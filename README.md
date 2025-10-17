@@ -108,6 +108,8 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ Sigstore keyless signing
 - ✅ VEX (false positive suppression)
 - ✅ License compliance checking
+- ✅ Typosquatting detection
+- ✅ Outdated dependency detection
 
 **Dependency Analysis**
 - ✅ Full transitive graph (JSON + GraphML)
