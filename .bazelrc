@@ -1,0 +1,28 @@
+# Common Bazel configuration
+
+# Build configuration
+build --enable_platform_specific_config
+build --incompatible_strict_action_env
+
+# Supply chain analysis shortcuts
+build:supplychain --keep_going
+build:supplychain --experimental_remote_cache_compression
+
+# Incremental mode (only changed targets)
+build:supplychain-incremental --config=supplychain
+build:supplychain-incremental --trim_test_configuration
+
+# Full analysis (all targets, all features)
+build:supplychain-full --config=supplychain
+
+# Performance tuning
+build:supplychain --jobs=auto
+build:supplychain --local_cpu_resources=HOST_CPUS*.75
+
+# Test configuration
+test --test_output=errors
+test --test_summary=detailed
+
+# Coverage configuration
+coverage --combined_report=lcov
+coverage --experimental_generate_llvm_lcov

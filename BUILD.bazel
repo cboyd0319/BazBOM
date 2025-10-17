@@ -1,0 +1,4 @@
+# Root build file for BazBom
+
+# Placeholder for workspace-level SBOM generation
+# To be implemented: sbom_all target that aggregates all SBOMs
