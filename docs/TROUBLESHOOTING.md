@@ -77,7 +77,7 @@ bazel build //...
 
 **Symptom**: `find bazel-bin -name "*.spdx.json"` returns nothing
 
-**Solution**: 
+**Solution**:
 
 1. Verify SBOM targets exist:
    ```bash

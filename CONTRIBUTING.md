@@ -13,17 +13,20 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
 ### Setup
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/cboyd0319/BazBOM.git
    cd BazBOM
    ```
 
 2. Build the project:
+
    ```bash
    bazel build //...
    ```
 
 3. Run tests:
+
    ```bash
    bazel test //...
    ```
@@ -40,7 +43,8 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) for commi
 - `refactor:` for code refactoring
 
 Example:
-```
+
+```text
 feat: add SPDX 3.0 support to SBOM generation
 
 - Implement SPDX 3.0 schema
@@ -54,10 +58,13 @@ feat: add SPDX 3.0 support to SBOM generation
 2. Make your changes and ensure they follow the project style
 3. Add or update tests as needed
 4. Run linters and formatters:
+
    ```bash
    bazel run //tools/dev:lint
    ```
+
 5. Ensure all tests pass:
+
    ```bash
    bazel test //...
    ```

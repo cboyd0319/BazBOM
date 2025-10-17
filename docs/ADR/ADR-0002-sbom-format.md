@@ -68,7 +68,7 @@ We will use **SPDX 2.3 in JSON format** as our primary SBOM format.
 
 We use Package URLs (purl) for ecosystem-agnostic package identification:
 
-```
+```text
 pkg:maven/org.example/my-library@1.2.3
 pkg:npm/lodash@4.17.21
 pkg:pypi/requests@2.28.0
@@ -107,6 +107,7 @@ SPDX license identifiers from the [SPDX License List](https://spdx.org/licenses/
 ### SPDX 3.0 Migration
 
 SPDX 3.0 is in development with:
+
 - Improved security metadata
 - Better link integrity
 - Enhanced relationship modeling
@@ -179,7 +180,7 @@ Test with multiple SBOM consumers:
 
 ### Generation Process
 
-```
+```text
 1. Bazel aspect collects dependency data
 2. write_sbom.py processes data
 3. Generate SPDX package entries

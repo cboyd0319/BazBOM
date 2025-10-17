@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial repository structure
 - Bazel-native SBOM generation framework
 - SPDX 2.3 support
@@ -19,23 +20,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Security-first development practices
 
 ### Changed
+
 - N/A
 
 ### Deprecated
+
 - N/A
 
 ### Removed
+
 - N/A
 
 ### Fixed
+
 - N/A
 
 ### Security
+
 - N/A
 
 ## [0.1.0] - TBD
 
-### Added
+### Initial Release
+
 - Initial release
 - Core SBOM generation capability
 - Basic SCA functionality

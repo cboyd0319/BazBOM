@@ -84,10 +84,12 @@ maven_install(
 Coursier is a fast dependency resolver for JVM.
 
 **Pros**:
+
 - Very fast resolution
 - Used by Scala community
 
 **Cons**:
+
 - Additional tooling required
 - Not Bazel-native
 - Would need custom integration
@@ -99,10 +101,12 @@ Coursier is a fast dependency resolver for JVM.
 Gradle has built-in dependency locking.
 
 **Pros**:
+
 - Familiar to many developers
 - Good IDE integration
 
 **Cons**:
+
 - Not Bazel-native
 - Would require running Gradle alongside Bazel
 - Adds complexity
