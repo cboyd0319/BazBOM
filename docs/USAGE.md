@@ -116,6 +116,193 @@ bazel build //path/to:target.sbom \
   --@bazbom//config:include_transitive=true
 ```
 
+## SBOM Diffing & Change Tracking
+
+BazBOM can compare SBOMs to identify changes between releases, detect drift, and generate automated release notes.
+
+### Compare Two SBOMs
+
+```bash
+# Compare two SBOMs to see what changed
+bazel run //tools/supplychain:sbom_diff -- \
+  bazel-bin/v1.0.0_sbom.spdx.json \
+  bazel-bin/v1.1.0_sbom.spdx.json
+
+# Generate JSON output for automation
+bazel run //tools/supplychain:sbom_diff -- \
+  baseline.json current.json \
+  --format json > diff.json
+
+# Save human-readable report
+bazel run //tools/supplychain:sbom_diff -- \
+  old.json new.json \
+  --format text -o DIFF_REPORT.txt
+```
+
+**Output includes:**
+- New dependencies added
+- Dependencies removed
+- Dependencies upgraded/downgraded
+- License changes
+- Summary statistics
+
+**Example output:**
+```
+📦 SBOM DIFF REPORT
+================================================================================
+
+Comparing:
+  Old: my-app-v1.0.0
+  New: my-app-v1.1.0
+
+Summary:
+  Total packages (old):  150
+  Total packages (new):  152
+  Added:                 3
+  Removed:               1
+  Upgraded:              5
+  Downgraded:            0
+  License changed:       1
+
+NEW DEPENDENCIES (3):
+  + io.grpc:grpc-netty@1.50.0 (Apache-2.0)
+  + org.bouncycastle:bcprov-jdk15on@1.70 (MIT)
+  + io.netty:netty-handler@4.1.90 (Apache-2.0)
+
+UPGRADED DEPENDENCIES (5):
+  ↑ com.google.guava:guava: 30.1-jre → 31.1-jre
+  ↑ org.slf4j:slf4j-api: 1.7.32 → 2.0.0
+```
+
+### Drift Detection
+
+Detect unexpected changes against a baseline SBOM:
+
+```bash
+# Check for drift against baseline
+bazel run //tools/supplychain:drift_detector -- \
+  baseline.json current.json
+
+# Output JSON for automation
+bazel run //tools/supplychain:drift_detector -- \
+  baseline.json current.json \
+  --format json
+
+# Fail build on warnings (strict mode)
+bazel run //tools/supplychain:drift_detector -- \
+  baseline.json current.json \
+  --strict
+```
+
+**Built-in drift rules:**
+- **DRIFT-001**: Unexpected dependency additions (threshold: 5)
+- **DRIFT-002**: Unexpected dependency removals (threshold: 3)
+- **DRIFT-003**: License changes to forbidden licenses (GPL, AGPL)
+- **DRIFT-004**: Version downgrades detected
+
+**Example output:**
+```
+⚠️  STATUS: WARNING (non-critical issues found)
+
+Summary:
+  Total violations:  2
+  Critical:          0
+  Error:             0
+  Warning:           2
+
+DRIFT VIOLATIONS:
+⚠️ [WARNING] DRIFT-001: Unexpected Dependency Additions
+   Found 7 new dependencies (threshold: 5)
+
+⚠️ [WARNING] DRIFT-003: License Changes Detected
+   org.apache.commons:commons-text@1.9
+      Apache-2.0 → GPL-3.0
+```
+
+### Generate Release Notes
+
+Automatically generate release notes from SBOM changes:
+
+```bash
+# Generate markdown release notes
+bazel run //tools/supplychain:changelog_generator -- \
+  v1.0.0.spdx.json v1.1.0.spdx.json \
+  --format markdown \
+  --old-version v1.0.0 \
+  --new-version v1.1.0 \
+  -o CHANGELOG.md
+
+# Generate HTML changelog
+bazel run //tools/supplychain:changelog_generator -- \
+  old.json new.json \
+  --format html \
+  -o release-notes.html
+
+# Generate plain text
+bazel run //tools/supplychain:changelog_generator -- \
+  baseline.json current.json \
+  --format text
+```
+
+**Markdown output example:**
+```markdown
+# Release Notes: v1.0.0 → v1.1.0
+
+## 📊 Summary
+
+| Metric | Count |
+|--------|-------|
+| Total Dependencies (old) | 150 |
+| Total Dependencies (new) | 152 |
+| ➕ Added | 3 |
+| ➖ Removed | 1 |
+| ⬆️ Upgraded | 5 |
+| ⬇️ Downgraded | 0 |
+
+## ➕ New Dependencies (3)
+
+- **io.grpc:grpc-netty** `1.50.0`
+  - License: `Apache-2.0`
+  - PURL: `pkg:maven/io.grpc/grpc-netty@1.50.0`
+
+## ⬆️ Upgraded Dependencies (5)
+
+- **com.google.guava:guava**: `30.1-jre` → `31.1-jre`
+- **org.slf4j:slf4j-api**: `1.7.32` → `2.0.0`
+```
+
+### Use Cases
+
+**1. Pre-merge checks:**
+```bash
+# Detect unexpected changes before merging PR
+git show main:bazel-bin/workspace_sbom.spdx.json > baseline.json
+bazel build //:workspace_sbom
+bazel run //tools/supplychain:drift_detector -- \
+  baseline.json bazel-bin/workspace_sbom.spdx.json \
+  --strict
+```
+
+**2. Release documentation:**
+```bash
+# Generate release notes automatically
+bazel run //tools/supplychain:changelog_generator -- \
+  releases/v1.0.0.json bazel-bin/workspace_sbom.spdx.json \
+  --old-version v1.0.0 \
+  --new-version v1.1.0 \
+  --format markdown \
+  -o RELEASE_NOTES.md
+```
+
+**3. Security impact analysis:**
+```bash
+# Compare SBOMs to identify security changes
+bazel run //tools/supplychain:sbom_diff -- \
+  baseline.json current.json \
+  --format json | \
+  jq '.changes.upgraded[] | select(.name | contains("log4j"))'
+```
+
 ## Vulnerability Scanning
 
 ### Scan Single SBOM
