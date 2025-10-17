@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="docs/images/logo.png" alt="BazBOM Logo" width="250"/>
-
 # BazBOM
 
 ### **Build-time SBOM generation and vulnerability scanning for Bazel projects**
