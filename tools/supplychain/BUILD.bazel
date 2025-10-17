@@ -18,6 +18,11 @@ exports_files(
         "vex_processor.py",
         "license_extractor.py",
         "policy_check.py",
+        "kev_enrichment.py",
+        "epss_enrichment.py",
+        "ghsa_enrichment.py",
+        "vulncheck_enrichment.py",
+        "vulnerability_enrichment.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -110,6 +115,36 @@ sh_binary(
 sh_binary(
     name = "policy_check",
     srcs = ["policy_check.py"],
+)
+
+# Shell wrapper for kev_enrichment
+sh_binary(
+    name = "kev_enrichment",
+    srcs = ["kev_enrichment.py"],
+)
+
+# Shell wrapper for epss_enrichment
+sh_binary(
+    name = "epss_enrichment",
+    srcs = ["epss_enrichment.py"],
+)
+
+# Shell wrapper for ghsa_enrichment
+sh_binary(
+    name = "ghsa_enrichment",
+    srcs = ["ghsa_enrichment.py"],
+)
+
+# Shell wrapper for vulncheck_enrichment
+sh_binary(
+    name = "vulncheck_enrichment",
+    srcs = ["vulncheck_enrichment.py"],
+)
+
+# Shell wrapper for vulnerability_enrichment
+sh_binary(
+    name = "vulnerability_enrichment",
+    srcs = ["vulnerability_enrichment.py"],
 )
 
 # Export aspect and macro definitions

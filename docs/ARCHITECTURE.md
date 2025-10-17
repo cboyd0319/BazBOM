@@ -132,15 +132,116 @@ Queries the OSV (Open Source Vulnerabilities) database:
 
 Converts vulnerability data to SARIF format for GitHub Code Scanning:
 
-- **Input**: OSV vulnerability data
-- **Process**: Formats as SARIF 2.1.0
+- **Input**: OSV vulnerability data (enriched or unenriched)
+- **Process**: Formats as SARIF 2.1.0 with enriched context
 - **Output**: `.sarif.json` files compatible with GitHub
 
 **SARIF Benefits**:
 - Native GitHub Code Scanning integration
-- Rich security alert UI
+- Rich security alert UI with KEV/EPSS context
 - PR annotations for new vulnerabilities
 - Trend tracking over time
+
+### 5. Vulnerability Enrichment Pipeline
+
+**Location**: `tools/supplychain/vulnerability_enrichment.py`
+
+Multi-source enrichment pipeline that enhances vulnerability findings with actionable intelligence:
+
+#### Enrichment Modules
+
+**KEV Enrichment** (`kev_enrichment.py`):
+- **Source**: CISA Known Exploited Vulnerabilities Catalog
+- **Update Frequency**: Daily
+- **Caching**: 24-hour TTL
+- **Output**: KEV status, due dates, required actions
+- **Impact**: CVEs in KEV → P0-IMMEDIATE priority
+
+**EPSS Enrichment** (`epss_enrichment.py`):
+- **Source**: FIRST.org Exploit Prediction Scoring System
+- **Model**: Machine learning-based probability (0-100%)
+- **Batch Support**: 100 CVEs per API call
+- **Caching**: 24-hour TTL
+- **Output**: Exploitation probability, percentile ranking
+- **Impact**: High EPSS → Higher risk score
+
+**GHSA Enrichment** (`ghsa_enrichment.py`):
+- **Source**: GitHub Security Advisories
+- **API**: GraphQL (requires token for higher rate limits)
+- **Coverage**: Maven, npm, PyPI, RubyGems, NuGet, Rust, Go
+- **Output**: Remediation guidance, patched versions, vulnerable ranges
+- **Impact**: Provides actionable fix information
+
+**VulnCheck Enrichment** (`vulncheck_enrichment.py`, optional):
+- **Source**: VulnCheck API
+- **API Key**: Required (free tier: 100 req/day)
+- **Output**: Exploit maturity, weaponization status, attack vectors
+- **Impact**: Weaponized exploits → P1-CRITICAL priority
+
+#### Risk Scoring Algorithm
+
+Composite risk score calculation (0-100):
+
+```python
+Risk Score = (CVSS × 0.40) + (EPSS × 0.30) + (KEV × 0.20) + (Exploit × 0.10)
+```
+
+**Component Weights**:
+- **CVSS (40%)**: Base severity score from NVD/OSV
+- **EPSS (30%)**: Exploitation probability from FIRST.org
+- **KEV (20%)**: Active exploitation status from CISA
+- **Exploit (10%)**: Public exploit availability
+
+#### Priority Mapping
+
+| Priority | Criteria | Risk Score | Action Timeline |
+|----------|----------|------------|-----------------|
+| P0-IMMEDIATE | In CISA KEV | Any | Fix immediately |
+| P1-CRITICAL | High risk | ≥ 80 | Fix this week |
+| P2-HIGH | Medium-high risk | ≥ 60 | Fix this sprint |
+| P3-MEDIUM | Medium risk | ≥ 40 | Fix next quarter |
+| P4-LOW | Low risk | < 40 | Backlog |
+
+#### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                   Vulnerability Enrichment                   │
+│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
+│  │   KEV    │  │   EPSS   │  │   GHSA   │  │VulnCheck │  │
+│  │(CISA API)│  │(FIRST.org)│(GitHub API)│  │(Optional)│  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  │
+│       │             │             │             │          │
+│       └─────────────┴─────────────┴─────────────┘          │
+│                         │                                   │
+│              ┌──────────▼──────────┐                       │
+│              │ VulnerabilityEnricher│                       │
+│              │  - Risk Scoring      │                       │
+│              │  - Priority Mapping  │                       │
+│              │  - Data Normalization│                       │
+│              └──────────┬──────────┘                       │
+│                         │                                   │
+│                         ▼                                   │
+│              ┌────────────────────┐                         │
+│              │ Enriched Findings  │                         │
+│              │ - Risk Score 0-100 │                         │
+│              │ - Priority P0-P4   │                         │
+│              │ - KEV Context      │                         │
+│              │ - EPSS Probability │                         │
+│              │ - Exploit Status   │                         │
+│              │ - GHSA Remediation │                         │
+│              └────────────────────┘                         │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Performance Considerations
+
+- **Parallel Enrichment**: All sources queried concurrently
+- **Batch Processing**: EPSS supports 100 CVEs per request
+- **Caching**: KEV and EPSS cached for 24 hours
+- **Graceful Degradation**: Continues if enrichment sources fail
+- **Rate Limiting**: Respects API rate limits (GHSA: 60/hr unauthenticated, 5000/hr with token)
 
 ## Data Flow
 
@@ -155,7 +256,7 @@ Converts vulnerability data to SARIF format for GitHub Code Scanning:
 6. SPDX files written to bazel-bin/
 ```
 
-### SCA Flow
+### SCA Flow (with Enrichment)
 
 ```
 1. Developer runs: bazel run //:sca_from_sbom
@@ -164,9 +265,17 @@ Converts vulnerability data to SARIF format for GitHub Code Scanning:
    a. Extract package list
    b. Query OSV database
    c. Collect vulnerabilities
-4. sarif_adapter.py formats results
-5. SARIF files written to bazel-bin/
-6. (Optional) Upload to GitHub Code Scanning
+4. Enrichment pipeline (if enabled):
+   a. Fetch EPSS scores (batch, 100 CVEs/request)
+   b. Check CISA KEV catalog
+   c. Query GitHub Security Advisories
+   d. Query VulnCheck API (optional)
+   e. Calculate risk scores
+   f. Assign priorities (P0-P4)
+5. sarif_adapter.py formats enriched results
+6. SARIF files with KEV/EPSS context written to bazel-bin/
+7. Priority summary printed to console
+8. (Optional) Upload to GitHub Code Scanning
 ```
 
 ## Build Graph Integration

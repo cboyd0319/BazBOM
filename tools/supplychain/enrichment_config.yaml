@@ -1,0 +1,126 @@
+# Vulnerability Enrichment Configuration
+# This file configures the behavior of vulnerability enrichment modules
+
+enrichment:
+  # Enable/disable enrichment globally
+  enabled: true
+  
+  # Data sources configuration
+  sources:
+    # CISA Known Exploited Vulnerabilities (KEV)
+    kev:
+      enabled: true
+      cache_ttl_hours: 24
+      url: "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+      cache_dir: ".bazel-cache/kev"
+    
+    # FIRST.org Exploit Prediction Scoring System (EPSS)
+    epss:
+      enabled: true
+      cache_ttl_hours: 24
+      url: "https://api.first.org/data/v1/epss"
+      batch_size: 100  # CVEs per API request
+      cache_dir: ".bazel-cache/epss"
+    
+    # GitHub Security Advisories (GHSA)
+    ghsa:
+      enabled: true
+      url: "https://api.github.com/graphql"
+      # GitHub token from environment variable (recommended)
+      # Increases rate limit from 60/hr to 5000/hr
+      token_env: "GITHUB_TOKEN"
+      # Or provide token directly (not recommended)
+      # token: "ghp_xxxxxxxxxxxxx"
+    
+    # VulnCheck KEV (optional - requires API key)
+    vulncheck:
+      enabled: false  # Disabled by default (requires API key)
+      url: "https://api.vulncheck.com/v3/index/vulncheck-kev"
+      # API key from environment variable
+      api_key_env: "VULNCHECK_API_KEY"
+      # Free tier: 100 requests/day
+  
+  # Risk scoring algorithm
+  risk_scoring:
+    # Component weights (must sum to 1.0)
+    # Rationale for weight distribution:
+    # - CVSS (40%): Industry standard severity baseline, most widely understood metric
+    # - EPSS (30%): ML-predicted exploitation probability, strong indicator of real-world risk
+    # - KEV (20%): Binary indicator but highly significant (active exploitation confirmed)
+    # - Exploit (10%): Public exploit availability, lower weight as not all are weaponized
+    weights:
+      cvss: 0.40      # 40% - Base CVSS score (severity baseline)
+      epss: 0.30      # 30% - Exploitation probability (ML prediction)
+      kev: 0.20       # 20% - Known exploited status (confirmed exploitation)
+      exploit: 0.10   # 10% - Exploit availability (public/weaponized)
+    
+    # Priority thresholds (0-100 risk score scale)
+    # Note: P0 is assigned to ANY vulnerability in CISA KEV catalog, regardless of risk score
+    # Score-based priorities only apply to non-KEV vulnerabilities
+    priority_thresholds:
+      p0_immediate: null  # Not score-based - assigned if in CISA KEV catalog
+      p1_critical: 80     # Risk score >= 80 (not in KEV)
+      p2_high: 60         # Risk score >= 60
+      p3_medium: 40       # Risk score >= 40
+      p4_low: 0           # Risk score < 40 (any remaining)
+  
+  # Performance tuning
+  performance:
+    # Maximum concurrent API requests
+    max_concurrent_requests: 5
+    
+    # Request timeout (seconds)
+    request_timeout: 30
+    
+    # Retry configuration
+    max_retries: 3
+    retry_delay: 1  # seconds
+    
+    # Enable parallel enrichment for multiple sources
+    parallel_enrichment: true
+  
+  # Fallback behavior
+  fallback:
+    # Continue if enrichment sources fail
+    graceful_degradation: true
+    
+    # Use stale cache if API is unavailable
+    use_stale_cache: true
+    
+    # Maximum cache age when using stale cache (hours)
+    max_stale_cache_hours: 168  # 7 days
+  
+  # Output configuration
+  output:
+    # Include enrichment metadata in output
+    include_metadata: true
+    
+    # Show enrichment summary in console
+    show_summary: true
+    
+    # Log enrichment details to stderr
+    verbose_logging: false
+
+# CLI default options (can be overridden via command line)
+cli_defaults:
+  enrich: true
+  enable_kev: true
+  enable_epss: true
+  enable_ghsa: true
+  enable_vulncheck: false  # Disabled by default (requires API key)
+
+# Rate limiting configuration
+rate_limits:
+  # EPSS (no rate limit, but batch for efficiency)
+  epss:
+    requests_per_second: 10
+    
+  # GHSA (without token: 60/hr, with token: 5000/hr)
+  ghsa:
+    requests_per_hour_unauthenticated: 60
+    requests_per_hour_authenticated: 5000
+    
+  # VulnCheck (free tier: 100/day)
+  vulncheck:
+    requests_per_day_free: 100
+    requests_per_day_paid: 10000
