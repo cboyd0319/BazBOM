@@ -1,11 +1,14 @@
 # Root build file for BazBOM
 
-# Generate dependency list from WORKSPACE
+# Generate dependency list from maven_install.json (or fall back to WORKSPACE)
 genrule(
     name = "extract_deps",
-    srcs = ["WORKSPACE"],
+    srcs = [
+        "WORKSPACE",
+        "maven_install.json",
+    ],
     outs = ["workspace_deps.json"],
-    cmd = "$(location //tools/supplychain:extract_maven_deps) --workspace $< --output $@",
+    cmd = "$(location //tools/supplychain:extract_maven_deps) --workspace $(location WORKSPACE) --maven-install-json $(location maven_install.json) --output $@",
     tools = ["//tools/supplychain:extract_maven_deps"],
     visibility = ["//visibility:public"],
 )
