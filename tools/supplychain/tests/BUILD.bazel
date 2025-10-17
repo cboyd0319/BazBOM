@@ -65,6 +65,15 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_sarif_adapter",
+    srcs = [
+        "test_sarif_adapter.py",
+        "//tools/supplychain:sarif_adapter.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",
