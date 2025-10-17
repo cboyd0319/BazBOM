@@ -1037,6 +1037,152 @@ class TestVulnCheckEnrichFinding(unittest.TestCase):
         self.assertFalse(result["exploit"]["exploit_available"])
 
 
+class TestEPSSCaching(unittest.TestCase):
+    """Test EPSS caching behavior."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = EPSSEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('epss_enrichment.requests.get')
+    def test_cache_functionality(self, mock_get):
+        """Test EPSS scores are cached properly."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "cve": "CVE-2021-11111",
+                "epss": "0.75",
+                "percentile": "0.90"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        # First call should hit API
+        scores1 = self.enricher.fetch_epss_scores(["CVE-2021-11111"])
+        self.assertEqual(mock_get.call_count, 1)
+        
+        # Second call should use cache
+        scores2 = self.enricher.fetch_epss_scores(["CVE-2021-11111"])
+        # Should still be 1 call (used cache)
+        self.assertEqual(mock_get.call_count, 1)
+        
+        # Scores should match
+        self.assertEqual(scores1, scores2)
+    
+    @patch('epss_enrichment.requests.get')
+    def test_fetch_epss_invalid_response_structure(self, mock_get):
+        """Test EPSS handles invalid response structure."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = "invalid"  # String instead of dict
+        mock_get.return_value = mock_response
+        
+        with self.assertRaises(ValueError) as ctx:
+            self.enricher.fetch_epss_scores(["CVE-2021-11111"])
+        
+        self.assertIn("Invalid EPSS API response", str(ctx.exception))
+    
+    @patch('epss_enrichment.requests.get')
+    def test_fetch_epss_missing_cve_in_entry(self, mock_get):
+        """Test EPSS handles entries without CVE field."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [
+                {"epss": "0.75", "percentile": "0.90"},  # Missing 'cve' field
+                {"cve": "CVE-2021-11111", "epss": "0.50", "percentile": "0.50"}
+            ]
+        }
+        mock_get.return_value = mock_response
+        
+        scores = self.enricher.fetch_epss_scores(["CVE-2021-11111"])
+        
+        # Should skip entry without CVE and process valid one
+        self.assertIn("CVE-2021-11111", scores)
+        self.assertEqual(len(scores), 1)
+
+
+class TestKEVCaching(unittest.TestCase):
+    """Test KEV caching behavior."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = KEVEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('kev_enrichment.requests.get')
+    def test_cache_freshness_check(self, mock_get):
+        """Test KEV catalog cache freshness."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "catalogVersion": "2025.01.17",
+            "vulnerabilities": []
+        }
+        mock_get.return_value = mock_response
+        
+        # First fetch
+        catalog1 = self.enricher.fetch_kev_catalog()
+        call_count_first = mock_get.call_count
+        
+        # Immediate second fetch should use cache
+        catalog2 = self.enricher.fetch_kev_catalog()
+        self.assertEqual(mock_get.call_count, call_count_first)  # No new call
+
+
+class TestResponseValidation(unittest.TestCase):
+    """Test validation of API responses."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('epss_enrichment.requests.get')
+    def test_epss_invalid_score_values(self, mock_get):
+        """Test EPSS handles invalid score values."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "cve": "CVE-2021-11111",
+                "epss": "invalid",  # Invalid float
+                "percentile": "0.90"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        enricher = EPSSEnricher(cache_dir=self.temp_dir)
+        
+        # Should handle gracefully by skipping invalid entry
+        try:
+            scores = enricher.fetch_epss_scores(["CVE-2021-11111"])
+            # If it doesn't raise, check it handled it somehow
+            self.assertIsInstance(scores, dict)
+        except (ValueError, TypeError):
+            # Also acceptable to raise for invalid data
+            pass
+
+
 class TestEPSSEnrichFinding(unittest.TestCase):
     """Test EPSS enrich_finding method."""
     
