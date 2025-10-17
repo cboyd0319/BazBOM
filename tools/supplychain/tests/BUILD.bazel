@@ -56,6 +56,15 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_write_sbom",
+    srcs = [
+        "test_write_sbom.py",
+        "//tools/supplychain:write_sbom.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",
