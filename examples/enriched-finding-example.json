@@ -1,0 +1,88 @@
+{
+  "cve": "CVE-2021-44228",
+  "package": {
+    "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+    "name": "log4j-core",
+    "version": "2.14.1",
+    "ecosystem": "Maven"
+  },
+  
+  "base_metrics": {
+    "severity": "CRITICAL",
+    "cvss_score": 10.0,
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H",
+    "database_id": "OSV:GHSA-jfh8-c2jp-5v3q"
+  },
+  
+  "kev": {
+    "in_kev": true,
+    "vulnerability_name": "Apache Log4j2 Remote Code Execution Vulnerability",
+    "date_added": "2021-12-10",
+    "due_date": "2021-12-24",
+    "required_action": "Apply updates per vendor instructions or discontinue use of the product if updates are unavailable.",
+    "vendor_project": "Apache",
+    "product": "Log4j",
+    "short_description": "Apache Log4j2 contains a vulnerability where JNDI features do not protect against attacker-controlled LDAP and other JNDI related endpoints. This vulnerability allows a remote attacker to execute arbitrary code on the affected system."
+  },
+  
+  "epss": {
+    "epss_score": 0.97538,
+    "epss_percentile": 0.99999,
+    "date": "2025-01-17",
+    "model_version": "v2024.11.01"
+  },
+  
+  "exploitation_probability": "97.5%",
+  "epss_priority": "CRITICAL",
+  
+  "exploit": {
+    "exploit_available": true,
+    "exploit_maturity": "functional",
+    "weaponized": true,
+    "attack_vector": "network",
+    "attack_complexity": "low"
+  },
+  
+  "ghsa": {
+    "ghsa_id": "GHSA-jfh8-c2jp-5v3q",
+    "summary": "Remote code execution in Log4j",
+    "description": "Apache Log4j2 2.0-beta9 through 2.15.0 (excluding security releases 2.12.2, 2.12.3, and 2.3.1) JNDI features used in configuration, log messages, and parameters do not protect against attacker controlled LDAP and other JNDI related endpoints.",
+    "severity": "CRITICAL",
+    "first_patched_version": "2.15.0",
+    "vulnerable_version_range": ">=2.0.0, <2.15.0",
+    "cwes": ["CWE-502", "CWE-20"],
+    "references": [
+      "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q",
+      "https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+      "https://logging.apache.org/log4j/2.x/security.html",
+      "https://www.cisa.gov/known-exploited-vulnerabilities-catalog"
+    ]
+  },
+  
+  "risk_score": 99.1,
+  "priority": "P0-IMMEDIATE",
+  "priority_explanation": "Known exploited (CISA KEV) + 97.5% exploitation probability (EPSS) + weaponized exploit available",
+  
+  "affected_targets": [
+    "//services/api:api_lib",
+    "//services/auth:auth_server",
+    "//tools/monitoring:log_collector"
+  ],
+  
+  "remediation": {
+    "fixed_versions": ["2.15.0", "2.16.0", "2.17.0", "2.17.1"],
+    "recommended_version": "2.17.1",
+    "recommended_action": "Upgrade to log4j-core 2.17.1 immediately. This is the most stable patched version.",
+    "estimated_effort": "2-4 hours",
+    "breaking_changes": "Minimal - JNDI lookup behavior changed, but most applications unaffected",
+    "workaround": "Set system property log4j2.formatMsgNoLookups=true or environment variable LOG4J_FORMAT_MSG_NO_LOOKUPS=true (temporary mitigation only)",
+    "upgrade_command": "bazel run //tools:upgrade -- org.apache.logging.log4j:log4j-core:2.17.1"
+  },
+  
+  "metadata": {
+    "scan_date": "2025-01-17T18:45:00Z",
+    "enrichment_sources": ["OSV", "CISA_KEV", "EPSS", "GHSA", "VulnCheck"],
+    "enrichment_version": "1.0.0",
+    "scanner": "BazBOM/1.0.0"
+  }
+}
