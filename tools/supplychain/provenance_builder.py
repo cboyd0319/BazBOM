@@ -31,7 +31,7 @@ def generate_slsa_provenance(
     Returns:
         SLSA provenance document as a dictionary
     """
-    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(datetime, 'UTC') else datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     
     # Default values
     if not commit_sha:

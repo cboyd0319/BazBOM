@@ -24,7 +24,7 @@ def generate_spdx_document(packages: List[Dict[str, Any]], name: str) -> Dict[st
         SPDX document as a dictionary
     """
     document_namespace = f"https://example.com/sboms/{name}-{uuid4()}"
-    timestamp = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(datetime, 'UTC') else datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     
     # Create SPDX document structure
     doc = {
