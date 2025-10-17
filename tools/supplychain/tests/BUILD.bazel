@@ -38,6 +38,15 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_extract_maven_deps",
+    srcs = [
+        "test_extract_maven_deps.py",
+        "//tools/supplychain:extract_maven_deps.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",

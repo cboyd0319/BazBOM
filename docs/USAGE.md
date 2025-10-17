@@ -2,6 +2,47 @@
 
 This guide covers day-to-day commands and workflows for BazBOM.
 
+## Dependency Extraction
+
+BazBOM uses **maven_install.json** as the source of truth for Maven dependencies, as recommended by the Bazel ecosystem. This lockfile provides:
+
+- Complete transitive dependency graph
+- Exact versions for all dependencies
+- SHA256 checksums for verification
+- Dependency relationship mapping
+
+### Automatic Dependency Extraction
+
+```bash
+# Extract all dependencies (prefers maven_install.json if available)
+bazel build //:extract_deps
+
+# View extracted dependencies
+cat bazel-bin/workspace_deps.json | jq
+```
+
+**Output includes:**
+- Direct dependencies (declared in WORKSPACE)
+- Transitive dependencies (from maven_install.json)
+- SHA256 checksums for all artifacts
+- Package URLs (PURLs) for each dependency
+
+### Manual Extraction
+
+```bash
+# Extract from maven_install.json
+python tools/supplychain/extract_maven_deps.py \
+  --workspace WORKSPACE \
+  --maven-install-json maven_install.json \
+  --output deps.json
+
+# Extract from WORKSPACE only (fallback)
+python tools/supplychain/extract_maven_deps.py \
+  --workspace WORKSPACE \
+  --output deps.json \
+  --prefer-lockfile=false
+```
+
 ## SBOM Generation
 
 ### Generate SBOM for a Single Target
@@ -15,6 +56,12 @@ bazel build //path/to:target.sbom
 ```bash
 bazel build //:sbom_all
 ```
+
+**The SBOM now includes:**
+- All transitive dependencies (not just direct deps)
+- SHA256 checksums for verification
+- Proper dependency relationships (e.g., Guava → failureaccess)
+- Package URLs (PURLs) for each artifact
 
 ### Generate SBOM with Custom Options
 

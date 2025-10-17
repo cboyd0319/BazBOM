@@ -1,6 +1,6 @@
 # BazBOM Examples
 
-This directory contains examples demonstrating BazBOM usage.
+This directory contains examples demonstrating BazBOM usage with real-world scenarios.
 
 ## Quick Demo
 
@@ -12,16 +12,45 @@ cd examples
 ```
 
 This will:
-1. Extract Maven dependencies from WORKSPACE
-2. Generate SPDX 2.3 SBOM
+1. Extract Maven dependencies from WORKSPACE and maven_install.json
+2. Generate SPDX 2.3 SBOM with transitive dependencies
 3. Validate SBOM schema
-4. Generate dependency graphs (JSON + GraphML)
+4. Generate dependency graphs (JSON + GraphML) with depth tracking
 5. Generate SLSA provenance
 6. Run vulnerability scan via OSV API
-7. Generate SARIF report
+7. Generate SARIF report for GitHub Code Scanning
 8. Validate SARIF schema
 
 All artifacts are generated in `/tmp/` for inspection.
+
+## What's New: Enhanced Dependency Analysis
+
+BazBOM now leverages **maven_install.json** as the source of truth, providing:
+
+✅ **Complete Transitive Dependencies** - All 7 dependencies (not just direct)
+✅ **SHA256 Checksums** - Verification for all artifacts
+✅ **Dependency Relationships** - Full parent→child mapping
+✅ **Depth Tracking** - Blast radius analysis (max depth: 2)
+✅ **Direct vs Transitive** - Clear classification
+
+### Example Output
+
+```json
+{
+  "statistics": {
+    "total_packages": 7,
+    "max_depth": 2,
+    "direct_dependencies": 1,
+    "transitive_dependencies": 6
+  },
+  "graph": {
+    "nodes": [
+      {"name": "guava", "depth": 1, "is_direct": true},
+      {"name": "failureaccess", "depth": 2, "is_direct": false}
+    ]
+  }
+}
+```
 
 ## Minimal Java Example
 
@@ -43,12 +72,16 @@ bazel run :app
 From the repository root:
 
 ```bash
-# Using Bazel (if configured)
-bazel build //:minimal_java_sbom
+# Using Bazel (recommended)
+bazel build //:workspace_sbom
 
-# Or manually
+# View the SBOM
+cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool
+
+# Or manually with enhanced extraction
 python3 tools/supplychain/extract_maven_deps.py \
   --workspace WORKSPACE \
+  --maven-install-json maven_install.json \
   --output /tmp/deps.json
 
 python3 tools/supplychain/write_sbom.py \
@@ -59,18 +92,61 @@ python3 tools/supplychain/write_sbom.py \
 
 ## What Each Tool Does
 
-### extract_maven_deps.py
-Parses WORKSPACE file to extract Maven artifacts declared in `maven_install()`.
-Creates a JSON file with package metadata (group, artifact, version, PURL).
+### extract_maven_deps.py ⭐ ENHANCED
+**NEW:** Now reads from maven_install.json (preferred) or WORKSPACE (fallback).
 
-### write_sbom.py
-Converts dependency JSON into SPDX 2.3 compliant SBOM.
-Includes packages, relationships, and provenance metadata.
+Extracts complete dependency information:
+- ✅ All transitive dependencies from lockfile
+- ✅ SHA256 checksums for verification
+- ✅ Dependency relationships (parent→child)
+- ✅ Direct vs transitive classification
 
-### graph_generator.py
+**Usage:**
+```bash
+# With maven_install.json (recommended)
+python3 tools/supplychain/extract_maven_deps.py \
+  --workspace WORKSPACE \
+  --maven-install-json maven_install.json \
+  --output deps.json
+
+# Fallback to WORKSPACE only
+python3 tools/supplychain/extract_maven_deps.py \
+  --workspace WORKSPACE \
+  --output deps.json \
+  --prefer-lockfile=false
+```
+
+### write_sbom.py ⭐ ENHANCED
+**NEW:** Generates SPDX SBOMs with complete transitive relationships.
+
+Converts dependency JSON into SPDX 2.3 compliant SBOM:
+- ✅ SHA256 checksums for all packages
+- ✅ Proper DEPENDS_ON relationships
+- ✅ Distinguishes direct from transitive deps
+- ✅ Package URLs (PURLs) for all artifacts
+
+### graph_generator.py ⭐ ENHANCED
+**NEW:** Calculates dependency depth for blast radius analysis.
+
 Creates dependency graph visualizations:
-- **JSON format**: Machine-readable graph with nodes and edges
-- **GraphML format**: Import into Gephi, yEd, or other graph tools
+- **JSON format**: Machine-readable graph with depth info
+- **GraphML format**: Import into Gephi, yEd, or other tools
+- **Depth tracking**: BFS-based shortest path calculation
+- **Statistics**: Max depth, direct/transitive counts
+
+**Usage:**
+```bash
+# From workspace_deps.json (recommended - has full info)
+python3 tools/supplychain/graph_generator.py \
+  --deps bazel-bin/workspace_deps.json \
+  --output-json /tmp/graph.json \
+  --output-graphml /tmp/graph.graphml
+
+# From SBOM (fallback)
+python3 tools/supplychain/graph_generator.py \
+  --sbom bazel-bin/workspace_sbom.spdx.json \
+  --output-json /tmp/graph.json
+```
 
 ### provenance_builder.py
 Generates SLSA provenance v1.0 attestations.
@@ -88,13 +164,17 @@ Enables upload to GitHub Code Scanning for security alerts.
 
 ### SBOM (SPDX)
 ```bash
-cat /tmp/demo_sbom.spdx.json | python3 -m json.tool | less
+cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool | less
 ```
 
 Key sections:
 - `creationInfo`: When and how the SBOM was created
-- `packages`: List of all dependencies with PURLs
-- `relationships`: Dependency relationships (DEPENDS_ON, etc.)
+- `packages`: List of all dependencies with PURLs and checksums
+- `relationships`: Complete dependency graph (DEPENDS_ON)
+
+**NEW:** Each package now includes:
+- `checksums`: SHA256 for verification
+- `externalRefs`: PURLs for ecosystem identification
 
 ### Dependency Graph (JSON)
 ```bash

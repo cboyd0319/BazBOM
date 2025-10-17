@@ -31,7 +31,32 @@ For the Mermaid source, see [diagrams/architecture.mmd](diagrams/architecture.mm
 
 ## Components
 
-### 1. Dependency Discovery (Bazel Aspects)
+### 1. Dependency Extraction
+
+**Location**: `tools/supplychain/extract_maven_deps.py`
+
+Extracts Maven dependencies from the build configuration:
+
+- **Primary Source**: `maven_install.json` (lockfile, preferred)
+- **Fallback Source**: `WORKSPACE` file parsing
+- **Output**: Structured JSON with all dependencies
+
+**Key Features**:
+- **Transitive Dependencies**: Includes complete dependency graph from maven_install.json
+- **Checksums**: SHA256 hashes for verification
+- **Dependency Relationships**: Parent-child mapping for all dependencies
+- **Direct vs Transitive**: Distinguishes between direct and transitive deps
+
+**Data Flow**:
+```
+maven_install.json → extract_maven_deps.py → workspace_deps.json
+       ↓                                              ↓
+   (artifacts)                                  (packages)
+   (dependencies)                           (with relationships)
+   (checksums)                                  (with SHA256)
+```
+
+### 2. Dependency Discovery (Bazel Aspects)
 
 **Location**: `tools/supplychain/aspects.bzl`
 
@@ -47,15 +72,15 @@ Bazel aspects traverse the build graph to collect dependency information:
 - Handles transitive dependencies
 - Captures license information
 
-### 2. SBOM Generator
+### 3. SBOM Generator
 
 **Location**: `tools/supplychain/write_sbom.py`
 
 Converts dependency data into standards-compliant SPDX documents:
 
-- **Input**: Dependency data from aspects
-- **Process**: Generates SPDX 2.3 JSON documents
-- **Output**: `.spdx.json` files
+- **Input**: Dependency data from extract_maven_deps.py
+- **Process**: Generates SPDX 2.3 JSON documents with relationships
+- **Output**: `.spdx.json` files with complete dependency graph
 
 **SPDX Document Structure**:
 ```json
@@ -65,12 +90,27 @@ Converts dependency data into standards-compliant SPDX documents:
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "Package-SBOM",
   "documentNamespace": "https://example.com/...",
-  "packages": [...],
-  "relationships": [...]
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-guava",
+      "checksums": [{"algorithm": "SHA256", "checksumValue": "abc..."}],
+      "externalRefs": [{"referenceType": "purl", "referenceLocator": "pkg:maven/..."}]
+    }
+  ],
+  "relationships": [
+    {"spdxElementId": "root", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "guava"},
+    {"spdxElementId": "guava", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "failureaccess"}
+  ]
 }
 ```
 
-### 3. Vulnerability Scanner (SCA)
+**Enhanced Features**:
+- SHA256 checksums for all packages
+- Package URLs (PURLs) for ecosystem identification
+- Proper transitive relationships (not just root dependencies)
+- Direct/transitive dependency distinction
+
+### 4. Vulnerability Scanner (SCA)
 
 **Location**: `tools/supplychain/osv_query.py`
 

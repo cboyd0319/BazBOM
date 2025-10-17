@@ -61,9 +61,13 @@ def generate_spdx_document(packages: List[Dict[str, Any]], name: str) -> Dict[st
         "relatedSpdxElement": "SPDXRef-Package-root"
     })
     
+    # Build map of package IDs for dependency resolution
+    package_id_map = {}
+    
     # Add dependency packages
     for pkg in packages:
         pkg_id = sanitize_spdx_id(f"SPDXRef-Package-{pkg['name']}")
+        package_id_map[f"{pkg.get('group', '')}:{pkg.get('name', '')}"] = pkg_id
         
         pkg_entry = {
             "SPDXID": pkg_id,
@@ -83,14 +87,37 @@ def generate_spdx_document(packages: List[Dict[str, Any]], name: str) -> Dict[st
                 "referenceLocator": pkg["purl"]
             }]
         
+        # Add checksums if available (SHA256)
+        if pkg.get("sha256"):
+            pkg_entry["checksums"] = [{
+                "algorithm": "SHA256",
+                "checksumValue": pkg["sha256"]
+            }]
+        
         doc["packages"].append(pkg_entry)
         
-        # Add dependency relationship
-        doc["relationships"].append({
-            "spdxElementId": "SPDXRef-Package-root",
-            "relationshipType": "DEPENDS_ON",
-            "relatedSpdxElement": pkg_id
-        })
+        # Add direct dependency relationship from root
+        if pkg.get("is_direct", False):
+            doc["relationships"].append({
+                "spdxElementId": "SPDXRef-Package-root",
+                "relationshipType": "DEPENDS_ON",
+                "relatedSpdxElement": pkg_id
+            })
+    
+    # Add transitive dependency relationships
+    for pkg in packages:
+        pkg_id = sanitize_spdx_id(f"SPDXRef-Package-{pkg['name']}")
+        dependencies = pkg.get("dependencies", [])
+        
+        for dep_coord in dependencies:
+            # Try to find the dependency in our package map
+            if dep_coord in package_id_map:
+                dep_id = package_id_map[dep_coord]
+                doc["relationships"].append({
+                    "spdxElementId": pkg_id,
+                    "relationshipType": "DEPENDS_ON",
+                    "relatedSpdxElement": dep_id
+                })
     
     return doc
 
