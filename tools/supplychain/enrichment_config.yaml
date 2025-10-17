@@ -43,19 +43,26 @@ enrichment:
   # Risk scoring algorithm
   risk_scoring:
     # Component weights (must sum to 1.0)
+    # Rationale for weight distribution:
+    # - CVSS (40%): Industry standard severity baseline, most widely understood metric
+    # - EPSS (30%): ML-predicted exploitation probability, strong indicator of real-world risk
+    # - KEV (20%): Binary indicator but highly significant (active exploitation confirmed)
+    # - Exploit (10%): Public exploit availability, lower weight as not all are weaponized
     weights:
-      cvss: 0.40      # 40% - Base CVSS score
-      epss: 0.30      # 30% - Exploitation probability
-      kev: 0.20       # 20% - Known exploited status
-      exploit: 0.10   # 10% - Exploit availability
+      cvss: 0.40      # 40% - Base CVSS score (severity baseline)
+      epss: 0.30      # 30% - Exploitation probability (ML prediction)
+      kev: 0.20       # 20% - Known exploited status (confirmed exploitation)
+      exploit: 0.10   # 10% - Exploit availability (public/weaponized)
     
-    # Priority thresholds (0-100 scale)
+    # Priority thresholds (0-100 risk score scale)
+    # Note: P0 is assigned to ANY vulnerability in CISA KEV catalog, regardless of risk score
+    # Score-based priorities only apply to non-KEV vulnerabilities
     priority_thresholds:
-      p0_immediate: 80  # Risk score >= 80 OR in KEV catalog
-      p1_critical: 60   # Risk score >= 60
-      p2_high: 40       # Risk score >= 40
-      p3_medium: 20     # Risk score >= 20
-      p4_low: 0         # Risk score < 20
+      p0_immediate: null  # Not score-based - assigned if in CISA KEV catalog
+      p1_critical: 80     # Risk score >= 80 (not in KEV)
+      p2_high: 60         # Risk score >= 60
+      p3_medium: 40       # Risk score >= 40
+      p4_low: 0           # Risk score < 40 (any remaining)
   
   # Performance tuning
   performance:
