@@ -34,10 +34,13 @@ py_repositories()
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 maven_install(
+    name = "maven",
     artifacts = [
         "com.google.guava:guava:31.1-jre",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",
     ],
+    maven_install_json = "//:maven_install.json",
+    fail_if_repin_required = False,
 )
