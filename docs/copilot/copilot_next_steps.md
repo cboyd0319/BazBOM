@@ -1,10 +1,10 @@
 Please implement the features described in these 3 documents, in the order specified:
 
-  1. Read: /Users/chadboyd/Documents/GitHub/NEXT_STEPS_FOR_COPILOT.md (start here)
+  1. Read: NEXT_STEPS_FOR_COPILOT.md (start here)
   
-  2. Reference: /BAZBOM_FEATURE_ROADMAP_SUMMARY.md (quick lookup)
+  2. Reference: BAZBOM_FEATURE_ROADMAP_SUMMARY.md (quick lookup)
   
-  3. Detailed spec: /BAZBOM_NEXT_LEVEL_FEATURES.md (implementation details)
+  3. Detailed spec: BAZBOM_NEXT_LEVEL_FEATURES.md (implementation details)
   
   4. Repository guidelines: /BazBom/.github/copilot-instructions.md (quality standards)
 
