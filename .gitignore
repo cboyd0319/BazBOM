@@ -38,3 +38,5 @@ hs_err_pid*
 *.bak
 *.log
 /tmp/
+.bazel-cache/
+.coverage
