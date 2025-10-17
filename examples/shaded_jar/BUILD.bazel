@@ -1,0 +1,30 @@
+# Shaded JAR example
+
+# Standard Java binary (non-shaded)
+java_binary(
+    name = "app",
+    srcs = glob(["src/main/java/**/*.java"]),
+    main_class = "com.example.shaded.ShadedApp",
+    deps = [
+        "@maven//:com_google_guava_guava",
+        "@maven//:org_apache_commons_commons_text",
+    ],
+)
+
+# TODO: Fat JAR / shaded JAR example
+# This would typically use rules_jvm like:
+# java_binary(
+#     name = "app_deploy",
+#     srcs = glob(["src/main/java/**/*.java"]),
+#     main_class = "com.example.shaded.ShadedApp",
+#     deps = [...],
+#     # Creates _deploy.jar with all dependencies included
+# )
+#
+# Or with shade plugin:
+# load("@rules_jvm_external//:defs.bzl", "artifact")
+# java_binary(
+#     name = "app_shaded",
+#     ...
+#     # Shade/relocate packages to avoid conflicts
+# )

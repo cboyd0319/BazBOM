@@ -1,0 +1,5 @@
+# Multi-module example root BUILD file
+# This demonstrates SBOM generation for a complex monorepo with multiple modules
+
+# TODO: Add SBOM generation rules once aspect-based approach is implemented
+# For now, this example shows the structure of a multi-module project
