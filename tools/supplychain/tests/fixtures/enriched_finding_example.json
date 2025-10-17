@@ -1,0 +1,160 @@
+{
+  "scan_date": "2025-01-17T18:30:00Z",
+  "packages_scanned": 42,
+  "vulnerabilities_found": 3,
+  "enrichment_enabled": true,
+  "vulnerabilities": [
+    {
+      "id": "CVE-2021-44228",
+      "cve": "CVE-2021-44228",
+      "package": "log4j-core",
+      "version": "2.14.1",
+      "purl": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+      "summary": "Remote code execution via JNDI lookup in log message",
+      "severity": "CRITICAL",
+      "cvss_score": 10.0,
+      "published": "2021-12-10T00:00:00Z",
+      "kev": {
+        "in_kev": true,
+        "date_added": "2021-12-10",
+        "due_date": "2021-12-24",
+        "required_action": "Apply updates per vendor instructions",
+        "vulnerability_name": "Log4Shell",
+        "vendor_project": "Apache",
+        "product": "Log4j",
+        "short_description": "Apache Log4j2 JNDI features do not protect against attacker controlled LDAP and other JNDI related endpoints."
+      },
+      "epss": {
+        "epss_score": 0.97538,
+        "epss_percentile": 0.99999,
+        "date": "2025-01-17"
+      },
+      "exploitation_probability": "97.5%",
+      "epss_priority": "CRITICAL",
+      "exploit": {
+        "exploit_available": true,
+        "exploit_maturity": "functional",
+        "weaponized": true,
+        "attack_vector": "network"
+      },
+      "ghsa": {
+        "ghsa_id": "GHSA-jfh8-c2jp-5v3q",
+        "summary": "Remote code execution via JNDI lookup",
+        "severity": "CRITICAL",
+        "published_at": "2021-12-10",
+        "permalink": "https://github.com/advisories/GHSA-jfh8-c2jp-5v3q",
+        "vulnerabilities": [
+          {
+            "package_name": "log4j-core",
+            "ecosystem": "MAVEN",
+            "vulnerable_version_range": ">=2.0.0, <2.15.0",
+            "first_patched_version": "2.15.0"
+          }
+        ]
+      },
+      "remediation": {
+        "fixed_version": "2.15.0",
+        "vulnerable_range": ">=2.0.0, <2.15.0",
+        "recommended_action": "Upgrade to 2.17.0 immediately (2.15.0 had bypass)"
+      },
+      "risk_score": 97.54,
+      "priority": "P0-IMMEDIATE",
+      "priority_explanation": "Known exploited (KEV) + 97.5% exploitation probability (EPSS) + weaponized exploit available",
+      "affected_targets": [
+        "//services/api",
+        "//services/auth"
+      ]
+    },
+    {
+      "id": "CVE-2022-42889",
+      "cve": "CVE-2022-42889",
+      "package": "commons-text",
+      "version": "1.9",
+      "purl": "pkg:maven/org.apache.commons/commons-text@1.9",
+      "summary": "Variable interpolation RCE (Text4Shell)",
+      "severity": "HIGH",
+      "cvss_score": 7.5,
+      "published": "2022-10-15T00:00:00Z",
+      "kev": {
+        "in_kev": false
+      },
+      "epss": {
+        "epss_score": 0.82451,
+        "epss_percentile": 0.98765,
+        "date": "2025-01-17"
+      },
+      "exploitation_probability": "82.5%",
+      "epss_priority": "CRITICAL",
+      "exploit": {
+        "exploit_available": true,
+        "exploit_maturity": "proof-of-concept",
+        "weaponized": false,
+        "attack_vector": "network"
+      },
+      "ghsa": {
+        "ghsa_id": "GHSA-599f-7c49-w659",
+        "summary": "Apache Commons Text RCE via variable interpolation",
+        "severity": "CRITICAL",
+        "published_at": "2022-10-15",
+        "permalink": "https://github.com/advisories/GHSA-599f-7c49-w659",
+        "vulnerabilities": [
+          {
+            "package_name": "commons-text",
+            "ecosystem": "MAVEN",
+            "vulnerable_version_range": ">=1.5, <1.10.0",
+            "first_patched_version": "1.10.0"
+          }
+        ]
+      },
+      "remediation": {
+        "fixed_version": "1.10.0",
+        "vulnerable_range": ">=1.5, <1.10.0"
+      },
+      "risk_score": 79.25,
+      "priority": "P1-CRITICAL",
+      "priority_explanation": "High CVSS (7.5) + high EPSS (82.5%) + public PoC",
+      "affected_targets": [
+        "//libs/common"
+      ]
+    },
+    {
+      "id": "CVE-2023-12345",
+      "cve": "CVE-2023-12345",
+      "package": "example-lib",
+      "version": "3.2.1",
+      "purl": "pkg:maven/com.example/example-lib@3.2.1",
+      "summary": "Information disclosure via error messages",
+      "severity": "MEDIUM",
+      "cvss_score": 5.3,
+      "published": "2023-06-15T00:00:00Z",
+      "kev": {
+        "in_kev": false
+      },
+      "epss": {
+        "epss_score": 0.00123,
+        "epss_percentile": 0.15432,
+        "date": "2025-01-17"
+      },
+      "exploitation_probability": "0.1%",
+      "epss_priority": "LOW",
+      "exploit": {
+        "exploit_available": false,
+        "weaponized": false
+      },
+      "ghsa": {
+        "ghsa_id": "",
+        "summary": "",
+        "vulnerabilities": []
+      },
+      "remediation": {
+        "fixed_version": "3.2.2"
+      },
+      "risk_score": 21.24,
+      "priority": "P3-MEDIUM",
+      "priority_explanation": "Medium CVSS (5.3) + very low EPSS (0.1%) + no exploit",
+      "affected_targets": [
+        "//apps/web"
+      ]
+    }
+  ]
+}
