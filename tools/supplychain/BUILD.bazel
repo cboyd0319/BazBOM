@@ -9,6 +9,10 @@ exports_files(
         "osv_query.py",
         "sarif_adapter.py",
         "extract_maven_deps.py",
+        "purl_generator.py",
+        "conflict_detector.py",
+        "license_analyzer.py",
+        "metrics_aggregator.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -47,6 +51,30 @@ sh_binary(
 sh_binary(
     name = "provenance_builder",
     srcs = ["provenance_builder.py"],
+)
+
+# Shell wrapper for purl_generator
+sh_binary(
+    name = "purl_generator",
+    srcs = ["purl_generator.py"],
+)
+
+# Shell wrapper for conflict_detector
+sh_binary(
+    name = "conflict_detector",
+    srcs = ["conflict_detector.py"],
+)
+
+# Shell wrapper for license_analyzer
+sh_binary(
+    name = "license_analyzer",
+    srcs = ["license_analyzer.py"],
+)
+
+# Shell wrapper for metrics_aggregator
+sh_binary(
+    name = "metrics_aggregator",
+    srcs = ["metrics_aggregator.py"],
 )
 
 # Export aspect and macro definitions

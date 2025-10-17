@@ -59,6 +59,16 @@ jobs:
           bazel build //:workspace_provenance
           echo "✓ Provenance generation complete"
       
+      - name: Detect Dependency Conflicts
+        run: |
+          bazel build //:conflict_report
+          echo "✓ Conflict detection complete"
+      
+      - name: Generate License Report
+        run: |
+          bazel build //:license_report
+          echo "✓ License compliance report generated"
+      
       - name: Run SCA
         run: |
           bazel build //:sca_scan_osv || echo "⚠ SCA scan requires network access, skipping"
@@ -68,6 +78,11 @@ jobs:
         run: |
           bazel build //:sca_sarif || echo "⚠ SARIF generation skipped (no SCA findings)"
           echo "✓ SARIF generation attempted"
+      
+      - name: Aggregate Metrics
+        run: |
+          bazel build //:metrics_report
+          echo "✓ Supply chain metrics aggregated"
       
       - name: Upload SBOMs
         uses: actions/upload-artifact@v4
@@ -112,3 +127,30 @@ jobs:
         with:
           sarif_file: bazel-bin/sca_findings.sarif
         continue-on-error: true  # Don't fail if no SARIF file exists yet
+      
+      - name: Upload Conflict Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: conflict-reports
+          path: |
+            bazel-bin/conflicts.json
+          if-no-files-found: warn
+      
+      - name: Upload License Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: license-reports
+          path: |
+            bazel-bin/license_report.json
+          if-no-files-found: warn
+      
+      - name: Upload Metrics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: supply-chain-metrics
+          path: |
+            bazel-bin/supply_chain_metrics.json
+          if-no-files-found: warn

@@ -15,9 +15,15 @@ build:supplychain-incremental --trim_test_configuration
 # Full analysis (all targets, all features)
 build:supplychain-full --config=supplychain
 
+# Offline mode (no network)
+build:supplychain-offline --config=supplychain
+
 # Performance tuning
 build:supplychain --jobs=auto
 build:supplychain --local_cpu_resources=HOST_CPUS*.75
+
+# Memory optimization for large graphs
+build:supplychain --experimental_skyframe_cpu_heavy_skykeys_thread_pool_size=HOST_CPUS
 
 # Test configuration
 test --test_output=errors
@@ -26,3 +32,7 @@ test --test_summary=detailed
 # Coverage configuration
 coverage --combined_report=lcov
 coverage --experimental_generate_llvm_lcov
+
+# Remote cache configuration (example - adjust URL as needed)
+# build:remote-cache --remote_cache=https://cache.example.com
+# build:remote-cache --experimental_remote_cache_compression

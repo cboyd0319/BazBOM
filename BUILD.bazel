@@ -100,6 +100,44 @@ filegroup(
         ":workspace_provenance",
         ":sca_findings.json",
         ":sca_sarif",
+        ":conflict_report",
+        ":license_report",
+        ":metrics_report",
     ],
+    visibility = ["//visibility:public"],
+)
+
+# Detect dependency version conflicts
+genrule(
+    name = "conflict_report",
+    srcs = [":workspace_deps.json"],
+    outs = ["conflicts.json"],
+    cmd = "$(location //tools/supplychain:conflict_detector) --input $< --output $@",
+    tools = ["//tools/supplychain:conflict_detector"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate license compliance report
+genrule(
+    name = "license_report",
+    srcs = [":workspace_deps.json"],
+    outs = ["license_report.json"],
+    cmd = "$(location //tools/supplychain:license_analyzer) --input $< --output $@ --check-conflicts --flag-copyleft",
+    tools = ["//tools/supplychain:license_analyzer"],
+    visibility = ["//visibility:public"],
+)
+
+# Aggregate metrics from all analyses
+genrule(
+    name = "metrics_report",
+    srcs = [
+        ":workspace_sbom",
+        ":sca_findings.json",
+        ":license_report",
+        ":conflict_report",
+    ],
+    outs = ["supply_chain_metrics.json"],
+    cmd = "$(location //tools/supplychain:metrics_aggregator) --sbom $(location :workspace_sbom) --sca-findings $(location :sca_findings.json) --license-report $(location :license_report) --conflicts $(location :conflict_report) --output $@",
+    tools = ["//tools/supplychain:metrics_aggregator"],
     visibility = ["//visibility:public"],
 )
