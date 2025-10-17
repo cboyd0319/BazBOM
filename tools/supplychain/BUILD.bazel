@@ -17,6 +17,7 @@ exports_files(
         "incremental_analyzer.py",
         "vex_processor.py",
         "license_extractor.py",
+        "policy_check.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -103,6 +104,12 @@ sh_binary(
 sh_binary(
     name = "license_extractor",
     srcs = ["license_extractor.py"],
+)
+
+# Shell wrapper for policy_check
+sh_binary(
+    name = "policy_check",
+    srcs = ["policy_check.py"],
 )
 
 # Export aspect and macro definitions

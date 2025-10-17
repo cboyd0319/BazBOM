@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate SPDX SBOM documents from dependency data.
+"""Generate SPDX and CycloneDX SBOM documents from dependency data.
 
 This script converts dependency information collected by Bazel aspects
-into SPDX 2.3 compliant SBOM documents.
+into SPDX 2.3 or CycloneDX 1.5 compliant SBOM documents.
 """
 
 import argparse
@@ -135,9 +135,130 @@ def sanitize_spdx_id(spdx_id: str) -> str:
     return re.sub(r'[^A-Za-z0-9.-]', '-', spdx_id)
 
 
+def generate_cyclonedx_document(packages: List[Dict[str, Any]], name: str) -> Dict[str, Any]:
+    """Generate a CycloneDX 1.5 document.
+    
+    Args:
+        packages: List of package information dictionaries
+        name: Name for the SBOM document
+        
+    Returns:
+        CycloneDX document as a dictionary
+    """
+    timestamp = datetime.now(timezone.utc).isoformat()
+    document_serial_number = f"urn:uuid:{uuid4()}"
+    
+    # Create CycloneDX document structure
+    doc = {
+        "bomFormat": "CycloneDX",
+        "specVersion": "1.5",
+        "serialNumber": document_serial_number,
+        "version": 1,
+        "metadata": {
+            "timestamp": timestamp,
+            "tools": [
+                {
+                    "vendor": "BazBOM",
+                    "name": "BazBOM",
+                    "version": "1.0.0"
+                }
+            ],
+            "component": {
+                "type": "application",
+                "name": name,
+                "version": "1.0.0",
+                "bom-ref": "pkg:generic/application@1.0.0"
+            }
+        },
+        "components": [],
+        "dependencies": []
+    }
+    
+    # Add root component to dependencies
+    root_dependency = {
+        "ref": "pkg:generic/application@1.0.0",
+        "dependsOn": []
+    }
+    
+    # Add dependency packages
+    for pkg in packages:
+        purl = pkg.get("purl", f"pkg:maven/{pkg.get('group', 'unknown')}/{pkg.get('name', 'unknown')}@{pkg.get('version', 'unknown')}")
+        
+        component = {
+            "type": "library",
+            "bom-ref": purl,
+            "purl": purl,
+            "name": pkg.get("name", "unknown"),
+            "version": pkg.get("version", "unknown"),
+        }
+        
+        # Add group/publisher if available
+        if pkg.get("group"):
+            component["group"] = pkg["group"]
+        
+        # Add licenses if available
+        if pkg.get("license") and pkg["license"] != "NOASSERTION":
+            component["licenses"] = [
+                {
+                    "license": {
+                        "id": pkg["license"]
+                    }
+                }
+            ]
+        
+        # Add checksums if available
+        if pkg.get("sha256"):
+            component["hashes"] = [
+                {
+                    "alg": "SHA-256",
+                    "content": pkg["sha256"]
+                }
+            ]
+        
+        # Add external references (download location)
+        if pkg.get("url") and pkg["url"] != "NOASSERTION":
+            component["externalReferences"] = [
+                {
+                    "type": "distribution",
+                    "url": pkg["url"]
+                }
+            ]
+        
+        doc["components"].append(component)
+        
+        # Add to root dependencies if direct
+        if pkg.get("is_direct", False):
+            root_dependency["dependsOn"].append(purl)
+        
+        # Add component's own dependencies
+        dependencies = pkg.get("dependencies", [])
+        if dependencies:
+            comp_dependency = {
+                "ref": purl,
+                "dependsOn": []
+            }
+            
+            for dep_coord in dependencies:
+                # Try to construct purl from coordinate
+                parts = dep_coord.split(":")
+                if len(parts) >= 2:
+                    dep_purl = f"pkg:maven/{parts[0]}/{parts[1]}"
+                    if len(parts) >= 3:
+                        dep_purl += f"@{parts[2]}"
+                    comp_dependency["dependsOn"].append(dep_purl)
+            
+            if comp_dependency["dependsOn"]:
+                doc["dependencies"].append(comp_dependency)
+    
+    # Add root dependency
+    doc["dependencies"].insert(0, root_dependency)
+    
+    return doc
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Generate SPDX SBOM from dependency data"
+        description="Generate SPDX or CycloneDX SBOM from dependency data"
     )
     parser.add_argument(
         "--input",
@@ -147,12 +268,18 @@ def main():
     parser.add_argument(
         "--output",
         required=True,
-        help="Output SPDX JSON file"
+        help="Output SBOM JSON file"
     )
     parser.add_argument(
         "--name",
         default="application",
         help="Name for the SBOM document"
+    )
+    parser.add_argument(
+        "--format",
+        choices=["spdx", "cyclonedx"],
+        default="spdx",
+        help="SBOM format (default: spdx)"
     )
     
     args = parser.parse_args()
@@ -169,14 +296,18 @@ def main():
         print(f"Error: Invalid JSON in input file: {e}", file=sys.stderr)
         return 1
     
-    # Generate SPDX document
-    spdx_doc = generate_spdx_document(packages, args.name)
+    # Generate SBOM document based on format
+    if args.format == "cyclonedx":
+        sbom_doc = generate_cyclonedx_document(packages, args.name)
+        print(f"CycloneDX SBOM written to {args.output}")
+    else:
+        sbom_doc = generate_spdx_document(packages, args.name)
+        print(f"SPDX SBOM written to {args.output}")
     
     # Write output
     try:
         with open(args.output, "w") as f:
-            json.dump(spdx_doc, f, indent=2)
-        print(f"SBOM written to {args.output}")
+            json.dump(sbom_doc, f, indent=2)
     except IOError as e:
         print(f"Error writing output file: {e}", file=sys.stderr)
         return 1

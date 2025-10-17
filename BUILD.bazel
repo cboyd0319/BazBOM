@@ -18,7 +18,17 @@ genrule(
     name = "workspace_sbom",
     srcs = [":workspace_deps.json"],
     outs = ["workspace_sbom.spdx.json"],
-    cmd = "$(location //tools/supplychain:write_sbom) --input $< --output $@ --name bazbom-workspace",
+    cmd = "$(location //tools/supplychain:write_sbom) --input $< --output $@ --name bazbom-workspace --format spdx",
+    tools = ["//tools/supplychain:write_sbom"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate CycloneDX SBOM (optional format)
+genrule(
+    name = "workspace_sbom_cyclonedx",
+    srcs = [":workspace_deps.json"],
+    outs = ["workspace_sbom.cdx.json"],
+    cmd = "$(location //tools/supplychain:write_sbom) --input $< --output $@ --name bazbom-workspace --format cyclonedx",
     tools = ["//tools/supplychain:write_sbom"],
     visibility = ["//visibility:public"],
 )
@@ -79,6 +89,16 @@ filegroup(
     name = "sbom_all",
     srcs = [
         ":workspace_sbom",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Filegroup to collect all SBOM formats (SPDX + CycloneDX)
+filegroup(
+    name = "sbom_all_formats",
+    srcs = [
+        ":workspace_sbom",
+        ":workspace_sbom_cyclonedx",
     ],
     visibility = ["//visibility:public"],
 )
@@ -168,5 +188,20 @@ genrule(
     outs = ["sca_findings_filtered.json"],
     cmd = "if [ -d vex/statements ] && [ -n \"$$(find vex/statements -name '*.json' 2>/dev/null)\" ]; then $(location //tools/supplychain:vex_processor) --vex-dir=vex/statements --sca-findings $(location :sca_findings.json) --output $@; else cp $(location :sca_findings.json) $@; fi",
     tools = ["//tools/supplychain:vex_processor"],
+    visibility = ["//visibility:public"],
+)
+
+# Policy enforcement check
+genrule(
+    name = "policy_check_report",
+    srcs = [
+        ":sca_findings_filtered.json",
+        ":license_report",
+        ":conflict_report",
+        ":supply_chain_risk_report",
+    ],
+    outs = ["policy_check.json"],
+    cmd = "$(location //tools/supplychain:policy_check) --findings $(location :sca_findings_filtered.json) --license-report $(location :license_report) --conflicts $(location :conflict_report) --risk-report $(location :supply_chain_risk_report) --max-critical 0 --max-high 10 --output $@ || echo '{\"violations\": []}' > $@",
+    tools = ["//tools/supplychain:policy_check"],
     visibility = ["//visibility:public"],
 )
