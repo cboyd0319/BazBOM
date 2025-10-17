@@ -1906,8 +1906,8 @@ class TestKEVEnrichFindingError(unittest.TestCase):
         self.assertFalse(result["kev"]["in_kev"])
 
 
-class TestKEVEnricherCLI(unittest.TestCase):
-    """Test KEV CLI main function."""
+class TestKEVEnricherCLIOutputFormats(unittest.TestCase):
+    """Test KEV CLI main function output formats."""
     
     @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
     @patch('kev_enrichment.KEVEnricher.is_known_exploited')
@@ -2067,8 +2067,8 @@ class TestGHSAEnricherCLI(unittest.TestCase):
         self.assertEqual(result, 1)
 
 
-class TestGHSAEnricherCLI(unittest.TestCase):
-    """Test GHSA CLI main function."""
+class TestGHSAEnricherCLIVariations(unittest.TestCase):
+    """Test GHSA CLI main function output variations."""
     
     @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
     def test_ghsa_main_with_json_output(self, mock_query):
@@ -2215,7 +2215,7 @@ class TestVulnCheckEnricherCLI(unittest.TestCase):
         self.assertEqual(result, 1)
 
 
-class TestVulnCheckEnricherCLI(unittest.TestCase):
+class TestVulnCheckEnricherCLIVariations(unittest.TestCase):
     """Test VulnCheck CLI main function."""
     
     @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
@@ -2408,6 +2408,9 @@ class TestGHSAValidation(unittest.TestCase):
     @patch('ghsa_enrichment.requests.post')
     def test_query_advisory_with_network_timeout(self, mock_post):
         """Test GHSA query with network timeout."""
+        if requests is None:
+            self.skipTest("requests module not available")
+        
         mock_post.side_effect = requests.Timeout("Request timeout")
         
         enricher = GHSAEnricher()
