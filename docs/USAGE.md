@@ -54,7 +54,11 @@ bazel build //path/to:target.sbom
 ### Generate SBOMs for All Targets
 
 ```bash
+# Generate SPDX 2.3 SBOMs (default)
 bazel build //:sbom_all
+
+# Generate both SPDX and CycloneDX formats
+bazel build //:sbom_all_formats
 ```
 
 **The SBOM now includes:**
@@ -62,6 +66,47 @@ bazel build //:sbom_all
 - SHA256 checksums for verification
 - Proper dependency relationships (e.g., Guava → failureaccess)
 - Package URLs (PURLs) for each artifact
+
+### Generate CycloneDX SBOM
+
+BazBOM supports CycloneDX 1.5 format in addition to SPDX 2.3:
+
+```bash
+# Generate CycloneDX SBOM for workspace
+bazel build //:workspace_sbom_cyclonedx
+
+# View the CycloneDX SBOM
+cat bazel-bin/workspace_sbom.cdx.json | jq
+
+# Generate custom CycloneDX SBOM
+python tools/supplychain/write_sbom.py \
+  --input workspace_deps.json \
+  --output sbom.cdx.json \
+  --format cyclonedx \
+  --name my-application
+```
+
+**CycloneDX format includes:**
+- Components with PURLs and hashes
+- License information (SPDX IDs)
+- External references (download URLs)
+- Dependency relationships
+- Metadata (tools, timestamp)
+
+### SBOM Format Comparison
+
+| Feature | SPDX 2.3 | CycloneDX 1.5 |
+|---------|----------|---------------|
+| Format | JSON | JSON |
+| Spec Version | 2.3 | 1.5 |
+| Relationships | Explicit | Dependency graph |
+| License IDs | SPDX IDs | SPDX IDs |
+| Tool Support | Wide | Wide |
+| Use Case | Compliance, legal | Security, DevSecOps |
+
+**When to use each:**
+- **SPDX**: Legal compliance, license analysis, regulatory requirements
+- **CycloneDX**: Security scanning, vulnerability management, DevSecOps workflows
 
 ### Generate SBOM with Custom Options
 
@@ -117,6 +162,169 @@ spdx-sbom-validator bazel-bin/path/to/package.spdx.json
 # Using the built-in validator
 bazel run //tools/supplychain:validate_sarif -- \
   --input bazel-bin/path/to/vulnerabilities.sarif.json
+```
+
+## Policy Enforcement
+
+BazBOM includes a comprehensive policy enforcement tool to ensure supply chain security standards in CI/CD pipelines.
+
+### Basic Policy Check
+
+```bash
+# Run policy check with default thresholds (0 critical vulnerabilities)
+bazel build //:policy_check_report
+
+# View policy report
+cat bazel-bin/policy_check.json | jq
+```
+
+### Custom Policy Thresholds
+
+```bash
+# Strict policy: no critical/high vulnerabilities
+python tools/supplychain/policy_check.py \
+  --findings bazel-bin/sca_findings_filtered.json \
+  --max-critical 0 \
+  --max-high 0
+
+# Flexible policy: allow some non-critical vulnerabilities
+python tools/supplychain/policy_check.py \
+  --findings bazel-bin/sca_findings_filtered.json \
+  --max-critical 0 \
+  --max-high 5 \
+  --max-medium 20
+```
+
+**Exit codes:**
+- `0`: All policies passed
+- `1`: Policy violations found (CI should fail)
+
+### Comprehensive Policy Check
+
+```bash
+# Check all reports: vulnerabilities, licenses, conflicts, risks
+python tools/supplychain/policy_check.py \
+  --findings bazel-bin/sca_findings_filtered.json \
+  --license-report bazel-bin/license_report.json \
+  --conflicts bazel-bin/conflicts.json \
+  --risk-report bazel-bin/supply_chain_risks.json \
+  --max-critical 0 \
+  --max-high 5 \
+  --output policy_report.json
+```
+
+### License Policy Enforcement
+
+```bash
+# Block specific licenses (e.g., GPL family)
+python tools/supplychain/policy_check.py \
+  --findings bazel-bin/sca_findings_filtered.json \
+  --license-report bazel-bin/license_report.json \
+  --blocked-licenses GPL-2.0 GPL-3.0 AGPL-3.0 \
+  --block-license-conflicts \
+  --flag-copyleft
+```
+
+### VEX Statement Requirements
+
+```bash
+# Require VEX statements for accepted risks
+python tools/supplychain/policy_check.py \
+  --findings bazel-bin/sca_findings_filtered.json \
+  --require-vex-for-accepted \
+  --max-critical 0
+```
+
+### Supply Chain Risk Policies
+
+```bash
+# Block typosquatting and unmaintained dependencies
+python tools/supplychain/policy_check.py \
+  --risk-report bazel-bin/supply_chain_risks.json \
+  --block-typosquatting \
+  --unmaintained-threshold 0
+```
+
+### CI/CD Integration
+
+Add to `.github/workflows/supplychain.yml`:
+
+```yaml
+- name: Enforce Security Policies
+  run: |
+    bazel build //:policy_check_report
+    
+    # Policy check will fail (exit 1) if violations found
+    python tools/supplychain/policy_check.py \
+      --findings bazel-bin/sca_findings_filtered.json \
+      --license-report bazel-bin/license_report.json \
+      --conflicts bazel-bin/conflicts.json \
+      --risk-report bazel-bin/supply_chain_risks.json \
+      --max-critical 0 \
+      --max-high 5 \
+      --block-license-conflicts \
+      --block-typosquatting
+```
+
+### Policy Violation Reports
+
+Policy violations are categorized by severity:
+
+```json
+{
+  "total_violations": 2,
+  "violations": [
+    {
+      "severity": "CRITICAL",
+      "rule": "max_critical_vulnerabilities",
+      "message": "Found 2 critical vulnerabilities (max allowed: 0)",
+      "details": {
+        "count": 2,
+        "threshold": 0
+      }
+    },
+    {
+      "severity": "HIGH",
+      "rule": "blocked_license",
+      "message": "Package foo uses blocked license: GPL-3.0",
+      "details": {
+        "package": "foo",
+        "version": "1.0.0",
+        "license": "GPL-3.0"
+      }
+    }
+  ]
+}
+```
+
+### Policy Configuration Examples
+
+**Strict Production Policy:**
+```bash
+--max-critical 0 \
+--max-high 0 \
+--max-medium 5 \
+--blocked-licenses GPL-2.0 GPL-3.0 AGPL-3.0 \
+--block-license-conflicts \
+--require-vex-for-accepted \
+--block-typosquatting
+```
+
+**Development/Staging Policy:**
+```bash
+--max-critical 0 \
+--max-high 10 \
+--max-medium 50 \
+--flag-copyleft \
+--block-typosquatting
+```
+
+**Audit/Reporting Policy:**
+```bash
+--max-critical 999 \
+--max-high 999 \
+--flag-copyleft \
+--output full-audit-report.json
 ```
 
 ## Working with Aspects
