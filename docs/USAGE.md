@@ -139,8 +139,136 @@ This automatically discovers all `.spdx.json` files and queries OSV.
 ```bash
 python tools/supplychain/osv_query.py \
   --sbom path/to/sbom.json \
-  --output vulnerabilities.sarif.json \
-  --severity high,critical
+  --output vulnerabilities.json \
+  --batch
+```
+
+### Vulnerability Enrichment
+
+BazBOM enriches vulnerability findings with multiple authoritative data sources to provide actionable prioritization:
+
+#### Enrichment Data Sources
+
+1. **CISA KEV (Known Exploited Vulnerabilities)** - CVEs actively exploited in the wild
+2. **EPSS (Exploit Prediction Scoring)** - ML-based exploitation probability (0-100%)
+3. **GitHub Security Advisories (GHSA)** - Ecosystem-specific remediation guidance
+4. **VulnCheck KEV** (optional) - Advanced exploit intelligence with API key
+
+#### Enable Enrichment (Default)
+
+```bash
+# Enrichment is enabled by default
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output bazel-bin/vulnerabilities_enriched.json
+```
+
+#### Enrichment Output
+
+Enriched findings include:
+
+- **Risk Score (0-100)**: Composite score combining CVSS, EPSS, KEV, and exploit data
+- **Priority (P0-P4)**: Actionable priority levels
+  - **P0-IMMEDIATE**: In CISA KEV (fix now)
+  - **P1-CRITICAL**: Risk score ≥ 80
+  - **P2-HIGH**: Risk score ≥ 60
+  - **P3-MEDIUM**: Risk score ≥ 40
+  - **P4-LOW**: Risk score < 40
+- **KEV Status**: Whether CVE is being actively exploited
+- **EPSS Score**: Exploitation probability percentage
+- **Exploit Intelligence**: Weaponization status, attack vector
+- **GHSA Remediation**: Patched versions, vulnerable ranges
+
+#### Priority Summary
+
+```bash
+📊 Priority Summary:
+  🚨 P0 - IMMEDIATE (KEV):     2  ← FIX NOW
+  🔴 P1 - CRITICAL:            5  ← This week
+  🟠 P2 - HIGH:                8  ← This sprint
+  🟡 P3 - MEDIUM:              6  ← Next quarter
+  🟢 P4 - LOW:                 2  ← Backlog
+```
+
+#### Advanced Enrichment Options
+
+```bash
+# With GitHub token for higher GHSA rate limits
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output bazel-bin/vulnerabilities_enriched.json \
+  --github-token "${GITHUB_TOKEN}"
+
+# With VulnCheck API key for exploit intelligence
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output bazel-bin/vulnerabilities_enriched.json \
+  --vulncheck-api-key "${VULNCHECK_API_KEY}"
+
+# Disable enrichment (legacy mode)
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output bazel-bin/vulnerabilities.json \
+  --no-enrich
+
+# Disable specific enrichment sources
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output bazel-bin/vulnerabilities_enriched.json \
+  --disable-vulncheck \
+  --disable-ghsa
+```
+
+#### API Keys and Rate Limits
+
+**Free tier limits (no API key required):**
+
+- EPSS: Unlimited (public API)
+- KEV: Unlimited (public dataset)
+- GHSA: 60 req/hour (unauthenticated)
+
+**With API keys (recommended):**
+
+- GHSA: 5000 req/hour (with GitHub token)
+- VulnCheck: 100 req/day (free tier)
+
+**Set environment variables:**
+
+```bash
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxx"
+export VULNCHECK_API_KEY="your-api-key"
+```
+
+#### Risk Scoring Algorithm
+
+BazBOM calculates a composite risk score (0-100) based on:
+
+```
+Risk Score = (CVSS × 0.40) + (EPSS × 0.30) + (KEV × 0.20) + (Exploit × 0.10)
+```
+
+**Example:**
+
+```json
+{
+  "cve": "CVE-2021-44228",
+  "package": "log4j-core",
+  "version": "2.14.1",
+  "risk_score": 97.5,
+  "priority": "P0-IMMEDIATE",
+  "kev": {
+    "in_kev": true,
+    "vulnerability_name": "Log4Shell",
+    "due_date": "2021-12-24"
+  },
+  "epss": {
+    "epss_score": 0.97538,
+    "exploitation_probability": "97.5%"
+  },
+  "exploit": {
+    "weaponized": true
+  }
+}
 ```
 
 ## Validation

@@ -237,6 +237,161 @@ Common SARIF upload errors:
 - **File too large**: GitHub has a 10MB limit per SARIF file
 - **Missing permissions**: Workflow needs `security-events: write`
 
+## Vulnerability Enrichment Issues
+
+### KEV Enrichment Fails
+
+**Symptom**: `Warning: KEV fetch failed` in console output
+
+**Possible Causes**:
+
+1. **Network connectivity**: Cannot reach CISA KEV API
+2. **Stale cache used**: Enrichment continues with older data
+
+**Solution**:
+
+```bash
+# Test KEV API connectivity
+curl -s "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json" | jq '.catalogVersion'
+
+# Clear KEV cache to force refresh
+rm -rf .bazel-cache/kev/
+
+# Test KEV enrichment directly
+python tools/supplychain/kev_enrichment.py CVE-2021-44228
+```
+
+### EPSS Enrichment Slow
+
+**Symptom**: Enrichment takes several minutes for many CVEs
+
+**Solution**: EPSS enrichment uses batching (100 CVEs/request) but large vulnerability lists take time.
+
+```bash
+# Check batch size in enrichment
+# Default: 100 CVEs per request (optimal)
+
+# Monitor EPSS requests
+python tools/supplychain/osv_query.py \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output vulnerabilities.json \
+  --enrich 2>&1 | grep "EPSS"
+```
+
+**Expected performance**:
+- 100 CVEs: ~5-10 seconds
+- 500 CVEs: ~30-40 seconds  
+- 1000+ CVEs: ~60-90 seconds
+
+Cache is used for subsequent runs (24-hour TTL).
+
+### GHSA Rate Limiting
+
+**Symptom**: `Warning: GHSA query failed` with rate limit errors
+
+**Solution**: Use GitHub token for higher rate limits:
+
+```bash
+# Without token: 60 requests/hour
+# With token: 5000 requests/hour
+
+export GITHUB_TOKEN="ghp_xxxxxxxxxxxxx"
+
+bazel run //tools/supplychain:osv_query -- \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output vulnerabilities.json \
+  --github-token "${GITHUB_TOKEN}"
+```
+
+**Generate GitHub token**:
+1. Go to GitHub Settings → Developer settings → Personal access tokens
+2. Click "Generate new token (classic)"
+3. Select scope: `public_repo` (for public repos) or `repo` (for private)
+4. Generate and copy token
+
+### VulnCheck API Key Invalid
+
+**Symptom**: `VulnCheck API authentication failed - check API key`
+
+**Solution**: Verify VulnCheck API key:
+
+```bash
+# Test VulnCheck API key
+curl -H "Authorization: Bearer YOUR_API_KEY" \
+  "https://api.vulncheck.com/v3/index/vulncheck-kev?cve=CVE-2021-44228"
+
+# Set API key environment variable
+export VULNCHECK_API_KEY="your-api-key"
+
+# Or pass directly
+python tools/supplychain/osv_query.py \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output vulnerabilities.json \
+  --vulncheck-api-key "${VULNCHECK_API_KEY}"
+```
+
+**Get VulnCheck API key**: Sign up at https://vulncheck.com (free tier: 100 req/day)
+
+### No Enrichment Data
+
+**Symptom**: Enrichment runs but findings don't have KEV/EPSS data
+
+**Possible Causes**:
+
+1. **CVE ID not found**: Vulnerability uses non-CVE identifier (e.g., GHSA-xxxx)
+2. **Recent CVE**: Not yet in KEV/EPSS databases
+3. **Enrichment disabled**: `--no-enrich` flag used
+
+**Solution**:
+
+```bash
+# Check if CVE has enrichment data available
+python tools/supplychain/kev_enrichment.py CVE-2021-44228
+python tools/supplychain/epss_enrichment.py CVE-2021-44228
+
+# Verify enrichment is enabled
+python tools/supplychain/osv_query.py \
+  --sbom bazel-bin/workspace.spdx.json \
+  --output vulnerabilities.json \
+  --enrich  # Explicitly enable
+```
+
+### Risk Score Seems Wrong
+
+**Symptom**: Risk score doesn't match expectation
+
+**Explanation**: Risk score is composite (0-100) based on:
+
+```
+Risk Score = (CVSS × 0.40) + (EPSS × 0.30) + (KEV × 0.20) + (Exploit × 0.10)
+```
+
+**Example calculations**:
+
+```
+High Risk (97.5):
+- CVSS: 10.0 → 40 points (40%)
+- EPSS: 0.95 → 28.5 points (30%)
+- KEV: true → 20 points (20%)
+- Exploit weaponized: true → 10 points (10%)
+= 98.5 total
+
+Medium Risk (45.0):
+- CVSS: 7.0 → 28 points (40%)
+- EPSS: 0.10 → 3 points (30%)  
+- KEV: false → 0 points (20%)
+- Exploit available: true → 5 points (10%)
+= 36 total
+```
+
+**Verify calculation**:
+
+```bash
+# Check individual components
+jq '.vulnerabilities[] | select(.cve=="CVE-xxxx") | {cve, cvss_score, epss, kev, exploit, risk_score}' \
+  bazel-bin/vulnerabilities_enriched.json
+```
+
 ## Python Tool Issues
 
 ### Python Dependencies Not Found
