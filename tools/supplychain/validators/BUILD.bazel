@@ -1,0 +1,24 @@
+# Validation tools for supply chain artifacts
+
+package(default_visibility = ["//visibility:public"])
+
+# Export Python scripts as executable files
+exports_files(
+    [
+        "validate_sbom.py",
+        "validate_sarif.py",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Shell wrapper for SBOM validator
+sh_binary(
+    name = "validate_sbom",
+    srcs = ["validate_sbom.py"],
+)
+
+# Shell wrapper for SARIF validator
+sh_binary(
+    name = "validate_sarif",
+    srcs = ["validate_sarif.py"],
+)

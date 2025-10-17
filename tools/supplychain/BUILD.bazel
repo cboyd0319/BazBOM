@@ -1,0 +1,56 @@
+# Supply chain security tooling
+
+package(default_visibility = ["//visibility:public"])
+
+# Export Python scripts as executable files
+exports_files(
+    [
+        "write_sbom.py",
+        "osv_query.py",
+        "sarif_adapter.py",
+        "extract_maven_deps.py",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Shell wrapper for write_sbom
+sh_binary(
+    name = "write_sbom",
+    srcs = ["write_sbom.py"],
+)
+
+# Shell wrapper for osv_query
+sh_binary(
+    name = "osv_query",
+    srcs = ["osv_query.py"],
+)
+
+# Shell wrapper for sarif_adapter
+sh_binary(
+    name = "sarif_adapter",
+    srcs = ["sarif_adapter.py"],
+)
+
+# Shell wrapper for extract_maven_deps
+sh_binary(
+    name = "extract_maven_deps",
+    srcs = ["extract_maven_deps.py"],
+)
+
+# Shell wrapper for graph_generator
+sh_binary(
+    name = "graph_generator",
+    srcs = ["graph_generator.py"],
+)
+
+# Shell wrapper for provenance_builder
+sh_binary(
+    name = "provenance_builder",
+    srcs = ["provenance_builder.py"],
+)
+
+# Export aspect and macro definitions
+exports_files([
+    "aspects.bzl",
+    "defs.bzl",
+])

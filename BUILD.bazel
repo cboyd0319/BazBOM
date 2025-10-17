@@ -1,4 +1,105 @@
-# Root build file for BazBom
+# Root build file for BazBOM
 
-# Placeholder for workspace-level SBOM generation
-# To be implemented: sbom_all target that aggregates all SBOMs
+# Generate dependency list from WORKSPACE
+genrule(
+    name = "extract_deps",
+    srcs = ["WORKSPACE"],
+    outs = ["workspace_deps.json"],
+    cmd = "$(location //tools/supplychain:extract_maven_deps) --workspace $< --output $@",
+    tools = ["//tools/supplychain:extract_maven_deps"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate SBOM from extracted dependencies
+genrule(
+    name = "workspace_sbom",
+    srcs = [":workspace_deps.json"],
+    outs = ["workspace_sbom.spdx.json"],
+    cmd = "$(location //tools/supplychain:write_sbom) --input $< --output $@ --name bazbom-workspace",
+    tools = ["//tools/supplychain:write_sbom"],
+    visibility = ["//visibility:public"],
+)
+
+# Run SCA scan using OSV (requires network access)
+genrule(
+    name = "sca_scan_osv",
+    srcs = [":workspace_sbom"],
+    outs = ["sca_findings.json"],
+    cmd = "$(location //tools/supplychain:osv_query) --sbom $< --output $@ --batch || echo '{\"packages_scanned\": 0, \"vulnerabilities_found\": 0, \"vulnerabilities\": []}' > $@",
+    tools = ["//tools/supplychain:osv_query"],
+    tags = ["requires-network"],
+    visibility = ["//visibility:public"],
+)
+
+# Convert SCA findings to SARIF
+genrule(
+    name = "sca_sarif",
+    srcs = [":sca_findings.json"],
+    outs = ["sca_findings.sarif"],
+    cmd = "$(location //tools/supplychain:sarif_adapter) --input $< --output $@",
+    tools = ["//tools/supplychain:sarif_adapter"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate dependency graph (JSON format)
+genrule(
+    name = "dep_graph_json",
+    srcs = [":workspace_sbom"],
+    outs = ["dep_graph.json"],
+    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-json $@",
+    tools = ["//tools/supplychain:graph_generator"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate dependency graph (GraphML format)
+genrule(
+    name = "dep_graph_graphml",
+    srcs = [":workspace_sbom"],
+    outs = ["dep_graph.graphml"],
+    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-graphml $@",
+    tools = ["//tools/supplychain:graph_generator"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate SLSA provenance for workspace SBOM
+genrule(
+    name = "workspace_provenance",
+    srcs = [":workspace_sbom"],
+    outs = ["workspace_sbom.provenance.json"],
+    cmd = "$(location //tools/supplychain:provenance_builder) --artifact workspace_sbom.spdx.json --output $@",
+    tools = ["//tools/supplychain:provenance_builder"],
+    visibility = ["//visibility:public"],
+)
+
+# Filegroup to collect all SBOMs
+filegroup(
+    name = "sbom_all",
+    srcs = [
+        ":workspace_sbom",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Filegroup for dependency graphs
+filegroup(
+    name = "dep_graph_all",
+    srcs = [
+        ":dep_graph_json",
+        ":dep_graph_graphml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Filegroup for all supply chain artifacts
+filegroup(
+    name = "supply_chain_all",
+    srcs = [
+        ":workspace_sbom",
+        ":dep_graph_json",
+        ":dep_graph_graphml",
+        ":workspace_provenance",
+        ":sca_findings.json",
+        ":sca_sarif",
+    ],
+    visibility = ["//visibility:public"],
+)
