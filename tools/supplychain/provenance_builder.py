@@ -8,7 +8,7 @@ import argparse
 import json
 import sys
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List
 
 
@@ -31,7 +31,7 @@ def generate_slsa_provenance(
     Returns:
         SLSA provenance document as a dictionary
     """
-    timestamp = datetime.now(datetime.UTC).strftime("%Y-%m-%dT%H:%M:%SZ") if hasattr(datetime, 'UTC') else datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     
     # Default values
     if not commit_sha:
