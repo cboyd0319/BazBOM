@@ -37,6 +37,18 @@ sh_binary(
     srcs = ["extract_maven_deps.py"],
 )
 
+# Shell wrapper for graph_generator
+sh_binary(
+    name = "graph_generator",
+    srcs = ["graph_generator.py"],
+)
+
+# Shell wrapper for provenance_builder
+sh_binary(
+    name = "provenance_builder",
+    srcs = ["provenance_builder.py"],
+)
+
 # Export aspect and macro definitions
 exports_files([
     "aspects.bzl",

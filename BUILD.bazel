@@ -41,6 +41,36 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+# Generate dependency graph (JSON format)
+genrule(
+    name = "dep_graph_json",
+    srcs = [":workspace_sbom"],
+    outs = ["dep_graph.json"],
+    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-json $@",
+    tools = ["//tools/supplychain:graph_generator"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate dependency graph (GraphML format)
+genrule(
+    name = "dep_graph_graphml",
+    srcs = [":workspace_sbom"],
+    outs = ["dep_graph.graphml"],
+    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-graphml $@",
+    tools = ["//tools/supplychain:graph_generator"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate SLSA provenance for workspace SBOM
+genrule(
+    name = "workspace_provenance",
+    srcs = [":workspace_sbom"],
+    outs = ["workspace_sbom.provenance.json"],
+    cmd = "$(location //tools/supplychain:provenance_builder) --artifact workspace_sbom.spdx.json --output $@",
+    tools = ["//tools/supplychain:provenance_builder"],
+    visibility = ["//visibility:public"],
+)
+
 # Filegroup to collect all SBOMs
 filegroup(
     name = "sbom_all",
@@ -50,11 +80,24 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# Filegroup for dependency graphs
+filegroup(
+    name = "dep_graph_all",
+    srcs = [
+        ":dep_graph_json",
+        ":dep_graph_graphml",
+    ],
+    visibility = ["//visibility:public"],
+)
+
 # Filegroup for all supply chain artifacts
 filegroup(
     name = "supply_chain_all",
     srcs = [
         ":workspace_sbom",
+        ":dep_graph_json",
+        ":dep_graph_graphml",
+        ":workspace_provenance",
         ":sca_findings.json",
         ":sca_sarif",
     ],
