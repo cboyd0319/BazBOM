@@ -32,7 +32,8 @@ def maven_to_purl(
         PURL string (e.g., 'pkg:maven/com.google.guava/guava@31.1-jre')
     """
     # Encode components
-    namespace = quote(group_id.replace(".", "/"), safe="")
+    # For Maven, namespace keeps dots but we replace with / for PURL format
+    namespace = group_id.replace(".", "/")
     name = quote(artifact_id, safe="")
     version_encoded = quote(version, safe="")
     

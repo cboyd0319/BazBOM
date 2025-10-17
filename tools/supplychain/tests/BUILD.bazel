@@ -1,0 +1,27 @@
+# Tests for supply chain tooling
+
+package(default_visibility = ["//visibility:public"])
+
+py_test(
+    name = "test_purl_generator",
+    srcs = [
+        "test_purl_generator.py",
+        "//tools/supplychain:purl_generator.py",
+    ],
+    size = "small",
+)
+
+py_test(
+    name = "test_conflict_detector",
+    srcs = [
+        "test_conflict_detector.py",
+        "//tools/supplychain:conflict_detector.py",
+    ],
+    size = "small",
+)
+
+# Test fixtures directory
+filegroup(
+    name = "fixtures",
+    srcs = glob(["fixtures/**/*"]),
+)
