@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - TBD
 
-### Initial Release
+### Added
 
 - Initial release
 - Core SBOM generation capability
