@@ -87,6 +87,18 @@ py_test(
     size = "medium",
 )
 
+py_test(
+    name = "test_signing",
+    srcs = [
+        "test_signing.py",
+        "//tools/supplychain:sbom_signing.py",
+        "//tools/supplychain:rekor_integration.py",
+        "//tools/supplychain:intoto_attestation.py",
+        "//tools/supplychain:verify_sbom.py",
+    ],
+    size = "medium",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",
