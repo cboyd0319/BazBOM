@@ -74,6 +74,19 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_enrichment",
+    srcs = [
+        "test_enrichment.py",
+        "//tools/supplychain:kev_enrichment.py",
+        "//tools/supplychain:epss_enrichment.py",
+        "//tools/supplychain:ghsa_enrichment.py",
+        "//tools/supplychain:vulncheck_enrichment.py",
+        "//tools/supplychain:vulnerability_enrichment.py",
+    ],
+    size = "medium",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",
