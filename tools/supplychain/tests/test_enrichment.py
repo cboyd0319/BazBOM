@@ -1847,12 +1847,221 @@ class TestKEVEnricherCLI(unittest.TestCase):
         self.assertEqual(result, 0)
     
     @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
+    @patch('kev_enrichment.KEVEnricher.is_known_exploited')
+    def test_kev_main_with_text_output_in_kev(self, mock_is_known, mock_fetch):
+        """Test KEV main function with text output when CVE is in KEV."""
+        mock_fetch.return_value = {"vulnerabilities": []}
+        mock_is_known.return_value = {
+            "in_kev": True,
+            "vulnerability_name": "Test Vuln",
+            "vendor_project": "Test Vendor",
+            "product": "Test Product",
+            "date_added": "2021-01-01",
+            "due_date": "2021-01-15",
+            "required_action": "Apply patches"
+        }
+        
+        from kev_enrichment import main
+        with patch('sys.argv', ['kev_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
     def test_kev_main_with_error(self, mock_fetch):
         """Test KEV main function handles errors."""
         mock_fetch.side_effect = Exception("Test error")
         
         from kev_enrichment import main
         with patch('sys.argv', ['kev_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 1)
+
+
+class TestKEVEnrichFindingError(unittest.TestCase):
+    """Test KEV enrich_finding error handling."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = KEVEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('kev_enrichment.KEVEnricher.is_known_exploited')
+    def test_enrich_finding_with_exception(self, mock_is_known):
+        """Test enrich_finding handles exceptions gracefully."""
+        mock_is_known.side_effect = ValueError("Test error")
+        
+        finding = {"cve": "CVE-2021-11111"}
+        result = self.enricher.enrich_finding(finding)
+        
+        # Should have kev field with in_kev=False
+        self.assertIn("kev", result)
+        self.assertFalse(result["kev"]["in_kev"])
+
+
+class TestKEVEnricherCLI(unittest.TestCase):
+    """Test KEV CLI main function."""
+    
+    @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
+    @patch('kev_enrichment.KEVEnricher.is_known_exploited')
+    def test_kev_main_with_json_output(self, mock_is_known, mock_fetch):
+        """Test KEV main function with JSON output."""
+        mock_fetch.return_value = {"vulnerabilities": []}
+        mock_is_known.return_value = {
+            "in_kev": True,
+            "vulnerability_name": "Test",
+            "date_added": "2021-01-01",
+            "due_date": "2021-01-15"
+        }
+        
+        from kev_enrichment import main
+        with patch('sys.argv', ['kev_enrichment.py', 'CVE-2021-11111', '--json']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
+    @patch('kev_enrichment.KEVEnricher.is_known_exploited')
+    def test_kev_main_with_text_output(self, mock_is_known, mock_fetch):
+        """Test KEV main function with text output."""
+        mock_fetch.return_value = {"vulnerabilities": []}
+        mock_is_known.return_value = {
+            "in_kev": False
+        }
+        
+        from kev_enrichment import main
+        with patch('sys.argv', ['kev_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('kev_enrichment.KEVEnricher.fetch_kev_catalog')
+    def test_kev_main_with_error(self, mock_fetch):
+        """Test KEV main function handles errors."""
+        mock_fetch.side_effect = Exception("Test error")
+        
+        from kev_enrichment import main
+        with patch('sys.argv', ['kev_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 1)
+
+
+class TestGHSAEnricherCLI(unittest.TestCase):
+    """Test GHSA CLI main function."""
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_json_output(self, mock_query):
+        """Test GHSA main function with JSON output."""
+        mock_query.return_value = {
+            "ghsa_id": "GHSA-test-1234",
+            "summary": "Test vulnerability",
+            "severity": "HIGH",
+            "vulnerabilities": []
+        }
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111', '--json']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_text_output(self, mock_query):
+        """Test GHSA main function with text output."""
+        mock_query.return_value = {
+            "ghsa_id": "",
+            "summary": "",
+            "severity": "",
+            "vulnerabilities": []
+        }
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_text_output_found(self, mock_query):
+        """Test GHSA main function with text output when advisory found."""
+        mock_query.return_value = {
+            "ghsa_id": "GHSA-test-1234",
+            "summary": "Test vulnerability",
+            "severity": "HIGH",
+            "published_at": "2021-01-01",
+            "permalink": "https://github.com/advisories/GHSA-test-1234",
+            "vulnerabilities": [
+                {
+                    "ecosystem": "MAVEN",
+                    "package_name": "test:package",
+                    "vulnerable_version_range": "< 1.0.0",
+                    "first_patched_version": "1.0.0"
+                }
+            ]
+        }
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_text_output_no_patched_version(self, mock_query):
+        """Test GHSA main function with vulnerability without patched version."""
+        mock_query.return_value = {
+            "ghsa_id": "GHSA-test-1234",
+            "summary": "Test vulnerability",
+            "severity": "HIGH",
+            "published_at": "2021-01-01",
+            "permalink": "https://github.com/advisories/GHSA-test-1234",
+            "vulnerabilities": [
+                {
+                    "ecosystem": "MAVEN",
+                    "package_name": "test:package",
+                    "vulnerable_version_range": "< 1.0.0",
+                    "first_patched_version": None  # No patch available
+                }
+            ]
+        }
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_github_token(self, mock_query):
+        """Test GHSA main function with GitHub token."""
+        mock_query.return_value = {
+            "ghsa_id": "",
+            "summary": "",
+            "severity": "",
+            "vulnerabilities": []
+        }
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111', '--token', 'test_token']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_ghsa_main_with_error(self, mock_query):
+        """Test GHSA main function handles errors."""
+        mock_query.side_effect = Exception("Test error")
+        
+        from ghsa_enrichment import main
+        with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111']):
             result = main()
         
         self.assertEqual(result, 1)
@@ -1916,6 +2125,91 @@ class TestGHSAEnricherCLI(unittest.TestCase):
         
         from ghsa_enrichment import main
         with patch('sys.argv', ['ghsa_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 1)
+
+
+class TestVulnCheckEnricherCLI(unittest.TestCase):
+    """Test VulnCheck CLI main function."""
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_json_output(self, mock_get):
+        """Test VulnCheck main function with JSON output."""
+        mock_get.return_value = {
+            "exploit_available": True,
+            "weaponized": True,
+            "exploit_maturity": "functional"
+        }
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111', '--json']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_text_output(self, mock_get):
+        """Test VulnCheck main function with text output."""
+        mock_get.return_value = {
+            "exploit_available": False
+        }
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_text_output_exploit_found(self, mock_get):
+        """Test VulnCheck main function with text output when exploit found."""
+        mock_get.return_value = {
+            "exploit_available": True,
+            "exploit_maturity": "functional",
+            "attack_vector": "network",
+            "weaponized": True,
+            "ransomware_use": True
+        }
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_text_output_with_note(self, mock_get):
+        """Test VulnCheck main function with text output including note."""
+        mock_get.return_value = {
+            "exploit_available": False,
+            "note": "API key required for detailed intelligence"
+        }
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_api_key(self, mock_get):
+        """Test VulnCheck main function with API key."""
+        mock_get.return_value = {"exploit_available": False}
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111', '--api-key', 'test_key']):
+            result = main()
+        
+        self.assertEqual(result, 0)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_vulncheck_main_with_error(self, mock_get):
+        """Test VulnCheck main function handles errors."""
+        mock_get.side_effect = Exception("Test error")
+        
+        from vulncheck_enrichment import main
+        with patch('sys.argv', ['vulncheck_enrichment.py', 'CVE-2021-11111']):
             result = main()
         
         self.assertEqual(result, 1)
@@ -2057,6 +2351,88 @@ class TestVulnCheckEnricherErrorHandling(unittest.TestCase):
         result = enricher.get_exploit_status("CVE-2021-11111")
         
         # Should return safe defaults
+        self.assertFalse(result["exploit_available"])
+
+
+class TestEPSSValidation(unittest.TestCase):
+    """Test EPSS input validation."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = EPSSEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    def test_fetch_epss_scores_with_non_string_cve(self):
+        """Test fetching EPSS scores with non-string CVE ID."""
+        with self.assertRaises(TypeError) as ctx:
+            self.enricher.fetch_epss_scores([123])  # Integer instead of string
+        self.assertIn("CVE ID must be string", str(ctx.exception))
+
+
+class TestKEVValidation(unittest.TestCase):
+    """Test KEV input validation and error paths."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = KEVEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_invalid_data_type(self, mock_get):
+        """Test KEV fetch with invalid data type (not dict)."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = ["list", "instead", "of", "dict"]  # Invalid type
+        mock_get.return_value = mock_response
+        
+        with self.assertRaises(ValueError) as ctx:
+            self.enricher.fetch_kev_catalog()
+        self.assertIn("expected dict", str(ctx.exception))
+
+
+class TestGHSAValidation(unittest.TestCase):
+    """Test GHSA input validation."""
+    
+    @patch('ghsa_enrichment.requests.post')
+    def test_query_advisory_with_network_timeout(self, mock_post):
+        """Test GHSA query with network timeout."""
+        mock_post.side_effect = requests.Timeout("Request timeout")
+        
+        enricher = GHSAEnricher()
+        result = enricher.query_advisory("CVE-2021-11111")
+        
+        # Should handle gracefully
+        self.assertEqual(result["ghsa_id"], "")
+        self.assertIn("error", result)
+
+
+class TestVulnCheckValidation(unittest.TestCase):
+    """Test VulnCheck input validation."""
+    
+    @patch('vulncheck_enrichment.requests.get')
+    def test_get_exploit_status_with_rate_limit(self, mock_get):
+        """Test VulnCheck with rate limit response."""
+        mock_response = Mock()
+        mock_response.status_code = 429  # Rate limit
+        mock_response.json.return_value = {"error": "Rate limit exceeded"}
+        mock_get.return_value = mock_response
+        
+        enricher = VulnCheckEnricher(api_key="test_key")
+        result = enricher.get_exploit_status("CVE-2021-11111")
+        
+        # Should handle gracefully
         self.assertFalse(result["exploit_available"])
 
 
