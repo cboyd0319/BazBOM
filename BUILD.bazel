@@ -103,6 +103,8 @@ filegroup(
         ":conflict_report",
         ":license_report",
         ":metrics_report",
+        ":supply_chain_risk_report",
+        ":sca_findings_with_vex",
     ],
     visibility = ["//visibility:public"],
 )
@@ -139,5 +141,29 @@ genrule(
     outs = ["supply_chain_metrics.json"],
     cmd = "$(location //tools/supplychain:metrics_aggregator) --sbom $(location :workspace_sbom) --sca-findings $(location :sca_findings.json) --license-report $(location :license_report) --conflicts $(location :conflict_report) --output $@",
     tools = ["//tools/supplychain:metrics_aggregator"],
+    visibility = ["//visibility:public"],
+)
+
+# Supply chain risk analysis
+genrule(
+    name = "supply_chain_risk_report",
+    srcs = [":workspace_sbom"],
+    outs = ["supply_chain_risks.json"],
+    cmd = "$(location //tools/supplychain:supply_chain_risk) --sbom $< --output $@ --check-typosquatting --check-deprecated; exit 0",
+    tools = ["//tools/supplychain:supply_chain_risk"],
+    tags = ["requires-network"],
+    visibility = ["//visibility:public"],
+)
+
+# Apply VEX statements to filter findings
+genrule(
+    name = "sca_findings_with_vex",
+    srcs = [
+        ":sca_findings.json",
+        "//vex:vex_statements",
+    ],
+    outs = ["sca_findings_filtered.json"],
+    cmd = "if [ -d vex/statements ] && [ -n \"$$(find vex/statements -name '*.json' 2>/dev/null)\" ]; then $(location //tools/supplychain:vex_processor) --vex-dir=vex/statements --sca-findings $(location :sca_findings.json) --output $@; else cp $(location :sca_findings.json) $@; fi",
+    tools = ["//tools/supplychain:vex_processor"],
     visibility = ["//visibility:public"],
 )

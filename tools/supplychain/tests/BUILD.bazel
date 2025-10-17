@@ -20,6 +20,24 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_supply_chain_risk",
+    srcs = [
+        "test_supply_chain_risk.py",
+        "//tools/supplychain:supply_chain_risk.py",
+    ],
+    size = "small",
+)
+
+py_test(
+    name = "test_vex_processor",
+    srcs = [
+        "test_vex_processor.py",
+        "//tools/supplychain:vex_processor.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",

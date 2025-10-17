@@ -319,6 +319,146 @@ Then use:
 bazel build --config=remote-cache //...
 ```
 
+## Supply Chain Risk Analysis
+
+### Detect Typosquatting and Outdated Packages
+
+Run supply chain risk analysis to detect:
+- Typosquatting attempts (similar package names)
+- Outdated dependencies
+- Deprecated packages
+
+```bash
+bazel build //:supply_chain_risk_report
+cat bazel-bin/supply_chain_risks.json
+```
+
+The report includes:
+- Typosquatting findings (packages similar to popular ones)
+- Outdated version information with latest available versions
+- Unmaintained dependency detection
+- Risk severity levels
+
+Manual execution with options:
+
+```bash
+# Check for typosquatting only
+bazel run //tools/supplychain:supply_chain_risk -- \
+  --sbom bazel-bin/workspace_sbom.spdx.json \
+  --output risks.json \
+  --check-typosquatting
+
+# Check for deprecated packages (requires network)
+bazel run //tools/supplychain:supply_chain_risk -- \
+  --sbom bazel-bin/workspace_sbom.spdx.json \
+  --output risks.json \
+  --check-deprecated
+
+# Offline mode
+bazel run //tools/supplychain:supply_chain_risk -- \
+  --sbom bazel-bin/workspace_sbom.spdx.json \
+  --output risks.json \
+  --offline-mode
+```
+
+## VEX (Vulnerability Exploitability eXchange)
+
+### Create VEX Statements
+
+Create VEX statements to suppress false positives or document accepted risks:
+
+```bash
+# Create a VEX statement file
+cat > vex/statements/CVE-2023-12345.json <<EOF
+{
+  "cve": "CVE-2023-12345",
+  "package": "pkg:maven/com.example/vulnerable@1.0.0",
+  "status": "not_affected",
+  "justification": "Vulnerable code path not used in our application",
+  "created": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+  "author": "Security Team"
+}
+EOF
+```
+
+Valid status values:
+- `not_affected` - Vulnerability doesn't affect this package/version
+- `false_positive` - Scanner incorrectly flagged this
+- `mitigated` - Risk mitigated by other controls
+- `accepted_risk` - Known and accepted by security team
+
+### Apply VEX Statements
+
+Apply VEX statements to filter vulnerability findings:
+
+```bash
+# Apply during build
+bazel build //:sca_findings_with_vex
+cat bazel-bin/sca_findings_filtered.json
+
+# Manual application
+bazel run //tools/supplychain:vex_processor -- \
+  --vex-dir=vex/statements \
+  --sca-findings=bazel-bin/sca_findings.json \
+  --output=sca_findings_filtered.json \
+  --suppressed-output=suppressed.json
+```
+
+### Validate VEX Statements
+
+Validate VEX statement format before committing:
+
+```bash
+bazel run //tools/supplychain:vex_processor -- \
+  --vex-dir=vex/statements \
+  --sca-findings=bazel-bin/sca_findings.json \
+  --output=/tmp/filtered.json \
+  --validate-only
+```
+
+See [vex/statements/README.md](../vex/statements/README.md) for more details on VEX format and best practices.
+
+## Incremental Analysis
+
+### Git-Based Incremental Builds
+
+For faster CI/CD on large repositories, analyze only changed targets:
+
+```bash
+# Detect changed targets since last commit
+bazel run //tools/supplychain:incremental_analyzer -- \
+  --workspace=. \
+  --base-ref=HEAD~1 \
+  --output-format=targets
+
+# Use output in build commands
+TARGETS=$(bazel run //tools/supplychain:incremental_analyzer -- \
+  --base-ref=origin/main \
+  --output-format=targets)
+bazel build $TARGETS
+```
+
+Output formats:
+- `targets` - Space-separated Bazel target list
+- `json` - Detailed JSON with changed files and affected targets
+- `bazel-query` - Format suitable for `bazel query` commands
+
+Example in CI:
+
+```yaml
+- name: Incremental Analysis
+  run: |
+    CHANGED=$(bazel run //tools/supplychain:incremental_analyzer -- \
+      --base-ref=${{ github.event.pull_request.base.sha }} \
+      --output-format=targets)
+    if [ -n "$CHANGED" ]; then
+      bazel build $CHANGED
+    else
+      echo "No changes detected, running full analysis"
+      bazel build //...
+    fi
+```
+
 ## Troubleshooting
 
 For common issues and solutions, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).

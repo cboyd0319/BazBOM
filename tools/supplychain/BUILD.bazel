@@ -13,6 +13,10 @@ exports_files(
         "conflict_detector.py",
         "license_analyzer.py",
         "metrics_aggregator.py",
+        "supply_chain_risk.py",
+        "incremental_analyzer.py",
+        "vex_processor.py",
+        "license_extractor.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -75,6 +79,30 @@ sh_binary(
 sh_binary(
     name = "metrics_aggregator",
     srcs = ["metrics_aggregator.py"],
+)
+
+# Shell wrapper for supply_chain_risk
+sh_binary(
+    name = "supply_chain_risk",
+    srcs = ["supply_chain_risk.py"],
+)
+
+# Shell wrapper for incremental_analyzer
+sh_binary(
+    name = "incremental_analyzer",
+    srcs = ["incremental_analyzer.py"],
+)
+
+# Shell wrapper for vex_processor
+sh_binary(
+    name = "vex_processor",
+    srcs = ["vex_processor.py"],
+)
+
+# Shell wrapper for license_extractor
+sh_binary(
+    name = "license_extractor",
+    srcs = ["license_extractor.py"],
 )
 
 # Export aspect and macro definitions
