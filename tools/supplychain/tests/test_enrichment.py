@@ -895,5 +895,198 @@ class TestVulnerabilityEnricherAdvanced(unittest.TestCase):
         self.assertEqual(summary["P1-CRITICAL"], 1)
 
 
+class TestGHSAEnrichFinding(unittest.TestCase):
+    """Test GHSA enrich_finding method."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.enricher = GHSAEnricher()
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_enrich_finding_with_remediation(self, mock_query):
+        """Test enrich_finding adds remediation info."""
+        mock_query.return_value = {
+            "ghsa_id": "GHSA-test-1234",
+            "summary": "Test vulnerability",
+            "vulnerabilities": [{
+                "first_patched_version": "2.0.0",
+                "vulnerable_version_range": "< 2.0.0"
+            }]
+        }
+        
+        finding = {"cve": "CVE-2021-12345"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("ghsa", result)
+        self.assertIn("remediation", result)
+        self.assertEqual(result["remediation"]["fixed_version"], "2.0.0")
+    
+    @patch('ghsa_enrichment.GHSAEnricher.query_advisory')
+    def test_enrich_finding_exception_handling(self, mock_query):
+        """Test enrich_finding handles exceptions gracefully."""
+        mock_query.side_effect = Exception("Network error")
+        
+        finding = {"cve": "CVE-2021-12345"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("ghsa", result)
+        self.assertEqual(result["ghsa"]["ghsa_id"], "")
+    
+    def test_enrich_finding_non_cve_id(self):
+        """Test enrich_finding with non-CVE ID."""
+        finding = {"cve": "INVALID-123"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("ghsa", result)
+        self.assertEqual(result["ghsa"]["ghsa_id"], "")
+    
+    def test_enrich_finding_with_id_field(self):
+        """Test enrich_finding uses 'id' field as fallback."""
+        with patch.object(self.enricher, 'query_advisory') as mock_query:
+            mock_query.return_value = {"ghsa_id": "GHSA-test"}
+            finding = {"id": "CVE-2021-12345"}
+            result = self.enricher.enrich_finding(finding)
+            self.assertIn("ghsa", result)
+    
+    def test_enrich_finding_with_vulnerability_id_field(self):
+        """Test enrich_finding uses nested 'vulnerability.id' field."""
+        with patch.object(self.enricher, 'query_advisory') as mock_query:
+            mock_query.return_value = {"ghsa_id": "GHSA-test"}
+            finding = {"vulnerability": {"id": "CVE-2021-12345"}}
+            result = self.enricher.enrich_finding(finding)
+            self.assertIn("ghsa", result)
+    
+    def test_enrich_findings_list(self):
+        """Test enrich_findings processes list of findings."""
+        findings = [
+            {"cve": "CVE-2021-12345"},
+            {"cve": "CVE-2021-67890"}
+        ]
+        with patch.object(self.enricher, 'query_advisory') as mock_query:
+            mock_query.return_value = {"ghsa_id": "GHSA-test"}
+            result = self.enricher.enrich_findings(findings)
+            self.assertEqual(len(result), 2)
+    
+    def test_enrich_findings_with_non_dict_items(self):
+        """Test enrich_findings handles non-dict items."""
+        findings = [
+            {"cve": "CVE-2021-12345"},
+            "not a dict",
+            {"cve": "CVE-2021-67890"}
+        ]
+        with patch.object(self.enricher, 'query_advisory') as mock_query:
+            mock_query.return_value = {"ghsa_id": "GHSA-test"}
+            result = self.enricher.enrich_findings(findings)
+            # Should not crash, just skip non-dict items
+            self.assertEqual(len(result), 3)
+
+
+class TestVulnCheckEnrichFinding(unittest.TestCase):
+    """Test VulnCheck enrich_finding method."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.enricher = VulnCheckEnricher()
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_enrich_finding_with_weaponized_exploit(self, mock_get):
+        """Test enrich_finding with weaponized exploit."""
+        mock_get.return_value = {
+            "exploit_available": True,
+            "weaponized": True,
+            "exploit_maturity": "functional"
+        }
+        
+        finding = {"cve": "CVE-2021-44228"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("exploit", result)
+        self.assertTrue(result["exploit"]["weaponized"])
+        self.assertIn("priority", result)
+        self.assertEqual(result["priority"], "P1-CRITICAL")
+        self.assertIn("exploit_context", result)
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_enrich_finding_preserves_p0_priority(self, mock_get):
+        """Test enrich_finding preserves P0-IMMEDIATE priority."""
+        mock_get.return_value = {"exploit_available": True, "weaponized": True}
+        
+        finding = {"cve": "CVE-2021-44228", "priority": "P0-IMMEDIATE"}
+        result = self.enricher.enrich_finding(finding)
+        
+        # Should not downgrade P0 to P1
+        self.assertEqual(result["priority"], "P0-IMMEDIATE")
+    
+    @patch('vulncheck_enrichment.VulnCheckEnricher.get_exploit_status')
+    def test_enrich_finding_exception_handling(self, mock_get):
+        """Test enrich_finding handles exceptions."""
+        mock_get.side_effect = Exception("API error")
+        
+        finding = {"cve": "CVE-2021-12345"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("exploit", result)
+        self.assertFalse(result["exploit"]["exploit_available"])
+    
+    def test_enrich_finding_non_cve_id(self):
+        """Test enrich_finding with non-CVE ID."""
+        finding = {"cve": "INVALID-123"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("exploit", result)
+        self.assertFalse(result["exploit"]["exploit_available"])
+
+
+class TestEPSSEnrichFinding(unittest.TestCase):
+    """Test EPSS enrich_finding method."""
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = EPSSEnricher(cache_dir=self.temp_dir)
+    
+    def tearDown(self):
+        """Clean up."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+    
+    @patch('epss_enrichment.requests.get')
+    def test_enrich_finding_with_cve(self, mock_get):
+        """Test enriching a single finding with CVE."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "cve": "CVE-2021-44228",
+                "epss": "0.95",
+                "percentile": "0.99"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        finding = {"cve": "CVE-2021-44228"}
+        result = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("epss", result)
+        self.assertAlmostEqual(result["epss"]["epss_score"], 0.95)
+    
+    def test_enrich_finding_no_cve(self):
+        """Test enriching finding without CVE."""
+        finding = {"id": "GHSA-1234"}
+        result = self.enricher.enrich_finding(finding)
+        
+        # Should not crash
+        self.assertIsInstance(result, dict)
+    
+    def test_enrich_finding_non_cve_format(self):
+        """Test enriching finding with non-CVE format ID."""
+        finding = {"cve": "INVALID-123"}
+        result = self.enricher.enrich_finding(finding)
+        
+        # Should handle gracefully
+        self.assertIsInstance(result, dict)
+
+
 if __name__ == "__main__":
     unittest.main()
