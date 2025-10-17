@@ -7,6 +7,7 @@ exports_files(
     [
         "validate_sbom.py",
         "validate_sarif.py",
+        "validate_provenance.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -21,4 +22,10 @@ sh_binary(
 sh_binary(
     name = "validate_sarif",
     srcs = ["validate_sarif.py"],
+)
+
+# Shell wrapper for SLSA provenance validator
+sh_binary(
+    name = "validate_provenance",
+    srcs = ["validate_provenance.py"],
 )

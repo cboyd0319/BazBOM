@@ -1,0 +1,109 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://slsa.dev/provenance/v1/schema",
+  "title": "SLSA Provenance v1.0",
+  "description": "Schema for SLSA provenance attestation v1.0",
+  "type": "object",
+  "required": ["_type", "subject", "predicateType", "predicate"],
+  "properties": {
+    "_type": {
+      "type": "string",
+      "enum": ["https://in-toto.io/Statement/v1"]
+    },
+    "subject": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["name", "digest"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Identifier for the artifact"
+          },
+          "digest": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "minProperties": 1,
+            "description": "Content hashes of the artifact"
+          }
+        }
+      }
+    },
+    "predicateType": {
+      "type": "string",
+      "enum": [
+        "https://slsa.dev/provenance/v1"
+      ]
+    },
+    "predicate": {
+      "type": "object",
+      "required": ["buildDefinition", "runDetails"],
+      "properties": {
+        "buildDefinition": {
+          "type": "object",
+          "required": ["buildType", "externalParameters", "internalParameters"],
+          "properties": {
+            "buildType": {
+              "type": "string",
+              "description": "URI indicating the type of build"
+            },
+            "externalParameters": {
+              "type": "object",
+              "description": "Top-level external parameters"
+            },
+            "internalParameters": {
+              "type": "object",
+              "description": "Internal parameters"
+            },
+            "resolvedDependencies": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "uri": { "type": "string" },
+                  "digest": { "type": "object" }
+                }
+              }
+            }
+          }
+        },
+        "runDetails": {
+          "type": "object",
+          "required": ["builder", "metadata"],
+          "properties": {
+            "builder": {
+              "type": "object",
+              "required": ["id"],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "URI identifying the builder"
+                },
+                "version": {
+                  "type": "object"
+                },
+                "builderDependencies": {
+                  "type": "array"
+                }
+              }
+            },
+            "metadata": {
+              "type": "object",
+              "properties": {
+                "invocationId": { "type": "string" },
+                "startedOn": { "type": "string", "format": "date-time" },
+                "finishedOn": { "type": "string", "format": "date-time" }
+              }
+            },
+            "byproducts": {
+              "type": "array"
+            }
+          }
+        }
+      }
+    }
+  }
+}

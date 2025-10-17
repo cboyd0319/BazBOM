@@ -1,0 +1,37 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "workspace_sbom.spdx.json",
+      "digest": {
+        "sha256": "unknown"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://github.com/bazel-contrib/bazbom@v1",
+      "externalParameters": {
+        "repository": "unknown-builder",
+        "ref": "unknown"
+      },
+      "internalParameters": {
+        "buildId": "unknown"
+      },
+      "resolvedDependencies": []
+    },
+    "runDetails": {
+      "builder": {
+        "id": "https://github.com/unknown-builder/actions",
+        "version": {}
+      },
+      "metadata": {
+        "invocationId": "unknown",
+        "startedOn": "2025-10-17T17:51:33Z",
+        "finishedOn": "2025-10-17T17:51:33Z"
+      },
+      "byproducts": []
+    }
+  }
+}
