@@ -31,6 +31,8 @@ exports_files(
         "sbom_diff.py",
         "drift_detector.py",
         "changelog_generator.py",
+        "osv_contributor.py",
+        "contribution_tracker.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -202,6 +204,18 @@ sh_binary(
 sh_binary(
     name = "changelog_generator",
     srcs = ["changelog_generator.py"],
+)
+
+# Shell wrapper for osv_contributor
+sh_binary(
+    name = "osv_contributor",
+    srcs = ["osv_contributor.py"],
+)
+
+# Shell wrapper for contribution_tracker
+sh_binary(
+    name = "contribution_tracker",
+    srcs = ["contribution_tracker.py"],
 )
 
 # Export aspect and macro definitions
