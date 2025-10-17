@@ -254,11 +254,36 @@ bazel build //app:app_sbom --define=max_depth=1
 
 ### Performance Benchmarks
 
-| Configuration | Targets Processed | Time | SBOM Size |
-|---------------|------------------|------|-----------|
-| Default (no tests) | 500 | 3.2 min | 234 KB |
-| Include tests | 750 | 4.8 min | 389 KB |
-| Max depth=1 | 500 | 1.5 min | 87 KB |
+<table>
+  <thead>
+    <tr>
+      <th>Configuration</th>
+      <th>Targets Processed</th>
+      <th>Time</th>
+      <th>SBOM Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Default (no tests)</td>
+      <td>500</td>
+      <td>3.2 min</td>
+      <td>234 KB</td>
+    </tr>
+    <tr>
+      <td>Include tests</td>
+      <td>750</td>
+      <td>4.8 min</td>
+      <td>389 KB</td>
+    </tr>
+    <tr>
+      <td>Max depth=1</td>
+      <td>500</td>
+      <td>1.5 min</td>
+      <td>87 KB</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Review Notes
 

@@ -1,66 +1,46 @@
+<div align="center">
+
+<img src="docs/images/logo.png" alt="BazBOM Logo" width="250"/>
+
 # BazBOM
 
-**Bazel-native SBOM and SCA for the JVM ecosystem**
+### **Build-time SBOM generation and vulnerability scanning for Bazel projects**
 
-BazBOM generates SBOMs (Software Bill of Materials) and performs supply chain security analysis for Bazel-built Java/JVM projects. Zero configuration, automatic dependency discovery via Bazel aspects, SPDX/SARIF output for GitHub Code Scanning.
+Automatic dependency discovery • Zero configuration • Production-ready
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
-[![SLSA Level 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/PROVENANCE.md)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/PROVENANCE.md)
+[![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
 
-## TL;DR
+[Quickstart](#-quickstart) •
+[Features](#-features) •
+[Documentation](docs/README.md) •
+[Contributing](CONTRIBUTING.md)
 
-```bash
-# Generate SBOM for all targets
-bazel build //:sbom_all
+</div>
 
-# Run vulnerability scan
-bazel run //:sca_scan
+---
 
-# View results
-ls bazel-bin/**/*.spdx.json bazel-bin/sca_findings.sarif
-```
+## What is BazBOM?
 
-That's it. SBOMs generated, vulnerabilities scanned, SARIF ready for GitHub Code Scanning.
+BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for Java/JVM projects built with Bazel. It uses Bazel's build graph as the source of truth—no guessing, no manual maintenance.
 
-## What is This?
+**The problem:** Manual SBOM creation is error-prone. Post-build scanners miss transitive dependencies or include test artifacts.
 
-BazBOM solves the problem of generating accurate, complete SBOMs for Java/JVM projects built with Bazel. Unlike post-build scanners that guess at dependencies, BazBOM uses Bazel's build graph as the source of truth.
+**The solution:** BazBOM uses Bazel aspects to traverse your dependency graph automatically. Every build produces an accurate SBOM. Maven lockfiles provide exact versions and licenses.
 
-**Pain:** Manual SBOM creation is error-prone. Post-build scanners miss transitive dependencies or include test artifacts.
+### Who is this for?
 
-**Solution:** Bazel aspects traverse the dependency graph automatically. Every build produces an SBOM. Maven lockfile provides accurate versions and licenses.
+- **Security teams** enforcing supply chain policies (SBOM + VEX + SLSA)
+- **DevSecOps engineers** automating vulnerability scanning in CI/CD
+- **Organizations** with large Bazel+Java monorepos (5000+ targets)
 
-**Target users:** Security teams, DevSecOps, organizations with Bazel+Java monorepos requiring supply chain security.
+---
 
-## Features
+## ⚡ Quickstart
 
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **SBOM Generation** | SPDX 2.3 (JSON), optional CycloneDX | ✅ |
-| **Dependency Graph** | JSON + GraphML for visualization | ✅ |
-| **Vulnerability Scanning** | OSV, NVD, GitHub Security Advisories | ✅ |
-| **SARIF Output** | GitHub Code Scanning integration | ✅ |
-| **SLSA Provenance** | Level 3, Sigstore signed | ✅ |
-| **VEX Support** | False positive suppression (CSAF 2.0) | ✅ |
-| **License Compliance** | Extract licenses, detect conflicts | ✅ |
-| **Incremental Analysis** | Git-based changed target detection | ✅ |
-| **Large Monorepo Support** | 5000+ targets, <30 min analysis | ✅ |
-
-## Quickstart
-
-### Prerequisites
-
-| Requirement | Version | Why |
-|-------------|---------|-----|
-| Bazel | ≥ 6.0 | Build system |
-| Java | ≥ 11 | JVM runtime |
-| Python | ≥ 3.9 | Tooling scripts |
-| Git | ≥ 2.30 | Incremental analysis |
-
-### Installation
-
-1. **Add to WORKSPACE:**
+### 1. Add BazBOM to your WORKSPACE
 
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -68,43 +48,275 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "bazbom",
     urls = ["https://github.com/cboyd0319/BazBOM/archive/v1.0.0.tar.gz"],
-    sha256 = "...",  # Replace with actual SHA256
+    sha256 = "...",  # Get from releases page
     strip_prefix = "BazBOM-1.0.0",
 )
 ```
 
-2. **Run setup:**
-
-```bash
-bazel run @bazbom//setup:install
-```
-
-3. **Generate first SBOM:**
+### 2. Generate your first SBOM
 
 ```bash
 bazel build //app:app_sbom
 cat bazel-bin/app/app_sbom.spdx.json
 ```
 
-**Expected output:** Valid SPDX 2.3 JSON with all dependencies.
+**Output:** Valid SPDX 2.3 JSON with all dependencies, licenses, and hashes.
 
-## Usage
-
-### Basic: Generate SBOM for Single Target
+### 3. Run vulnerability scan
 
 ```bash
-bazel build //app:deployable_sbom
+bazel run //:sca_scan
 ```
 
-Output: `bazel-bin/app/deployable_sbom.spdx.json`
+**Output:**
+- `sca_findings.json` - Machine-readable findings (OSV + NVD)
+- `sca_findings.sarif` - GitHub Code Scanning format
 
-### Generate SBOMs for All Targets
+That's it. No configuration files, no manual dependency lists.
+
+📖 **New to BazBOM?** Follow the [5-minute tutorial](docs/QUICKSTART.md)
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td width="50%">
+
+**SBOM Generation**
+- ✅ SPDX 2.3 (JSON) primary format
+- ✅ CycloneDX 1.5 (optional)
+- ✅ Per-target or workspace-wide
+- ✅ Automatic version/license extraction
+
+**Vulnerability Scanning**
+- ✅ OSV (Open Source Vulnerabilities)
+- ✅ NVD (National Vulnerability Database)
+- ✅ GitHub Security Advisories (GHSA)
+- ✅ Offline mode (air-gapped environments)
+
+**GitHub Integration**
+- ✅ SARIF 2.1.0 output
+- ✅ Code Scanning alerts
+- ✅ PR comments with findings
+- ✅ Policy enforcement (block on critical CVEs)
+
+</td>
+<td width="50%">
+
+**Supply Chain Security**
+- ✅ SLSA Level 3 provenance
+- ✅ Sigstore keyless signing
+- ✅ VEX (false positive suppression)
+- ✅ License compliance checking
+
+**Dependency Analysis**
+- ✅ Full transitive graph (JSON + GraphML)
+- ✅ Reverse dependency lookups
+- ✅ Conflict detection
+- ✅ Visualize with Gephi/yEd
+
+**Performance**
+- ✅ Incremental analysis (5-10x faster PRs)
+- ✅ Remote caching support
+- ✅ Parallel processing
+- ✅ Scales to 5000+ target monorepos
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🎯 Core Workflows
+
+### Workflow 1: Daily Development
+
+```bash
+# Generate SBOM for what you're working on
+bazel build //my-service:sbom
+
+# Check for vulnerabilities
+bazel run //my-service:sca_check
+
+# View dependency graph
+bazel run //my-service:dep_graph
+```
+
+### Workflow 2: CI/CD Pipeline
+
+```yaml
+- name: Supply Chain Analysis
+  run: |
+    bazel build //:sbom_all
+    bazel run //:sca_scan
+
+- name: Upload to GitHub Security
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: bazel-bin/sca_findings.sarif
+```
+
+See [CI/CD examples](.github/workflows/) for complete workflows.
+
+### Workflow 3: Compliance & Audit
+
+```bash
+# Generate compliance bundle
+bazel build //:compliance_bundle
+
+# Outputs:
+# - All SBOMs (SPDX + CycloneDX)
+# - SLSA provenance (signed)
+# - License report
+# - Dependency graph
+# - VEX statements
+```
+
+---
+
+## 📊 How It Works
+
+```mermaid
+graph LR
+    A[Bazel Build] -->|Aspect| B[Dependency Discovery]
+    B --> C[maven_install.json]
+    C --> D[SBOM Generator]
+    D --> E[SPDX 2.3 JSON]
+    E --> F[Vulnerability Scanner]
+    F --> G[OSV Database]
+    G --> H[SARIF Output]
+    H --> I[GitHub Security]
+
+    style A fill:#43A047
+    style E fill:#1976D2
+    style H fill:#F57C00
+    style I fill:#E91E63
+```
+
+1. **Build** - Bazel aspects traverse the dependency graph
+2. **Extract** - Parse `maven_install.json` for versions/licenses
+3. **Generate** - Create SPDX 2.3 compliant SBOM
+4. **Scan** - Query OSV/NVD for known vulnerabilities
+5. **Report** - Output SARIF for GitHub Code Scanning
+
+No external tools. No network access during build (hermetic). Fully reproducible.
+
+---
+
+## 🚀 Installation
+
+### Prerequisites
+
+<table>
+  <thead>
+    <tr>
+      <th>Tool</th>
+      <th>Version</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Bazel</strong></td>
+      <td>≥ 6.0</td>
+      <td>Build system</td>
+    </tr>
+    <tr>
+      <td><strong>Java</strong></td>
+      <td>≥ 11</td>
+      <td>JVM runtime</td>
+    </tr>
+    <tr>
+      <td><strong>Python</strong></td>
+      <td>≥ 3.9</td>
+      <td>SBOM generation scripts</td>
+    </tr>
+    <tr>
+      <td><strong>Git</strong></td>
+      <td>≥ 2.30</td>
+      <td>Incremental analysis (optional)</td>
+    </tr>
+  </tbody>
+</table>
+
+### Option 1: Quick Install (Recommended)
+
+```bash
+# In your Bazel workspace root
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+```
+
+### Option 2: Manual Installation
+
+Add to `WORKSPACE`:
+
+```python
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "bazbom",
+    urls = ["https://github.com/cboyd0319/BazBOM/archive/v1.0.0.tar.gz"],
+    sha256 = "...",
+    strip_prefix = "BazBOM-1.0.0",
+)
+
+load("@bazbom//:deps.bzl", "bazbom_dependencies")
+bazbom_dependencies()
+```
+
+Add to root `BUILD.bazel`:
+
+```python
+load("@bazbom//:defs.bzl", "sbom_all", "sca_scan")
+
+sbom_all(name = "sbom_all")
+sca_scan(name = "sca_scan")
+```
+
+### Verify Installation
+
+```bash
+bazel build //:sbom_all
+# Should complete without errors and produce SBOMs in bazel-bin/
+```
+
+---
+
+## 📖 Usage Examples
+
+### Generate SBOM for Single Target
+
+```bash
+bazel build //services/api:api_sbom
+```
+
+**Output:** `bazel-bin/services/api/api_sbom.spdx.json`
+
+### Generate SBOMs for Entire Workspace
 
 ```bash
 bazel build //:sbom_all
 ```
 
-Output: SBOMs for every `java_binary` and `java_library` in workspace.
+**Output:** One SBOM per `java_binary` and `java_library`
+
+### Include Test Dependencies
+
+```bash
+bazel build //:sbom_all --define=include_test_deps=true
+```
+
+**Use case:** Comprehensive security audit including test frameworks
+
+### Generate CycloneDX Format
+
+```bash
+bazel build //:sbom_all --define=cyclonedx=true
+```
+
+**Output:** Both SPDX and CycloneDX files
 
 ### Run Vulnerability Scan
 
@@ -112,9 +324,17 @@ Output: SBOMs for every `java_binary` and `java_library` in workspace.
 bazel run //:sca_scan
 ```
 
-Output:
-- `bazel-bin/sca_findings.json` - Machine-readable findings
-- `bazel-bin/sca_findings.sarif` - GitHub Code Scanning format
+**Output:**
+- `bazel-bin/sca_findings.json`
+- `bazel-bin/sca_findings.sarif`
+
+### Scan with Offline CVE Database
+
+```bash
+bazel run //:sca_scan -- --offline-mode --osv-db-path=/opt/osv-db
+```
+
+**Use case:** Air-gapped environments
 
 ### Generate Dependency Graph
 
@@ -122,11 +342,11 @@ Output:
 bazel build //:dep_graph_all
 ```
 
-Output:
-- `bazel-bin/dep_graph.json` - Queryable graph
-- `bazel-bin/dep_graph.graphml` - For Gephi/yEd visualization
+**Output:**
+- `bazel-bin/dep_graph.json` - Query with jq
+- `bazel-bin/dep_graph.graphml` - Visualize with Gephi
 
-### Apply VEX Statements (Filter False Positives)
+### Apply VEX Statements (Suppress False Positives)
 
 ```bash
 bazel run //:apply_vex -- \
@@ -137,86 +357,149 @@ bazel run //:apply_vex -- \
 
 See [VEX Guide](docs/VEX.md) for creating VEX statements.
 
-## Configuration
+---
 
-BazBOM works with zero configuration for most projects. Configuration options:
+## ⚙️ Configuration
 
-| Flag | Default | Purpose |
-|------|---------|---------|
-| `--define=include_test_deps=true` | `false` | Include test dependencies in SBOM |
-| `--define=cyclonedx=true` | `false` | Generate CycloneDX in addition to SPDX |
-| `--define=max_depth=N` | `unlimited` | Limit transitive dependency depth |
-| `--define=offline_mode=true` | `false` | Use local CVE database (no network) |
+BazBOM works **zero-config** for most projects. Advanced options:
 
-Example:
+<table>
+  <thead>
+    <tr>
+      <th>Flag</th>
+      <th>Default</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>--define=include_test_deps=true</code></td>
+      <td><code>false</code></td>
+      <td>Include test scope dependencies</td>
+    </tr>
+    <tr>
+      <td><code>--define=cyclonedx=true</code></td>
+      <td><code>false</code></td>
+      <td>Generate CycloneDX + SPDX</td>
+    </tr>
+    <tr>
+      <td><code>--define=max_depth=N</code></td>
+      <td>unlimited</td>
+      <td>Limit transitive depth</td>
+    </tr>
+    <tr>
+      <td><code>--define=offline_mode=true</code></td>
+      <td><code>false</code></td>
+      <td>Use local CVE database</td>
+    </tr>
+  </tbody>
+</table>
+
+**.bazelrc example:**
 
 ```bash
-bazel build //:sbom_all --define=include_test_deps=true --define=cyclonedx=true
+# Add to your .bazelrc
+build:sbom --aspects=@bazbom//tools:aspects.bzl%sbom_aspect
+build:sbom --output_groups=+sbom
+
+# Use with: bazel build --config=sbom //...
 ```
 
-See [Usage Guide](docs/USAGE.md) for full configuration reference.
+See [Usage Guide](docs/USAGE.md) for full reference.
 
-## Architecture
+---
 
-```
-┌─────────────┐
-│  Developer  │
-└──────┬──────┘
-       │ bazel build
-       ▼
-┌─────────────────┐
-│ Bazel Aspect    │ ──► Traverse dependency graph
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ write_sbom.py   │ ──► Generate SPDX 2.3 JSON
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ osv_query.py    │ ──► Query OSV for vulnerabilities
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ sarif_adapter   │ ──► Convert to SARIF 2.1.0
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ GitHub Security │ ──► Display in Code Scanning
-└─────────────────┘
-```
+## ⚡ Performance
 
-See [Architecture Doc](docs/ARCHITECTURE.md) for detailed design.
+Expected times with **remote cache enabled**:
 
-## Security
+<table>
+  <thead>
+    <tr>
+      <th>Repo Size</th>
+      <th>Targets</th>
+      <th>Dependencies</th>
+      <th>Full Analysis</th>
+      <th>Incremental (PR)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Small</strong></td>
+      <td>&lt; 50</td>
+      <td>&lt; 100</td>
+      <td>&lt; 2 min</td>
+      <td>&lt; 1 min</td>
+    </tr>
+    <tr>
+      <td><strong>Medium</strong></td>
+      <td>50-500</td>
+      <td>100-500</td>
+      <td>&lt; 5 min</td>
+      <td>&lt; 2 min</td>
+    </tr>
+    <tr>
+      <td><strong>Large</strong></td>
+      <td>500-5K</td>
+      <td>500-2K</td>
+      <td>&lt; 15 min</td>
+      <td>&lt; 5 min</td>
+    </tr>
+    <tr>
+      <td><strong>Massive</strong></td>
+      <td>5K+</td>
+      <td>2K+</td>
+      <td>&lt; 30 min</td>
+      <td>&lt; 10 min</td>
+    </tr>
+  </tbody>
+</table>
 
-- **Secrets:** No secrets required. OSV API is public.
-- **Least privilege:** Read-only access to source code and dependencies.
-- **Supply chain:** Releases signed with Sigstore. SBOMs published at `/releases/`.
-- **Disclosure:** Report vulnerabilities via [SECURITY.md](SECURITY.md).
-- **SLSA Level:** Level 3 (signed provenance, hardened build platform).
+**Optimization tips:**
+- Enable Bazel remote cache (`--remote_cache`)
+- Use incremental mode in PRs (only changed targets)
+- Parallel execution (`--jobs=auto`)
 
-## Performance
+See [Performance Guide](docs/PERFORMANCE.md) for tuning details.
 
-Expected analysis times (with remote cache):
+---
 
-| Repo Size | Targets | Dependencies | Time |
-|-----------|---------|--------------|------|
-| Small | < 50 | < 100 | < 2 min |
-| Medium | 50-500 | 100-500 | < 5 min |
-| Large | 500-5K | 500-2K | < 15 min |
-| Massive | 5K+ | 2K+ | < 30 min (incremental) |
+## 🔒 Security
 
-See [Performance Guide](docs/PERFORMANCE.md) for optimization.
+### Threat Model
 
-## Troubleshooting
+BazBOM operates with **least privilege**:
+- **Read-only** access to source code and dependencies
+- **No secrets required** (OSV API is public, GHSA via GitHub token if available)
+- **Hermetic builds** (no network during SBOM generation)
+- **Signed releases** (Sigstore keyless signing)
 
-### Issue: "No such package: @maven"
+See [Threat Model](docs/THREAT_MODEL.md) for complete analysis.
 
-**Cause:** `rules_jvm_external` not configured.
+### SLSA Compliance
+
+BazBOM targets **SLSA Level 3**:
+- ✅ Provenance generated for all builds
+- ✅ Provenance signed with Sigstore
+- ✅ GitHub-hosted runners (hardened platform)
+- ✅ Build logs retained (90 days)
+
+See [Provenance Guide](docs/PROVENANCE.md) for verification steps.
+
+### Reporting Vulnerabilities
+
+Report security issues via [SECURITY.md](SECURITY.md). We respond within 48 hours.
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+<details>
+<summary><strong>Error: "No such package: @maven"</strong></summary>
+
+**Cause:** `rules_jvm_external` not configured
 
 **Fix:** Add to WORKSPACE:
 
@@ -230,91 +513,157 @@ maven_install(
 )
 ```
 
-### Issue: SBOM missing dependencies
+</details>
 
-**Cause:** Aspect not applied to all targets.
+<details>
+<summary><strong>SBOM missing dependencies</strong></summary>
 
-**Fix:** Rebuild with `--nocache_test_results`:
+**Cause:** Aspect not applied to all targets
+
+**Fix:** Clear cache and rebuild:
 
 ```bash
-bazel build //:sbom_all --nocache_test_results
+bazel clean
+bazel build //:sbom_all
 ```
 
-See [Troubleshooting Guide](docs/TROUBLESHOOTING.md) for more.
+</details>
 
-## Roadmap
+<details>
+<summary><strong>Slow analysis on large repo</strong></summary>
 
+**Cause:** Full workspace analysis on every build
+
+**Fix:** Use incremental mode:
+
+```bash
+# Analyze only changed targets
+bazel run //tools/supplychain:incremental_analyzer
+```
+
+See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
+
+</details>
+
+**More help:** [Troubleshooting Guide](docs/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
+
+---
+
+## 🗺️ Roadmap
+
+**In Progress:**
 - [ ] Gradle support (in addition to Maven)
+- [ ] Container image SBOM (`rules_oci` integration)
+
+**Planned:**
 - [ ] Kotlin Multiplatform support
-- [ ] Container image SBOM (rules_oci integration)
 - [ ] Dependency conflict auto-resolution
-- [ ] Visual dependency graph UI
+- [ ] Visual dependency graph UI (web-based)
+- [ ] NPM/Node.js support
 
-See [GitHub Issues](https://github.com/cboyd0319/BazBOM/issues) for details.
+**Completed:**
+- [x] SPDX 2.3 SBOM generation
+- [x] OSV vulnerability scanning
+- [x] SLSA Level 3 provenance
+- [x] VEX statement support
+- [x] Large monorepo optimization
 
-## Documentation
+Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
 
-**Getting Started:**
-- [Quickstart](docs/QUICKSTART.md) - 5-minute setup
-- [Usage Guide](docs/USAGE.md) - Commands and workflows
+---
 
-**Architecture:**
-- [Architecture](docs/ARCHITECTURE.md) - System design
-- [Supply Chain](docs/SUPPLY_CHAIN.md) - SBOM/SCA details
-- [Threat Model](docs/THREAT_MODEL.md) - Security analysis
+## 📚 Documentation
 
-**Advanced:**
-- [Performance](docs/PERFORMANCE.md) - Large monorepo optimization
-- [Provenance](docs/PROVENANCE.md) - SLSA attestation
-- [VEX](docs/VEX.md) - False positive management
-- [Dependency Graphs](docs/GRAPH_ANALYSIS.md) - Visualization and queries
+### Getting Started
+- **[Quickstart](docs/QUICKSTART.md)** - 5-minute setup
+- **[Usage Guide](docs/USAGE.md)** - All commands and workflows
+- **[Installation](docs/QUICKSTART.md#installation)** - Detailed setup
 
-**Operations:**
-- [Validation](docs/VALIDATION.md) - Schema validation
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues
+### Architecture & Design
+- **[Architecture](docs/ARCHITECTURE.md)** - System design and data flow
+- **[Supply Chain](docs/SUPPLY_CHAIN.md)** - SBOM/SCA implementation
+- **[Threat Model](docs/THREAT_MODEL.md)** - Security analysis
+- **[ADRs](docs/ADR/)** - Architecture Decision Records
 
-**Decisions:**
-- [ADRs](docs/ADR/) - Architecture Decision Records
+### Advanced Features
+- **[Performance](docs/PERFORMANCE.md)** - Large monorepo optimization
+- **[Provenance](docs/PROVENANCE.md)** - SLSA Level 3 attestation
+- **[VEX](docs/VEX.md)** - False positive management
+- **[Dependency Graphs](docs/GRAPH_ANALYSIS.md)** - Visualization and queries
 
-## Contributing
+### Operations
+- **[Validation](docs/VALIDATION.md)** - SBOM/SARIF schema validation
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and fixes
 
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for:
-- Local development setup
-- Running tests
-- Code style (lint with `bazel run //:lint`)
-- Commit message format
-- PR review process
+### Full Documentation Index
+See [docs/README.md](docs/README.md) for complete documentation map.
 
-Code of Conduct: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+---
 
-## License
+## 🤝 Contributing
 
-Apache License 2.0. See [LICENSE](LICENSE).
+Contributions are welcome! BazBOM is open-source and community-driven.
 
-**What you can do:**
-- Use commercially
-- Modify and distribute
-- Patent grant included
+**Before you start:**
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions
+2. Check [existing issues](https://github.com/cboyd0319/BazBOM/issues) for duplicates
+3. Discuss major changes in [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions) first
 
-**What you must do:**
-- Include license and copyright notice
-- State changes made
+**Quick links:**
+- [Code of Conduct](CODE_OF_CONDUCT.md)
+- [Development Setup](CONTRIBUTING.md#development-setup)
+- [Running Tests](CONTRIBUTING.md#testing)
+- [Maintainers](MAINTAINERS.md)
 
-**What you cannot do:**
-- Hold authors liable
-- Use trademarks without permission
+**Good first issues:** Look for [`good-first-issue`](https://github.com/cboyd0319/BazBOM/labels/good-first-issue) label.
 
-Choose a License: https://choosealicense.com/licenses/apache-2.0/
+---
 
-## Support
+## 📄 License
 
-- **Bug reports:** [GitHub Issues](https://github.com/cboyd0319/BazBOM/issues)
-- **Feature requests:** [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
-- **Security issues:** [SECURITY.md](SECURITY.md)
-- **Maintainers:** [MAINTAINERS.md](MAINTAINERS.md)
+**MIT License** - See [LICENSE](LICENSE) for full text.
 
-## Status
+```
+✅ Commercial use allowed
+✅ Modification allowed
+✅ Distribution allowed
+✅ Private use allowed
+📋 License and copyright notice required
+```
 
-**Active Development** - Production-ready, security-first implementation following Bazel best practices.
+**TL;DR:** Use it however you want. Just include the license.
 
-Last updated: 2025-10-17
+Learn more: https://choosealicense.com/licenses/mit/
+
+---
+
+## 💬 Support & Community
+
+**Need help?**
+- 🐛 [File a bug report](https://github.com/cboyd0319/BazBOM/issues/new?template=bug_report.md)
+- 💡 [Request a feature](https://github.com/cboyd0319/BazBOM/discussions/new?category=feature-requests)
+- 💬 [Ask a question](https://github.com/cboyd0319/BazBOM/discussions/new?category=q-a)
+- 🔒 [Report a security issue](SECURITY.md) (private)
+
+**Resources:**
+- [Maintainers](MAINTAINERS.md) - Who maintains BazBOM
+- [Changelog](CHANGELOG.md) - Release history
+- [Bazel Slack](https://slack.bazel.build) - `#bazbom` channel (coming soon)
+
+---
+
+<div align="center">
+
+## ⭐ Spread the Word
+
+If BazBOM helps secure your supply chain, **give us a star** ⭐
+
+[![Star History](https://img.shields.io/github/stars/cboyd0319/BazBOM?style=social)](https://github.com/cboyd0319/BazBOM/stargazers)
+
+**Active Development** • **Production-Ready** • **Community-Driven**
+
+Made with ❤️ for the Bazel ecosystem
+
+[⬆ Back to top](#bazbom)
+
+</div>

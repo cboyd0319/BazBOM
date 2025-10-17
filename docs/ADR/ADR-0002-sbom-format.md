@@ -35,14 +35,54 @@ We will use **SPDX 2.3 in JSON format** as our primary SBOM format.
 
 ## Comparison Matrix
 
-| Feature | SPDX 2.3 | CycloneDX | SWID |
-|---------|----------|-----------|------|
-| License Compliance | ⭐⭐⭐ | ⭐⭐ | ⭐ |
-| Security Metadata | ⭐⭐ | ⭐⭐⭐ | ⭐ |
-| Standard Status | ISO/IEC | OWASP | ISO/IEC |
-| Tooling Ecosystem | ⭐⭐⭐ | ⭐⭐ | ⭐ |
-| JSON Support | ⭐⭐⭐ | ⭐⭐⭐ | ⭐ |
-| Adoption | ⭐⭐⭐ | ⭐⭐ | ⭐ |
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>SPDX 2.3</th>
+      <th>CycloneDX</th>
+      <th>SWID</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>License Compliance</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐⭐</td>
+      <td>⭐</td>
+    </tr>
+    <tr>
+      <td>Security Metadata</td>
+      <td>⭐⭐</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐</td>
+    </tr>
+    <tr>
+      <td>Standard Status</td>
+      <td>ISO/IEC</td>
+      <td>OWASP</td>
+      <td>ISO/IEC</td>
+    </tr>
+    <tr>
+      <td>Tooling Ecosystem</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐⭐</td>
+      <td>⭐</td>
+    </tr>
+    <tr>
+      <td>JSON Support</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐</td>
+    </tr>
+    <tr>
+      <td>Adoption</td>
+      <td>⭐⭐⭐</td>
+      <td>⭐⭐</td>
+      <td>⭐</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Implementation
 

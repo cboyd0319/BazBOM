@@ -18,3 +18,4 @@
 *.jar binary
 *.war binary
 *.ear binary
+logo.png binary

@@ -16,12 +16,52 @@ Expected performance:
 
 ## Performance Targets by Repository Size
 
-| Repo Size | Targets | Dependencies | Full Analysis | Incremental (PR) | Cache Hit Rate |
-|-----------|---------|--------------|---------------|------------------|----------------|
-| Small     | < 50    | < 100        | < 2 min       | < 1 min          | > 95%          |
-| Medium    | 50-500  | 100-500      | < 5 min       | < 3 min          | > 90%          |
-| Large     | 500-5K  | 500-2K       | < 15 min      | < 5 min          | > 85%          |
-| Massive   | 5K+     | 2K+          | < 30 min      | < 10 min         | > 80%          |
+<table>
+  <thead>
+    <tr>
+      <th>Repo Size</th>
+      <th>Targets</th>
+      <th>Dependencies</th>
+      <th>Full Analysis</th>
+      <th>Incremental (PR)</th>
+      <th>Cache Hit Rate</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Small</td>
+      <td>&lt; 50</td>
+      <td>&lt; 100</td>
+      <td>&lt; 2 min</td>
+      <td>&lt; 1 min</td>
+      <td>&gt; 95%</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>50-500</td>
+      <td>100-500</td>
+      <td>&lt; 5 min</td>
+      <td>&lt; 3 min</td>
+      <td>&gt; 90%</td>
+    </tr>
+    <tr>
+      <td>Large</td>
+      <td>500-5K</td>
+      <td>500-2K</td>
+      <td>&lt; 15 min</td>
+      <td>&lt; 5 min</td>
+      <td>&gt; 85%</td>
+    </tr>
+    <tr>
+      <td>Massive</td>
+      <td>5K+</td>
+      <td>2K+</td>
+      <td>&lt; 30 min</td>
+      <td>&lt; 10 min</td>
+      <td>&gt; 80%</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Quick Wins (Apply These First)
 
@@ -343,14 +383,54 @@ with Timer("OSV query"):
 
 ### Test Repository: 5000 Targets, 1500 Dependencies
 
-| Configuration | Time (Full) | Time (Incremental) | Notes |
-|---------------|-------------|-------------------|-------|
-| Default       | 45 min      | 12 min           | No optimizations |
-| + Remote cache| 18 min      | 5 min            | 60% speedup |
-| + Parallel (8 cores) | 12 min | 3 min         | 75% speedup |
-| + Deduplication | 8 min    | 2 min            | 82% speedup |
-| + Incremental mode | 8 min | 1.5 min         | 90% speedup on PRs |
-| All optimizations | 6 min  | 1.2 min         | 87% speedup overall |
+<table>
+  <thead>
+    <tr>
+      <th>Configuration</th>
+      <th>Time (Full)</th>
+      <th>Time (Incremental)</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Default</td>
+      <td>45 min</td>
+      <td>12 min</td>
+      <td>No optimizations</td>
+    </tr>
+    <tr>
+      <td>+ Remote cache</td>
+      <td>18 min</td>
+      <td>5 min</td>
+      <td>60% speedup</td>
+    </tr>
+    <tr>
+      <td>+ Parallel (8 cores)</td>
+      <td>12 min</td>
+      <td>3 min</td>
+      <td>75% speedup</td>
+    </tr>
+    <tr>
+      <td>+ Deduplication</td>
+      <td>8 min</td>
+      <td>2 min</td>
+      <td>82% speedup</td>
+    </tr>
+    <tr>
+      <td>+ Incremental mode</td>
+      <td>8 min</td>
+      <td>1.5 min</td>
+      <td>90% speedup on PRs</td>
+    </tr>
+    <tr>
+      <td>All optimizations</td>
+      <td>6 min</td>
+      <td>1.2 min</td>
+      <td>87% speedup overall</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Scalability Testing
 

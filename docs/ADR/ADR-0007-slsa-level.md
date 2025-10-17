@@ -14,12 +14,37 @@ Target **SLSA Level 3** for BazBOM builds.
 
 ### SLSA Levels Overview
 
-| Level | Requirements | BazBOM Status |
-|-------|-------------|---------------|
-| **Level 1** | Provenance exists | ✅ Implemented |
-| **Level 2** | Signed provenance, tamper-resistant | ✅ Implemented (Sigstore) |
-| **Level 3** | Hardened build platform, non-falsifiable | ✅ Implemented (GitHub-hosted) |
-| **Level 4** | Two-person review, hermetic builds | 🔄 Partial (CODEOWNERS, builds hermetic) |
+<table>
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Requirements</th>
+      <th>BazBOM Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Level 1</strong></td>
+      <td>Provenance exists</td>
+      <td>✅ Implemented</td>
+    </tr>
+    <tr>
+      <td><strong>Level 2</strong></td>
+      <td>Signed provenance, tamper-resistant</td>
+      <td>✅ Implemented (Sigstore)</td>
+    </tr>
+    <tr>
+      <td><strong>Level 3</strong></td>
+      <td>Hardened build platform, non-falsifiable</td>
+      <td>✅ Implemented (GitHub-hosted)</td>
+    </tr>
+    <tr>
+      <td><strong>Level 4</strong></td>
+      <td>Two-person review, hermetic builds</td>
+      <td>🔄 Partial (CODEOWNERS, builds hermetic)</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Rationale for Level 3
 

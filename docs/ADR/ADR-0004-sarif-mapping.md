@@ -10,24 +10,79 @@ OSV and NVD use different severity systems than SARIF. We need consistent mappin
 
 ### Severity Systems
 
-| Source | Severity Levels |
-|--------|----------------|
-| CVSS 3.x | 0.0-10.0 (continuous score) |
-| OSV | critical, high, moderate, low |
-| NVD | CRITICAL, HIGH, MEDIUM, LOW |
-| SARIF | error, warning, note, none |
+<table>
+  <thead>
+    <tr>
+      <th>Source</th>
+      <th>Severity Levels</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CVSS 3.x</td>
+      <td>0.0-10.0 (continuous score)</td>
+    </tr>
+    <tr>
+      <td>OSV</td>
+      <td>critical, high, moderate, low</td>
+    </tr>
+    <tr>
+      <td>NVD</td>
+      <td>CRITICAL, HIGH, MEDIUM, LOW</td>
+    </tr>
+    <tr>
+      <td>SARIF</td>
+      <td>error, warning, note, none</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Decision
 
 Map vulnerabilities to SARIF levels using this table:
 
-| OSV/NVD Severity | CVSS Score Range | SARIF Level | GitHub Display |
-|-----------------|------------------|-------------|----------------|
-| CRITICAL | 9.0 - 10.0 | error | Red, blocks merge (if configured) |
-| HIGH | 7.0 - 8.9 | error | Red, alerts required |
-| MEDIUM/MODERATE | 4.0 - 6.9 | warning | Yellow, review recommended |
-| LOW | 0.1 - 3.9 | note | Gray, informational |
-| NONE/INFO | 0.0 | none | Not displayed |
+<table>
+  <thead>
+    <tr>
+      <th>OSV/NVD Severity</th>
+      <th>CVSS Score Range</th>
+      <th>SARIF Level</th>
+      <th>GitHub Display</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>CRITICAL</td>
+      <td>9.0 - 10.0</td>
+      <td>error</td>
+      <td>Red, blocks merge (if configured)</td>
+    </tr>
+    <tr>
+      <td>HIGH</td>
+      <td>7.0 - 8.9</td>
+      <td>error</td>
+      <td>Red, alerts required</td>
+    </tr>
+    <tr>
+      <td>MEDIUM/MODERATE</td>
+      <td>4.0 - 6.9</td>
+      <td>warning</td>
+      <td>Yellow, review recommended</td>
+    </tr>
+    <tr>
+      <td>LOW</td>
+      <td>0.1 - 3.9</td>
+      <td>note</td>
+      <td>Gray, informational</td>
+    </tr>
+    <tr>
+      <td>NONE/INFO</td>
+      <td>0.0</td>
+      <td>none</td>
+      <td>Not displayed</td>
+    </tr>
+  </tbody>
+</table>
 
 ### Special Cases
 

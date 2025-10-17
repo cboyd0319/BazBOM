@@ -36,24 +36,78 @@ VEX (Vulnerability Exploitability eXchange) is a standard format for communicati
 
 ## VEX Status Types
 
-| Status | Meaning | Use When |
-|--------|---------|----------|
-| `not_affected` | Vulnerability does not impact this product | Vulnerable code path not used |
-| `affected` | Vulnerability impacts this product | Confirming scanner is correct |
-| `fixed` | Vulnerability was fixed in this version | Patched or upgraded |
-| `under_investigation` | Status unknown, investigating | Need time to analyze |
+<table>
+  <thead>
+    <tr>
+      <th>Status</th>
+      <th>Meaning</th>
+      <th>Use When</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>not_affected</code></td>
+      <td>Vulnerability does not impact this product</td>
+      <td>Vulnerable code path not used</td>
+    </tr>
+    <tr>
+      <td><code>affected</code></td>
+      <td>Vulnerability impacts this product</td>
+      <td>Confirming scanner is correct</td>
+    </tr>
+    <tr>
+      <td><code>fixed</code></td>
+      <td>Vulnerability was fixed in this version</td>
+      <td>Patched or upgraded</td>
+    </tr>
+    <tr>
+      <td><code>under_investigation</code></td>
+      <td>Status unknown, investigating</td>
+      <td>Need time to analyze</td>
+    </tr>
+  </tbody>
+</table>
 
 ## VEX Justification Types
 
 For `not_affected` status, provide a justification:
 
-| Justification | Description | Example |
-|---------------|-------------|---------|
-| `component_not_present` | Vulnerable component not included | Compile-time only dependency |
-| `vulnerable_code_not_present` | Vulnerable code removed | Stripped down build |
-| `vulnerable_code_not_in_execute_path` | Code exists but never called | Dead code, test-only path |
-| `vulnerable_code_cannot_be_controlled_by_adversary` | Input sanitized | Validated before reaching vuln |
-| `inline_mitigations_already_exist` | Mitigated via other controls | WAF, network segmentation |
+<table>
+  <thead>
+    <tr>
+      <th>Justification</th>
+      <th>Description</th>
+      <th>Example</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>component_not_present</code></td>
+      <td>Vulnerable component not included</td>
+      <td>Compile-time only dependency</td>
+    </tr>
+    <tr>
+      <td><code>vulnerable_code_not_present</code></td>
+      <td>Vulnerable code removed</td>
+      <td>Stripped down build</td>
+    </tr>
+    <tr>
+      <td><code>vulnerable_code_not_in_execute_path</code></td>
+      <td>Code exists but never called</td>
+      <td>Dead code, test-only path</td>
+    </tr>
+    <tr>
+      <td><code>vulnerable_code_cannot_be_controlled_by_adversary</code></td>
+      <td>Input sanitized</td>
+      <td>Validated before reaching vuln</td>
+    </tr>
+    <tr>
+      <td><code>inline_mitigations_already_exist</code></td>
+      <td>Mitigated via other controls</td>
+      <td>WAF, network segmentation</td>
+    </tr>
+  </tbody>
+</table>
 
 ## VEX Document Structure (CSAF 2.0)
 

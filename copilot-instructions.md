@@ -304,16 +304,409 @@ permissions:
 
 ## Working with GitHub Copilot
 
-When suggesting code or documentation changes:
+### Mandatory Requirements for ALL Suggestions
 
-1. **Understand context:** Review related files in `tools/supplychain/` and `docs/`
-2. **Follow patterns:** Match existing code style and structure
-3. **Include tests:** Add unit tests in `tools/supplychain/tests/`
-4. **Update docs:** Update relevant docs in `docs/` for any feature changes
-5. **Validate outputs:** Ensure generated SBOMs/SARIF are schema-compliant
-6. **Consider scale:** Design for large monorepos (1000+ targets, 1000+ deps)
-7. **Security first:** Always consider supply chain security implications
-8. **Examples:** Provide runnable examples in `examples/` directory
+GitHub Copilot must meet these **non-negotiable** standards. Incomplete or low-quality suggestions will be rejected.
+
+#### 1. Context Awareness (REQUIRED)
+- **Read before suggesting:** Review ALL related files in `tools/supplychain/`, `docs/`, and test directories
+- **Understand dependencies:** Check how the code interacts with Bazel aspects, lockfiles, and external tools
+- **Check existing patterns:** Match the repository's existing code style, structure, and conventions
+- **Review recent changes:** Look at git history to understand recent design decisions
+- **NO assumptions:** If you don't have context, ask clarifying questions instead of guessing
+
+#### 2. Error Handling (MANDATORY)
+Every code suggestion MUST include:
+- **Explicit error handling** for ALL failure modes (file I/O, network, parsing, validation)
+- **Meaningful error messages** with actionable guidance (not "Error occurred")
+- **Exit codes** that distinguish error types (0=success, 1=user error, 2=system error)
+- **Validation** of ALL inputs (file paths, JSON structure, schema compliance)
+- **Graceful degradation** where possible (e.g., offline mode fallback)
+- **Error context:** Include file paths, line numbers, and relevant data in error messages
+
+**Example of UNACCEPTABLE error handling:**
+```python
+def parse_json(file_path):
+    with open(file_path) as f:
+        return json.load(f)  # ❌ No error handling
+```
+
+**Example of REQUIRED error handling:**
+```python
+def parse_json(file_path: str) -> dict:
+    """Parse JSON file with comprehensive error handling."""
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"JSON file not found: {file_path}")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in {file_path} at line {e.lineno}: {e.msg}")
+    except PermissionError:
+        raise PermissionError(f"Cannot read {file_path}: permission denied")
+    except Exception as e:
+        raise RuntimeError(f"Failed to parse {file_path}: {str(e)}")
+
+    return data
+```
+
+#### 3. Testing (NON-NEGOTIABLE)
+ALL code changes require:
+- **Unit tests** in `tools/supplychain/tests/` covering:
+  - Happy path (expected inputs, expected outputs)
+  - Edge cases (empty inputs, maximum size inputs, special characters)
+  - Error conditions (invalid inputs, missing files, malformed data)
+  - Boundary conditions (single item, thousands of items)
+- **Integration tests** for multi-component features
+- **Performance tests** for operations on large datasets (1000+ items)
+- **Test data fixtures** in `tools/supplychain/tests/fixtures/`
+- **Minimum 80% code coverage** for new code
+- **All tests must pass** before suggesting the code
+
+**Example test structure:**
+```python
+class TestPURLGenerator(unittest.TestCase):
+    def test_maven_coordinates_to_purl_happy_path(self):
+        """Test standard Maven coordinates."""
+        purl = maven_to_purl("com.google.guava", "guava", "31.1-jre")
+        self.assertEqual(purl, "pkg:maven/com.google.guava/guava@31.1-jre")
+
+    def test_maven_coordinates_invalid_group_id(self):
+        """Test rejection of invalid group ID."""
+        with self.assertRaises(ValueError) as ctx:
+            maven_to_purl("", "guava", "31.1-jre")
+        self.assertIn("group_id", str(ctx.exception))
+
+    def test_maven_coordinates_special_characters(self):
+        """Test handling of special characters in coordinates."""
+        # Test with dots, hyphens, underscores
+        purl = maven_to_purl("org.springframework.boot", "spring-boot_2.13", "3.0.0-RC1")
+        self.assertTrue(purl.startswith("pkg:maven/"))
+```
+
+#### 4. Documentation (MANDATORY FOR ALL CHANGES)
+- **Update ALL affected docs** in `docs/` - no exceptions
+- **NEVER create new documentation files** - update existing docs in `docs/` instead
+- **ALL documentation MUST live in `docs/` directory** - no scattered markdown files
+- **Update existing docs, don't proliferate:** Add sections to existing files rather than creating new ones
+- **Allowed new docs:** Only ADRs in `docs/ADR/` following the ADR-NNNN-title.md naming convention
+- **Code comments:** Explain WHY, not WHAT (code explains what)
+- **Docstrings:** Required for all public functions, classes, and modules
+- **Examples:** Provide copy-paste ready examples with expected outputs
+- **Architecture diagrams:** Update Mermaid diagrams if data flow changes
+- **Troubleshooting:** Add common errors to `docs/TROUBLESHOOTING.md` (don't create separate troubleshooting docs)
+- **CHANGELOG:** Update with user-facing changes
+
+**Documentation location rules:**
+- ✅ Update `docs/USAGE.md` with new commands
+- ✅ Update `docs/ARCHITECTURE.md` with design changes
+- ✅ Add to `docs/TROUBLESHOOTING.md` for error solutions
+- ✅ Create `docs/ADR/ADR-NNNN-topic.md` for architectural decisions
+- ❌ DON'T create `NEW_FEATURE.md` in repo root
+- ❌ DON'T create scattered docs outside `docs/`
+- ❌ DON'T create a new doc for every task or feature
+
+**Unacceptable documentation:**
+```python
+def process(data):
+    # Process the data
+    result = transform(data)  # ❌ Useless comment
+    return result
+```
+
+**Required documentation:**
+```python
+def process_sbom_dependencies(sbom_data: dict) -> list[Dependency]:
+    """Extract and normalize dependency information from SPDX SBOM.
+
+    Handles SPDX 2.3 format with Relationships section. Resolves
+    transitive dependencies via DEPENDS_ON relationships and deduplicates
+    by PURL.
+
+    Args:
+        sbom_data: Parsed SPDX 2.3 JSON document with packages and relationships
+
+    Returns:
+        List of Dependency objects with normalized PURLs, licenses, and hashes
+
+    Raises:
+        ValueError: If SBOM is missing required fields (packages, relationships)
+        SchemaError: If SBOM doesn't conform to SPDX 2.3 schema
+
+    Example:
+        >>> with open('app.spdx.json') as f:
+        ...     sbom = json.load(f)
+        >>> deps = process_sbom_dependencies(sbom)
+        >>> len(deps)
+        42
+        >>> deps[0].purl
+        'pkg:maven/com.google.guava/guava@31.1-jre'
+    """
+    if not sbom_data.get('packages'):
+        raise ValueError("SBOM missing required 'packages' field")
+    # ... implementation with clear logic
+```
+
+#### 5. Schema Validation (ALWAYS REQUIRED)
+- **Validate ALL inputs** against schemas (SPDX 2.3, SARIF 2.1.0, SLSA v1.0)
+- **Validate ALL outputs** before writing to disk
+- **Use official schemas:** Load from `tools/supplychain/sbom_schemas/`
+- **Fail fast:** Reject invalid data immediately with clear error messages
+- **Include validation in tests:** Test both valid and invalid schema cases
+
+#### 6. Performance & Scale (DESIGN REQUIREMENT)
+Design ALL code to handle:
+- **5000+ Bazel targets** in a single workspace
+- **2000+ unique dependencies** with complex transitive graphs
+- **100MB+ JSON files** (large SBOMs, dependency graphs)
+- **Parallel processing:** Use thread pools or multiprocessing where appropriate
+- **Memory efficiency:** Stream large files, don't load entire datasets into memory
+- **Incremental processing:** Support partial updates, don't regenerate everything
+- **Caching:** Cache expensive operations (JAR metadata extraction, HTTP requests)
+
+**Performance requirements:**
+- File I/O: Stream files > 10MB
+- HTTP requests: Batch requests, max 100 items per batch
+- JSON parsing: Use `ijson` for files > 50MB
+- Deduplication: Use hash-based lookups, not linear scans
+
+#### 7. Security Requirements (CRITICAL)
+- **Input validation:** Sanitize ALL user inputs and external data
+- **Path traversal prevention:** Validate all file paths, reject `..` and absolute paths outside workspace
+- **Secrets detection:** Never log or print sensitive data (tokens, keys, credentials)
+- **Dependency pinning:** All external tools must have SHA256 hashes
+- **SLSA compliance:** Follow SLSA Level 3 requirements for provenance
+- **VEX statements:** Document and track all false positives
+- **Fail secure:** Default to denying access, not granting it
+
+#### 8. Code Quality Standards (ENFORCED)
+- **Type hints:** Required for ALL function signatures (Python)
+- **Null safety:** Handle None/null cases explicitly
+- **Immutability:** Prefer immutable data structures
+- **Single responsibility:** One function = one purpose
+- **DRY principle:** No copy-paste code, extract shared logic
+- **Naming:** Use descriptive names, no abbreviations (except well-known: SBOM, PURL, SARIF)
+- **Line length:** Max 100 characters
+- **Complexity:** Max cyclomatic complexity of 10 per function
+
+#### 9. Edge Cases & Boundary Conditions (MUST HANDLE)
+Code must handle:
+- **Empty inputs:** Empty files, empty arrays, empty strings
+- **Maximum inputs:** Thousands of items, huge files
+- **Malformed data:** Invalid JSON, missing required fields, wrong types
+- **Unicode:** Non-ASCII characters, emojis, RTL text
+- **Special characters:** Quotes, backslashes, newlines in strings
+- **Concurrency:** Race conditions, file locking
+- **Network failures:** Timeouts, connection errors, partial responses
+- **Disk space:** Handle out-of-disk gracefully
+- **Permissions:** Handle read-only filesystems
+
+#### 10. Bazel Integration (STRICT)
+- **Hermetic builds:** No network access except declared `http_archive`
+- **Deterministic outputs:** Same inputs = same outputs (byte-for-byte)
+- **Stable JSON:** Sort keys, use consistent formatting
+- **Aspect best practices:** Don't traverse test dependencies unless explicitly enabled
+- **Output paths:** Write to `bazel-bin/`, never to source tree
+- **Action caching:** Ensure actions are cacheable (no timestamps in outputs)
+- **Remote cache friendly:** Support Bazel remote execution and caching
+
+### Quality Checklist (EVERY SUGGESTION)
+
+Before suggesting ANY code, verify:
+
+- [ ] I have read all related files in the repository
+- [ ] Error handling covers all failure modes
+- [ ] Tests cover happy path, edge cases, and error conditions
+- [ ] Documentation is updated (code comments, docstrings, markdown docs)
+- [ ] Schema validation is implemented for inputs and outputs
+- [ ] Code handles large-scale inputs (1000+ items)
+- [ ] Security best practices are followed
+- [ ] Type hints are present and correct
+- [ ] Code follows repository style and conventions
+- [ ] Examples are runnable and produce expected output
+- [ ] Performance implications are considered
+- [ ] Integration with Bazel is hermetic and cacheable
+
+### What NOT to Suggest
+
+- **Half-implemented features:** Don't suggest partial solutions
+- **TODO comments:** Complete the implementation or don't suggest it
+- **Placeholder error messages:** Every error must be specific and actionable
+- **Untested code:** All code must have corresponding tests
+- **Breaking changes without migration:** Provide backward compatibility or migration guide
+- **Magic numbers:** Use named constants
+- **Silent failures:** All errors must be reported
+- **Copy-paste code:** Extract shared logic into functions
+- **Undocumented public APIs:** All public functions need docstrings
+- **New documentation files:** Don't create new docs - update existing ones in `docs/`
+
+## Common Anti-Patterns (DO NOT DO THESE)
+
+### ❌ Anti-Pattern 1: Vague Error Messages
+```python
+# BAD
+raise Exception("Error")
+raise ValueError("Invalid input")
+raise RuntimeError("Something went wrong")
+
+# GOOD
+raise FileNotFoundError(f"SBOM file not found at {sbom_path}. Expected SPDX 2.3 JSON file.")
+raise ValueError(f"Invalid PURL format: '{purl}'. Expected 'pkg:maven/group/artifact@version'")
+raise SchemaValidationError(f"SBOM failed validation at field 'packages[3].licenseConcluded': {details}")
+```
+
+### ❌ Anti-Pattern 2: Missing Input Validation
+```python
+# BAD
+def process_deps(deps):
+    for dep in deps:
+        print(dep['purl'])  # Assumes 'purl' key exists
+
+# GOOD
+def process_deps(deps: list[dict]) -> None:
+    if not isinstance(deps, list):
+        raise TypeError(f"Expected list of dependencies, got {type(deps)}")
+
+    for i, dep in enumerate(deps):
+        if not isinstance(dep, dict):
+            raise TypeError(f"Dependency {i} is not a dict: {type(dep)}")
+        if 'purl' not in dep:
+            raise KeyError(f"Dependency {i} missing required 'purl' field")
+
+        purl = dep['purl']
+        if not purl.startswith('pkg:'):
+            raise ValueError(f"Invalid PURL format at index {i}: '{purl}'")
+
+        print(purl)
+```
+
+### ❌ Anti-Pattern 3: No Tests
+```python
+# BAD: Suggesting code without tests
+
+# GOOD: Every code suggestion includes corresponding tests
+def test_process_deps_empty_list(self):
+    """Test that empty dependency list is handled."""
+    process_deps([])  # Should not raise
+
+def test_process_deps_missing_purl_key(self):
+    """Test error handling for missing PURL."""
+    with self.assertRaises(KeyError) as ctx:
+        process_deps([{'name': 'foo'}])
+    self.assertIn('purl', str(ctx.exception))
+```
+
+### ❌ Anti-Pattern 4: Ignoring Scale
+```python
+# BAD: Loads entire 100MB SBOM into memory
+with open('sbom.json') as f:
+    sbom = json.load(f)
+    for package in sbom['packages']:  # Could be 10,000+ packages
+        process(package)
+
+# GOOD: Streams large files
+import ijson
+
+with open('sbom.json', 'rb') as f:
+    packages = ijson.items(f, 'packages.item')
+    for package in packages:
+        process(package)  # Processes one at a time
+```
+
+### ❌ Anti-Pattern 5: Creating Scattered Documentation
+```python
+# BAD: Creating new docs everywhere
+# - Creates: NEW_FEATURE.md in root
+# - Creates: tools/supplychain/TOOL_GUIDE.md
+# - Creates: HOW_TO_USE_VEX.md in root
+
+# GOOD: Update existing structured docs
+# - Updates: docs/USAGE.md (add commands section)
+# - Updates: docs/VEX.md (add usage examples)
+# - Updates: docs/ARCHITECTURE.md (add design notes)
+# - Creates: docs/ADR/ADR-0008-new-decision.md (only for architectural decisions)
+```
+
+### ❌ Anti-Pattern 6: No Error Context
+```python
+# BAD
+try:
+    result = parse_sbom(file_path)
+except Exception:
+    print("Failed to parse SBOM")
+    sys.exit(1)
+
+# GOOD
+try:
+    result = parse_sbom(file_path)
+except json.JSONDecodeError as e:
+    print(f"ERROR: Invalid JSON in {file_path}")
+    print(f"  Line {e.lineno}, column {e.colno}: {e.msg}")
+    print(f"  Ensure file is valid SPDX 2.3 JSON format")
+    sys.exit(2)
+except SchemaValidationError as e:
+    print(f"ERROR: SBOM schema validation failed for {file_path}")
+    print(f"  {e.details}")
+    print(f"  See docs/VALIDATION.md for schema requirements")
+    sys.exit(2)
+except FileNotFoundError:
+    print(f"ERROR: SBOM file not found: {file_path}")
+    print(f"  Run 'bazel build //:sbom_all' to generate SBOMs")
+    sys.exit(1)
+```
+
+### ❌ Anti-Pattern 7: Untested Edge Cases
+```python
+# BAD: Only tests happy path
+def test_maven_to_purl(self):
+    purl = maven_to_purl("com.google.guava", "guava", "31.1-jre")
+    self.assertEqual(purl, "pkg:maven/com.google.guava/guava@31.1-jre")
+
+# GOOD: Tests edge cases and error conditions
+def test_maven_to_purl_happy_path(self):
+    purl = maven_to_purl("com.google.guava", "guava", "31.1-jre")
+    self.assertEqual(purl, "pkg:maven/com.google.guava/guava@31.1-jre")
+
+def test_maven_to_purl_empty_group_id(self):
+    with self.assertRaises(ValueError):
+        maven_to_purl("", "guava", "31.1-jre")
+
+def test_maven_to_purl_empty_artifact_id(self):
+    with self.assertRaises(ValueError):
+        maven_to_purl("com.google.guava", "", "31.1-jre")
+
+def test_maven_to_purl_empty_version(self):
+    with self.assertRaises(ValueError):
+        maven_to_purl("com.google.guava", "guava", "")
+
+def test_maven_to_purl_special_characters(self):
+    purl = maven_to_purl("org.spring-framework.boot", "app_name", "1.0.0-SNAPSHOT")
+    self.assertTrue(purl.startswith("pkg:maven/"))
+
+def test_maven_to_purl_unicode_characters(self):
+    # Ensure Unicode is properly encoded
+    purl = maven_to_purl("com.example", "café", "1.0.0")
+    self.assertIn("caf", purl)  # Should be URL-encoded
+```
+
+## Copilot Performance Expectations
+
+GitHub Copilot suggestions will be evaluated on:
+
+1. **Correctness:** Code must work as intended with NO bugs
+2. **Completeness:** Includes error handling, tests, and documentation
+3. **Quality:** Follows all coding standards and best practices
+4. **Security:** No vulnerabilities or insecure patterns
+5. **Performance:** Handles scale requirements (5000+ targets, 2000+ deps)
+6. **Maintainability:** Clear, well-documented, follows existing patterns
+
+**Grading criteria:**
+- ✅ **Excellent:** Meets all requirements, comprehensive tests, clear docs
+- ⚠️ **Acceptable:** Meets most requirements, minor gaps in tests or docs
+- ❌ **Unacceptable:** Missing error handling, no tests, vague errors, or scattered docs
+
+Anything below "Acceptable" will be **rejected immediately**.
 
 ## Quick Reference
 

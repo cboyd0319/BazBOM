@@ -39,12 +39,37 @@ This enables:
 
 BazBOM targets **SLSA Level 3**:
 
-| Level | Requirements | BazBOM Status |
-|-------|-------------|---------------|
-| SLSA 1 | Provenance exists | ✅ Implemented |
-| SLSA 2 | Signed provenance | ✅ Implemented (Sigstore) |
-| SLSA 3 | Hardened build platform | ✅ GitHub-hosted runners |
-| SLSA 4 | Two-party review | 🚧 Optional (via CODEOWNERS) |
+<table>
+  <thead>
+    <tr>
+      <th>Level</th>
+      <th>Requirements</th>
+      <th>BazBOM Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>SLSA 1</td>
+      <td>Provenance exists</td>
+      <td>✅ Implemented</td>
+    </tr>
+    <tr>
+      <td>SLSA 2</td>
+      <td>Signed provenance</td>
+      <td>✅ Implemented (Sigstore)</td>
+    </tr>
+    <tr>
+      <td>SLSA 3</td>
+      <td>Hardened build platform</td>
+      <td>✅ GitHub-hosted runners</td>
+    </tr>
+    <tr>
+      <td>SLSA 4</td>
+      <td>Two-party review</td>
+      <td>🚧 Optional (via CODEOWNERS)</td>
+    </tr>
+  </tbody>
+</table>
 
 ## Provenance Schema (SLSA v1.0)
 
