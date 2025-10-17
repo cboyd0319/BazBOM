@@ -1,0 +1,16 @@
+graph TD
+    A[Bazel Build] -->|Aspect Traversal| B[Dependency Discovery]
+    B --> C[SBOM Generator]
+    C --> D[SPDX JSON Files]
+    D --> E[SCA Engine]
+    E -->|OSV Query| F[Vulnerability Database]
+    F --> G[SARIF Reports]
+    G --> H[GitHub Code Scanning]
+    
+    C --> I[SBOM Validator]
+    E --> J[SARIF Validator]
+    
+    style A fill:#e1f5ff
+    style D fill:#ffe1e1
+    style G fill:#ffe1e1
+    style H fill:#e1ffe1

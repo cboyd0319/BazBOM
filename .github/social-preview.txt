@@ -1,0 +1,9 @@
+BazBOM - Bazel SBOM & SCA
+
+This is a placeholder for the repository social preview image.
+To create an actual image:
+1. Design a 1280x640px image with project branding
+2. Include the project name and tagline
+3. Use project colors and logo
+4. Save as social-preview.png
+5. Upload via GitHub repository settings > Social Preview
