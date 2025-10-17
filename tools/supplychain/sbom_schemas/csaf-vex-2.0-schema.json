@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-vex-schema.json",
+  "title": "CSAF VEX 2.0 (Simplified)",
+  "description": "Simplified schema for CSAF VEX (Vulnerability Exploitability eXchange) statements",
+  "type": "object",
+  "required": ["document", "vulnerabilities"],
+  "properties": {
+    "document": {
+      "type": "object",
+      "required": ["category", "csaf_version", "publisher", "title", "tracking"],
+      "properties": {
+        "category": {
+          "type": "string",
+          "description": "Document category"
+        },
+        "csaf_version": {
+          "type": "string",
+          "pattern": "^2\\.0$",
+          "description": "CSAF version"
+        },
+        "publisher": {
+          "type": "object",
+          "required": ["category", "name", "namespace"],
+          "properties": {
+            "category": {
+              "type": "string",
+              "enum": ["vendor", "coordinator", "discoverer", "user", "other"]
+            },
+            "name": { "type": "string" },
+            "namespace": { "type": "string", "format": "uri" }
+          }
+        },
+        "title": {
+          "type": "string",
+          "description": "Document title"
+        },
+        "tracking": {
+          "type": "object",
+          "required": ["current_release_date", "id", "initial_release_date", "revision_history", "status", "version"],
+          "properties": {
+            "current_release_date": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "id": {
+              "type": "string"
+            },
+            "initial_release_date": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "revision_history": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["date", "number", "summary"],
+                "properties": {
+                  "date": { "type": "string", "format": "date-time" },
+                  "number": { "type": "string" },
+                  "summary": { "type": "string" }
+                }
+              }
+            },
+            "status": {
+              "type": "string",
+              "enum": ["draft", "final", "interim"]
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "product_tree": {
+      "type": "object",
+      "description": "Product identification"
+    },
+    "vulnerabilities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "cve": {
+            "type": "string",
+            "pattern": "^CVE-[0-9]{4}-[0-9]{4,}$"
+          },
+          "product_status": {
+            "type": "object",
+            "properties": {
+              "known_affected": { "type": "array", "items": { "type": "string" } },
+              "known_not_affected": { "type": "array", "items": { "type": "string" } },
+              "fixed": { "type": "array", "items": { "type": "string" } },
+              "under_investigation": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "threats": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["category"],
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "enum": ["exploit_status", "impact", "target_set"]
+                },
+                "details": { "type": "string" }
+              }
+            }
+          },
+          "title": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
