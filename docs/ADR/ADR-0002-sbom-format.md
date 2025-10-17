@@ -156,18 +156,36 @@ SPDX 3.0 is in development with:
 
 ### Multi-Format Support
 
-Consider generating both SPDX and CycloneDX:
+**UPDATE (2025-10-17)**: Multi-format support has been implemented.
 
-```python
-# tools/supplychain/write_sbom.py
-def write_sbom(data, format="spdx"):
-    if format == "spdx":
-        return write_spdx_23(data)
-    elif format == "cyclonedx":
-        return write_cyclonedx_14(data)
+BazBOM now generates both SPDX and CycloneDX formats:
+
+```bash
+# Generate SPDX 2.3 (primary format)
+bazel build //:workspace_sbom
+
+# Generate CycloneDX 1.5 (optional format)
+bazel build //:workspace_sbom_cyclonedx
+
+# Generate both formats
+bazel build //:sbom_all_formats
 ```
 
-**Decision**: Defer until user demand; SPDX meets current needs.
+Implementation in `tools/supplychain/write_sbom.py`:
+
+```python
+def write_sbom(data, format="spdx"):
+    if format == "spdx":
+        return generate_spdx_document(data)
+    elif format == "cyclonedx":
+        return generate_cyclonedx_document(data)
+```
+
+**Rationale for dual format support:**
+- SPDX remains primary for legal compliance and regulatory requirements
+- CycloneDX provided as optional format for security-focused tools
+- Zero overhead when CycloneDX not needed (opt-in via target)
+- Maintains single source of truth (dependency data) for both formats
 
 ### Format Conversion
 

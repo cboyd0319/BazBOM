@@ -47,6 +47,15 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_policy_check",
+    srcs = [
+        "test_policy_check.py",
+        "//tools/supplychain:policy_check.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",
