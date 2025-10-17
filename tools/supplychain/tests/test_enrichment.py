@@ -12,6 +12,12 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Import requests for exception testing
+try:
+    import requests
+except ImportError:
+    requests = None
+
 from kev_enrichment import KEVEnricher
 from epss_enrichment import EPSSEnricher
 from ghsa_enrichment import GHSAEnricher
@@ -562,6 +568,331 @@ class TestVulnerabilityEnricher(unittest.TestCase):
         """Test error handling for invalid findings type."""
         with self.assertRaises(TypeError):
             self.enricher.enrich_all("not a list")
+
+
+class TestKEVEnricherAdvanced(unittest.TestCase):
+    """Advanced test cases for KEV enrichment."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = KEVEnricher(cache_dir=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_with_cache(self, mock_get):
+        """Test KEV catalog fetch uses cache when fresh."""
+        # First fetch (should call API)
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "vulnerabilities": [{"cveID": "CVE-2021-44228"}]
+        }
+        mock_get.return_value = mock_response
+        
+        catalog1 = self.enricher.fetch_kev_catalog()
+        self.assertEqual(mock_get.call_count, 1)
+        
+        # Second fetch (should use cache, no new API call)
+        catalog2 = self.enricher.fetch_kev_catalog()
+        self.assertEqual(mock_get.call_count, 1)  # Still 1, no new call
+        self.assertEqual(catalog1, catalog2)
+
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_network_error_with_stale_cache(self, mock_get):
+        """Test KEV fetch falls back to stale cache on network error."""
+        # Create stale cache
+        cache_file = Path(self.temp_dir) / "kev_catalog.json"
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_file, 'w') as f:
+            json.dump({"vulnerabilities": [{"cveID": "CVE-OLD"}]}, f)
+        
+        # Make the cache file old (set mtime to 48 hours ago)
+        import time
+        old_time = time.time() - (48 * 3600)
+        os.utime(cache_file, (old_time, old_time))
+        
+        # Network error
+        mock_get.side_effect = requests.RequestException("Network error")
+        
+        # Should return stale cache
+        catalog = self.enricher.fetch_kev_catalog()
+        self.assertEqual(catalog["vulnerabilities"][0]["cveID"], "CVE-OLD")
+
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_invalid_json(self, mock_get):
+        """Test KEV fetch handles invalid JSON response."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.side_effect = json.JSONDecodeError("Invalid JSON", "", 0)
+        mock_get.return_value = mock_response
+        
+        with self.assertRaises(json.JSONDecodeError):
+            self.enricher.fetch_kev_catalog()
+
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_missing_vulnerabilities_field(self, mock_get):
+        """Test KEV fetch validates response structure."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"invalid": "structure"}
+        mock_get.return_value = mock_response
+        
+        with self.assertRaises(ValueError) as ctx:
+            self.enricher.fetch_kev_catalog()
+        self.assertIn("vulnerabilities", str(ctx.exception))
+
+
+class TestEPSSEnricherAdvanced(unittest.TestCase):
+    """Advanced test cases for EPSS enrichment."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.temp_dir = tempfile.mkdtemp()
+        self.enricher = EPSSEnricher(cache_dir=self.temp_dir)
+
+    def tearDown(self):
+        """Clean up test fixtures."""
+        import shutil
+        if os.path.exists(self.temp_dir):
+            shutil.rmtree(self.temp_dir)
+
+    @patch('epss_enrichment.requests.get')
+    def test_fetch_epss_with_cache(self, mock_get):
+        """Test EPSS fetch uses cache for previously fetched CVEs."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "cve": "CVE-2021-44228",
+                "epss": "0.97538",
+                "percentile": "0.99999",
+                "date": "2025-01-17"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        # First fetch
+        scores1 = self.enricher.fetch_epss_scores(["CVE-2021-44228"])
+        self.assertEqual(mock_get.call_count, 1)
+        
+        # Second fetch (should use cache)
+        scores2 = self.enricher.fetch_epss_scores(["CVE-2021-44228"])
+        self.assertEqual(mock_get.call_count, 1)  # No new API call
+        self.assertEqual(scores1, scores2)
+
+    @patch('epss_enrichment.requests.get')
+    def test_fetch_epss_network_error(self, mock_get):
+        """Test EPSS fetch handles network errors gracefully."""
+        mock_get.side_effect = requests.RequestException("Network error")
+        
+        # Should return empty scores with error info
+        scores = self.enricher.fetch_epss_scores(["CVE-2021-44228"])
+        self.assertIn("CVE-2021-44228", scores)
+        self.assertEqual(scores["CVE-2021-44228"]["epss_score"], 0.0)
+        self.assertIn("error", scores["CVE-2021-44228"])
+
+    @patch('epss_enrichment.requests.get')
+    def test_fetch_epss_invalid_score(self, mock_get):
+        """Test EPSS fetch handles invalid score values."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "cve": "CVE-2021-44228",
+                "epss": "invalid",
+                "percentile": "not_a_number",
+                "date": "2025-01-17"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        scores = self.enricher.fetch_epss_scores(["CVE-2021-44228"])
+        # Should handle gracefully and not include invalid CVE
+        self.assertTrue(len(scores) == 0 or scores["CVE-2021-44228"]["epss_score"] == 0.0)
+
+    @patch('epss_enrichment.requests.get')
+    def test_enrich_findings_with_api_error(self, mock_get):
+        """Test enrich_findings continues with error."""
+        mock_get.side_effect = Exception("API error")
+        
+        findings = [{"cve": "CVE-2021-44228", "cvss_score": 10.0}]
+        enriched = self.enricher.enrich_findings(findings)
+        
+        # Should return findings without EPSS data
+        self.assertEqual(len(enriched), 1)
+        self.assertNotIn("epss", enriched[0])
+
+    def test_enrich_finding_single(self):
+        """Test enrich_finding method for single finding."""
+        self.enricher._cache = {
+            "CVE-2021-44228": {
+                "epss_score": 0.97,
+                "epss_percentile": 0.99,
+                "date": "2025-01-17"
+            }
+        }
+        self.enricher._cache_loaded = True
+        
+        finding = {"cve": "CVE-2021-44228", "cvss_score": 10.0}
+        enriched = self.enricher.enrich_finding(finding)
+        
+        self.assertIn("epss", enriched)
+        self.assertEqual(enriched["epss"]["epss_score"], 0.97)
+
+
+class TestGHSAEnricherAdvanced(unittest.TestCase):
+    """Advanced test cases for GHSA enrichment."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.enricher = GHSAEnricher()
+
+    @patch('ghsa_enrichment.requests.post')
+    def test_query_advisory_network_error(self, mock_post):
+        """Test GHSA query handles network errors."""
+        mock_post.side_effect = requests.RequestException("Network error")
+        
+        result = self.enricher.query_advisory("CVE-2021-44228")
+        # Should return empty result with error field
+        self.assertEqual(result["ghsa_id"], "")
+        self.assertEqual(result["summary"], "")
+        self.assertIn("error", result)
+
+    @patch('ghsa_enrichment.requests.post')
+    def test_query_advisory_invalid_response(self, mock_post):
+        """Test GHSA query handles malformed responses."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"invalid": "structure"}
+        mock_post.return_value = mock_response
+        
+        result = self.enricher.query_advisory("CVE-2021-44228")
+        # Should return empty result when no advisory found
+        self.assertEqual(result["ghsa_id"], "")
+        self.assertEqual(result["summary"], "")
+        self.assertEqual(result["vulnerabilities"], [])
+
+
+class TestVulnCheckEnricherAdvanced(unittest.TestCase):
+    """Advanced test cases for VulnCheck enrichment."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.enricher = VulnCheckEnricher(api_key="test_key")
+
+    @patch('vulncheck_enrichment.requests.get')
+    def test_get_exploit_status_success(self, mock_get):
+        """Test VulnCheck exploit status fetch success."""
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "data": [{
+                "exploit_available": True,
+                "exploit_maturity": "functional",
+                "weaponized": True,
+                "attack_vector": "network"
+            }]
+        }
+        mock_get.return_value = mock_response
+        
+        result = self.enricher.get_exploit_status("CVE-2021-44228")
+        
+        self.assertTrue(result["exploit_available"])
+        self.assertTrue(result["weaponized"])
+
+    @patch('vulncheck_enrichment.requests.get')
+    def test_get_exploit_status_network_error(self, mock_get):
+        """Test VulnCheck handles network errors."""
+        mock_get.side_effect = requests.RequestException("Network error")
+        
+        result = self.enricher.get_exploit_status("CVE-2021-44228")
+        self.assertEqual(result["exploit_available"], False)
+        self.assertIn("error", result)
+
+
+class TestVulnerabilityEnricherAdvanced(unittest.TestCase):
+    """Advanced test cases for vulnerability enrichment pipeline."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.enricher = VulnerabilityEnricher(
+            enable_vulncheck=False,
+            enable_ghsa=False
+        )
+
+    @patch('vulnerability_enrichment.EPSSEnricher.enrich_findings')
+    @patch('vulnerability_enrichment.KEVEnricher.enrich_finding')
+    def test_enrich_all_with_findings(self, mock_kev, mock_epss):
+        """Test full enrichment pipeline with actual findings."""
+        mock_epss.return_value = [
+            {
+                "cve": "CVE-2021-44228",
+                "cvss_score": 10.0,
+                "epss": {"epss_score": 0.97}
+            }
+        ]
+        
+        mock_kev.return_value = {
+            "cve": "CVE-2021-44228",
+            "cvss_score": 10.0,
+            "epss": {"epss_score": 0.97},
+            "kev": {"in_kev": True}
+        }
+        
+        findings = [{"cve": "CVE-2021-44228", "cvss_score": 10.0}]
+        enriched = self.enricher.enrich_all(findings)
+        
+        self.assertEqual(len(enriched), 1)
+        self.assertIn("risk_score", enriched[0])
+        self.assertIn("priority", enriched[0])
+
+    def test_calculate_risk_score_all_components(self):
+        """Test risk score calculation with all components."""
+        finding = {
+            "cvss_score": 10.0,
+            "epss": {"epss_score": 1.0},
+            "kev": {"in_kev": True},
+            "exploit": {"weaponized": True}
+        }
+        
+        score = self.enricher._calculate_risk_score(finding)
+        
+        # Max score: (10/10 * 40) + (1.0 * 30) + 20 + 10 = 100
+        self.assertEqual(score, 100.0)
+
+    def test_calculate_risk_score_no_exploit(self):
+        """Test risk score without exploit data."""
+        finding = {
+            "cvss_score": 5.0,
+            "epss": {"epss_score": 0.5},
+            "kev": {"in_kev": False},
+            "exploit": {"weaponized": False}
+        }
+        
+        score = self.enricher._calculate_risk_score(finding)
+        
+        # (5/10 * 40) + (0.5 * 30) + 0 + 0 = 20 + 15 = 35
+        self.assertEqual(score, 35.0)
+
+    def test_get_priority_summary_with_non_dict(self):
+        """Test priority summary handles non-dict items."""
+        findings = [
+            {"priority": "P0-IMMEDIATE"},
+            "invalid",
+            {"priority": "P1-CRITICAL"},
+            None
+        ]
+        
+        summary = self.enricher.get_priority_summary(findings)
+        
+        self.assertEqual(summary["P0-IMMEDIATE"], 1)
+        self.assertEqual(summary["P1-CRITICAL"], 1)
 
 
 if __name__ == "__main__":
