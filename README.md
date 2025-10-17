@@ -93,7 +93,10 @@ That's it. No configuration files, no manual dependency lists.
 **Vulnerability Scanning**
 - ✅ OSV (Open Source Vulnerabilities)
 - ✅ NVD (National Vulnerability Database)
+- ✅ **CISA KEV** (actively exploited CVEs)
+- ✅ **EPSS** (ML-based exploit probability)
 - ✅ GitHub Security Advisories (GHSA)
+- ✅ **Risk scoring & priority mapping (P0-P4)**
 - ✅ Offline mode (air-gapped environments)
 
 **GitHub Integration**

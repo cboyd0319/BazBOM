@@ -23,6 +23,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Advanced Features
 
+- **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
 - **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
 - **[VEX Statements](VEX.md)** - Managing false positives and accepted risks
