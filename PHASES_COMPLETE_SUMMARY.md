@@ -11,7 +11,7 @@ BazBOM has successfully implemented **7 major feature phases** (Phases 0-6), tra
 
 - ✅ **1,700+ lines** of new production code
 - ✅ **Comprehensive testing** with 26+ unit tests
-- ✅ **Complete documentation** updates
+- ✅ **Documentation updates** (USAGE.md, examples, CLIs)
 - ✅ **Full Bazel integration** with 9+ new targets
 - ✅ **Zero breaking changes** to existing functionality
 
@@ -123,7 +123,7 @@ BazBOM has successfully implemented **7 major feature phases** (Phases 0-6), tra
 
 **Status:** COMPLETE  
 **Effort:** 4 hours  
-**LOC:** ~2,100 (code + tests)
+**LOC:** ~1,700 (code + tests)
 
 **Deliverables:**
 - `sbom_diff.py` - SBOM comparison engine (632 lines)
@@ -326,7 +326,7 @@ bazel run //tools/supplychain:contribution_tracker -- report
 | Deliverable | Status |
 |-------------|--------|
 | USAGE.md updated | ✅ COMPLETE |
-| ARCHITECTURE.md updated | ⚠️ Partial (needs Phase 4 details) |
+| ARCHITECTURE.md updated | ⚠️ TODO (needs Phase 4 data flows) |
 | VULNERABILITY_ENRICHMENT.md | ✅ COMPLETE |
 | Code examples | ✅ COMPLETE |
 | CLI help messages | ✅ COMPLETE |
