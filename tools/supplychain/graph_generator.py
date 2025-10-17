@@ -27,33 +27,15 @@ def calculate_depths(packages: List[Dict[str, Any]]) -> Dict[str, int]:
     
     # Build adjacency map
     dependency_map = {}
-    coord_to_direct = {}
     
     for pkg in packages:
         coord = f"{pkg.get('group', '')}:{pkg.get('name', '')}"
         dependency_map[coord] = pkg.get("dependencies", [])
         
-        # Track if this is a direct dependency (has dependencies listed in lockfile)
-        is_direct = coord in dependency_map and len(dependency_map.get(coord, [])) > 0
-        coord_to_direct[coord] = is_direct or pkg.get("is_direct", False)
-        
-        # Initialize depth for packages that have dependencies (direct from root perspective)
-        if is_direct:
+        # Direct dependencies (from WORKSPACE/maven_install) start at depth 1
+        if pkg.get("is_direct", False):
             depths[coord] = 1
             queue.append((coord, 1))
-    
-    # Also add packages without dependencies at depth 1 if they appear as direct deps
-    for pkg in packages:
-        coord = f"{pkg.get('group', '')}:{pkg.get('name', '')}"
-        # If not yet assigned depth but is referenced as a dependency, it's at depth 2
-        if coord not in depths:
-            # Check if this is directly depended on by a depth-1 package
-            for other_coord, deps in dependency_map.items():
-                if coord in deps and other_coord in depths and depths[other_coord] == 1:
-                    if coord not in depths or depths[coord] > 2:
-                        depths[coord] = 2
-                        queue.append((coord, 2))
-                        break
     
     # BFS to calculate remaining depths
     visited = set()
@@ -374,7 +356,6 @@ def main():
             f.write(graphml)
         print(f"GraphML graph written to {args.output_graphml}")
     
-    print(f"Processed {len(packages)} packages")
     return 0
 
 
