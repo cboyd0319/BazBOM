@@ -44,22 +44,22 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
-# Generate dependency graph (JSON format)
+# Generate dependency graph (JSON format) from workspace_deps
 genrule(
     name = "dep_graph_json",
-    srcs = [":workspace_sbom"],
+    srcs = [":workspace_deps.json"],
     outs = ["dep_graph.json"],
-    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-json $@",
+    cmd = "$(location //tools/supplychain:graph_generator) --deps $< --output-json $@",
     tools = ["//tools/supplychain:graph_generator"],
     visibility = ["//visibility:public"],
 )
 
-# Generate dependency graph (GraphML format)
+# Generate dependency graph (GraphML format) from workspace_deps
 genrule(
     name = "dep_graph_graphml",
-    srcs = [":workspace_sbom"],
+    srcs = [":workspace_deps.json"],
     outs = ["dep_graph.graphml"],
-    cmd = "$(location //tools/supplychain:graph_generator) --sbom $< --output-graphml $@",
+    cmd = "$(location //tools/supplychain:graph_generator) --deps $< --output-graphml $@",
     tools = ["//tools/supplychain:graph_generator"],
     visibility = ["//visibility:public"],
 )

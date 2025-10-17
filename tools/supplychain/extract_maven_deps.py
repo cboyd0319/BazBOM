@@ -38,6 +38,9 @@ def extract_from_maven_install_json(lockfile_path):
     artifacts_dict = data.get("artifacts", {})
     dependencies_dict = data.get("dependencies", {})
     
+    # Packages in dependencies_dict are direct dependencies
+    direct_dependencies = set(dependencies_dict.keys())
+    
     # Process each artifact
     for coord, info in artifacts_dict.items():
         parts = coord.split(":")
@@ -53,6 +56,10 @@ def extract_from_maven_install_json(lockfile_path):
             # Get transitive dependencies
             transitive_deps = dependencies_dict.get(coord, [])
             
+            # A package is direct if it appears in the dependencies dict
+            # (meaning it has its own list of dependencies, even if empty)
+            is_direct = coord in direct_dependencies
+            
             artifact_info = {
                 "name": artifact,
                 "group": group,
@@ -63,7 +70,7 @@ def extract_from_maven_install_json(lockfile_path):
                 "url": f"https://repo1.maven.org/maven2/{group.replace('.', '/')}/{artifact}/{version}/{artifact}-{version}.jar",
                 "sha256": sha256,
                 "dependencies": transitive_deps,
-                "is_direct": coord in dependencies_dict  # Direct deps have their own dep lists
+                "is_direct": is_direct
             }
             
             artifacts.append(artifact_info)
