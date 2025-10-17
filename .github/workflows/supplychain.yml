@@ -1,0 +1,82 @@
+name: Supply Chain Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+permissions:
+  contents: read
+  security-events: write  # For SARIF upload
+
+jobs:
+  sbom-and-sca:
+    name: SBOM Generation and SCA
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install requests jsonschema
+      
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.8.1
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+      
+      - name: Generate SBOMs
+        run: |
+          # TODO: Implement SBOM generation
+          # bazel build //:sbom_all
+          echo "SBOM generation not yet implemented"
+      
+      - name: Run SCA
+        run: |
+          # TODO: Implement SCA scanning
+          # bazel run //:sca_from_sbom
+          echo "SCA scanning not yet implemented"
+      
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sboms
+          path: |
+            bazel-bin/**/*.spdx.json
+          if-no-files-found: warn
+      
+      - name: Upload SARIF reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sarif-reports
+          path: |
+            bazel-bin/**/*.sarif.json
+          if-no-files-found: warn
+      
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          sarif_file: bazel-bin/vulnerabilities.sarif.json
+        continue-on-error: true  # Don't fail if no SARIF file exists yet

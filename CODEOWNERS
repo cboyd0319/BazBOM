@@ -1,0 +1,9 @@
+# Default owners for everything in the repo
+* @cboyd0319
+
+# Critical supply chain tooling
+/tools/supplychain/ @cboyd0319
+/.github/workflows/ @cboyd0319
+
+# Documentation
+/docs/ @cboyd0319

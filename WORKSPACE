@@ -29,3 +29,15 @@ http_archive(
 load("@rules_python//python:repositories.bzl", "py_repositories")
 
 py_repositories()
+
+# Maven dependencies for examples
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    artifacts = [
+        "com.google.guava:guava:31.1-jre",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
