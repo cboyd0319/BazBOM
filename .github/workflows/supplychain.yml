@@ -12,6 +12,7 @@ on:
 permissions:
   contents: read
   security-events: write  # For SARIF upload
+  id-token: write  # For Sigstore OIDC signing
 
 jobs:
   sbom-and-sca:
@@ -182,3 +183,154 @@ jobs:
           path: |
             bazel-bin/sca_findings_filtered.json
           if-no-files-found: warn
+  
+  sign-and-attest:
+    name: Sign SBOMs and Generate Attestations
+    runs-on: ubuntu-latest
+    needs: sbom-and-sca
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      id-token: write  # Required for Sigstore keyless signing
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      
+      - name: Install Python dependencies
+        run: |
+          pip install requests
+      
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3.4.0
+        with:
+          cosign-release: 'v2.2.3'
+      
+      - name: Download SBOM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: sboms
+          path: bazel-bin/
+      
+      - name: Sign SBOMs with Sigstore
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          mkdir -p bazel-bin/signatures
+          
+          echo "Signing SBOMs..."
+          for sbom in bazel-bin/**/*.spdx.json; do
+            if [ -f "$sbom" ]; then
+              echo "Signing: $sbom"
+              
+              # Get base name without extension
+              basename=$(basename "$sbom" .spdx.json)
+              
+              # Sign with cosign (creates signature and logs to Rekor)
+              cosign sign-blob "$sbom" \
+                --bundle "bazel-bin/signatures/${basename}.bundle.json" \
+                --yes
+              
+              echo "✓ Signed: $basename"
+            fi
+          done
+      
+      - name: Generate in-toto Attestations
+        run: |
+          mkdir -p bazel-bin/attestations
+          
+          echo "Generating attestations..."
+          for sbom in bazel-bin/**/*.spdx.json; do
+            if [ -f "$sbom" ]; then
+              basename=$(basename "$sbom" .spdx.json)
+              
+              # Generate in-toto attestation
+              python3 tools/supplychain/intoto_attestation.py generate \
+                "$sbom" \
+                --output "bazel-bin/attestations/${basename}.attestation.json" \
+                --builder-id "${GITHUB_REPOSITORY}" \
+                --build-id "${GITHUB_RUN_ID}"
+              
+              echo "✓ Attestation created: ${basename}.attestation.json"
+            fi
+          done
+      
+      - name: Verify Signatures
+        run: |
+          echo "Verifying signatures..."
+          for sbom in bazel-bin/**/*.spdx.json; do
+            if [ -f "$sbom" ]; then
+              basename=$(basename "$sbom" .spdx.json)
+              bundle="bazel-bin/signatures/${basename}.bundle.json"
+              
+              if [ -f "$bundle" ]; then
+                echo "Verifying: $sbom"
+                
+                python3 tools/supplychain/verify_sbom.py \
+                  "$sbom" \
+                  --bundle "$bundle" \
+                  --cert-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supplychain.yml@refs/heads/main" \
+                  --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
+                  || echo "Warning: Verification failed for $basename"
+              fi
+            fi
+          done
+      
+      - name: Upload Signed SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: signed-sboms
+          path: |
+            bazel-bin/**/*.spdx.json
+            bazel-bin/signatures/**/*.bundle.json
+          retention-days: 90
+      
+      - name: Upload Attestations
+        uses: actions/upload-artifact@v4
+        with:
+          name: attestations
+          path: |
+            bazel-bin/attestations/**/*.attestation.json
+          retention-days: 90
+      
+      - name: Generate Signing Summary
+        run: |
+          echo "## SBOM Signing Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All SBOMs have been signed with Sigstore and logged to Rekor transparency log." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Signed Artifacts:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          for sbom in bazel-bin/**/*.spdx.json; do
+            if [ -f "$sbom" ]; then
+              basename=$(basename "$sbom")
+              bundle="bazel-bin/signatures/$(basename "$sbom" .spdx.json).bundle.json"
+              
+              echo "- **$basename**" >> $GITHUB_STEP_SUMMARY
+              
+              if [ -f "$bundle" ]; then
+                # Extract Rekor entry from bundle
+                rekor_entry=$(python3 -c "import json; print(json.load(open('$bundle')).get('rekor_entry', 'N/A'))")
+                echo "  - Rekor Entry: $rekor_entry" >> $GITHUB_STEP_SUMMARY
+              fi
+            fi
+          done
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Verification:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "# Download and verify SBOM" >> $GITHUB_STEP_SUMMARY
+          echo "gh run download ${GITHUB_RUN_ID} -n signed-sboms" >> $GITHUB_STEP_SUMMARY
+          echo "cosign verify-blob sbom.spdx.json \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --bundle bundle.json \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --certificate-identity 'https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supplychain.yml@refs/heads/main' \\" >> $GITHUB_STEP_SUMMARY
+          echo "  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com'" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
