@@ -199,6 +199,126 @@ grype sbom:bazel-bin/path/to/package.spdx.json
 syft convert bazel-bin/path/to/package.spdx.json -o cyclonedx-json
 ```
 
+## Dependency Analysis
+
+### Detect Version Conflicts
+
+Identify dependencies with multiple versions in the same build:
+
+```bash
+bazel build //:conflict_report
+cat bazel-bin/conflicts.json
+```
+
+The report includes:
+- Package names with conflicts
+- All conflicting versions
+- Recommended resolution version
+- Affected targets
+
+### License Compliance Checking
+
+Generate a comprehensive license compliance report:
+
+```bash
+bazel build //:license_report
+cat bazel-bin/license_report.json
+```
+
+With additional flags:
+
+```bash
+# Flag copyleft licenses
+bazel run //tools/supplychain:license_analyzer -- \
+  --input bazel-bin/workspace_deps.json \
+  --output license_report.json \
+  --flag-copyleft
+
+# Check for license conflicts
+bazel run //tools/supplychain:license_analyzer -- \
+  --input bazel-bin/workspace_deps.json \
+  --output license_report.json \
+  --check-conflicts \
+  --flag-copyleft
+```
+
+### Generate PURL for Dependencies
+
+Convert Maven coordinates to Package URLs (PURLs):
+
+```bash
+# Process dependencies file
+bazel run //tools/supplychain:purl_generator -- \
+  --input bazel-bin/workspace_deps.json \
+  --output deps_with_purls.json
+
+# Single coordinate conversion (for testing)
+bazel run //tools/supplychain:purl_generator -- \
+  --coordinates "com.google.guava:guava:31.1-jre"
+```
+
+### Aggregate Supply Chain Metrics
+
+Generate comprehensive metrics dashboard:
+
+```bash
+bazel build //:metrics_report
+cat bazel-bin/supply_chain_metrics.json
+```
+
+The metrics include:
+- Vulnerability counts by severity
+- Dependency statistics (total, direct, transitive, conflicts)
+- License distribution
+- Copyleft and unknown license counts
+
+For text format output:
+
+```bash
+bazel run //tools/supplychain:metrics_aggregator -- \
+  --sbom bazel-bin/workspace_sbom.spdx.json \
+  --sca-findings bazel-bin/sca_findings.json \
+  --license-report bazel-bin/license_report.json \
+  --conflicts bazel-bin/conflicts.json \
+  --output metrics.txt \
+  --format text
+```
+
+## Performance Optimization
+
+### Use Configuration Profiles
+
+BazBOM includes pre-configured Bazel profiles:
+
+```bash
+# Standard supply chain analysis
+bazel build --config=supplychain //:sbom_all
+
+# Incremental mode (faster for PRs)
+bazel build --config=supplychain-incremental //:sbom_all
+
+# Full analysis with all features
+bazel build --config=supplychain-full //:supply_chain_all
+
+# Offline mode (no network access)
+bazel build --config=supplychain-offline //:sbom_all
+```
+
+### Enable Remote Caching
+
+For team environments, configure remote cache in `.bazelrc`:
+
+```bash
+build:remote-cache --remote_cache=https://cache.example.com
+build:remote-cache --experimental_remote_cache_compression
+```
+
+Then use:
+
+```bash
+bazel build --config=remote-cache //...
+```
+
 ## Troubleshooting
 
 For common issues and solutions, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
