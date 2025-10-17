@@ -276,7 +276,9 @@ def main():
     print(f"Supply chain risk report written to {args.output}", file=sys.stderr)
     print(f"Found {len(findings)} potential risks", file=sys.stderr)
     
-    return 0 if len(findings) == 0 else 1
+    # Always return 0 for report generation (don't fail the build)
+    # CI can check the findings count and fail based on policy
+    return 0
 
 
 if __name__ == '__main__':

@@ -1,0 +1,7 @@
+# VEX statements
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "vex_statements",
+    srcs = glob(["statements/*.json"]),
+)
