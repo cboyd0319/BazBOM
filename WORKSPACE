@@ -44,3 +44,7 @@ maven_install(
     maven_install_json = "//:maven_install.json",
     fail_if_repin_required = False,
 )
+
+load("@maven//:defs.bzl", "pinned_maven_install")
+
+pinned_maven_install()
