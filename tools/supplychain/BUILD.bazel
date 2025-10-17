@@ -23,6 +23,10 @@ exports_files(
         "ghsa_enrichment.py",
         "vulncheck_enrichment.py",
         "vulnerability_enrichment.py",
+        "sbom_signing.py",
+        "rekor_integration.py",
+        "intoto_attestation.py",
+        "verify_sbom.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -145,6 +149,30 @@ sh_binary(
 sh_binary(
     name = "vulnerability_enrichment",
     srcs = ["vulnerability_enrichment.py"],
+)
+
+# Shell wrapper for sbom_signing
+sh_binary(
+    name = "sbom_signing",
+    srcs = ["sbom_signing.py"],
+)
+
+# Shell wrapper for rekor_integration
+sh_binary(
+    name = "rekor_integration",
+    srcs = ["rekor_integration.py"],
+)
+
+# Shell wrapper for intoto_attestation
+sh_binary(
+    name = "intoto_attestation",
+    srcs = ["intoto_attestation.py"],
+)
+
+# Shell wrapper for verify_sbom
+sh_binary(
+    name = "verify_sbom",
+    srcs = ["verify_sbom.py"],
 )
 
 # Export aspect and macro definitions
