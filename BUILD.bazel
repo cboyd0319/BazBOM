@@ -205,3 +205,31 @@ genrule(
     tools = ["//tools/supplychain:policy_check"],
     visibility = ["//visibility:public"],
 )
+
+# Generate compliance reports (Executive, SOC2, Attribution, Audit Trail)
+genrule(
+    name = "compliance_reports",
+    srcs = [
+        ":workspace_sbom",
+        ":sca_findings_filtered.json",
+        ":license_report",
+        "//tools/supplychain:compliance_templates",
+    ],
+    outs = [
+        "compliance-reports/executive_summary.html",
+        "compliance-reports/soc2_report.html",
+        "compliance-reports/attribution.html",
+        "compliance-reports/audit_trail.html",
+    ],
+    cmd = "mkdir -p $$(dirname $(location compliance-reports/executive_summary.html)) && " +
+          "$(location //tools/supplychain:compliance_report) " +
+          "--sbom $(location :workspace_sbom) " +
+          "--sca-findings $(location :sca_findings_filtered.json) " +
+          "--license-report $(location :license_report) " +
+          "--output-dir $$(dirname $(location compliance-reports/executive_summary.html)) " +
+          "--templates-dir=tools/supplychain/templates/compliance " +
+          "--company-name=\"BazBOM Project\" " +
+          "--formats html",
+    tools = ["//tools/supplychain:compliance_report"],
+    visibility = ["//visibility:public"],
+)

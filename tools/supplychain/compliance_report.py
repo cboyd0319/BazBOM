@@ -44,9 +44,28 @@ class ComplianceReportGenerator:
             FileNotFoundError: If templates directory doesn't exist
         """
         if templates_dir is None:
-            # Default to templates/compliance in same directory as this file
+            # Try to find templates in Bazel runfiles or relative to script
             script_dir = Path(__file__).parent
-            templates_dir = script_dir / "templates" / "compliance"
+            
+            # Try runfiles location first (when run via Bazel)
+            potential_dirs = [
+                script_dir / "templates" / "compliance",  # Normal location
+                Path(os.getcwd()) / "tools" / "supplychain" / "templates" / "compliance",  # Bazel build
+                script_dir.parent.parent / "tools" / "supplychain" / "templates" / "compliance",  # From bazel-bin
+            ]
+            
+            templates_dir = None
+            for dir_path in potential_dirs:
+                if dir_path.exists() and (dir_path / "executive_summary.html").exists():
+                    templates_dir = dir_path
+                    break
+            
+            if templates_dir is None:
+                raise FileNotFoundError(
+                    f"Templates directory not found. Tried:\n" +
+                    "\n".join(f"  - {d}" for d in potential_dirs) +
+                    f"\nExpected templates in tools/supplychain/templates/compliance/"
+                )
         
         self.templates_dir = Path(templates_dir)
         if not self.templates_dir.exists():

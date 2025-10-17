@@ -27,6 +27,7 @@ exports_files(
         "rekor_integration.py",
         "intoto_attestation.py",
         "verify_sbom.py",
+        "compliance_report.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -175,8 +176,28 @@ sh_binary(
     srcs = ["verify_sbom.py"],
 )
 
+# Shell wrapper for compliance_report
+sh_binary(
+    name = "compliance_report",
+    srcs = ["compliance_report.py"],
+    data = glob(["templates/compliance/*.html"]),
+)
+
 # Export aspect and macro definitions
 exports_files([
     "aspects.bzl",
     "defs.bzl",
 ])
+
+# Export compliance report templates
+exports_files(
+    glob(["templates/compliance/*.html"]),
+    visibility = ["//visibility:public"],
+)
+
+# Filegroup for compliance templates
+filegroup(
+    name = "compliance_templates",
+    srcs = glob(["templates/compliance/*.html"]),
+    visibility = ["//visibility:public"],
+)
