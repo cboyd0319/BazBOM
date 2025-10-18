@@ -196,3 +196,80 @@ class TestGenerateSlsaProvenance:
         # Should be deserializable back to same structure
         deserialized = json.loads(json_str)
         assert deserialized == provenance
+
+
+class TestMainFunction:
+    """Test the main CLI function."""
+    
+    @patch('provenance_builder.argparse.ArgumentParser.parse_args')
+    def test_main_success(self, mock_parse_args, tmp_path, capsys):
+        """Test successful provenance generation via main()."""
+        from provenance_builder import main
+        
+        output_file = tmp_path / "provenance.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'artifact': 'myapp.jar',
+            'output': str(output_file),
+            'digest': 'abc123',
+            'commit': 'commit-sha',
+            'build_id': 'build-123',
+            'builder': 'myorg/myrepo'
+        })()
+        
+        result = main()
+        
+        assert result == 0
+        assert output_file.exists()
+        
+        # Verify content
+        with open(output_file) as f:
+            provenance = json.load(f)
+        
+        assert provenance["subject"][0]["name"] == "myapp.jar"
+        assert provenance["subject"][0]["digest"]["sha256"] == "abc123"
+        
+        captured = capsys.readouterr()
+        assert "Provenance written to" in captured.out
+    
+    @patch('provenance_builder.argparse.ArgumentParser.parse_args')
+    def test_main_minimal_args(self, mock_parse_args, tmp_path):
+        """Test main() with only required arguments."""
+        from provenance_builder import main
+        
+        output_file = tmp_path / "provenance.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'artifact': 'app.jar',
+            'output': str(output_file),
+            'digest': None,
+            'commit': None,
+            'build_id': None,
+            'builder': None
+        })()
+        
+        result = main()
+        
+        assert result == 0
+        assert output_file.exists()
+    
+    @patch('provenance_builder.argparse.ArgumentParser.parse_args')
+    def test_main_io_error(self, mock_parse_args, capsys):
+        """Test main() handles IO errors gracefully."""
+        from provenance_builder import main
+        
+        # Try to write to invalid path
+        mock_parse_args.return_value = type('Args', (), {
+            'artifact': 'app.jar',
+            'output': '/invalid/path/provenance.json',
+            'digest': None,
+            'commit': None,
+            'build_id': None,
+            'builder': None
+        })()
+        
+        result = main()
+        
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "Error writing output file" in captured.err
