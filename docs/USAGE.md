@@ -273,6 +273,163 @@ Review the SARIF report for details.
 📊 View detailed findings in the Security tab
 ```
 
+## Container Image SBOM Scanning
+
+Generate SBOMs for container images, including application dependencies and OS packages:
+
+### Basic Usage
+
+```bash
+# Scan local Docker image
+bazel run //tools/supplychain:scan_container -- myapp:latest
+
+# Scan image from registry
+bazel run //tools/supplychain:scan_container -- registry.io/myapp:v1.2.3
+
+# Output to file
+bazel run //tools/supplychain:scan_container -- myapp:latest --output sbom.json
+
+# CycloneDX format
+bazel run //tools/supplychain:scan_container -- myapp:latest --format cyclonedx
+```
+
+### What Gets Scanned
+
+The container scanner analyzes:
+- **Application dependencies**: JAR files and their metadata
+- **OS packages**: Packages installed via apt, yum, or apk
+- **Base image layers**: All container layers
+- **Image metadata**: Architecture, OS, creation date
+
+### Integration with Docker/Podman
+
+Works with both Docker and Podman:
+
+```bash
+# Using Docker
+docker pull myapp:latest
+bazel run //tools/supplychain:scan_container -- myapp:latest
+
+# Using Podman
+podman pull myapp:latest
+bazel run //tools/supplychain:scan_container -- myapp:latest
+```
+
+### Dockerfile Integration
+
+Embed SBOM generation in your Dockerfile:
+
+```dockerfile
+FROM openjdk:11-jre-slim
+
+COPY target/app.jar /app/app.jar
+
+# Generate SBOM during build (requires BazBOM installed)
+RUN bazbom scan-container --output /app/sbom.spdx.json
+
+# Attach SBOM as OCI artifact
+LABEL org.opencontainers.image.sbom=/app/sbom.spdx.json
+```
+
+## Interactive Vulnerability Fix
+
+Automatically generate and apply fixes for vulnerable dependencies:
+
+### Basic Usage
+
+```bash
+# Interactive mode - prompts for each fix
+bazel run //tools/supplychain:interactive_fix -- \
+  --findings bazel-bin/sca_findings.json
+
+# Specify project directory
+bazel run //tools/supplychain:interactive_fix -- \
+  --findings sca_findings.json \
+  --project /path/to/project
+```
+
+### How It Works
+
+1. **Analyzes vulnerabilities**: Identifies which can be fixed by upgrading
+2. **Generates fixes**: Creates build-system-specific overrides
+3. **Interactive prompts**: Shows details and asks for confirmation
+4. **Applies fixes**: Updates build files (pom.xml, build.gradle, WORKSPACE)
+
+### Example Session
+
+```
+🔍 Found 3 fixable vulnerabilities
+
+Build system: maven
+============================================================
+
+Fix 1/3
+------------------------------------------------------------
+Package: com.fasterxml.jackson.core:jackson-databind
+Current version: 2.13.0
+Recommended version: 2.13.4.2
+Severity: CRITICAL
+CVE: CVE-2022-42003
+
+Generated fix:
+
+<!-- BazBOM auto-generated fix -->
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>2.13.4.2</version>
+</dependency>
+
+Apply fix? [y/N/skip all] y
+✅ Fix queued for application
+
+...
+
+============================================================
+Applying 2 fixes...
+============================================================
+✓ Updated pom.xml
+
+✅ Successfully applied 2 fixes
+
+Next steps:
+  1. Review changes in pom.xml
+  2. Run: mvn clean install
+  3. Run tests to verify compatibility
+```
+
+### Supported Build Systems
+
+**Maven**: Generates `<dependencyManagement>` overrides
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>vulnerable-dep</artifactId>
+      <version>2.1</version>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+**Gradle**: Generates `resolutionStrategy` force overrides
+```kotlin
+configurations.all {
+    resolutionStrategy {
+        force('com.example:vulnerable-dep:2.1')
+    }
+}
+```
+
+**Bazel**: Provides instructions for `maven_install.json` updates
+```python
+# Add to maven_install() in WORKSPACE:
+override_targets = {
+    "com.example:vulnerable-dep": "@maven//:com_example_vulnerable_dep",
+},
+```
+
 ## Dependency Extraction
 
 BazBOM uses **maven_install.json** as the source of truth for Maven dependencies, as recommended by the Bazel ecosystem. This lockfile provides:
