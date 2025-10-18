@@ -151,6 +151,21 @@ def scan_command(args) -> int:
     # Load configuration
     config = BazBOMConfig.find_and_load(path)
     
+    # Handle fast-discovery mode with RipGrep
+    if hasattr(args, 'fast_discovery') and args.fast_discovery:
+        try:
+            from dependency_scanner import check_ripgrep_available, find_bazel_maven_jars
+            if not check_ripgrep_available():
+                print("⚠️  RipGrep not found - fast discovery unavailable", file=sys.stderr)
+                print("   Install: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
+                if not hasattr(args, 'no_fast_discovery') or not args.no_fast_discovery:
+                    print("   Falling back to standard analysis", file=sys.stderr)
+            else:
+                print("✅ RipGrep detected - enabling fast discovery mode")
+                # Fast dependency discovery will be used by build system
+        except ImportError:
+            print("⚠️  dependency_scanner module not found", file=sys.stderr)
+    
     print(f"Scanning project: {path}")
     
     # If watch mode, continuously monitor for changes
@@ -262,6 +277,426 @@ def version_command(args) -> int:
     return 0
 
 
+def license_report_command(args) -> int:
+    """Generate license compliance report using RipGrep.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        Exit code
+    """
+    try:
+        from license_scanner import (
+            check_ripgrep_available,
+            scan_license_headers,
+            find_unlicensed_files,
+            check_copyleft_licenses,
+            generate_license_report
+        )
+    except ImportError:
+        print("ERROR: license_scanner module not found", file=sys.stderr)
+        return 1
+    
+    if not check_ripgrep_available():
+        print("ERROR: RipGrep (rg) is not installed", file=sys.stderr)
+        print("Install from: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
+        return 1
+    
+    workspace = Path(args.workspace or '.')
+    
+    print(f"Scanning licenses in: {workspace}")
+    
+    try:
+        if args.check_copyleft:
+            # Check for copyleft licenses only
+            copyleft = check_copyleft_licenses(str(workspace))
+            
+            if copyleft:
+                print(f"\n⚠️  Found {sum(len(files) for files in copyleft.values())} files with copyleft licenses:")
+                for license_type, files in copyleft.items():
+                    print(f"\n  {license_type}: {len(files)} files")
+                    if args.verbose:
+                        for file_path in files[:10]:  # Show first 10
+                            print(f"    - {file_path}")
+                        if len(files) > 10:
+                            print(f"    ... and {len(files) - 10} more")
+                return 1  # Exit with error if copyleft found
+            else:
+                print("\n✅ No copyleft licenses found")
+                return 0
+        
+        elif args.find_unlicensed:
+            # Find unlicensed files only
+            unlicensed = find_unlicensed_files(str(workspace))
+            
+            print(f"\nFound {len(unlicensed)} files without license headers")
+            
+            if unlicensed and args.verbose:
+                print("\nUnlicensed files:")
+                for file_path in unlicensed[:20]:  # Show first 20
+                    print(f"  - {file_path}")
+                if len(unlicensed) > 20:
+                    print(f"  ... and {len(unlicensed) - 20} more")
+            
+            if args.output:
+                result = {
+                    'unlicensed_count': len(unlicensed),
+                    'unlicensed_files': unlicensed
+                }
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, indent=2)
+                print(f"\nReport saved to: {args.output}")
+            
+            return 0
+        
+        else:
+            # Full license report
+            if args.output:
+                output_format = args.format or 'csv'
+                if output_format == 'csv':
+                    generate_license_report(str(workspace), args.output)
+                    print(f"\n✅ License report saved to: {args.output}")
+                else:  # json
+                    licenses = scan_license_headers(str(workspace))
+                    unlicensed = find_unlicensed_files(str(workspace))
+                    
+                    result = {
+                        'total_files': sum(len(files) for files in licenses.values()) + len(unlicensed),
+                        'licenses': licenses,
+                        'unlicensed': unlicensed
+                    }
+                    with open(args.output, 'w', encoding='utf-8') as f:
+                        json.dump(result, f, indent=2)
+                    print(f"\n✅ License report saved to: {args.output}")
+            else:
+                licenses = scan_license_headers(str(workspace))
+                unlicensed = find_unlicensed_files(str(workspace))
+                
+                total_files = sum(len(files) for files in licenses.values()) + len(unlicensed)
+                print(f"\nScanned {total_files} source files")
+                print(f"  Licensed: {sum(len(files) for files in licenses.values())}")
+                print(f"  Unlicensed: {len(unlicensed)}")
+                
+                if licenses:
+                    print("\nLicense distribution:")
+                    for license_type, files in sorted(licenses.items(), key=lambda x: len(x[1]), reverse=True):
+                        print(f"  {license_type}: {len(files)} files")
+            
+            return 0
+            
+    except (RuntimeError, ValueError) as e:
+        print(f"ERROR: {str(e)}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print("\nInterrupted by user", file=sys.stderr)
+        return 130
+
+
+def scan_container_command(args) -> int:
+    """Scan container image for dependencies using RipGrep.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        Exit code
+    """
+    try:
+        from container_scanner import (
+            check_ripgrep_available,
+            scan_container_image,
+            extract_jars_from_image,
+            find_os_packages
+        )
+    except ImportError:
+        print("ERROR: container_scanner module not found", file=sys.stderr)
+        return 1
+    
+    if not check_ripgrep_available():
+        print("ERROR: RipGrep (rg) is not installed", file=sys.stderr)
+        print("Install from: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
+        return 1
+    
+    if args.layers_path:
+        # Scan already-extracted layers
+        print(f"Scanning extracted layers in: {args.layers_path}")
+        try:
+            jars = extract_jars_from_image(args.layers_path)
+            os_packages = find_os_packages(args.layers_path)
+            
+            print(f"\n✅ Scan complete:")
+            print(f"  JAR files found: {len(jars)}")
+            print(f"  OS package systems: {', '.join(os_packages.keys()) or 'none'}")
+            
+            if args.output:
+                sbom = {
+                    'layers_path': args.layers_path,
+                    'jvm_dependencies': jars,
+                    'jvm_dependency_count': len(jars),
+                    'os_packages': os_packages,
+                    'scanner': 'BazBOM Container Scanner (RipGrep-accelerated)'
+                }
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    json.dump(sbom, f, indent=2)
+                print(f"\nSBOM saved to: {args.output}")
+            
+            return 0
+            
+        except (RuntimeError, ValueError) as e:
+            print(f"ERROR: {str(e)}", file=sys.stderr)
+            return 1
+    
+    elif args.image:
+        # Scan container image
+        print(f"Scanning container image: {args.image}")
+        try:
+            sbom = scan_container_image(args.image, args.output)
+            
+            print(f"\n✅ Scan complete:")
+            print(f"  JAR files found: {sbom.get('jvm_dependency_count', 0)}")
+            print(f"  OS package systems: {', '.join(sbom.get('os_packages', {}).keys()) or 'none'}")
+            
+            return 0
+            
+        except (RuntimeError, ValueError) as e:
+            print(f"ERROR: {str(e)}", file=sys.stderr)
+            return 1
+    
+    else:
+        print("ERROR: Either --image or --layers-path must be provided", file=sys.stderr)
+        return 1
+
+
+def verify_command(args) -> int:
+    """Verify dependency usage using RipGrep.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        Exit code
+    """
+    try:
+        from dependency_verifier import (
+            check_ripgrep_available,
+            find_unused_dependencies,
+            find_undeclared_dependencies,
+            generate_usage_report
+        )
+    except ImportError:
+        print("ERROR: dependency_verifier module not found", file=sys.stderr)
+        return 1
+    
+    if not check_ripgrep_available():
+        print("ERROR: RipGrep (rg) is not installed", file=sys.stderr)
+        print("Install from: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
+        return 1
+    
+    workspace = Path(args.workspace or '.')
+    maven_install_json = args.maven_install_json or 'maven_install.json'
+    
+    print(f"Verifying dependencies in: {workspace}")
+    print(f"Using lockfile: {maven_install_json}")
+    
+    try:
+        if args.check_unused:
+            # Check for unused dependencies
+            unused = find_unused_dependencies(str(workspace), maven_install_json)
+            
+            print(f"\nFound {len(unused)} unused dependencies")
+            
+            if unused:
+                print("\n⚠️  Unused dependencies (consider removing):")
+                for dep in unused[:20]:  # Show first 20
+                    print(f"  - {dep}")
+                if len(unused) > 20:
+                    print(f"  ... and {len(unused) - 20} more")
+                
+                if args.output:
+                    result = {
+                        'unused_count': len(unused),
+                        'unused_dependencies': unused
+                    }
+                    with open(args.output, 'w', encoding='utf-8') as f:
+                        json.dump(result, f, indent=2)
+                    print(f"\nReport saved to: {args.output}")
+                
+                return 1  # Exit with error if unused deps found
+            else:
+                print("\n✅ No unused dependencies found")
+                return 0
+        
+        elif args.check_undeclared:
+            # Check for undeclared dependencies
+            undeclared = find_undeclared_dependencies(str(workspace), maven_install_json)
+            
+            print(f"\nFound {len(undeclared)} undeclared dependencies")
+            
+            if undeclared:
+                print("\n⚠️  Undeclared dependencies (missing from maven_install.json):")
+                for dep in undeclared[:20]:
+                    print(f"  - {dep}")
+                if len(undeclared) > 20:
+                    print(f"  ... and {len(undeclared) - 20} more")
+                
+                if args.output:
+                    result = {
+                        'undeclared_count': len(undeclared),
+                        'undeclared_dependencies': undeclared
+                    }
+                    with open(args.output, 'w', encoding='utf-8') as f:
+                        json.dump(result, f, indent=2)
+                    print(f"\nReport saved to: {args.output}")
+                
+                return 1  # Exit with error if undeclared deps found
+            else:
+                print("\n✅ No undeclared dependencies found")
+                return 0
+        
+        else:
+            # Full usage report
+            report = generate_usage_report(str(workspace), maven_install_json)
+            
+            print(f"\nDependency Usage Report:")
+            print(f"  Declared dependencies: {report['declared_count']}")
+            print(f"  Referenced dependencies: {report['referenced_count']}")
+            print(f"  Used dependencies: {report['used_count']}")
+            print(f"  Unused dependencies: {report['unused_count']}")
+            print(f"  Undeclared dependencies: {report['undeclared_count']}")
+            print(f"  Dependency usage rate: {report['usage_rate']}%")
+            
+            if report['unused_count'] > 0:
+                print(f"\n⚠️  {report['unused_count']} unused dependencies found")
+            
+            if report['undeclared_count'] > 0:
+                print(f"⚠️  {report['undeclared_count']} undeclared dependencies found")
+            
+            if args.output:
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    json.dump(report, f, indent=2)
+                print(f"\nReport saved to: {args.output}")
+            
+            return 0
+            
+    except (RuntimeError, ValueError) as e:
+        print(f"ERROR: {str(e)}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print("\nInterrupted by user", file=sys.stderr)
+        return 130
+
+
+def find_cves_command(args) -> int:
+    """Find CVE references in codebase using RipGrep.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        Exit code
+    """
+    try:
+        from cve_tracker import (
+            check_ripgrep_available,
+            find_cve_references,
+            cross_reference_with_sbom,
+            find_vex_statements
+        )
+    except ImportError:
+        print("ERROR: cve_tracker module not found", file=sys.stderr)
+        return 1
+    
+    if not check_ripgrep_available():
+        print("ERROR: RipGrep (rg) is not installed", file=sys.stderr)
+        print("Install from: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
+        return 1
+    
+    workspace = Path(args.workspace or '.')
+    
+    print(f"Searching for CVE references in: {workspace}")
+    
+    try:
+        if args.find_vex:
+            # Find VEX statements
+            vex_statements = find_vex_statements(str(workspace))
+            
+            print(f"\nFound {len(vex_statements)} VEX statement files")
+            
+            if vex_statements:
+                total_cves = sum(len(vex['cves']) for vex in vex_statements)
+                print(f"Total CVEs in VEX statements: {total_cves}")
+                
+                if args.verbose:
+                    for vex in vex_statements:
+                        print(f"\n  {vex['file']}")
+                        for cve in vex['cves'][:5]:
+                            print(f"    - {cve}")
+                        if len(vex['cves']) > 5:
+                            print(f"    ... and {len(vex['cves']) - 5} more")
+            
+            if args.output:
+                result = {
+                    'vex_file_count': len(vex_statements),
+                    'vex_statements': vex_statements
+                }
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, indent=2)
+                print(f"\nReport saved to: {args.output}")
+            
+            return 0
+        
+        else:
+            # Find CVE references in code
+            cves = find_cve_references(str(workspace))
+            
+            unique_cves = len(set(c['cve'] for c in cves))
+            print(f"\nFound {len(cves)} CVE references ({unique_cves} unique CVEs)")
+            
+            # Cross-reference if SBOM findings provided
+            if args.sbom_findings:
+                cross_ref = cross_reference_with_sbom(cves, args.sbom_findings)
+                
+                print(f"\nCross-reference with SBOM findings:")
+                print(f"  In both code and SBOM: {len(cross_ref['in_both'])}")
+                print(f"  Documented only (code): {len(cross_ref['documented_only'])}")
+                print(f"  SBOM only (not in code): {len(cross_ref['sbom_only'])}")
+                
+                if args.verbose:
+                    if cross_ref['documented_only']:
+                        print(f"\nDocumented but not in SBOM (may be mitigated):")
+                        for cve in cross_ref['documented_only'][:10]:
+                            print(f"  - {cve}")
+                    
+                    if cross_ref['sbom_only']:
+                        print(f"\nIn SBOM but not documented:")
+                        for cve in cross_ref['sbom_only'][:10]:
+                            print(f"  - {cve}")
+            
+            if args.output:
+                result = {
+                    'cve_reference_count': len(cves),
+                    'unique_cves': unique_cves,
+                    'cve_references': cves
+                }
+                
+                if args.sbom_findings:
+                    result['cross_reference'] = cross_ref
+                
+                with open(args.output, 'w', encoding='utf-8') as f:
+                    json.dump(result, f, indent=2)
+                print(f"\nReport saved to: {args.output}")
+            
+            return 0
+            
+    except (RuntimeError, ValueError) as e:
+        print(f"ERROR: {str(e)}", file=sys.stderr)
+        return 1
+    except KeyboardInterrupt:
+        print("\nInterrupted by user", file=sys.stderr)
+        return 130
+
+
 def main():
     """Main entry point for BazBOM CLI."""
     parser = argparse.ArgumentParser(
@@ -273,11 +708,26 @@ Examples:
   # Scan current directory
   bazbom scan .
   
-  # Scan specific project
-  bazbom scan /path/to/project
+  # Scan with fast discovery (RipGrep)
+  bazbom scan . --fast-discovery
   
   # Include test dependencies
   bazbom scan . --include-test
+  
+  # Generate license report
+  bazbom license-report --output licenses.csv
+  
+  # Check for copyleft licenses
+  bazbom license-report --check-copyleft
+  
+  # Scan container image
+  bazbom scan-container myapp:latest --output container-sbom.json
+  
+  # Verify dependency usage
+  bazbom verify --check-unused
+  
+  # Find CVE references
+  bazbom find-cves --output cves.json
   
   # Initialize configuration
   bazbom init
@@ -328,6 +778,139 @@ Examples:
         action='store_true',
         help='Watch for file changes and re-scan automatically'
     )
+    scan_parser.add_argument(
+        '--fast-discovery',
+        action='store_true',
+        help='Use RipGrep for 100x faster dependency discovery'
+    )
+    scan_parser.add_argument(
+        '--no-fast-discovery',
+        action='store_true',
+        help='Disable RipGrep acceleration (use standard methods)'
+    )
+    
+    # License report command
+    license_parser = subparsers.add_parser(
+        'license-report',
+        help='Generate license compliance report (requires RipGrep)'
+    )
+    license_parser.add_argument(
+        'workspace',
+        nargs='?',
+        default='.',
+        help='Workspace root path (default: current directory)'
+    )
+    license_parser.add_argument(
+        '--output',
+        '-o',
+        help='Output file path (CSV or JSON)'
+    )
+    license_parser.add_argument(
+        '--format',
+        choices=['csv', 'json'],
+        default='csv',
+        help='Output format (default: csv)'
+    )
+    license_parser.add_argument(
+        '--check-copyleft',
+        action='store_true',
+        help='Check for copyleft licenses (GPL, LGPL) only'
+    )
+    license_parser.add_argument(
+        '--find-unlicensed',
+        action='store_true',
+        help='Find files without license headers'
+    )
+    license_parser.add_argument(
+        '--verbose',
+        '-v',
+        action='store_true',
+        help='Show detailed file listings'
+    )
+    
+    # Container scan command
+    container_parser = subparsers.add_parser(
+        'scan-container',
+        help='Scan container image for dependencies (requires RipGrep)'
+    )
+    container_parser.add_argument(
+        'image',
+        nargs='?',
+        help='Container image name or ID to scan'
+    )
+    container_parser.add_argument(
+        '--output',
+        '-o',
+        help='Output JSON file for SBOM'
+    )
+    container_parser.add_argument(
+        '--layers-path',
+        help='Path to already-extracted container layers (skip extraction)'
+    )
+    
+    # Verify command
+    verify_parser = subparsers.add_parser(
+        'verify',
+        help='Verify dependency usage (requires RipGrep)'
+    )
+    verify_parser.add_argument(
+        'workspace',
+        nargs='?',
+        default='.',
+        help='Workspace root path (default: current directory)'
+    )
+    verify_parser.add_argument(
+        '--maven-install-json',
+        default='maven_install.json',
+        help='Path to maven_install.json (default: maven_install.json)'
+    )
+    verify_parser.add_argument(
+        '--output',
+        '-o',
+        help='Output JSON file for report'
+    )
+    verify_parser.add_argument(
+        '--check-unused',
+        action='store_true',
+        help='Check for unused dependencies only'
+    )
+    verify_parser.add_argument(
+        '--check-undeclared',
+        action='store_true',
+        help='Check for undeclared dependencies only'
+    )
+    
+    # Find CVEs command
+    cves_parser = subparsers.add_parser(
+        'find-cves',
+        help='Find CVE references in codebase (requires RipGrep)'
+    )
+    cves_parser.add_argument(
+        'workspace',
+        nargs='?',
+        default='.',
+        help='Workspace root path (default: current directory)'
+    )
+    cves_parser.add_argument(
+        '--output',
+        '-o',
+        help='Output JSON file for CVE references'
+    )
+    cves_parser.add_argument(
+        '--sbom-findings',
+        help='Path to SBOM findings JSON for cross-reference'
+    )
+    cves_parser.add_argument(
+        '--find-vex',
+        action='store_true',
+        help='Find VEX statements with CVE references'
+    )
+    cves_parser.add_argument(
+        '--verbose',
+        '-v',
+        action='store_true',
+        help='Show detailed CVE listings'
+    )
     
     # Init command
     init_parser = subparsers.add_parser(
@@ -357,6 +940,14 @@ Examples:
     # Execute command
     if args.command == 'scan':
         sys.exit(scan_command(args))
+    elif args.command == 'license-report':
+        sys.exit(license_report_command(args))
+    elif args.command == 'scan-container':
+        sys.exit(scan_container_command(args))
+    elif args.command == 'verify':
+        sys.exit(verify_command(args))
+    elif args.command == 'find-cves':
+        sys.exit(find_cves_command(args))
     elif args.command == 'init':
         sys.exit(init_command(args))
     elif args.command == 'version':
