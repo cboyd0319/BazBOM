@@ -39,36 +39,97 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### 🆕 What's New
 
-- **Universal Build System Support**: Works with Maven, Gradle, and Bazel projects
-- **Standalone CLI**: `bazbom scan .` works in any JVM project
-- **CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
-- **Security Badges**: Auto-generate shields.io badges for your README
-- **Configuration Files**: Customize with `bazbom.yml` per-project settings
+- **🚀 Zero-Config Installer**: One-line installation with auto-configuration
+- **🔄 Watch Mode**: Continuous monitoring and auto-scanning on file changes
+- **⚙️ GitHub Action**: Automated security scanning in CI/CD pipelines
+- **🐳 Container SBOM**: Scan Docker/Podman images for dependencies and OS packages
+- **🔧 Interactive Fix**: Auto-generate and apply dependency upgrades
+- **🌍 Universal Build System Support**: Works with Maven, Gradle, and Bazel
+- **📊 CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
+- **🛡️ Security Badges**: Auto-generate shields.io badges for your README
 
 ---
 
 ## ⚡ Quickstart
 
-### Option 1: Universal CLI (Any JVM Project)
+### Option 1: One-Line Install (Recommended)
+
+Install BazBOM with automatic configuration:
+
+```bash
+# Install BazBOM
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+
+# Scan any JVM project
+bazbom scan .
+
+# Watch for changes
+bazbom scan --watch
+```
+
+**What it does:**
+- ✅ Detects your platform (Linux/macOS, amd64/arm64)
+- ✅ Checks prerequisites (Python 3, Git)
+- ✅ Installs BazBOM to `~/.bazbom`
+- ✅ Adds `bazbom` command to PATH
+- ✅ Auto-configures Bazel projects
+
+### Option 2: Universal CLI (Manual Setup)
 
 Works with **Maven**, **Gradle**, or **Bazel** projects:
 
 ```bash
 # Clone BazBOM
-git clone https://github.com/cboyd0319/BazBOM
-cd BazBOM
+git clone https://github.com/cboyd0319/BazBOM ~/.bazbom
+export PATH="$HOME/.bazbom:$PATH"
 
 # Scan any JVM project (auto-detects build system)
-bazel run //tools/supplychain:bazbom_cli -- scan /path/to/your/project
+bazbom scan /path/to/your/project
 
 # Initialize configuration (optional)
 cd /path/to/your/project
-bazel run /path/to/BazBOM//tools/supplychain:bazbom_cli -- init
+bazbom init
 ```
 
 **Output:** `dependencies.json` with all resolved dependencies and PURLs.
 
-### Option 2: Bazel-Native (For Bazel Projects)
+### Option 3: GitHub Action (CI/CD)
+
+Add to `.github/workflows/security.yml`:
+
+```yaml
+name: Security Scan
+
+on: [push, pull_request]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run BazBOM Security Scan
+        uses: cboyd0319/BazBOM@main
+        with:
+          fail-on-critical: true
+          upload-sbom: true
+          upload-sarif: true
+```
+
+**What it does:**
+- ✅ Auto-detects build system (Maven/Gradle/Bazel)
+- ✅ Generates SBOM
+- ✅ Scans for vulnerabilities
+- ✅ Uploads SARIF to GitHub Security tab
+- ✅ Comments on PRs with findings
+- ✅ Fails build on policy violations
+
+### Option 4: Bazel-Native (For Bazel Projects Only)
 
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -84,6 +145,10 @@ http_archive(
 ### 2. Generate your first SBOM
 
 ```bash
+# For any project (via CLI)
+bazbom scan .
+
+# For Bazel projects (native)
 bazel build //app:app_sbom
 cat bazel-bin/app/app_sbom.spdx.json
 ```
@@ -93,6 +158,10 @@ cat bazel-bin/app/app_sbom.spdx.json
 ### 3. Run vulnerability scan
 
 ```bash
+# CLI mode
+bazbom scan . --format spdx  # TODO: Add vulnerability scanning to CLI
+
+# Bazel mode
 bazel run //:sca_scan
 ```
 
@@ -118,11 +187,20 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ **Bazel** (WORKSPACE) - via aspects
 - ✅ Auto-detection of build system
 - ✅ Unified CLI: `bazbom scan .`
+- ✅ Watch mode: `bazbom scan --watch` 🆕
+
+**Installation & Setup** 🆕
+- ✅ One-line installer script
+- ✅ Zero-config auto-setup
+- ✅ GitHub Action for CI/CD
+- ✅ Works on Linux, macOS (amd64/arm64)
+- ✅ Docker/Podman container support
 
 **SBOM Generation**
 - ✅ SPDX 2.3 (JSON) primary format
 - ✅ CycloneDX 1.5 (optional)
 - ✅ CSV export for spreadsheets 🆕
+- ✅ Container image SBOMs 🆕
 - ✅ Per-target or workspace-wide
 - ✅ Automatic version/license extraction
 
@@ -139,7 +217,8 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ SARIF 2.1.0 output
 - ✅ Code Scanning alerts
 - ✅ Security badges (shields.io) 🆕
-- ✅ PR comments with findings
+- ✅ GitHub Action for CI/CD 🆕
+- ✅ PR comments with findings 🆕
 - ✅ Policy enforcement (block on critical CVEs)
 
 </td>
@@ -149,6 +228,8 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ SLSA Level 3 provenance
 - ✅ Sigstore keyless signing
 - ✅ VEX (false positive suppression)
+- ✅ Interactive vulnerability fix 🆕
+- ✅ Auto-generate dependency overrides 🆕
 - ✅ License compliance checking
 - ✅ Typosquatting detection
 - ✅ Outdated dependency detection
@@ -165,6 +246,13 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ JSON (machine-readable)
 - ✅ SARIF (GitHub Security)
 - ✅ GraphML (dependency graphs)
+
+**Container Support** 🆕
+- ✅ Docker image SBOM scanning
+- ✅ Podman image support
+- ✅ OS package detection (apt/yum/apk)
+- ✅ JAR file discovery in containers
+- ✅ Multi-layer analysis
 
 **Dependency Analysis**
 - ✅ Full transitive graph (JSON + GraphML)
