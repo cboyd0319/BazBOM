@@ -40,6 +40,8 @@ exports_files(
         "build_system.py",
         "bazbom_config.py",
         "bazbom_cli.py",
+        "scan_container.py",
+        "interactive_fix.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -269,6 +271,18 @@ sh_binary(
         ":build_system.py",
         ":bazbom_config.py",
     ],
+)
+
+# Shell wrapper for scan_container (container image SBOM scanner)
+sh_binary(
+    name = "scan_container",
+    srcs = ["scan_container.py"],
+)
+
+# Shell wrapper for interactive_fix (interactive vulnerability fixer)
+sh_binary(
+    name = "interactive_fix",
+    srcs = ["interactive_fix.py"],
 )
 
 # Export aspect and macro definitions

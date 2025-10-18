@@ -2,9 +2,71 @@
 
 This guide covers day-to-day commands and workflows for BazBOM.
 
+## Installation
+
+### Quick Install (Recommended)
+
+Install BazBOM with zero configuration:
+
+```bash
+# Recommended: Download and inspect first (safest)
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh -o install.sh
+cat install.sh  # Review the script
+bash install.sh
+
+# Alternative: One-line install (if you trust the source)
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+
+# Or download and run locally
+wget https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+**⚠️ Security Note**: Always review scripts before running them, especially when using pipe-to-bash (`| bash`). The recommended approach is to download, inspect, and then execute.
+
+The installer will:
+- ✅ Detect your platform (Linux/macOS, amd64/arm64)
+- ✅ Check prerequisites (Python 3, Git)
+- ✅ Install BazBOM to `~/.bazbom`
+- ✅ Add `bazbom` command to your PATH
+- ✅ Auto-configure Bazel projects (if detected)
+
+### Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/cboyd0319/BazBOM.git ~/.bazbom
+
+# Add to PATH
+echo 'export PATH="$HOME/.bazbom:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+bazbom version
+```
+
 ## Quick Start with BazBOM CLI
 
-BazBOM now includes a unified CLI that works with **any JVM project**, not just Bazel:
+BazBOM includes a unified CLI that works with **any JVM project**, not just Bazel:
+
+```bash
+# Scan any JVM project (auto-detects Maven, Gradle, or Bazel)
+bazbom scan .
+
+# Watch for changes and re-scan automatically
+bazbom scan --watch
+
+# Initialize configuration file (bazbom.yml)
+bazbom init
+
+# Show version
+bazbom version
+```
+
+### Using via Bazel (Alternative)
+
+If you prefer using Bazel directly:
 
 ```bash
 # Scan any JVM project (auto-detects Maven, Gradle, or Bazel)
@@ -93,6 +155,286 @@ cat bazel-bin/security_badge.json
 
 # Use in GitHub workflows to update README badge
 # Badge color: green (no vulns), yellow (medium), orange (high), red (critical)
+```
+
+### Watch Mode
+
+Continuously monitor your project and re-scan on changes:
+
+```bash
+# Watch mode - re-scans when build files change
+bazbom scan --watch
+
+# What it monitors:
+# - Maven: pom.xml files
+# - Gradle: build.gradle, build.gradle.kts, settings.gradle
+# - Bazel: WORKSPACE, BUILD files, *.bzl files
+
+# Press Ctrl+C to stop watching
+```
+
+**Use Cases for Watch Mode:**
+- **Development**: Get real-time feedback as you update dependencies
+- **CI/CD**: Monitor long-running builds for dependency changes
+- **Security**: Immediate alerts when new vulnerabilities are introduced
+
+## GitHub Action Integration
+
+Add automated security scanning to your GitHub workflows:
+
+### Basic Setup
+
+Create `.github/workflows/security.yml`:
+
+```yaml
+name: Supply Chain Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run BazBOM Security Scan
+        uses: cboyd0319/BazBOM@main
+        with:
+          fail-on-critical: true
+          upload-sbom: true
+          upload-sarif: true
+```
+
+### Advanced Configuration
+
+```yaml
+- name: Run BazBOM Security Scan
+  uses: cboyd0319/BazBOM@main
+  with:
+    # Build system (auto-detect by default)
+    build-system: auto  # or: maven, gradle, bazel
+    
+    # Project path
+    path: .
+    
+    # Policy enforcement
+    fail-on-critical: true
+    fail-on-high: false
+    max-critical: 0
+    max-high: 10
+    
+    # Dependencies
+    include-test-deps: false
+    
+    # Outputs
+    upload-sbom: true
+    upload-sarif: true
+    output-format: spdx  # or: cyclonedx, both
+    
+    # Custom policy
+    policy-file: .bazbom/policy.yml
+```
+
+### Action Outputs
+
+Access scan results in subsequent steps:
+
+```yaml
+- name: Run BazBOM Security Scan
+  id: scan
+  uses: cboyd0319/BazBOM@main
+
+- name: Check Results
+  run: |
+    echo "Vulnerabilities found: ${{ steps.scan.outputs.vulnerabilities-found }}"
+    echo "Critical count: ${{ steps.scan.outputs.critical-count }}"
+    echo "High count: ${{ steps.scan.outputs.high-count }}"
+    echo "SBOM path: ${{ steps.scan.outputs.sbom-path }}"
+```
+
+### PR Comments
+
+The action automatically comments on pull requests with scan results:
+
+```markdown
+## 🔴 BazBOM Security Scan Results
+
+**Status:** 2 CRITICAL vulnerabilities found
+
+### 🔴 Critical Issues (2)
+Review the SARIF report for details.
+
+**Total vulnerabilities:** 5
+- CRITICAL: 2
+- HIGH: 3
+
+📊 View detailed findings in the Security tab
+```
+
+## Container Image SBOM Scanning
+
+Generate SBOMs for container images, including application dependencies and OS packages:
+
+### Basic Usage
+
+```bash
+# Scan local Docker image
+bazel run //tools/supplychain:scan_container -- myapp:latest
+
+# Scan image from registry
+bazel run //tools/supplychain:scan_container -- registry.io/myapp:v1.2.3
+
+# Output to file
+bazel run //tools/supplychain:scan_container -- myapp:latest --output sbom.json
+
+# CycloneDX format
+bazel run //tools/supplychain:scan_container -- myapp:latest --format cyclonedx
+```
+
+### What Gets Scanned
+
+The container scanner analyzes:
+- **Application dependencies**: JAR files and their metadata
+- **OS packages**: Packages installed via apt, yum, or apk
+- **Base image layers**: All container layers
+- **Image metadata**: Architecture, OS, creation date
+
+### Integration with Docker/Podman
+
+Works with both Docker and Podman:
+
+```bash
+# Using Docker
+docker pull myapp:latest
+bazel run //tools/supplychain:scan_container -- myapp:latest
+
+# Using Podman
+podman pull myapp:latest
+bazel run //tools/supplychain:scan_container -- myapp:latest
+```
+
+### Dockerfile Integration
+
+Embed SBOM generation in your Dockerfile:
+
+```dockerfile
+FROM openjdk:11-jre-slim
+
+COPY target/app.jar /app/app.jar
+
+# Generate SBOM during build (requires BazBOM installed)
+RUN bazbom scan-container --output /app/sbom.spdx.json
+
+# Attach SBOM as OCI artifact
+LABEL org.opencontainers.image.sbom=/app/sbom.spdx.json
+```
+
+## Interactive Vulnerability Fix
+
+Automatically generate and apply fixes for vulnerable dependencies:
+
+### Basic Usage
+
+```bash
+# Interactive mode - prompts for each fix
+bazel run //tools/supplychain:interactive_fix -- \
+  --findings bazel-bin/sca_findings.json
+
+# Specify project directory
+bazel run //tools/supplychain:interactive_fix -- \
+  --findings sca_findings.json \
+  --project /path/to/project
+```
+
+### How It Works
+
+1. **Analyzes vulnerabilities**: Identifies which can be fixed by upgrading
+2. **Generates fixes**: Creates build-system-specific overrides
+3. **Interactive prompts**: Shows details and asks for confirmation
+4. **Applies fixes**: Updates build files (pom.xml, build.gradle, WORKSPACE)
+
+### Example Session
+
+```
+🔍 Found 3 fixable vulnerabilities
+
+Build system: maven
+============================================================
+
+Fix 1/3
+------------------------------------------------------------
+Package: com.fasterxml.jackson.core:jackson-databind
+Current version: 2.13.0
+Recommended version: 2.13.4.2
+Severity: CRITICAL
+CVE: CVE-2022-42003
+
+Generated fix:
+
+<!-- BazBOM auto-generated fix -->
+<dependency>
+  <groupId>com.fasterxml.jackson.core</groupId>
+  <artifactId>jackson-databind</artifactId>
+  <version>2.13.4.2</version>
+</dependency>
+
+Apply fix? [y/N/skip all] y
+✅ Fix queued for application
+
+...
+
+============================================================
+Applying 2 fixes...
+============================================================
+✓ Updated pom.xml
+
+✅ Successfully applied 2 fixes
+
+Next steps:
+  1. Review changes in pom.xml
+  2. Run: mvn clean install
+  3. Run tests to verify compatibility
+```
+
+### Supported Build Systems
+
+**Maven**: Generates `<dependencyManagement>` overrides
+```xml
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>vulnerable-dep</artifactId>
+      <version>2.1</version>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+```
+
+**Gradle**: Generates `resolutionStrategy` force overrides
+```kotlin
+configurations.all {
+    resolutionStrategy {
+        force('com.example:vulnerable-dep:2.1')
+    }
+}
+```
+
+**Bazel**: Provides instructions for `maven_install.json` updates
+```python
+# Add to maven_install() in WORKSPACE:
+override_targets = {
+    "com.example:vulnerable-dep": "@maven//:com_example_vulnerable_dep",
+},
 ```
 
 ## Dependency Extraction

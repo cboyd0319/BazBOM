@@ -8,8 +8,9 @@ with Maven, Gradle, Bazel, and other build systems.
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 # Import BazBOM modules
 try:
@@ -26,21 +27,19 @@ except ImportError:
 __version__ = "1.0.0"
 
 
-def scan_command(args) -> int:
-    """Execute scan command.
+def perform_scan(path: Path, config: BazBOMConfig, args) -> int:
+    """Perform a single scan of the project.
     
     Args:
-        args: Parsed command-line arguments
+        path: Project path to scan
+        config: BazBOM configuration
+        args: Command-line arguments
         
     Returns:
         Exit code (0 for success)
     """
-    # Load configuration
-    config = BazBOMConfig.find_and_load(Path(args.path))
-    
     # Detect build system
-    print(f"Scanning project: {args.path}")
-    build_system = detect_build_system(Path(args.path))
+    build_system = detect_build_system(path)
     
     if not build_system:
         print("ERROR: Could not detect build system", file=sys.stderr)
@@ -53,7 +52,7 @@ def scan_command(args) -> int:
     # For Bazel, delegate to existing tooling
     if build_system.get_name() == "Bazel":
         print("\nFor Bazel projects, use:")
-        print(f"  cd {args.path}")
+        print(f"  cd {path}")
         print("  bazel build //:sbom_all")
         print("  bazel build //:sca_scan_osv")
         return 0
@@ -62,7 +61,7 @@ def scan_command(args) -> int:
     try:
         include_test = args.include_test or config.get_include_test_deps()
         dependencies = build_system.resolve_dependencies(
-            Path(args.path),
+            path,
             include_test_deps=include_test
         )
         
@@ -71,7 +70,7 @@ def scan_command(args) -> int:
         # Export dependencies to JSON
         deps_json = {
             "build_system": build_system.get_name(),
-            "project_path": str(args.path),
+            "project_path": str(path),
             "total_dependencies": len(dependencies),
             "dependencies": [dep.to_dict() for dep in dependencies],
         }
@@ -91,6 +90,130 @@ def scan_command(args) -> int:
     except RuntimeError as e:
         print(f"ERROR: {str(e)}", file=sys.stderr)
         return 1
+
+
+def get_build_files_mtimes(path: Path, build_system_name: str) -> dict:
+    """Get modification times of build files for change detection.
+    
+    Args:
+        path: Project directory path
+        build_system_name: Name of detected build system
+        
+    Returns:
+        Dictionary mapping file paths to modification times
+    """
+    mtimes = {}
+    
+    # Define files to watch based on build system
+    watch_files = []
+    if build_system_name == "Maven":
+        watch_files = ["pom.xml", "**/*.pom", "**/pom.xml"]
+    elif build_system_name == "Gradle":
+        watch_files = ["build.gradle", "build.gradle.kts", "settings.gradle",
+                      "settings.gradle.kts", "**/*.gradle", "**/*.gradle.kts"]
+    elif build_system_name == "Bazel":
+        watch_files = ["WORKSPACE", "MODULE.bazel", "BUILD", "BUILD.bazel",
+                      "**/*.bzl", "**/BUILD", "**/BUILD.bazel"]
+    
+    # Collect modification times
+    for pattern in watch_files:
+        if "**" in pattern:
+            # Recursive glob
+            for file_path in path.rglob(pattern.replace("**/", "")):
+                if file_path.is_file():
+                    try:
+                        mtimes[str(file_path)] = file_path.stat().st_mtime
+                    except OSError:
+                        pass
+        else:
+            # Direct file
+            file_path = path / pattern
+            if file_path.is_file():
+                try:
+                    mtimes[str(file_path)] = file_path.stat().st_mtime
+                except OSError:
+                    pass
+    
+    return mtimes
+
+
+def scan_command(args) -> int:
+    """Execute scan command.
+    
+    Args:
+        args: Parsed command-line arguments
+        
+    Returns:
+        Exit code (0 for success)
+    """
+    path = Path(args.path)
+    
+    # Load configuration
+    config = BazBOMConfig.find_and_load(path)
+    
+    print(f"Scanning project: {path}")
+    
+    # If watch mode, continuously monitor for changes
+    if hasattr(args, 'watch') and args.watch:
+        print("\n🔍 Watch mode enabled - monitoring for file changes...")
+        print("Press Ctrl+C to stop\n")
+        
+        # Detect build system once
+        build_system = detect_build_system(path)
+        if not build_system:
+            print("ERROR: Could not detect build system", file=sys.stderr)
+            return 1
+        
+        build_system_name = build_system.get_name()
+        
+        # Perform initial scan
+        print("=" * 60)
+        print(f"Initial scan at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print("=" * 60)
+        result = perform_scan(path, config, args)
+        
+        # Track file modification times
+        prev_mtimes = get_build_files_mtimes(path, build_system_name)
+        
+        try:
+            while True:
+                time.sleep(2)  # Check every 2 seconds
+                
+                # Check for file changes
+                curr_mtimes = get_build_files_mtimes(path, build_system_name)
+                
+                # Detect changes
+                changed_files = []
+                for file_path, mtime in curr_mtimes.items():
+                    if file_path not in prev_mtimes or prev_mtimes[file_path] != mtime:
+                        changed_files.append(file_path)
+                
+                # Also check for deleted files
+                for file_path in prev_mtimes:
+                    if file_path not in curr_mtimes:
+                        changed_files.append(file_path + " (deleted)")
+                
+                if changed_files:
+                    print("\n" + "=" * 60)
+                    print(f"Change detected at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                    print("=" * 60)
+                    print("Changed files:")
+                    for changed_file in changed_files:
+                        print(f"  - {changed_file}")
+                    print("\nRe-scanning...\n")
+                    
+                    # Perform scan
+                    perform_scan(path, config, args)
+                    
+                    # Update tracked mtimes
+                    prev_mtimes = curr_mtimes
+        
+        except KeyboardInterrupt:
+            print("\n\n⏹  Watch mode stopped")
+            return 0
+    
+    # Normal single-scan mode
+    return perform_scan(path, config, args)
 
 
 def init_command(args) -> int:
@@ -199,6 +322,11 @@ Examples:
         choices=['json', 'spdx', 'cyclonedx', 'csv'],
         default='json',
         help='Output format (default: json)'
+    )
+    scan_parser.add_argument(
+        '--watch',
+        action='store_true',
+        help='Watch for file changes and re-scan automatically'
     )
     
     # Init command
