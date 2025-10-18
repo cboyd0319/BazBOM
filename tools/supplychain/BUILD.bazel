@@ -28,6 +28,11 @@ exports_files(
         "intoto_attestation.py",
         "verify_sbom.py",
         "compliance_report.py",
+        "sbom_diff.py",
+        "drift_detector.py",
+        "changelog_generator.py",
+        "osv_contributor.py",
+        "contribution_tracker.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -181,6 +186,36 @@ sh_binary(
     name = "compliance_report",
     srcs = ["compliance_report.py"],
     data = glob(["templates/compliance/*.html"]),
+)
+
+# Shell wrapper for sbom_diff
+sh_binary(
+    name = "sbom_diff",
+    srcs = ["sbom_diff.py"],
+)
+
+# Shell wrapper for drift_detector
+sh_binary(
+    name = "drift_detector",
+    srcs = ["drift_detector.py"],
+)
+
+# Shell wrapper for changelog_generator
+sh_binary(
+    name = "changelog_generator",
+    srcs = ["changelog_generator.py"],
+)
+
+# Shell wrapper for osv_contributor
+sh_binary(
+    name = "osv_contributor",
+    srcs = ["osv_contributor.py"],
+)
+
+# Shell wrapper for contribution_tracker
+sh_binary(
+    name = "contribution_tracker",
+    srcs = ["contribution_tracker.py"],
 )
 
 # Export aspect and macro definitions
