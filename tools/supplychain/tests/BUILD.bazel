@@ -99,6 +99,15 @@ py_test(
     size = "medium",
 )
 
+py_test(
+    name = "test_ai_query_engine",
+    srcs = [
+        "test_ai_query_engine.py",
+        "//tools/supplychain:ai_query_engine.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",

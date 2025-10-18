@@ -33,6 +33,7 @@ exports_files(
         "changelog_generator.py",
         "osv_contributor.py",
         "contribution_tracker.py",
+        "ai_query_engine.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -216,6 +217,12 @@ sh_binary(
 sh_binary(
     name = "contribution_tracker",
     srcs = ["contribution_tracker.py"],
+)
+
+# Shell wrapper for ai_query_engine
+sh_binary(
+    name = "ai_query_engine",
+    srcs = ["ai_query_engine.py"],
 )
 
 # Export aspect and macro definitions
