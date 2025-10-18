@@ -132,6 +132,44 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+# CSV export targets for easy data analysis
+genrule(
+    name = "sbom_csv",
+    srcs = [":workspace_sbom"],
+    outs = ["workspace_sbom.csv"],
+    cmd = "$(location //tools/supplychain:csv_exporter) --sbom $< --output $@",
+    tools = ["//tools/supplychain:csv_exporter"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "vulnerabilities_csv",
+    srcs = [":sca_findings_with_vex"],
+    outs = ["vulnerabilities.csv"],
+    cmd = "$(location //tools/supplychain:csv_exporter) --findings $< --output $@",
+    tools = ["//tools/supplychain:csv_exporter"],
+    visibility = ["//visibility:public"],
+)
+
+genrule(
+    name = "licenses_csv",
+    srcs = [":license_report"],
+    outs = ["licenses.csv"],
+    cmd = "$(location //tools/supplychain:csv_exporter) --license-report $< --output $@",
+    tools = ["//tools/supplychain:csv_exporter"],
+    visibility = ["//visibility:public"],
+)
+
+# Generate security badge for README
+genrule(
+    name = "security_badge",
+    srcs = [":sca_findings_with_vex"],
+    outs = ["security_badge.json"],
+    cmd = "$(location //tools/supplychain:badge_generator) --findings $< --output $@",
+    tools = ["//tools/supplychain:badge_generator"],
+    visibility = ["//visibility:public"],
+)
+
 # Detect dependency version conflicts
 genrule(
     name = "conflict_report",

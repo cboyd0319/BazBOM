@@ -35,6 +35,11 @@ exports_files(
         "contribution_tracker.py",
         "ai_query_engine.py",
         "upgrade_recommender.py",
+        "csv_exporter.py",
+        "badge_generator.py",
+        "build_system.py",
+        "bazbom_config.py",
+        "bazbom_cli.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -230,6 +235,40 @@ sh_binary(
 sh_binary(
     name = "upgrade_recommender",
     srcs = ["upgrade_recommender.py"],
+)
+
+# Shell wrapper for csv_exporter
+sh_binary(
+    name = "csv_exporter",
+    srcs = ["csv_exporter.py"],
+)
+
+# Shell wrapper for badge_generator
+sh_binary(
+    name = "badge_generator",
+    srcs = ["badge_generator.py"],
+)
+
+# Shell wrapper for build_system
+sh_binary(
+    name = "build_system",
+    srcs = ["build_system.py"],
+)
+
+# Shell wrapper for bazbom_config
+sh_binary(
+    name = "bazbom_config",
+    srcs = ["bazbom_config.py"],
+)
+
+# Shell wrapper for bazbom_cli (main CLI entry point)
+sh_binary(
+    name = "bazbom_cli",
+    srcs = ["bazbom_cli.py"],
+    data = [
+        ":build_system.py",
+        ":bazbom_config.py",
+    ],
 )
 
 # Export aspect and macro definitions
