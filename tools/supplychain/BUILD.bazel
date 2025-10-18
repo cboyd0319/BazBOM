@@ -35,6 +35,8 @@ exports_files(
         "contribution_tracker.py",
         "ai_query_engine.py",
         "upgrade_recommender.py",
+        "csv_exporter.py",
+        "badge_generator.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -230,6 +232,18 @@ sh_binary(
 sh_binary(
     name = "upgrade_recommender",
     srcs = ["upgrade_recommender.py"],
+)
+
+# Shell wrapper for csv_exporter
+sh_binary(
+    name = "csv_exporter",
+    srcs = ["csv_exporter.py"],
+)
+
+# Shell wrapper for badge_generator
+sh_binary(
+    name = "badge_generator",
+    srcs = ["badge_generator.py"],
 )
 
 # Export aspect and macro definitions
