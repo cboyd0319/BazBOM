@@ -336,3 +336,209 @@ class TestTemplateSearch:
         
         # Assert
         assert generator.templates_dir == templates_dir
+
+
+class TestLoadData:
+    """Test data loading functionality."""
+
+    def test_load_data_with_sbom_path(self, tmp_path):
+        """Test loading SBOM data."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        sbom_file = tmp_path / "sbom.json"
+        sbom_file.write_text('{"packages": []}')
+        
+        # Act
+        data = generator.load_data(sbom_path=str(sbom_file))
+        
+        # Assert
+        assert 'sbom' in data
+        assert data['sbom'] == {"packages": []}
+
+    def test_load_data_with_sca_findings_path(self, tmp_path):
+        """Test loading SCA findings data."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text('{"vulnerabilities": []}')
+        
+        # Act
+        data = generator.load_data(sca_findings_path=str(findings_file))
+        
+        # Assert
+        assert 'sca_findings' in data
+        assert data['sca_findings'] == {"vulnerabilities": []}
+
+    def test_load_data_with_license_report_path(self, tmp_path):
+        """Test loading license report data."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        license_file = tmp_path / "licenses.json"
+        license_file.write_text('{"licenses": []}')
+        
+        # Act
+        data = generator.load_data(license_report_path=str(license_file))
+        
+        # Assert
+        assert 'license_report' in data
+        assert data['license_report'] == {"licenses": []}
+
+    def test_load_data_with_enrichment_data_path(self, tmp_path):
+        """Test loading enrichment data."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        enrichment_file = tmp_path / "enrichment.json"
+        enrichment_file.write_text('{"enriched": true}')
+        
+        # Act
+        data = generator.load_data(enrichment_data_path=str(enrichment_file))
+        
+        # Assert
+        assert 'enrichment' in data
+        assert data['enrichment'] == {"enriched": True}
+
+    def test_load_data_sbom_file_not_found(self, tmp_path):
+        """Test error when SBOM file not found."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act & Assert
+        with pytest.raises(FileNotFoundError, match="SBOM file not found"):
+            generator.load_data(sbom_path="/nonexistent/sbom.json")
+
+    def test_load_data_sca_findings_file_not_found(self, tmp_path):
+        """Test error when SCA findings file not found."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act & Assert
+        with pytest.raises(FileNotFoundError, match="SCA findings file not found"):
+            generator.load_data(sca_findings_path="/nonexistent/findings.json")
+
+    def test_load_data_license_report_file_not_found(self, tmp_path):
+        """Test error when license report file not found."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act & Assert
+        with pytest.raises(FileNotFoundError, match="License report file not found"):
+            generator.load_data(license_report_path="/nonexistent/licenses.json")
+
+    def test_load_data_enrichment_file_missing_is_ok(self, tmp_path):
+        """Test that missing enrichment file is optional and doesn't raise error."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act
+        data = generator.load_data(enrichment_data_path="/nonexistent/enrichment.json")
+        
+        # Assert
+        assert 'enrichment' not in data
+
+    def test_load_data_with_all_files(self, tmp_path):
+        """Test loading all data files."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        sbom_file = tmp_path / "sbom.json"
+        sbom_file.write_text('{"packages": []}')
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text('{"vulnerabilities": []}')
+        license_file = tmp_path / "licenses.json"
+        license_file.write_text('{"licenses": []}')
+        enrichment_file = tmp_path / "enrichment.json"
+        enrichment_file.write_text('{"enriched": true}')
+        
+        # Act
+        data = generator.load_data(
+            sbom_path=str(sbom_file),
+            sca_findings_path=str(findings_file),
+            license_report_path=str(license_file),
+            enrichment_data_path=str(enrichment_file)
+        )
+        
+        # Assert
+        assert 'sbom' in data
+        assert 'sca_findings' in data
+        assert 'license_report' in data
+        assert 'enrichment' in data
+
+    def test_load_data_invalid_json_in_sbom(self, tmp_path):
+        """Test error when SBOM contains invalid JSON."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        sbom_file = tmp_path / "sbom.json"
+        sbom_file.write_text('{invalid json}')
+        
+        # Act & Assert
+        with pytest.raises(json.JSONDecodeError):
+            generator.load_data(sbom_path=str(sbom_file))
+
+    def test_load_data_with_no_paths(self, tmp_path):
+        """Test loading with no paths returns empty dict."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act
+        data = generator.load_data()
+        
+        # Assert
+        assert data == {}
+
+
+class TestCalculateSummaryStats:
+    """Test summary statistics calculation."""
+
+    def test_calculate_summary_stats_with_empty_data(self, tmp_path):
+        """Test calculating stats with empty data."""
+        # Arrange
+        templates_dir = tmp_path / "templates" / "compliance"
+        templates_dir.mkdir(parents=True)
+        (templates_dir / "executive_summary.html").write_text("<html></html>")
+        generator = ComplianceReportGenerator(templates_dir=str(templates_dir))
+        
+        # Act
+        stats = generator._calculate_summary_stats({})
+        
+        # Assert
+        assert isinstance(stats, dict)
+        assert 'total_packages' in stats
+        assert stats['total_packages'] == 0

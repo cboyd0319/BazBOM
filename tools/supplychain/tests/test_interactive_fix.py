@@ -455,3 +455,153 @@ class TestFixesAppliedTracking:
         # Assert
         assert fixer.fixes_applied == []
         assert isinstance(fixer.fixes_applied, list)
+
+
+class TestGenerateMavenFix:
+    """Test Maven fix generation."""
+
+    def test_generate_maven_fix_basic(self, tmp_path):
+        """Test generating Maven fix with basic package format."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'org.apache.logging.log4j:log4j-core',
+            'recommended_version': '2.17.0'
+        }
+        
+        # Act
+        result = fixer.generate_maven_fix(fix_analysis)
+        
+        # Assert
+        assert '<groupId>org.apache.logging.log4j</groupId>' in result
+        assert '<artifactId>log4j-core</artifactId>' in result
+        assert '<version>2.17.0</version>' in result
+        assert '<!-- BazBOM auto-generated fix -->' in result
+
+    def test_generate_maven_fix_with_slash_separator(self, tmp_path):
+        """Test generating Maven fix with slash-separated package format."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'com.google.guava/guava',
+            'recommended_version': '31.1-jre'
+        }
+        
+        # Act
+        result = fixer.generate_maven_fix(fix_analysis)
+        
+        # Assert
+        assert '<groupId>com.google.guava</groupId>' in result
+        assert '<artifactId>guava</artifactId>' in result
+
+    def test_generate_maven_fix_with_single_part_package(self, tmp_path):
+        """Test generating Maven fix with single-part package name."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'simple-package',
+            'recommended_version': '1.0.0'
+        }
+        
+        # Act
+        result = fixer.generate_maven_fix(fix_analysis)
+        
+        # Assert
+        assert '<artifactId>simple-package</artifactId>' in result
+        assert '<version>1.0.0</version>' in result
+
+
+class TestGenerateGradleFix:
+    """Test Gradle fix generation."""
+
+    def test_generate_gradle_fix_basic(self, tmp_path):
+        """Test generating Gradle fix."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "build.gradle").write_text("plugins { }")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'org.apache.logging.log4j:log4j-core',
+            'recommended_version': '2.17.0'
+        }
+        
+        # Act
+        result = fixer.generate_gradle_fix(fix_analysis)
+        
+        # Assert
+        assert '// BazBOM auto-generated fix' in result
+        assert 'configurations.all' in result
+        assert 'resolutionStrategy' in result
+        assert "force('org.apache.logging.log4j:log4j-core:2.17.0')" in result
+
+
+class TestGenerateBazelFix:
+    """Test Bazel fix generation."""
+
+    def test_generate_bazel_fix_basic(self, tmp_path):
+        """Test generating Bazel fix."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "WORKSPACE").write_text("workspace(name = 'test')")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'org.apache.logging.log4j:log4j-core',
+            'recommended_version': '2.17.0'
+        }
+        
+        # Act
+        result = fixer.generate_bazel_fix(fix_analysis)
+        
+        # Assert
+        assert '# BazBOM auto-generated fix' in result
+        assert 'override_targets' in result
+        assert 'org.apache.logging.log4j:log4j-core' in result
+        assert '2.17.0' in result
+
+    def test_generate_bazel_fix_creates_valid_target_name(self, tmp_path):
+        """Test Bazel fix creates valid target name."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "WORKSPACE").write_text("workspace(name = 'test')")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'com.google.guava:guava',
+            'recommended_version': '31.1-jre'
+        }
+        
+        # Act
+        result = fixer.generate_bazel_fix(fix_analysis)
+        
+        # Assert
+        # Target name should replace dots and hyphens with underscores
+        assert 'com_google_guava_guava' in result

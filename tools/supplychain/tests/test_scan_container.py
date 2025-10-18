@@ -407,3 +407,149 @@ class TestErrorMessages:
         # Act & Assert
         with pytest.raises(RuntimeError, match=error_msg):
             inspector._inspect_with_runtime("docker")
+
+
+class TestExtractLayers:
+    """Test layer extraction from image."""
+
+    @patch.object(ContainerInspector, '_inspect_with_runtime')
+    def test_extract_layers_with_layers_present(self, mock_inspect):
+        """Test extracting layers when present in inspection data."""
+        # Arrange
+        mock_inspect.return_value = {
+            "RootFS": {
+                "Layers": [
+                    "sha256:abc123",
+                    "sha256:def456",
+                    "sha256:ghi789"
+                ]
+            }
+        }
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        layers = inspector.extract_layers("docker")
+        
+        # Assert
+        assert len(layers) == 3
+        assert "sha256:abc123" in layers
+        assert "sha256:def456" in layers
+
+    @patch.object(ContainerInspector, '_inspect_with_runtime')
+    def test_extract_layers_without_rootfs(self, mock_inspect):
+        """Test extracting layers when RootFS is not present."""
+        # Arrange
+        mock_inspect.return_value = {}
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        layers = inspector.extract_layers("docker")
+        
+        # Assert
+        assert layers == []
+
+    @patch.object(ContainerInspector, '_inspect_with_runtime')
+    def test_extract_layers_empty_layers(self, mock_inspect):
+        """Test extracting layers when layers list is empty."""
+        # Arrange
+        mock_inspect.return_value = {
+            "RootFS": {
+                "Layers": []
+            }
+        }
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        layers = inspector.extract_layers("docker")
+        
+        # Assert
+        assert layers == []
+
+
+class TestScanOSPackages:
+    """Test OS package scanning."""
+
+    @patch('scan_container.subprocess.run')
+    def test_scan_os_packages_dpkg_success(self, mock_run):
+        """Test scanning OS packages with dpkg."""
+        # Arrange
+        mock_run.return_value = Mock(
+            stdout="package1\t1.0.0\npackage2\t2.0.0\n",
+            returncode=0
+        )
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        packages = inspector.scan_os_packages("docker")
+        
+        # Assert
+        assert len(packages) == 2
+        assert packages[0]['name'] == 'package1'
+        assert packages[0]['version'] == '1.0.0'
+        assert packages[0]['package_manager'] == 'dpkg'
+
+    @patch('scan_container.subprocess.run')
+    def test_scan_os_packages_rpm_fallback(self, mock_run):
+        """Test scanning OS packages falls back to rpm."""
+        # Arrange
+        def run_side_effect(cmd, **kwargs):
+            if 'dpkg-query' in cmd:
+                raise subprocess.CalledProcessError(1, cmd)
+            elif 'rpm' in cmd:
+                return Mock(
+                    stdout="package1\t1.0.0\n",
+                    returncode=0
+                )
+            return Mock(returncode=1)
+        
+        mock_run.side_effect = run_side_effect
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        packages = inspector.scan_os_packages("docker")
+        
+        # Assert
+        assert len(packages) == 1
+        assert packages[0]['package_manager'] == 'rpm'
+
+    @patch('scan_container.subprocess.run')
+    def test_scan_os_packages_no_package_manager(self, mock_run):
+        """Test scanning when no package manager is found."""
+        # Arrange
+        mock_run.side_effect = subprocess.CalledProcessError(1, ["cmd"])
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        packages = inspector.scan_os_packages("docker")
+        
+        # Assert
+        assert packages == []
+
+    @patch('scan_container.subprocess.run')
+    def test_scan_os_packages_timeout(self, mock_run):
+        """Test handling timeout during package scan."""
+        # Arrange
+        mock_run.side_effect = subprocess.TimeoutExpired(["cmd"], 60)
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        packages = inspector.scan_os_packages("docker")
+        
+        # Assert
+        assert packages == []
+
+    @patch('scan_container.subprocess.run')
+    def test_scan_os_packages_empty_output(self, mock_run):
+        """Test handling empty package output."""
+        # Arrange
+        mock_run.return_value = Mock(
+            stdout="",
+            returncode=0
+        )
+        inspector = ContainerInspector("test:latest")
+        
+        # Act
+        packages = inspector.scan_os_packages("docker")
+        
+        # Assert
+        assert packages == []
