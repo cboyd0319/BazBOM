@@ -42,6 +42,11 @@ exports_files(
         "bazbom_cli.py",
         "scan_container.py",
         "interactive_fix.py",
+        "dependency_scanner.py",
+        "license_scanner.py",
+        "container_scanner.py",
+        "dependency_verifier.py",
+        "cve_tracker.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -283,6 +288,36 @@ sh_binary(
 sh_binary(
     name = "interactive_fix",
     srcs = ["interactive_fix.py"],
+)
+
+# Shell wrapper for dependency_scanner (RipGrep-accelerated dependency discovery)
+sh_binary(
+    name = "dependency_scanner",
+    srcs = ["dependency_scanner.py"],
+)
+
+# Shell wrapper for license_scanner (RipGrep-accelerated license scanning)
+sh_binary(
+    name = "license_scanner",
+    srcs = ["license_scanner.py"],
+)
+
+# Shell wrapper for container_scanner (RipGrep-accelerated container scanning)
+sh_binary(
+    name = "container_scanner",
+    srcs = ["container_scanner.py"],
+)
+
+# Shell wrapper for dependency_verifier (unused dependency detection)
+sh_binary(
+    name = "dependency_verifier",
+    srcs = ["dependency_verifier.py"],
+)
+
+# Shell wrapper for cve_tracker (CVE reference tracking)
+sh_binary(
+    name = "cve_tracker",
+    srcs = ["cve_tracker.py"],
 )
 
 # Export aspect and macro definitions
