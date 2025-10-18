@@ -4,9 +4,9 @@
 
 # BazBOM
 
-### **Build-time SBOM generation and vulnerability scanning for Bazel projects**
+### **Build-time SBOM generation and vulnerability scanning for JVM projects**
 
-Automatic dependency discovery • Zero configuration • Production-ready
+Universal support for Maven, Gradle, and Bazel • Zero configuration • Production-ready
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -24,23 +24,51 @@ Automatic dependency discovery • Zero configuration • Production-ready
 
 ## What is BazBOM?
 
-BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for Java/JVM projects built with Bazel. It uses Bazel's build graph as the source of truth—no guessing, no manual maintenance.
+BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **any JVM project**—whether you use **Maven, Gradle, or Bazel**. It automatically discovers dependencies and produces accurate, standards-compliant security artifacts.
 
 **The problem:** Manual SBOM creation is error-prone. Post-build scanners miss transitive dependencies or include test artifacts.
 
-**The solution:** BazBOM uses Bazel aspects to traverse your dependency graph automatically. Every build produces an accurate SBOM. Maven lockfiles provide exact versions and licenses.
+**The solution:** BazBOM uses build system-native dependency resolution for accuracy. For Bazel, it uses aspects to traverse the build graph. For Maven and Gradle, it leverages their dependency trees. Every scan produces an accurate SBOM with zero manual maintenance.
 
 ### Who is this for?
 
 - **Security teams** enforcing supply chain policies (SBOM + VEX + SLSA)
 - **DevSecOps engineers** automating vulnerability scanning in CI/CD
-- **Organizations** with large Bazel+Java monorepos (5000+ targets)
+- **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
+- **Organizations** with large monorepos (5000+ targets) or multi-repo setups
+
+### 🆕 What's New
+
+- **Universal Build System Support**: Works with Maven, Gradle, and Bazel projects
+- **Standalone CLI**: `bazbom scan .` works in any JVM project
+- **CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
+- **Security Badges**: Auto-generate shields.io badges for your README
+- **Configuration Files**: Customize with `bazbom.yml` per-project settings
 
 ---
 
 ## ⚡ Quickstart
 
-### 1. Add BazBOM to your WORKSPACE
+### Option 1: Universal CLI (Any JVM Project)
+
+Works with **Maven**, **Gradle**, or **Bazel** projects:
+
+```bash
+# Clone BazBOM
+git clone https://github.com/cboyd0319/BazBOM
+cd BazBOM
+
+# Scan any JVM project (auto-detects build system)
+bazel run //tools/supplychain:bazbom_cli -- scan /path/to/your/project
+
+# Initialize configuration (optional)
+cd /path/to/your/project
+bazel run /path/to/BazBOM//tools/supplychain:bazbom_cli -- init
+```
+
+**Output:** `dependencies.json` with all resolved dependencies and PURLs.
+
+### Option 2: Bazel-Native (For Bazel Projects)
 
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -84,9 +112,17 @@ That's it. No configuration files, no manual dependency lists.
 <tr>
 <td width="50%">
 
+**Universal Build System Support** 🆕
+- ✅ **Maven** (pom.xml) - via `mvn dependency:list`
+- ✅ **Gradle** (build.gradle) - via `gradle dependencies`
+- ✅ **Bazel** (WORKSPACE) - via aspects
+- ✅ Auto-detection of build system
+- ✅ Unified CLI: `bazbom scan .`
+
 **SBOM Generation**
 - ✅ SPDX 2.3 (JSON) primary format
 - ✅ CycloneDX 1.5 (optional)
+- ✅ CSV export for spreadsheets 🆕
 - ✅ Per-target or workspace-wide
 - ✅ Automatic version/license extraction
 
@@ -102,6 +138,7 @@ That's it. No configuration files, no manual dependency lists.
 **GitHub Integration**
 - ✅ SARIF 2.1.0 output
 - ✅ Code Scanning alerts
+- ✅ Security badges (shields.io) 🆕
 - ✅ PR comments with findings
 - ✅ Policy enforcement (block on critical CVEs)
 
@@ -115,6 +152,19 @@ That's it. No configuration files, no manual dependency lists.
 - ✅ License compliance checking
 - ✅ Typosquatting detection
 - ✅ Outdated dependency detection
+
+**Configuration & Customization** 🆕
+- ✅ Project-level config (bazbom.yml)
+- ✅ Severity thresholds (CRITICAL/HIGH/MEDIUM/LOW)
+- ✅ Policy enforcement rules
+- ✅ Custom output paths
+- ✅ Multiple output formats
+
+**Data Export** 🆕
+- ✅ CSV export (SBOM, vulnerabilities, licenses)
+- ✅ JSON (machine-readable)
+- ✅ SARIF (GitHub Security)
+- ✅ GraphML (dependency graphs)
 
 **Dependency Analysis**
 - ✅ Full transitive graph (JSON + GraphML)
