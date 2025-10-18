@@ -100,6 +100,20 @@ check_prerequisites() {
         log_warning "Git is not installed. Some features may not work."
     fi
     
+    # Check for ripgrep (optional but recommended for fast scanning)
+    if ! command -v rg &> /dev/null; then
+        log_warning "RipGrep not found - fast scanning disabled"
+        log_info "   For 100x faster dependency scanning, install RipGrep:"
+        log_info "   - Debian/Ubuntu: apt install ripgrep"
+        log_info "   - RHEL/CentOS: yum install ripgrep"
+        log_info "   - macOS: brew install ripgrep"
+        log_info "   - Or see: https://github.com/BurntSushi/ripgrep#installation"
+    else
+        RG_VERSION=$(rg --version | head -n1)
+        log_success "RipGrep detected - enabling fast mode"
+        log_info "   $RG_VERSION"
+    fi
+    
     log_success "Prerequisites check passed"
 }
 
