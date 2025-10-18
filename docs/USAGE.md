@@ -9,7 +9,12 @@ This guide covers day-to-day commands and workflows for BazBOM.
 Install BazBOM with zero configuration:
 
 ```bash
-# One-line installer
+# Recommended: Download and inspect first (safest)
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh -o install.sh
+cat install.sh  # Review the script
+bash install.sh
+
+# Alternative: One-line install (if you trust the source)
 curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
 
 # Or download and run locally
@@ -17,6 +22,8 @@ wget https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
+
+**⚠️ Security Note**: Always review scripts before running them, especially when using pipe-to-bash (`| bash`). The recommended approach is to download, inspect, and then execute.
 
 The installer will:
 - ✅ Detect your platform (Linux/macOS, amd64/arm64)

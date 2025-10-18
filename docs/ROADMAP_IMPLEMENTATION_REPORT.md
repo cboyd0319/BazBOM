@@ -52,8 +52,16 @@ bazbom scan --watch
 **Impact**: Critical - Gateway to universal adoption
 
 ```bash
+# Recommended: Download and inspect first
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh -o install.sh
+less install.sh  # Review the script
+bash install.sh
+
+# Or: One-line install (if you trust the source)
 curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
 ```
+
+**Security Note**: Always review scripts before running them, especially when using pipe-to-bash. The recommended approach is to download, inspect, and then execute.
 
 **Capabilities:**
 - Platform detection (Linux/macOS, amd64/arm64)

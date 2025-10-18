@@ -57,7 +57,12 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 Install BazBOM with automatic configuration:
 
 ```bash
-# Install BazBOM
+# Recommended: Download and inspect first
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh -o install.sh
+less install.sh  # Review the script
+bash install.sh
+
+# Or: One-line install (if you trust the source)
 curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
 
 # Scan any JVM project
@@ -66,6 +71,8 @@ bazbom scan .
 # Watch for changes
 bazbom scan --watch
 ```
+
+**Security Note**: Always review scripts before executing them with bash. The recommended approach is to download, inspect, and then execute.
 
 **What it does:**
 - ✅ Detects your platform (Linux/macOS, amd64/arm64)
