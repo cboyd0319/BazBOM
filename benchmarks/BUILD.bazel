@@ -1,0 +1,21 @@
+"""Benchmark suite for BazBOM performance testing."""
+
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+py_binary(
+    name = "runner",
+    srcs = ["runner.py"],
+    deps = [],
+    visibility = ["//visibility:public"],
+    python_version = "PY3",
+    srcs_version = "PY3",
+)
+
+py_test(
+    name = "test_runner",
+    srcs = ["test_runner.py"],
+    deps = [":runner"],
+    size = "medium",
+    python_version = "PY3",
+    srcs_version = "PY3",
+)
