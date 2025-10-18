@@ -34,6 +34,7 @@ exports_files(
         "osv_contributor.py",
         "contribution_tracker.py",
         "ai_query_engine.py",
+        "upgrade_recommender.py",
     ],
     visibility = ["//visibility:public"],
 )
@@ -223,6 +224,12 @@ sh_binary(
 sh_binary(
     name = "ai_query_engine",
     srcs = ["ai_query_engine.py"],
+)
+
+# Shell wrapper for upgrade_recommender
+sh_binary(
+    name = "upgrade_recommender",
+    srcs = ["upgrade_recommender.py"],
 )
 
 # Export aspect and macro definitions

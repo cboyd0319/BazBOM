@@ -108,6 +108,15 @@ py_test(
     size = "small",
 )
 
+py_test(
+    name = "test_upgrade_recommender",
+    srcs = [
+        "test_upgrade_recommender.py",
+        "//tools/supplychain:upgrade_recommender.py",
+    ],
+    size = "small",
+)
+
 # Test fixtures directory
 filegroup(
     name = "fixtures",

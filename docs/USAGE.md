@@ -1032,3 +1032,83 @@ Example in CI:
 ## Troubleshooting
 
 For common issues and solutions, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md).
+
+## Performance Benchmarking
+
+BazBOM includes a comprehensive benchmark suite to measure performance against other SBOM tools:
+
+```bash
+# Run benchmarks for BazBOM
+bazel run //benchmarks:runner -- --tools bazbom --sizes all
+
+# Compare against other tools
+bazel run //benchmarks:runner -- --tools bazbom syft --sizes all --leaderboard
+
+# Test specific repository sizes
+bazel run //benchmarks:runner -- --tools bazbom --sizes small_100_deps medium_500_deps
+```
+
+**Output:**
+- `benchmarks/results/benchmark_results.json` - Detailed metrics
+- `benchmarks/results/leaderboard.md` - Human-readable comparison
+
+See [benchmarks/README.md](../benchmarks/README.md) for creating custom benchmark repositories.
+
+## AI-Powered Query Interface
+
+Query your SBOMs using natural language:
+
+```bash
+# Interactive mode
+bazel run //tools/supplychain:ai_query_engine -- --sbom app.spdx.json
+
+# Single query
+bazel run //tools/supplychain:ai_query_engine -- \
+  --sbom app.spdx.json \
+  --query "What packages use log4j?"
+
+# JSON output for automation
+bazel run //tools/supplychain:ai_query_engine -- \
+  --sbom app.spdx.json \
+  --query "Show GPL dependencies" \
+  --json
+```
+
+**Supported queries:**
+- Dependency searches: "What uses log4j?", "Show guava dependencies"
+- License queries: "Show GPL dependencies", "List Apache-licensed packages"
+- Vulnerability queries: "Which packages are vulnerable?", "Show CVE-2021-44228"
+- Statistics: "How many dependencies?", "Show statistics"
+
+## Upgrade Recommendations
+
+Get AI-powered upgrade recommendations with breaking change analysis:
+
+```bash
+# Get upgrade recommendation
+bazel run //tools/supplychain:upgrade_recommender -- \
+  --package com.google.guava:guava \
+  --current 30.1-jre \
+  --versions 31.0-jre 31.1-jre 32.0-jre
+
+# With changelog analysis
+bazel run //tools/supplychain:upgrade_recommender -- \
+  --package com.google.guava:guava \
+  --current 30.1-jre \
+  --changelog path/to/CHANGELOG.md
+
+# JSON output for automation
+bazel run //tools/supplychain:upgrade_recommender -- \
+  --package com.google.guava:guava \
+  --current 30.1-jre \
+  --json
+```
+
+**Output includes:**
+- Recommended version (balancing safety and updates)
+- Latest available version
+- Compatibility score (0-100%)
+- Effort estimate (LOW, MEDIUM, HIGH)
+- Breaking changes identified
+- Migration guide with steps
+- Security fixes (when available)
