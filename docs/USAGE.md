@@ -2,6 +2,99 @@
 
 This guide covers day-to-day commands and workflows for BazBOM.
 
+## Quick Start with BazBOM CLI
+
+BazBOM now includes a unified CLI that works with **any JVM project**, not just Bazel:
+
+```bash
+# Scan any JVM project (auto-detects Maven, Gradle, or Bazel)
+bazel run //tools/supplychain:bazbom_cli -- scan .
+
+# Initialize configuration file (bazbom.yml)
+bazel run //tools/supplychain:bazbom_cli -- init
+
+# Show version
+bazel run //tools/supplychain:bazbom_cli -- version
+```
+
+### Supported Build Systems
+
+BazBOM automatically detects and works with:
+- **Maven** (pom.xml)
+- **Gradle** (build.gradle, build.gradle.kts)
+- **Bazel** (WORKSPACE, MODULE.bazel)
+
+### Configuration File (bazbom.yml)
+
+Create a `bazbom.yml` in your project root to customize behavior:
+
+```yaml
+# Build system (auto-detect by default)
+build_system: auto  # or: maven, gradle, bazel
+
+# Include test dependencies in scans
+include_test_deps: false
+
+# Output formats
+output_formats:
+  - spdx
+  - cyclonedx
+
+# Minimum severity to report
+severity_threshold: MEDIUM  # CRITICAL, HIGH, MEDIUM, LOW
+
+# Policy enforcement
+policy:
+  block_critical: true
+  fail_on_policy_violation: true
+  max_critical: 0
+  max_high: 10
+
+# Vulnerability sources
+vulnerability_sources:
+  osv:
+    enabled: true
+  nvd:
+    enabled: false
+
+# Output file paths
+output:
+  sbom_path: sbom.spdx.json
+  findings_path: sca_findings.json
+  sarif_path: sca_findings.sarif
+```
+
+### CSV Export
+
+Export scan results to CSV for analysis in spreadsheet tools:
+
+```bash
+# Export SBOM to CSV
+bazel build //:sbom_csv
+cat bazel-bin/workspace_sbom.csv
+
+# Export vulnerabilities to CSV
+bazel build //:vulnerabilities_csv
+cat bazel-bin/vulnerabilities.csv
+
+# Export license report to CSV
+bazel build //:licenses_csv
+cat bazel-bin/licenses.csv
+```
+
+### Security Badges
+
+Generate shields.io compatible badges for your README:
+
+```bash
+# Generate badge JSON
+bazel build //:security_badge
+cat bazel-bin/security_badge.json
+
+# Use in GitHub workflows to update README badge
+# Badge color: green (no vulns), yellow (medium), orange (high), red (critical)
+```
+
 ## Dependency Extraction
 
 BazBOM uses **maven_install.json** as the source of truth for Maven dependencies, as recommended by the Bazel ecosystem. This lockfile provides:
