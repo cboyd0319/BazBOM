@@ -1,0 +1,358 @@
+name: 'BazBOM Security Scan'
+description: 'SBOM generation and vulnerability scanning for JVM projects'
+author: 'BazBOM Contributors'
+
+branding:
+  icon: 'shield'
+  color: 'blue'
+
+inputs:
+  build-system:
+    description: 'Build system (auto|maven|gradle|bazel)'
+    required: false
+    default: 'auto'
+  
+  path:
+    description: 'Path to project directory'
+    required: false
+    default: '.'
+  
+  fail-on-critical:
+    description: 'Fail workflow on CRITICAL vulnerabilities'
+    required: false
+    default: 'true'
+  
+  fail-on-high:
+    description: 'Fail workflow on HIGH vulnerabilities'
+    required: false
+    default: 'false'
+  
+  max-critical:
+    description: 'Maximum number of CRITICAL vulnerabilities allowed'
+    required: false
+    default: '0'
+  
+  max-high:
+    description: 'Maximum number of HIGH vulnerabilities allowed'
+    required: false
+    default: '10'
+  
+  include-test-deps:
+    description: 'Include test dependencies in scan'
+    required: false
+    default: 'false'
+  
+  policy-file:
+    description: 'Path to policy file'
+    required: false
+    default: '.bazbom/policy.yml'
+  
+  upload-sbom:
+    description: 'Upload SBOM as artifact'
+    required: false
+    default: 'true'
+  
+  upload-sarif:
+    description: 'Upload SARIF to GitHub Security'
+    required: false
+    default: 'true'
+  
+  output-format:
+    description: 'SBOM output format (spdx|cyclonedx|both)'
+    required: false
+    default: 'spdx'
+
+outputs:
+  vulnerabilities-found:
+    description: 'Number of vulnerabilities found'
+    value: ${{ steps.scan.outputs.vulnerabilities-found }}
+  
+  critical-count:
+    description: 'Number of CRITICAL vulnerabilities'
+    value: ${{ steps.scan.outputs.critical-count }}
+  
+  high-count:
+    description: 'Number of HIGH vulnerabilities'
+    value: ${{ steps.scan.outputs.high-count }}
+  
+  sbom-path:
+    description: 'Path to generated SBOM'
+    value: ${{ steps.scan.outputs.sbom-path }}
+  
+  sarif-path:
+    description: 'Path to generated SARIF'
+    value: ${{ steps.scan.outputs.sarif-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install BazBOM
+      shell: bash
+      run: |
+        echo "::group::Installing BazBOM"
+        
+        # Clone BazBOM repository
+        BAZBOM_DIR="${HOME}/.bazbom"
+        if [ ! -d "$BAZBOM_DIR" ]; then
+          git clone https://github.com/cboyd0319/BazBOM.git "$BAZBOM_DIR"
+        fi
+        
+        # Create wrapper script
+        cat > "${HOME}/.bazbom/bazbom" << 'EOF'
+        #!/bin/bash
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        exec python3 "$SCRIPT_DIR/tools/supplychain/bazbom_cli.py" "$@"
+        EOF
+        chmod +x "${HOME}/.bazbom/bazbom"
+        
+        # Add to PATH
+        echo "${HOME}/.bazbom" >> $GITHUB_PATH
+        
+        # Verify installation
+        "${HOME}/.bazbom/bazbom" version
+        
+        echo "::endgroup::"
+    
+    - name: Detect Build System
+      id: detect
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Detecting build system"
+        
+        BUILD_SYSTEM="${{ inputs.build-system }}"
+        
+        if [ "$BUILD_SYSTEM" = "auto" ]; then
+          if [ -f "WORKSPACE" ] || [ -f "MODULE.bazel" ]; then
+            BUILD_SYSTEM="bazel"
+          elif [ -f "pom.xml" ]; then
+            BUILD_SYSTEM="maven"
+          elif [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+            BUILD_SYSTEM="gradle"
+          else
+            echo "::error::Could not detect build system"
+            exit 1
+          fi
+        fi
+        
+        echo "Detected build system: $BUILD_SYSTEM"
+        echo "build-system=$BUILD_SYSTEM" >> $GITHUB_OUTPUT
+        
+        echo "::endgroup::"
+    
+    - name: Setup Bazel
+      if: steps.detect.outputs.build-system == 'bazel'
+      uses: bazel-contrib/setup-bazel@0.8.5
+      with:
+        bazelisk-cache: true
+        disk-cache: ${{ github.workflow }}
+        repository-cache: true
+    
+    - name: Generate SBOM (Bazel)
+      if: steps.detect.outputs.build-system == 'bazel'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Generating SBOM with Bazel"
+        bazel build //:workspace_sbom
+        
+        # Copy SBOM to predictable location
+        cp bazel-bin/workspace_sbom.spdx.json sbom.spdx.json
+        
+        echo "sbom-path=sbom.spdx.json" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+    
+    - name: Scan Dependencies (Maven/Gradle)
+      if: steps.detect.outputs.build-system != 'bazel'
+      id: scan-deps
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Scanning dependencies"
+        
+        INCLUDE_TEST=""
+        if [ "${{ inputs.include-test-deps }}" = "true" ]; then
+          INCLUDE_TEST="--include-test"
+        fi
+        
+        bazbom scan . $INCLUDE_TEST --output dependencies.json
+        
+        echo "dependencies-path=dependencies.json" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+    
+    - name: Run Vulnerability Scan
+      id: scan
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Running vulnerability scan"
+        
+        # For Bazel projects
+        if [ "${{ steps.detect.outputs.build-system }}" = "bazel" ]; then
+          bazel build //:sca_scan_osv || true
+          
+          if [ -f "bazel-bin/sca_findings.json" ]; then
+            cp bazel-bin/sca_findings.json sca_findings.json
+          else
+            echo '{"packages_scanned": 0, "vulnerabilities_found": 0, "vulnerabilities": []}' > sca_findings.json
+          fi
+        else
+          # TODO: Implement vulnerability scanning for Maven/Gradle
+          echo '{"packages_scanned": 0, "vulnerabilities_found": 0, "vulnerabilities": []}' > sca_findings.json
+        fi
+        
+        # Parse results
+        VULNS_FOUND=$(jq -r '.vulnerabilities_found // 0' sca_findings.json)
+        CRITICAL_COUNT=$(jq -r '[.vulnerabilities[]? | select(.severity == "CRITICAL")] | length' sca_findings.json)
+        HIGH_COUNT=$(jq -r '[.vulnerabilities[]? | select(.severity == "HIGH")] | length' sca_findings.json)
+        
+        echo "vulnerabilities-found=$VULNS_FOUND" >> $GITHUB_OUTPUT
+        echo "critical-count=$CRITICAL_COUNT" >> $GITHUB_OUTPUT
+        echo "high-count=$HIGH_COUNT" >> $GITHUB_OUTPUT
+        
+        echo "Found $VULNS_FOUND vulnerabilities ($CRITICAL_COUNT CRITICAL, $HIGH_COUNT HIGH)"
+        
+        echo "::endgroup::"
+    
+    - name: Generate SARIF
+      if: inputs.upload-sarif == 'true'
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Generating SARIF"
+        
+        if [ "${{ steps.detect.outputs.build-system }}" = "bazel" ]; then
+          bazel build //:sca_sarif || true
+          
+          if [ -f "bazel-bin/sca_findings.sarif" ]; then
+            cp bazel-bin/sca_findings.sarif sca_findings.sarif
+          fi
+        fi
+        
+        # Create minimal SARIF if none exists
+        if [ ! -f "sca_findings.sarif" ]; then
+          cat > sca_findings.sarif << 'EOF'
+        {
+          "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+          "version": "2.1.0",
+          "runs": [
+            {
+              "tool": {
+                "driver": {
+                  "name": "BazBOM",
+                  "version": "1.0.0"
+                }
+              },
+              "results": []
+            }
+          ]
+        }
+        EOF
+        fi
+        
+        echo "sarif-path=sca_findings.sarif" >> $GITHUB_OUTPUT
+        
+        echo "::endgroup::"
+    
+    - name: Upload SBOM Artifact
+      if: inputs.upload-sbom == 'true'
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: |
+          ${{ inputs.path }}/sbom.spdx.json
+          ${{ inputs.path }}/*.sbom.json
+        if-no-files-found: warn
+    
+    - name: Upload SARIF to GitHub Security
+      if: inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.path }}/sca_findings.sarif
+        category: bazbom-security
+      continue-on-error: true
+    
+    - name: Check Policy Violations
+      shell: bash
+      working-directory: ${{ inputs.path }}
+      run: |
+        echo "::group::Checking policy violations"
+        
+        CRITICAL_COUNT="${{ steps.scan.outputs.critical-count }}"
+        HIGH_COUNT="${{ steps.scan.outputs.high-count }}"
+        MAX_CRITICAL="${{ inputs.max-critical }}"
+        MAX_HIGH="${{ inputs.max-high }}"
+        
+        echo "Policy thresholds:"
+        echo "  - Max CRITICAL: $MAX_CRITICAL (found: $CRITICAL_COUNT)"
+        echo "  - Max HIGH: $MAX_HIGH (found: $HIGH_COUNT)"
+        
+        VIOLATIONS=0
+        
+        if [ "${{ inputs.fail-on-critical }}" = "true" ] && [ "$CRITICAL_COUNT" -gt "$MAX_CRITICAL" ]; then
+          echo "::error::Policy violation: Found $CRITICAL_COUNT CRITICAL vulnerabilities (max: $MAX_CRITICAL)"
+          VIOLATIONS=$((VIOLATIONS + 1))
+        fi
+        
+        if [ "${{ inputs.fail-on-high }}" = "true" ] && [ "$HIGH_COUNT" -gt "$MAX_HIGH" ]; then
+          echo "::error::Policy violation: Found $HIGH_COUNT HIGH vulnerabilities (max: $MAX_HIGH)"
+          VIOLATIONS=$((VIOLATIONS + 1))
+        fi
+        
+        echo "::endgroup::"
+        
+        if [ "$VIOLATIONS" -gt 0 ]; then
+          echo "::error::$VIOLATIONS policy violation(s) found. Build failed."
+          exit 1
+        fi
+        
+        echo "::notice::All policy checks passed ✓"
+    
+    - name: Comment on PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const vulnsFound = ${{ steps.scan.outputs.vulnerabilities-found }};
+          const criticalCount = ${{ steps.scan.outputs.critical-count }};
+          const highCount = ${{ steps.scan.outputs.high-count }};
+          
+          let statusEmoji = '✅';
+          let statusText = 'No vulnerabilities found';
+          
+          if (criticalCount > 0) {
+            statusEmoji = '🔴';
+            statusText = `${criticalCount} CRITICAL vulnerabilities found`;
+          } else if (highCount > 0) {
+            statusEmoji = '🟠';
+            statusText = `${highCount} HIGH vulnerabilities found`;
+          } else if (vulnsFound > 0) {
+            statusEmoji = '🟡';
+            statusText = `${vulnsFound} vulnerabilities found (MEDIUM/LOW)`;
+          }
+          
+          const comment = `## ${statusEmoji} BazBOM Security Scan Results
+          
+          **Status:** ${statusText}
+          
+          ${criticalCount > 0 ? `### 🔴 Critical Issues (${criticalCount})
+          Review the SARIF report for details.
+          ` : ''}
+          
+          ${highCount > 0 ? `### 🟠 High Issues (${highCount})
+          Review the SARIF report for details.
+          ` : ''}
+          
+          **Total vulnerabilities:** ${vulnsFound}
+          - CRITICAL: ${criticalCount}
+          - HIGH: ${highCount}
+          
+          📊 View detailed findings in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

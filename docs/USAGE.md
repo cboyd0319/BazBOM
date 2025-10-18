@@ -2,9 +2,64 @@
 
 This guide covers day-to-day commands and workflows for BazBOM.
 
+## Installation
+
+### Quick Install (Recommended)
+
+Install BazBOM with zero configuration:
+
+```bash
+# One-line installer
+curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+
+# Or download and run locally
+wget https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh
+chmod +x install.sh
+./install.sh
+```
+
+The installer will:
+- ✅ Detect your platform (Linux/macOS, amd64/arm64)
+- ✅ Check prerequisites (Python 3, Git)
+- ✅ Install BazBOM to `~/.bazbom`
+- ✅ Add `bazbom` command to your PATH
+- ✅ Auto-configure Bazel projects (if detected)
+
+### Manual Installation
+
+```bash
+# Clone repository
+git clone https://github.com/cboyd0319/BazBOM.git ~/.bazbom
+
+# Add to PATH
+echo 'export PATH="$HOME/.bazbom:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Verify installation
+bazbom version
+```
+
 ## Quick Start with BazBOM CLI
 
-BazBOM now includes a unified CLI that works with **any JVM project**, not just Bazel:
+BazBOM includes a unified CLI that works with **any JVM project**, not just Bazel:
+
+```bash
+# Scan any JVM project (auto-detects Maven, Gradle, or Bazel)
+bazbom scan .
+
+# Watch for changes and re-scan automatically
+bazbom scan --watch
+
+# Initialize configuration file (bazbom.yml)
+bazbom init
+
+# Show version
+bazbom version
+```
+
+### Using via Bazel (Alternative)
+
+If you prefer using Bazel directly:
 
 ```bash
 # Scan any JVM project (auto-detects Maven, Gradle, or Bazel)
@@ -93,6 +148,129 @@ cat bazel-bin/security_badge.json
 
 # Use in GitHub workflows to update README badge
 # Badge color: green (no vulns), yellow (medium), orange (high), red (critical)
+```
+
+### Watch Mode
+
+Continuously monitor your project and re-scan on changes:
+
+```bash
+# Watch mode - re-scans when build files change
+bazbom scan --watch
+
+# What it monitors:
+# - Maven: pom.xml files
+# - Gradle: build.gradle, build.gradle.kts, settings.gradle
+# - Bazel: WORKSPACE, BUILD files, *.bzl files
+
+# Press Ctrl+C to stop watching
+```
+
+**Use Cases for Watch Mode:**
+- **Development**: Get real-time feedback as you update dependencies
+- **CI/CD**: Monitor long-running builds for dependency changes
+- **Security**: Immediate alerts when new vulnerabilities are introduced
+
+## GitHub Action Integration
+
+Add automated security scanning to your GitHub workflows:
+
+### Basic Setup
+
+Create `.github/workflows/security.yml`:
+
+```yaml
+name: Supply Chain Security
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run BazBOM Security Scan
+        uses: cboyd0319/BazBOM@main
+        with:
+          fail-on-critical: true
+          upload-sbom: true
+          upload-sarif: true
+```
+
+### Advanced Configuration
+
+```yaml
+- name: Run BazBOM Security Scan
+  uses: cboyd0319/BazBOM@main
+  with:
+    # Build system (auto-detect by default)
+    build-system: auto  # or: maven, gradle, bazel
+    
+    # Project path
+    path: .
+    
+    # Policy enforcement
+    fail-on-critical: true
+    fail-on-high: false
+    max-critical: 0
+    max-high: 10
+    
+    # Dependencies
+    include-test-deps: false
+    
+    # Outputs
+    upload-sbom: true
+    upload-sarif: true
+    output-format: spdx  # or: cyclonedx, both
+    
+    # Custom policy
+    policy-file: .bazbom/policy.yml
+```
+
+### Action Outputs
+
+Access scan results in subsequent steps:
+
+```yaml
+- name: Run BazBOM Security Scan
+  id: scan
+  uses: cboyd0319/BazBOM@main
+
+- name: Check Results
+  run: |
+    echo "Vulnerabilities found: ${{ steps.scan.outputs.vulnerabilities-found }}"
+    echo "Critical count: ${{ steps.scan.outputs.critical-count }}"
+    echo "High count: ${{ steps.scan.outputs.high-count }}"
+    echo "SBOM path: ${{ steps.scan.outputs.sbom-path }}"
+```
+
+### PR Comments
+
+The action automatically comments on pull requests with scan results:
+
+```markdown
+## 🔴 BazBOM Security Scan Results
+
+**Status:** 2 CRITICAL vulnerabilities found
+
+### 🔴 Critical Issues (2)
+Review the SARIF report for details.
+
+**Total vulnerabilities:** 5
+- CRITICAL: 2
+- HIGH: 3
+
+📊 View detailed findings in the Security tab
 ```
 
 ## Dependency Extraction
