@@ -4,6 +4,7 @@
 import json
 import sys
 from pathlib import Path
+from unittest.mock import patch, mock_open
 
 import pytest
 
@@ -14,6 +15,7 @@ from validators.validate_sbom import (
     validate_spdx_required_fields,
     validate_package,
     validate_sbom_file,
+    main,
 )
 
 
@@ -346,3 +348,81 @@ class TestValidateSbomFile:
         
         assert not is_valid
         assert len(errors) > 0
+
+
+class TestMainFunction:
+    """Test suite for main CLI function."""
+    
+    @patch('sys.argv', ['validate_sbom.py', 'test.json'])
+    @patch('validators.validate_sbom.validate_sbom_file')
+    def test_main_single_valid_file(self, mock_validate):
+        """Test main with single valid file."""
+        # Arrange
+        mock_validate.return_value = (True, [])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        mock_validate.assert_called_once_with('test.json')
+    
+    @patch('sys.argv', ['validate_sbom.py', 'invalid.json'])
+    @patch('validators.validate_sbom.validate_sbom_file')
+    def test_main_single_invalid_file(self, mock_validate):
+        """Test main with single invalid file."""
+        # Arrange
+        mock_validate.return_value = (False, ['Error 1', 'Error 2'])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 1
+    
+    @patch('sys.argv', ['validate_sbom.py', 'file1.json', 'file2.json', 'file3.json'])
+    @patch('validators.validate_sbom.validate_sbom_file')
+    def test_main_multiple_files_all_valid(self, mock_validate):
+        """Test main with multiple valid files."""
+        # Arrange
+        mock_validate.return_value = (True, [])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        assert mock_validate.call_count == 3
+    
+    @patch('sys.argv', ['validate_sbom.py', 'valid.json', 'invalid.json'])
+    @patch('validators.validate_sbom.validate_sbom_file')
+    def test_main_multiple_files_some_invalid(self, mock_validate):
+        """Test main with mix of valid and invalid files."""
+        # Arrange
+        mock_validate.side_effect = [
+            (True, []),
+            (False, ['Error in file'])
+        ]
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 1
+    
+    @patch('sys.argv', ['validate_sbom.py', '--verbose', 'test.json'])
+    @patch('validators.validate_sbom.validate_sbom_file')
+    @patch('builtins.print')
+    def test_main_verbose_mode(self, mock_print, mock_validate):
+        """Test main with verbose flag."""
+        # Arrange
+        mock_validate.return_value = (True, [])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        # Verify verbose output was printed
+        assert mock_print.call_count >= 2  # At least summary and verbose message
+
