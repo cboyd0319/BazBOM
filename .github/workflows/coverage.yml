@@ -55,6 +55,8 @@ jobs:
 
       - name: Run tests with coverage
         working-directory: tools/supplychain
+        env:
+          PYTHONPATH: ${{ github.workspace }}
         run: |
           set -euo pipefail
           pytest tests/ \
