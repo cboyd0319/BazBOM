@@ -378,7 +378,48 @@ class TestFetchEPSSScores:
         result = enricher.fetch_epss_scores(["CVE-2021-44228"])
         
         # Assert - invalid entry should be skipped
-        assert "CVE-2021-44228" not in result or result["CVE-2021-44228"]["epss_score"] == 0.0
+        assert len(result) == 0  # No valid entries
+    
+    def test_fetch_epss_scores_skips_duplicate_error_entries(self, enricher, mocker, capsys):
+        """Test that CVEs already in scores during exception are not overwritten."""
+        # Arrange
+        import requests
+        
+        # Create a scenario where we have cached values for some CVEs
+        # and then the API call fails, but we shouldn't overwrite cached values
+        enricher._cache = {
+            "CVE-2021-44228": {
+                "epss_score": 0.97542,
+                "epss_percentile": 0.99995,
+                "date": "2025-01-17"
+            }
+        }
+        enricher._cache_loaded = True
+        
+        # Mock API to fail
+        mocker.patch('epss_enrichment.requests.get',
+                    side_effect=requests.RequestException("Network error"))
+        
+        # Request CVEs including the cached one
+        cves = ["CVE-2021-44228", "CVE-2023-00001"]
+        
+        # Act
+        result = enricher.fetch_epss_scores(cves)
+        
+        # Assert
+        # CVE-2021-44228 should have the cached value (not overwritten by error default)
+        assert "CVE-2021-44228" in result
+        assert result["CVE-2021-44228"]["epss_score"] == 0.97542  # Preserved from cache
+        assert "error" not in result["CVE-2021-44228"]  # No error marker on cached value
+        
+        # CVE-2023-00001 should have error default (not in cache)
+        assert "CVE-2023-00001" in result
+        assert result["CVE-2023-00001"]["epss_score"] == 0.0
+        assert "error" in result["CVE-2023-00001"]
+        
+        # Check warning was printed
+        captured = capsys.readouterr()
+        assert "Warning: EPSS API request failed" in captured.err
     
     def test_fetch_epss_scores_saves_to_cache(self, enricher, epss_api_response, mocker):
         """Test that fetched scores are saved to cache."""
@@ -479,6 +520,26 @@ class TestEnrichFindings:
         
         # Assert
         assert result == []
+    
+    def test_enrich_findings_handles_no_cves_found(self, enricher):
+        """Test enriching findings when no CVE IDs are found."""
+        # Arrange - findings with no CVE fields
+        findings = [
+            {"description": "Some vulnerability"},
+            {"name": "test-vuln"},
+            {"id": "NOT-A-CVE"}  # Doesn't start with CVE-
+        ]
+        
+        # Act
+        result = enricher.enrich_findings(findings)
+        
+        # Assert
+        assert result == findings
+        assert len(result) == 3
+        # No EPSS data should be added since no CVEs found
+        assert "epss" not in result[0]
+        assert "epss" not in result[1]
+        assert "epss" not in result[2]
     
     def test_enrich_findings_validates_findings_type(self, enricher):
         """Test validation of findings parameter type."""
@@ -713,6 +774,7 @@ class TestSaveCacheError:
         assert "Permission denied" in captured.err
 
 
+class TestFetchError:
     """Test fetch error handling."""
     
     def test_enrich_findings_fetch_exception(self, enricher, mocker, capsys):
@@ -732,5 +794,81 @@ class TestSaveCacheError:
         captured = capsys.readouterr()
         assert "Error: Failed to fetch EPSS scores" in captured.err
         assert len(result) == 1  # Should continue with empty scores
+
+
+class TestPriorityCalculationErrors:
+    """Test error handling in priority level calculation during enrichment."""
+    
+    def test_enrich_findings_handles_get_priority_level_type_error(self, enricher, epss_api_response, mocker, capsys):
+        """Test handling of TypeError from get_priority_level in enrich_findings."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.json.return_value = epss_api_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('epss_enrichment.requests.get', return_value=mock_response)
+        
+        # Mock get_priority_level to raise TypeError
+        mocker.patch.object(
+            enricher,
+            'get_priority_level',
+            side_effect=TypeError("EPSS score must be numeric")
+        )
+        
+        findings = [{"cve": "CVE-2021-44228"}]
+        
+        # Act
+        result = enricher.enrich_findings(findings)
+        
+        # Assert
+        captured = capsys.readouterr()
+        assert "Warning: Failed to calculate priority for CVE-2021-44228" in captured.err
+        assert result[0]["epss_priority"] == "UNKNOWN"
+        assert "epss" in result[0]  # EPSS data should still be added
+    
+    def test_enrich_findings_handles_get_priority_level_value_error(self, enricher, epss_api_response, mocker, capsys):
+        """Test handling of ValueError from get_priority_level in enrich_findings."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.json.return_value = epss_api_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('epss_enrichment.requests.get', return_value=mock_response)
+        
+        # Mock get_priority_level to raise ValueError
+        mocker.patch.object(
+            enricher,
+            'get_priority_level',
+            side_effect=ValueError("EPSS score out of range")
+        )
+        
+        findings = [{"cve": "CVE-2021-44228"}]
+        
+        # Act
+        result = enricher.enrich_findings(findings)
+        
+        # Assert
+        captured = capsys.readouterr()
+        assert "Warning: Failed to calculate priority for CVE-2021-44228" in captured.err
+        assert result[0]["epss_priority"] == "UNKNOWN"
+
+
+class TestMainExceptionHandling:
+    """Test exception handling in main() function."""
+    
+    def test_main_handles_unexpected_exception(self, mocker, capsys):
+        """Test main() catches and reports unexpected exceptions."""
+        # Arrange
+        # Mock EPSSEnricher to raise an unexpected exception
+        mocker.patch('epss_enrichment.EPSSEnricher',
+                    side_effect=RuntimeError("Unexpected error"))
+        
+        with patch('sys.argv', ['epss_enrichment.py', 'CVE-2021-44228']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 1
+            captured = capsys.readouterr()
+            assert "Error:" in captured.err
+            assert "Unexpected error" in captured.err
 
 
