@@ -60,9 +60,14 @@ jobs:
         run: |
           set -euo pipefail
           pytest tests/ \
+            --override-ini="addopts=" \
+            --cov=. \
+            --cov-branch \
             --cov-report=xml:../../coverage.xml \
             --cov-report=html:../../htmlcov \
+            --cov-report=term-missing:skip-covered \
             --ignore=tests/fixtures \
+            -q \
             | tee ../../coverage-output.txt
 
       - name: Upload coverage to Codecov
