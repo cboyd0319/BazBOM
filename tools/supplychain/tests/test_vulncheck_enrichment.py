@@ -200,6 +200,20 @@ class TestGetExploitStatus:
         # Assert
         assert result["exploit_available"] is False
         assert "error" in result
+    
+    def test_get_exploit_status_handles_invalid_response_type(self, enricher_with_key, mocker):
+        """Test handling of invalid response type (non-dict)."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.status_code = 200
+        # API returns a list instead of dict
+        mock_response.json.return_value = ["invalid", "response"]
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('vulncheck_enrichment.requests.get', return_value=mock_response)
+        
+        # Act & Assert
+        with pytest.raises(ValueError, match="Invalid VulnCheck response: expected dict"):
+            enricher_with_key.get_exploit_status("CVE-2021-44228")
 
 
 class TestEnrichFinding:
