@@ -787,3 +787,315 @@ class TestGraphGeneratorIntegration:
         assert node["name"] == "minimal"
         assert node["version"] == "unknown"
         assert node["type"] == "unknown"
+
+    def test_dependency_not_in_coord_map(self):
+        """Test handling when dependency coordinate is not found in package map."""
+        packages = [
+            {
+                "name": "app",
+                "group": "com.example",
+                "is_direct": True,
+                "dependencies": ["com.unknown:missing:1.0"]  # This dep doesn't exist
+            }
+        ]
+        
+        json_graph = generate_graph_json(packages)
+        graphml = generate_graphml(packages)
+        
+        # Should not crash, just skip the missing dependency
+        assert json_graph is not None
+        assert graphml is not None
+        # There will be one edge from root to app (direct dependency)
+        # But no edge from app to the missing dependency
+        edges = json_graph["graph"]["edges"]
+        root_to_app_edges = [e for e in edges if e["from"] == "root"]
+        assert len(root_to_app_edges) == 1  # Only root -> app
+        
+        # No edge from app to missing dependency
+        app_edges = [e for e in edges if e["from"] == "app"]
+        assert len(app_edges) == 0
+
+
+class TestMainFunctionEdgeCases:
+    """Additional edge case tests for main function."""
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_invalid_json(self, mock_parse_args, tmp_path, capsys):
+        """Test main with invalid JSON in SBOM file."""
+        # Create invalid SBOM file
+        sbom_file = tmp_path / "invalid.spdx.json"
+        sbom_file.write_text("{ not valid json }")
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(tmp_path / "graph.json"),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 1
+        captured = capsys.readouterr()
+        assert "Invalid JSON" in captured.err
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_with_npm_purl(self, mock_parse_args, tmp_path):
+        """Test main with SBOM containing npm packages."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-react",
+                    "name": "react",
+                    "versionInfo": "18.0.0",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:npm/react@18.0.0"
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        # Verify output was created
+        assert output_file.exists()
+        graph = json.loads(output_file.read_text())
+        # Find the npm package node
+        nodes = [n for n in graph["graph"]["nodes"] if n["name"] == "react"]
+        assert len(nodes) == 1
+        assert nodes[0]["type"] == "npm"
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_with_pypi_purl(self, mock_parse_args, tmp_path):
+        """Test main with SBOM containing PyPI packages."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-requests",
+                    "name": "requests",
+                    "versionInfo": "2.28.0",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:pypi/requests@2.28.0"
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        graph = json.loads(output_file.read_text())
+        nodes = [n for n in graph["graph"]["nodes"] if n["name"] == "requests"]
+        assert len(nodes) == 1
+        assert nodes[0]["type"] == "pypi"
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_with_malformed_maven_purl(self, mock_parse_args, tmp_path):
+        """Test main with SBOM containing malformed Maven PURL (< 3 parts)."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-lib",
+                    "name": "lib",
+                    "versionInfo": "1.0",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/lib"  # Malformed: only 2 parts
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        # Should not crash, just skip extracting group from malformed PURL
+        graph = json.loads(output_file.read_text())
+        nodes = [n for n in graph["graph"]["nodes"] if n["name"] == "lib"]
+        assert len(nodes) == 1
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_without_external_refs(self, mock_parse_args, tmp_path):
+        """Test main with SBOM package without external references."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-lib",
+                    "name": "lib",
+                    "versionInfo": "1.0"
+                    # No externalRefs field
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        # Should not crash when package has no externalRefs
+        graph = json.loads(output_file.read_text())
+        assert graph is not None
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_with_non_purl_refs(self, mock_parse_args, tmp_path):
+        """Test main with SBOM package with externalRefs but no purl type."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-lib",
+                    "name": "lib",
+                    "versionInfo": "1.0",
+                    "externalRefs": [
+                        {
+                            "referenceType": "cpe23",  # Not purl
+                            "referenceLocator": "cpe:2.3:a:vendor:product:1.0"
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        # Should not crash when externalRefs has no purl type
+        graph = json.loads(output_file.read_text())
+        assert graph is not None
+
+    @patch('tools.supplychain.graph_generator.argparse.ArgumentParser.parse_args')
+    def test_main_sbom_with_unknown_purl_type(self, mock_parse_args, tmp_path):
+        """Test main with SBOM containing unknown PURL type."""
+        sbom_data = {
+            "spdxVersion": "SPDX-2.3",
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-root",
+                    "name": "root"
+                },
+                {
+                    "SPDXID": "SPDXRef-Package-lib",
+                    "name": "lib",
+                    "versionInfo": "1.0",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:cargo/tokio@1.0.0"  # Unknown type (not maven/npm/pypi)
+                        }
+                    ]
+                }
+            ]
+        }
+        
+        sbom_file = tmp_path / "sbom.spdx.json"
+        sbom_file.write_text(json.dumps(sbom_data))
+        output_file = tmp_path / "graph.json"
+        
+        mock_parse_args.return_value = type('Args', (), {
+            'deps': None,
+            'sbom': str(sbom_file),
+            'output_json': str(output_file),
+            'output_graphml': None
+        })()
+        
+        from tools.supplychain.graph_generator import main
+        result = main()
+        
+        assert result == 0
+        # Should not crash with unknown PURL type
+        graph = json.loads(output_file.read_text())
+        nodes = [n for n in graph["graph"]["nodes"] if n["name"] == "lib"]
+        assert len(nodes) == 1

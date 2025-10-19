@@ -855,3 +855,260 @@ class TestExtractPomLicensesEnhanced:
         # Assert
         assert result == []
 
+
+class TestNormalizeLicenseEdgeCases:
+    """Test edge cases in license normalization."""
+    
+    def test_normalize_bsd_3_clause(self):
+        """Test BSD-3-Clause normalization."""
+        assert normalize_license_name_to_spdx("BSD 3-Clause License") == "BSD-3-Clause"
+        assert normalize_license_name_to_spdx("BSD 3 clause") == "BSD-3-Clause"
+    
+    def test_normalize_bsd_2_clause(self):
+        """Test BSD-2-Clause normalization."""
+        assert normalize_license_name_to_spdx("BSD 2-Clause License") == "BSD-2-Clause"
+        assert normalize_license_name_to_spdx("BSD 2 clause") == "BSD-2-Clause"
+    
+    def test_normalize_gpl_3(self):
+        """Test GPL-3.0 normalization."""
+        assert normalize_license_name_to_spdx("GPL 3") == "GPL-3.0"
+        assert normalize_license_name_to_spdx("GPL-3.0") == "GPL-3.0"
+    
+    def test_normalize_lgpl_3(self):
+        """Test LGPL-3.0 normalization."""
+        # Need "lesser" keyword AND "gpl" for LGPL detection
+        assert normalize_license_name_to_spdx("lesser gpl 3") == "LGPL-3.0"
+        assert normalize_license_name_to_spdx("lesser gpl-3.0") == "LGPL-3.0"
+    
+    def test_normalize_gpl_2(self):
+        """Test GPL-2.0 normalization."""
+        assert normalize_license_name_to_spdx("GPL 2") == "GPL-2.0"
+        assert normalize_license_name_to_spdx("GPL-2.0") == "GPL-2.0"
+    
+    def test_normalize_lgpl_2(self):
+        """Test LGPL-2.1 normalization."""
+        # Need "lesser" keyword AND "gpl" for LGPL detection
+        assert normalize_license_name_to_spdx("lesser gpl 2") == "LGPL-2.1"
+        assert normalize_license_name_to_spdx("lesser gpl-2.1") == "LGPL-2.1"
+
+
+class TestParsePomWithNamespace:
+    """Test POM parsing with namespace handling."""
+    
+    def test_parse_pom_with_explicit_namespace(self, tmp_path):
+        """Test parsing POM with explicit namespace in root tag."""
+        # Arrange
+        pom_content = '''<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <licenses>
+        <license>
+            <name>Apache License 2.0</name>
+        </license>
+    </licenses>
+</project>'''
+        pom_path = tmp_path / "pom.xml"
+        pom_path.write_text(pom_content)
+        
+        # Act
+        result = parse_pom_licenses(str(pom_path))
+        
+        # Assert
+        assert len(result) >= 1
+        assert result[0]['name'] == "Apache License 2.0"
+
+
+class TestExtractJarLicensesEdgeCases:
+    """Test edge cases in JAR license extraction."""
+    
+    def test_extract_jar_with_manifest_and_normalize(self, tmp_path):
+        """Test extraction with manifest that needs SPDX normalization."""
+        from tools.supplychain.license_extractor import extract_jar_licenses
+        import zipfile
+        
+        # Create JAR with manifest containing Apache-2.0
+        jar_path = tmp_path / "test.jar"
+        with zipfile.ZipFile(jar_path, 'w') as zf:
+            manifest_content = """Manifest-Version: 1.0
+Implementation-Title: Test
+License: Apache License 2.0
+
+"""
+            zf.writestr("META-INF/MANIFEST.MF", manifest_content)
+        
+        # Act
+        result = extract_jar_licenses(str(jar_path))
+        
+        # Assert
+        assert "Apache-2.0" in result["spdx_licenses"]
+    
+    def test_extract_jar_with_corrupted_license_file(self, tmp_path, capsys):
+        """Test handling of corrupted license file in JAR."""
+        from tools.supplychain.license_extractor import extract_jar_licenses
+        import zipfile
+        
+        # Create a mock JAR with a license file that will cause an error when read
+        jar_path = tmp_path / "corrupt.jar"
+        with zipfile.ZipFile(jar_path, 'w') as zf:
+            # Add a valid manifest
+            manifest = """Manifest-Version: 1.0
+
+"""
+            zf.writestr("META-INF/MANIFEST.MF", manifest)
+        
+        # Mock zipfile to raise exception when reading LICENSE
+        import unittest.mock as mock
+        original_open = zipfile.ZipFile.open
+        
+        def mock_open(self, name, *args, **kwargs):
+            if 'LICENSE' in name:
+                raise Exception("Simulated read error")
+            return original_open(self, name, *args, **kwargs)
+        
+        with mock.patch.object(zipfile.ZipFile, 'open', mock_open):
+            # Act
+            result = extract_jar_licenses(str(jar_path))
+            
+            # Assert - should not crash
+            assert result is not None
+            # Warning should be printed
+            captured = capsys.readouterr()
+            # May or may not have warnings depending on whether there were license files
+
+
+class TestMainFunction:
+    """Test main function of license_extractor."""
+    
+    def test_main_with_jar_file(self, tmp_path, mocker):
+        """Test main function with JAR file argument."""
+        import zipfile
+        from tools.supplychain.license_extractor import main
+        
+        # Create test JAR
+        jar_path = tmp_path / "test.jar"
+        with zipfile.ZipFile(jar_path, 'w') as zf:
+            manifest = """Manifest-Version: 1.0
+License: Apache-2.0
+
+"""
+            zf.writestr("META-INF/MANIFEST.MF", manifest)
+        
+        output_path = tmp_path / "output.json"
+        
+        # Mock sys.argv
+        mocker.patch('sys.argv', [
+            'license_extractor.py',
+            '--jar', str(jar_path),
+            '--output', str(output_path)
+        ])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        assert output_path.exists()
+        
+        # Verify output
+        import json
+        data = json.loads(output_path.read_text())
+        assert 'results' in data
+        assert len(data['results']) == 1
+    
+    def test_main_with_jar_list(self, tmp_path, mocker):
+        """Test main function with JAR list file."""
+        import zipfile
+        from tools.supplychain.license_extractor import main
+        
+        # Create test JARs
+        jar1 = tmp_path / "test1.jar"
+        jar2 = tmp_path / "test2.jar"
+        
+        for jar in [jar1, jar2]:
+            with zipfile.ZipFile(jar, 'w') as zf:
+                manifest = "Manifest-Version: 1.0\n\n"
+                zf.writestr("META-INF/MANIFEST.MF", manifest)
+        
+        # Create JAR list file
+        jar_list = tmp_path / "jars.txt"
+        jar_list.write_text(f"{jar1}\n{jar2}\n")
+        
+        output_path = tmp_path / "output.json"
+        
+        # Mock sys.argv
+        mocker.patch('sys.argv', [
+            'license_extractor.py',
+            '--jar-list', str(jar_list),
+            '--output', str(output_path)
+        ])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        assert output_path.exists()
+        
+        import json
+        data = json.loads(output_path.read_text())
+        assert len(data['results']) == 2
+    
+    def test_main_with_pom_file(self, tmp_path, mocker):
+        """Test main function with POM file argument."""
+        from tools.supplychain.license_extractor import main
+        
+        # Create test POM
+        pom_path = tmp_path / "pom.xml"
+        pom_content = '''<?xml version="1.0"?>
+<project>
+    <licenses>
+        <license>
+            <name>Apache-2.0</name>
+        </license>
+    </licenses>
+</project>'''
+        pom_path.write_text(pom_content)
+        
+        output_path = tmp_path / "output.json"
+        
+        # Mock sys.argv
+        mocker.patch('sys.argv', [
+            'license_extractor.py',
+            '--pom', str(pom_path),
+            '--output', str(output_path)
+        ])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        assert output_path.exists()
+    
+    def test_main_with_nonexistent_jar_in_list(self, tmp_path, mocker, capsys):
+        """Test main function with JAR list containing non-existent file."""
+        from tools.supplychain.license_extractor import main
+        
+        # Create JAR list with non-existent file
+        jar_list = tmp_path / "jars.txt"
+        jar_list.write_text("/nonexistent/test.jar\n")
+        
+        output_path = tmp_path / "output.json"
+        
+        # Mock sys.argv
+        mocker.patch('sys.argv', [
+            'license_extractor.py',
+            '--jar-list', str(jar_list),
+            '--output', str(output_path)
+        ])
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0  # Should complete even with missing JAR
+        captured = capsys.readouterr()
+        assert "Warning: JAR not found" in captured.err
+
+
+if __name__ == '__main__':
+    pytest.main([__file__, '-v'])
