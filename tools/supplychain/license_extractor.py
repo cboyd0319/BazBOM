@@ -208,8 +208,13 @@ def parse_pom_licenses(pom_path: str) -> List[Dict[str, str]]:
             license_elements = root.findall('.//licenses/license')
         
         for lic in license_elements:
-            name_elem = lic.find('maven:name', ns) or lic.find('name')
-            url_elem = lic.find('maven:url', ns) or lic.find('url')
+            name_elem = lic.find('maven:name', ns)
+            if name_elem is None:
+                name_elem = lic.find('name')
+            
+            url_elem = lic.find('maven:url', ns)
+            if url_elem is None:
+                url_elem = lic.find('url')
             
             license_info = {}
             if name_elem is not None and name_elem.text:
