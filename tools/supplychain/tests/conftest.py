@@ -77,12 +77,12 @@ def tmp_dir(tmp_path):
     return tmp_path
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_sbom_data() -> Dict[str, Any]:
     """Provide sample SPDX SBOM data for tests.
     
-    Session-scoped as this data is immutable and expensive to recreate.
-    Tests should copy this data if they need to modify it.
+    Function-scoped to prevent test isolation issues from mutations.
+    Each test gets a fresh copy of the data.
     """
     return {
         "spdxVersion": "SPDX-2.3",
@@ -150,11 +150,11 @@ def sample_sbom_data() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_vulnerability_data() -> Dict[str, Any]:
     """Provide sample vulnerability data for tests.
     
-    Session-scoped for performance. Tests should copy if modification needed.
+    Function-scoped to prevent test isolation issues from mutations.
     """
     return {
         "vulnerabilities": [
@@ -223,11 +223,11 @@ def sample_vulnerability_data() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def sample_maven_coordinates() -> Dict[str, Any]:
     """Provide sample Maven coordinates data.
     
-    Session-scoped for performance. Tests should copy if modification needed.
+    Function-scoped to prevent test isolation issues from mutations.
     """
     return {
         "dependencies": [
