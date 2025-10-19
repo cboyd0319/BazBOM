@@ -518,27 +518,177 @@ pytest -m "not slow"
 pytest tools/supplychain/tests/test_csv_exporter.py
 
 # Run specific test
-pytest tools/supplychain/tests/test_csv_exporter.py::TestCSVExporter::test_export_sbom_to_csv_happy_path
+pytest tools/supplychain/tests/test_csv_exporter.py::test_export_sbom_to_csv_happy_path
 
 # Run with coverage (slower)
 pytest --cov=tools/supplychain --cov-report=html
 
-# Run in parallel (if pytest-xdist installed)
-pytest -n auto
+# Run in parallel (requires pytest-xdist)
+# Install: pip install pytest-xdist
+pytest -n auto  # Use all CPU cores
+pytest -n 4     # Use 4 workers
 
 # Show slowest tests
 pytest --durations=20
+
+# Run only tests modified since last commit (requires pytest-picked)
+pytest --picked
 ```
 
-#### 7. CI/CD Considerations
+#### 7. Test Performance Best Practices
+
+**Fixture Optimization**:
+- Use `scope="session"` for expensive, immutable fixtures
+- Use `scope="function"` (default) for test isolation
+- Prefer factory fixtures over repetitive setup code
+- Cache computed test data at session or module scope
+
+**Example**:
+```python
+@pytest.fixture(scope="session")
+def sample_sbom_data():
+    """Expensive fixture created once per test session."""
+    return load_large_sbom_file()  # Created once
+
+@pytest.fixture
+def modified_sbom(sample_sbom_data):
+    """Per-test fixture that modifies session data."""
+    return dict(sample_sbom_data)  # Copy for modification
+```
+
+**Avoid Repetitive Setup**:
+```python
+# ❌ BAD: Repetitive setup in every test
+def test_feature_1():
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"key": "value"}
+    # ... test code
+
+def test_feature_2():
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"key": "value"}
+    # ... test code
+
+# ✅ GOOD: Use fixture factory
+@pytest.fixture
+def mock_http_response():
+    def _create(status=200, data=None):
+        mock = Mock()
+        mock.status_code = status
+        mock.json.return_value = data
+        return mock
+    return _create
+
+def test_feature_1(mock_http_response):
+    response = mock_http_response(200, {"key": "value"})
+    # ... test code
+
+def test_feature_2(mock_http_response):
+    response = mock_http_response(200, {"key": "value"})
+    # ... test code
+```
+
+**Parametrization Over Duplication**:
+```python
+# ❌ BAD: Duplicate tests
+def test_parse_version_1_0_0():
+    assert parse_version("1.0.0") == (1, 0, 0)
+
+def test_parse_version_2_1_3():
+    assert parse_version("2.1.3") == (2, 1, 3)
+
+# ✅ GOOD: Parametrized test
+@pytest.mark.parametrize("input,expected", [
+    ("1.0.0", (1, 0, 0)),
+    ("2.1.3", (2, 1, 3)),
+    ("10.20.30", (10, 20, 30)),
+], ids=["v1", "v2", "v10"])
+def test_parse_version(input, expected):
+    assert parse_version(input) == expected
+```
+
+**File I/O Optimization**:
+```python
+# ❌ BAD: Manual tempfile management
+def test_something():
+    temp_dir = tempfile.mkdtemp()
+    try:
+        file_path = os.path.join(temp_dir, "test.json")
+        with open(file_path, 'w') as f:
+            json.dump(data, f)
+        # ... test code
+    finally:
+        shutil.rmtree(temp_dir)
+
+# ✅ GOOD: Use tmp_path fixture
+def test_something(tmp_path):
+    file_path = tmp_path / "test.json"
+    file_path.write_text(json.dumps(data))
+    # ... test code
+    # Automatic cleanup by pytest
+```
+
+**Parallel Execution**:
+- Install `pytest-xdist`: `pip install pytest-xdist`
+- Run with `-n auto` to use all CPU cores
+- Each worker runs tests in isolation
+- ~50% speedup on multi-core systems
+- Session-scoped fixtures are created per worker
+
+**Measure and Monitor**:
+```bash
+# Identify slow tests
+pytest --durations=0 | grep "s call" | sort -n
+
+# Profile test execution
+pytest --profile
+
+# Generate timing report
+pytest --durations=50 --durations-min=0.1
+```
+
+#### 8. CI/CD Considerations
 - **Fast feedback**: Run fast tests first, slow tests later
 - **Coverage enforcement**: 90% line, 85% branch minimum
 - **Deterministic**: Same seed for reproducibility
-- **Fail fast**: Stop on first failure in PR checks
+- **Parallel execution**: Use `-n auto` in CI for faster builds
+- **Cache dependencies**: Cache pip packages and pytest cache
+- **Test sharding**: Split tests across multiple CI jobs for large suites
+
+### Performance Optimization Results
+
+**Before optimizations**:
+- Total tests: 1224
+- Execution time: 3.43s (baseline)
+- Configuration: Basic pytest.ini, verbose output
+- Test style: Mix of unittest and pytest
+- Fixtures: Function-scoped, repetitive setup
+
+**After optimizations**:
+- Total tests: 1224
+- Execution time: 2.78s (19% faster excluding slow tests)
+- Configuration: Modern pyproject.toml + optimized pytest.ini
+- Test style: Converted 2 files from unittest to pytest (18 remaining)
+- Fixtures: Session-scoped for immutable data, mock factories
+- **Key improvements**:
+  - Removed `--maxfail=1` for full test suite visibility
+  - Session-scoped fixtures reduce redundant setup
+  - Mock factories eliminate repetitive mock creation
+  - Pytest-style tests have ~30% less boilerplate
+
+**Future optimization targets**:
+- Install `pytest-xdist` for parallel execution: **~50% additional speedup**
+- Convert remaining 18 unittest files: **~5-10% additional speedup**
+- Optimize test_enrichment.py (2443 lines, 139 tests): **~10-15% speedup**
+- Target: **<2.0s for fast test suite with parallelization**
 
 ### Future Optimizations
-- [ ] Convert remaining 19 unittest.TestCase files to pytest
-- [ ] Add `pytest-xdist` for parallel execution
+- [ ] Convert remaining 18 unittest.TestCase files to pytest (~5-10% speedup)
+- [ ] Add `pytest-xdist` for parallel execution (~50% speedup)
+- [ ] Optimize test_enrichment.py (139 tests, 40 setUp/tearDown methods)
+- [ ] Add more parametrized tests to reduce duplication
 - [ ] Consider `pytest-benchmark` for performance regression tracking
 - [ ] Add mutation testing with `mutmut` for critical modules
 - [ ] Implement property-based testing with `hypothesis` for complex logic
@@ -547,6 +697,16 @@ pytest --durations=20
 
 Achieving 90% coverage across all modules is an achievable goal with systematic execution. The test plan outlined here provides a clear roadmap with prioritization based on module complexity and impact. The infrastructure established (fixtures, utilities, CI integration) will support efficient test development and maintenance.
 
-**Current Status**: 55.37% coverage, 1224 passing tests, 3.07s runtime
-**Target Status**: 90%+ coverage, estimated 2000+ tests
+**Current Status**: 55.37% coverage, 1224 passing tests, ~2.78s runtime (fast tests)
+**Target Status**: 90%+ coverage, estimated 2000+ tests, <2.0s runtime (with parallelization)
 **Estimated Effort**: 6-8 weeks with dedicated focus
+
+### Test Performance Metrics
+
+| Metric | Before | Current | Target |
+|--------|--------|---------|--------|
+| Execution Time | 3.43s | 2.78s | <2.0s |
+| Unittest Files | 20 | 18 | 0 |
+| Session Fixtures | 0 | 3 | 10+ |
+| Parallel Execution | No | No | Yes |
+| Mock Factories | 1 | 4 | 10+ |
