@@ -7,6 +7,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import pytest
+
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -393,8 +395,14 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(len(diff.get_removed_packages()), 0)
         self.assertEqual(len(diff.get_upgraded_packages()), 0)
     
+    @pytest.mark.slow
+    @pytest.mark.performance
     def test_diff_large_sbom(self):
-        """Test diff with large number of packages."""
+        """Test diff with large number of packages.
+        
+        Marked as slow since it creates and diffs SBOMs with 1000 packages each
+        to verify performance with large datasets.
+        """
         # Create SBOM with 1000 packages
         packages_old = [
             {

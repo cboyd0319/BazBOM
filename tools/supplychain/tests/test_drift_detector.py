@@ -589,8 +589,14 @@ class TestEdgeCases:
         violations = rule.check(diff)
         assert len(violations) == 1
 
+    @pytest.mark.slow
+    @pytest.mark.performance
     def test_large_number_of_violations(self):
-        """Test with large number of violations."""
+        """Test with large number of violations.
+        
+        Marked as slow since it creates 1000 mock packages to test
+        performance with large datasets.
+        """
         rule = UnexpectedAdditionsRule(max_additions=0)
         
         diff = Mock(spec=SBOMDiff)
