@@ -14,7 +14,7 @@ This document summarizes the comprehensive optimization of the BazBOM test suite
 
 ### After Optimization
 - **Total Tests**: 1224 (unchanged)
-- **Execution Time**: 3.08s (**10.2% faster** than baseline)
+- **Execution Time**: 3.05s (**11.1% faster** than baseline)
 - **Fast Tests Only**: 2.78s (**18.9% faster**, excluding 5 slow tests)
 - **Configuration**: Modern pyproject.toml + optimized pytest.ini
 - **Test Style**: Conversion to pytest style in progress
@@ -165,7 +165,7 @@ pytest tools/supplychain/tests/test_csv_exporter.py::TestCSVExporter::test_expor
 
 | Metric | Before | After | Improvement |
 |--------|--------|-------|-------------|
-| Total Runtime | 3.43s | 3.08s | **10.2% faster** |
+| Total Runtime | 3.43s | 3.05s | **11.1% faster** |
 | Fast Tests Runtime | 3.43s | 2.78s | **18.9% faster** |
 | Slow Tests Marked | 0 | 5 | ✅ Tracked |
 | Config Files | 1 | 2 | ✅ Modern structure |
@@ -223,7 +223,7 @@ pytest tools/supplychain/tests/test_csv_exporter.py::TestCSVExporter::test_expor
 
 The test suite optimization has achieved significant improvements while maintaining test quality and coverage:
 
-- **10.2% faster** overall execution (3.43s → 3.08s)
+- **11.1% faster** overall execution (3.43s → 3.05s)
 - **18.9% faster** for fast tests only (3.43s → 2.78s)
 - Modern Python project structure with pyproject.toml
 - Better test organization with markers
