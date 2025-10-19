@@ -345,5 +345,398 @@ def test_main_invalid_input_file(tmp_path):
     assert result != 0
 
 
+def test_main_invalid_json_input(tmp_path):
+    """Test handling of malformed JSON input file."""
+    # Create file with invalid JSON
+    input_file = tmp_path / "invalid.json"
+    input_file.write_text("{ not valid json }")
+    
+    output_file = tmp_path / "output.json"
+    
+    sys.argv = [
+        "write_sbom.py",
+        "--input", str(input_file),
+        "--output", str(output_file),
+        "--name", "test",
+        "--format", "spdx"
+    ]
+    
+    result = main()
+    assert result == 1
+
+
+def test_main_output_write_error(sample_input_file, tmp_path, mocker):
+    """Test handling of output file write errors."""
+    # Mock open to raise IOError when writing output
+    mock_open = mocker.patch("builtins.open", mocker.mock_open())
+    mock_open.side_effect = [
+        # First call: reading input (succeed)
+        mocker.mock_open(read_data='{"packages": []}')(),
+        # Second call: writing output (fail)
+        IOError("Permission denied")
+    ]
+    
+    sys.argv = [
+        "write_sbom.py",
+        "--input", str(sample_input_file),
+        "--output", str(tmp_path / "output.json"),
+        "--name", "test",
+        "--format", "spdx"
+    ]
+    
+    result = main()
+    assert result == 1
+
+
+def test_spdx_direct_dependencies(sample_packages):
+    """Test that direct dependency relationships are created."""
+    # Mark first package as direct dependency
+    sample_packages[0]["is_direct"] = True
+    
+    doc = generate_spdx_document(sample_packages, "test-sbom")
+    
+    # Find DEPENDS_ON relationships from root
+    root_deps = [r for r in doc["relationships"] 
+                 if r["spdxElementId"] == "SPDXRef-Package-root" 
+                 and r["relationshipType"] == "DEPENDS_ON"]
+    
+    assert len(root_deps) >= 1
+    # Check that the direct dependency is in the relationships
+    assert any("guava" in r["relatedSpdxElement"] for r in root_deps)
+
+
+def test_spdx_transitive_dependencies():
+    """Test that transitive dependency relationships are created."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "dependencies": ["com.google.guava:guava"]
+        },
+        {
+            "name": "guava",
+            "group": "com.google.guava",
+            "version": "31.1-jre",
+            "dependencies": []
+        }
+    ]
+    
+    doc = generate_spdx_document(packages, "test-sbom")
+    
+    # Find transitive DEPENDS_ON relationships
+    transitive_deps = [r for r in doc["relationships"]
+                      if "app" in r["spdxElementId"]
+                      and r["relationshipType"] == "DEPENDS_ON"]
+    
+    assert len(transitive_deps) >= 1
+
+
+def test_spdx_checksum_handling(sample_packages):
+    """Test that SHA256 checksums are included when available."""
+    doc = generate_spdx_document(sample_packages, "test-sbom")
+    
+    # Find package with checksum
+    guava_pkg = next((p for p in doc["packages"] if p.get("name") == "guava"), None)
+    assert guava_pkg is not None
+    assert "checksums" in guava_pkg
+    
+    checksum = guava_pkg["checksums"][0]
+    assert checksum["algorithm"] == "SHA256"
+    assert checksum["checksumValue"] == "abc123"
+
+
+def test_cyclonedx_empty_packages():
+    """Test handling of empty package list in CycloneDX format."""
+    doc = generate_cyclonedx_document([], "empty-sbom")
+    
+    # Should still have valid structure
+    assert doc["bomFormat"] == "CycloneDX"
+    assert "components" in doc
+    assert "dependencies" in doc
+
+
+def test_cyclonedx_missing_license():
+    """Test handling of packages without license information."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.test",
+            "version": "1.0.0",
+            "license": "NOASSERTION"  # No license
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    # Should not have licenses field when license is NOASSERTION
+    assert "licenses" not in component
+
+
+def test_cyclonedx_with_sha256():
+    """Test that SHA256 hashes are included in CycloneDX format."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.test",
+            "version": "1.0.0",
+            "sha256": "abc123def456"
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    assert "hashes" in component
+    
+    hash_entry = component["hashes"][0]
+    assert hash_entry["alg"] == "SHA-256"
+    assert hash_entry["content"] == "abc123def456"
+
+
+def test_cyclonedx_with_url():
+    """Test that external references (URLs) are included in CycloneDX format."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.test",
+            "version": "1.0.0",
+            "url": "https://example.com/package"
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    assert "externalReferences" in component
+    
+    ref = component["externalReferences"][0]
+    assert ref["type"] == "distribution"
+    assert ref["url"] == "https://example.com/package"
+
+
+def test_cyclonedx_without_url():
+    """Test handling of packages without URL in CycloneDX format."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.test",
+            "version": "1.0.0",
+            "url": "NOASSERTION"  # No URL
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    # Should not have externalReferences when URL is NOASSERTION
+    assert "externalReferences" not in component
+
+
+def test_cyclonedx_direct_dependencies():
+    """Test that direct dependencies are included in CycloneDX root dependencies."""
+    packages = [
+        {
+            "name": "guava",
+            "group": "com.google.guava",
+            "version": "31.1-jre",
+            "purl": "pkg:maven/com.google.guava/guava@31.1-jre",
+            "is_direct": True
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Check root dependency has the direct dependency
+    root_dep = doc["dependencies"][0]
+    assert root_dep["ref"] == "pkg:generic/application@1.0.0"
+    assert "pkg:maven/com.google.guava/guava@31.1-jre" in root_dep["dependsOn"]
+
+
+def test_cyclonedx_transitive_dependencies():
+    """Test that component dependencies are tracked in CycloneDX format."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "purl": "pkg:maven/com.example/app@1.0.0",
+            "dependencies": ["com.google.guava:guava:31.1-jre"]
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Find component dependency entry (not root)
+    comp_deps = [d for d in doc["dependencies"] if d["ref"] != "pkg:generic/application@1.0.0"]
+    
+    assert len(comp_deps) >= 1
+    # Check that dependency PURLs are constructed
+    assert any("guava" in dep for d in comp_deps for dep in d.get("dependsOn", []))
+
+
+def test_cyclonedx_dependency_with_version():
+    """Test dependency PURL construction with version."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "purl": "pkg:maven/com.example/app@1.0.0",
+            "dependencies": ["com.google.guava:guava:31.1-jre"]
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Find the app's dependency entry
+    app_dep = next((d for d in doc["dependencies"] 
+                   if "pkg:maven/com.example/app@1.0.0" in d["ref"]), None)
+    
+    assert app_dep is not None
+    assert len(app_dep["dependsOn"]) > 0
+    # Check version is included in PURL
+    assert any("@31.1-jre" in purl for purl in app_dep["dependsOn"])
+
+
+def test_cyclonedx_group_field():
+    """Test that group/publisher field is included when available."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.example",
+            "version": "1.0.0",
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    assert "group" in component
+    assert component["group"] == "com.example"
+
+
+def test_cyclonedx_without_group_field():
+    """Test that components without group field work correctly."""
+    packages = [
+        {
+            "name": "test-pkg",
+            # No group field
+            "version": "1.0.0",
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    # Should not have group field when not provided
+    assert "group" not in component or component.get("group") == "unknown"
+
+
+def test_cyclonedx_purl_fallback():
+    """Test PURL generation when not provided in package data."""
+    packages = [
+        {
+            "name": "test-pkg",
+            "group": "com.example",
+            "version": "1.0.0",
+            # No purl field
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    component = doc["components"][0]
+    assert "purl" in component
+    # Should construct PURL from group/name/version
+    assert component["purl"] == "pkg:maven/com.example/test-pkg@1.0.0"
+
+
+def test_cyclonedx_dependencies_without_version():
+    """Test dependency PURL construction without version (edge case)."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "purl": "pkg:maven/com.example/app@1.0.0",
+            "dependencies": ["com.google.guava:guava"]  # Only 2 parts, no version
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Find the app's dependency entry
+    app_dep = next((d for d in doc["dependencies"] 
+                   if "pkg:maven/com.example/app@1.0.0" in d["ref"]), None)
+    
+    assert app_dep is not None
+    assert len(app_dep["dependsOn"]) > 0
+    # Check PURL is constructed without version
+    assert any("guava" in purl for purl in app_dep["dependsOn"])
+
+
+def test_spdx_dependencies_not_in_map():
+    """Test handling of dependencies not found in package map."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "dependencies": ["com.unknown:missing-dep"]  # This dep is not in packages
+        }
+    ]
+    
+    doc = generate_spdx_document(packages, "test-sbom")
+    
+    # Should not crash, just skip the missing dependency
+    assert "relationships" in doc
+    # Verify document is still valid
+    assert doc["spdxVersion"] == "SPDX-2.3"
+
+
+def test_cyclonedx_dependencies_empty_list():
+    """Test that components with empty dependencies list don't create dependency entries."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "purl": "pkg:maven/com.example/app@1.0.0",
+            "dependencies": []  # Empty dependencies
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Component with empty dependencies should not have a dependency entry
+    # (beyond the root dependency)
+    non_root_deps = [d for d in doc["dependencies"] 
+                     if d["ref"] != "pkg:generic/application@1.0.0"]
+    
+    # Should not create an entry for component with empty dependencies
+    assert len(non_root_deps) == 0
+
+
+def test_cyclonedx_dependency_coordinate_with_one_part():
+    """Test dependency coordinate with only 1 part (edge case)."""
+    packages = [
+        {
+            "name": "app",
+            "group": "com.example",
+            "version": "1.0.0",
+            "purl": "pkg:maven/com.example/app@1.0.0",
+            "dependencies": ["single"]  # Only 1 part
+        }
+    ]
+    
+    doc = generate_cyclonedx_document(packages, "test-sbom")
+    
+    # Should handle gracefully, skipping malformed coordinates
+    # or not adding dependencies that can't be parsed
+    assert "dependencies" in doc
+
+
 if __name__ == '__main__':
     pytest.main([__file__, "-v"])
