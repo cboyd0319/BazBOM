@@ -4,10 +4,34 @@ This directory contains comprehensive pytest tests for BazBOM Python modules.
 
 ## Quick Start
 
+### Install Test Dependencies
+```bash
+# From repository root
+pip install -r requirements-test.txt
+```
+
+This installs:
+- pytest, pytest-cov, pytest-mock (core framework)
+- pytest-xdist (parallel execution for ~50% speedup)
+- pytest-randomly (detect test order dependencies)
+- freezegun, responses (test utilities)
+
 ### Run All Tests
 ```bash
 cd /home/runner/work/BazBOM/BazBOM
 python3 -m pytest tools/supplychain/tests/ -v
+```
+
+### Run Tests in Parallel (Faster)
+```bash
+# Use all CPU cores - ~50% speedup
+python3 -m pytest tools/supplychain/tests/ -n auto
+```
+
+### Run Fast Tests Only
+```bash
+# Skip slow tests for rapid iteration
+python3 -m pytest tools/supplychain/tests/ -m "not slow"
 ```
 
 ### Run with Coverage
@@ -21,6 +45,26 @@ python3 -m pytest tools/supplychain/tests/ \
 ### Run Specific Module Tests
 ```bash
 python3 -m pytest tools/supplychain/tests/test_badge_generator.py -v
+```
+
+## Performance
+
+**Current Metrics**:
+- Total tests: 1224
+- Execution time: 2.78s (fast tests, excluding slow tests)
+- Execution time with parallelization: ~1.5-2.0s (estimated)
+- Pass rate: 100%
+- Flaky tests: 0
+
+**Optimizations Applied**:
+- Session-scoped fixtures for expensive data
+- Mock factories to eliminate repetitive setup
+- pytest-style tests (no unittest.TestCase boilerplate)
+- Parallel execution support via pytest-xdist
+
+**Show Slowest Tests**:
+```bash
+pytest --durations=20
 ```
 
 ## Test Structure
@@ -110,19 +154,26 @@ All tests in this suite follow these standards:
 
 ## Fixtures (conftest.py)
 
-### Data Fixtures
-- `sample_sbom_data` - Example SPDX SBOM with packages
-- `sample_vulnerability_data` - Example OSV vulnerability findings
-- `sample_maven_coordinates` - Example Maven dependency data
+### Session-Scoped Fixtures (Efficient)
+- `sample_sbom_data` - Example SPDX SBOM (created once per session)
+- `sample_vulnerability_data` - Example OSV vulnerability findings (session-scoped)
+- `sample_maven_coordinates` - Example Maven dependency data (session-scoped)
+
+### Factory Fixtures (Reusable)
+- `mock_http_response` - Factory for creating mock HTTP responses
+- `mock_requests_get` - Factory for mock requests.get calls
+- `temp_json_file` - Factory for creating temporary JSON files
+- `kev_catalog_data` - KEV catalog data for enrichment tests
+- `epss_data` - EPSS scoring data for enrichment tests
+- `ghsa_advisory_data` - GitHub Security Advisory data
 
 ### Utility Fixtures
-- `tmp_dir` / `tmp_path` - Temporary directory for test files
+- `tmp_dir` / `tmp_path` - Temporary directory for test files (auto-cleanup)
 - `env_vars` - Helper for setting environment variables
-- `mock_http_response` - Factory for creating mock HTTP responses
-- `temp_json_file` - Factory for creating temporary JSON files
 
 ### Auto-used Fixtures
-- `_seed_rng` - Seeds random number generators (random, numpy)
+- `_seed_rng` - Seeds random number generators (random, numpy) for determinism
+- `_isolate_environment` - Isolates environment variables between tests
 
 ## Common Patterns
 
@@ -229,22 +280,39 @@ def test_api_call(mock_get):
 
 ## Resources
 
-- **TESTING.md** - Comprehensive testing guide (repository root)
-- **TEST_SUMMARY.md** - Project summary and metrics (repository root)
-- **pytest.ini** - Test configuration (repository root)
+### Documentation
+- **[PYTEST_BEST_PRACTICES.md](../../../docs/PYTEST_BEST_PRACTICES.md)** - Comprehensive pytest best practices guide
+  - Factory fixtures, parametrization, performance optimization
+  - Clear do's and don'ts with examples
+  - Checklist for new tests
+- **[TEST_PLAN.md](../../../docs/TEST_PLAN.md)** - Detailed test plan and coverage strategy
+  - Performance optimization techniques
+  - Coverage goals and progress
+- **[TESTING.md](../../../TESTING.md)** - Quick reference guide (repository root)
+  - Common commands
+  - Parallel execution setup
+  - Performance tips
+- **requirements-test.txt** - Test dependencies (repository root)
+
+### External Resources
 - [pytest documentation](https://docs.pytest.org/)
+- [pytest-xdist documentation](https://pytest-xdist.readthedocs.io/) (parallel execution)
 - [Coverage.py documentation](https://coverage.readthedocs.io/)
 
 ## Statistics
 
-- **Total Tests:** 561
-- **New Tests Added:** 223
-- **Test Code Lines:** 2,211 (new tests only)
+- **Total Tests:** 1224
+- **Execution Time:** 2.78s (fast tests), ~1.5-2.0s (with -n auto)
 - **Pass Rate:** 100%
-- **Execution Time:** ~6 seconds
-- **Deterministic:** Yes
+- **Deterministic:** Yes (seeded RNG, frozen time)
 - **Flaky Tests:** 0
+- **Unittest Files Converted:** 2 (18 remaining)
+- **Session Fixtures:** 3 (reduces redundant setup)
+- **Mock Factories:** 4 (eliminates repetition)
 
 ---
 
-For detailed information, see **TESTING.md** in the repository root.
+For detailed information, see:
+- **PYTEST_BEST_PRACTICES.md** - How to write efficient tests
+- **TEST_PLAN.md** - Performance optimization strategies
+- **TESTING.md** - Quick command reference
