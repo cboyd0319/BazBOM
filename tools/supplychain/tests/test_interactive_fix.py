@@ -505,9 +505,10 @@ class TestGenerateMavenFix:
         # Assert
         assert '<groupId>com.google.guava</groupId>' in result
         assert '<artifactId>guava</artifactId>' in result
+        assert '<version>31.1-jre</version>' in result
 
-    def test_generate_maven_fix_with_single_part_package(self, tmp_path):
-        """Test generating Maven fix with single-part package name."""
+    def test_generate_maven_fix_with_invalid_package_format(self, tmp_path):
+        """Test generating Maven fix with invalid package format."""
         # Arrange
         findings_file = tmp_path / "findings.json"
         findings_file.write_text(json.dumps({"vulnerabilities": []}))
@@ -517,16 +518,484 @@ class TestGenerateMavenFix:
         fixer = InteractiveFixer(findings_file, project_dir)
         
         fix_analysis = {
-            'package': 'simple-package',
-            'recommended_version': '1.0.0'
+            'package': 'single-part',
+            'recommended_version': '1.0'
         }
         
         # Act
         result = fixer.generate_maven_fix(fix_analysis)
         
         # Assert
-        assert '<artifactId>simple-package</artifactId>' in result
-        assert '<version>1.0.0</version>' in result
+        assert '<version>1.0</version>' in result
+
+
+class TestGenerateGradleFix:
+    """Test Gradle fix generation."""
+
+    def test_generate_gradle_fix_basic(self, tmp_path):
+        """Test generating Gradle fix."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "build.gradle").write_text("plugins { }")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'com.google.guava:guava',
+            'recommended_version': '31.1-jre'
+        }
+        
+        # Act
+        result = fixer.generate_gradle_fix(fix_analysis)
+        
+        # Assert
+        assert 'resolutionStrategy' in result
+        assert 'force(' in result
+        assert 'com.google.guava:guava:31.1-jre' in result
+        assert '// BazBOM auto-generated fix' in result
+
+
+class TestGenerateBazelFix:
+    """Test Bazel fix generation."""
+
+    def test_generate_bazel_fix_basic(self, tmp_path):
+        """Test generating Bazel fix."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "WORKSPACE").write_text("workspace(name = 'test')")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        fix_analysis = {
+            'package': 'com.google.guava:guava',
+            'recommended_version': '31.1-jre'
+        }
+        
+        # Act
+        result = fixer.generate_bazel_fix(fix_analysis)
+        
+        # Assert
+        assert 'override_targets' in result
+        assert 'com.google.guava:guava' in result
+        assert '31.1-jre' in result
+        assert '# BazBOM auto-generated fix' in result
+
+
+class TestCheckBreakingChanges:
+    """Test breaking changes detection."""
+
+    def test_check_breaking_changes_major_version_upgrade(self, tmp_path):
+        """Test detecting major version upgrade."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer._check_breaking_changes('1.0.0', '2.0.0')
+        
+        # Assert
+        assert result is True
+
+    def test_check_breaking_changes_minor_version_upgrade(self, tmp_path):
+        """Test minor version upgrade not detected as breaking."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer._check_breaking_changes('1.0.0', '1.1.0')
+        
+        # Assert
+        assert result is False
+
+    def test_check_breaking_changes_invalid_versions(self, tmp_path):
+        """Test handling of invalid version strings."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer._check_breaking_changes('invalid', 'also-invalid')
+        
+        # Assert
+        assert result is False
+
+    def test_check_breaking_changes_none_values(self, tmp_path):
+        """Test handling of None values."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer._check_breaking_changes(None, '2.0.0')
+        
+        # Assert
+        assert result is False
+
+
+class TestAnalyzeFixDetailed:
+    """Test detailed fix analysis."""
+
+    def test_analyze_fix_with_transitive_dependency(self, tmp_path):
+        """Test analyzing fix for transitive dependency."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        vulnerability = {
+            "package": "log4j-core",
+            "version": "2.14.1",
+            "fixed_in": ["2.17.0", "2.18.0"],
+            "dependency_type": "transitive",
+            "direct_parent": "spring-boot-starter"
+        }
+        
+        # Act
+        analysis = fixer.analyze_fix(vulnerability)
+        
+        # Assert
+        assert analysis['package'] == 'log4j-core'
+        assert analysis['current_version'] == '2.14.1'
+        assert analysis['recommended_version'] == '2.17.0'
+        assert analysis['is_transitive'] is True
+        assert analysis['direct_parent'] == 'spring-boot-starter'
+
+    def test_analyze_fix_with_multiple_fix_versions(self, tmp_path):
+        """Test analyzing fix picks earliest version."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        vulnerability = {
+            "package": "guava",
+            "version": "20.0",
+            "fixed_in": ["31.1-jre", "30.0-jre", "32.0-jre"]
+        }
+        
+        # Act
+        analysis = fixer.analyze_fix(vulnerability)
+        
+        # Assert
+        assert analysis['recommended_version'] == '30.0-jre'
+
+    def test_analyze_fix_with_breaking_changes(self, tmp_path):
+        """Test analyzing fix detects breaking changes."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        vulnerability = {
+            "package": "junit",
+            "version": "4.13.2",
+            "fixed_in": ["5.9.0"]
+        }
+        
+        # Act
+        analysis = fixer.analyze_fix(vulnerability)
+        
+        # Assert
+        assert analysis['breaking_changes_likely'] is True
+
+
+class TestApplyMavenFixes:
+    """Test applying Maven fixes."""
+
+    @patch('builtins.input', return_value='n')
+    def test_apply_maven_fixes_without_dependency_management(self, mock_input, tmp_path):
+        """Test applying Maven fixes when no dependencyManagement exists."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        pom_file = project_dir / "pom.xml"
+        pom_file.write_text("<project>\n</project>")
+        
+        fixer = InteractiveFixer(findings_file, project_dir)
+        fixer.fixes_applied = [{
+            'fix': '<dependency>\n  <groupId>test</groupId>\n  <artifactId>test</artifactId>\n  <version>1.0</version>\n</dependency>'
+        }]
+        
+        # Act
+        fixer._apply_maven_fixes()
+        
+        # Assert
+        content = pom_file.read_text()
+        assert '<dependencyManagement>' in content
+        assert '<groupId>test</groupId>' in content
+
+    @patch('builtins.input', return_value='n')
+    def test_apply_maven_fixes_with_existing_dependency_management(self, mock_input, tmp_path):
+        """Test applying Maven fixes with existing dependencyManagement."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        pom_file = project_dir / "pom.xml"
+        pom_file.write_text("""<project>
+  <dependencyManagement>
+    <dependencies>
+    </dependencies>
+  </dependencyManagement>
+</project>""")
+        
+        fixer = InteractiveFixer(findings_file, project_dir)
+        fixer.fixes_applied = [{
+            'fix': '<dependency>\n  <groupId>test</groupId>\n</dependency>'
+        }]
+        
+        # Act
+        fixer._apply_maven_fixes()
+        
+        # Assert
+        content = pom_file.read_text()
+        assert '<groupId>test</groupId>' in content
+
+
+class TestApplyGradleFixes:
+    """Test applying Gradle fixes."""
+
+    @patch('builtins.input', return_value='n')
+    def test_apply_gradle_fixes_to_build_gradle(self, mock_input, tmp_path):
+        """Test applying Gradle fixes to build.gradle."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        build_file = project_dir / "build.gradle"
+        build_file.write_text("plugins { }")
+        
+        fixer = InteractiveFixer(findings_file, project_dir)
+        fixer.fixes_applied = [{
+            'fix': 'configurations.all {\n  resolutionStrategy {\n    force("test:test:1.0")\n  }\n}'
+        }]
+        
+        # Act
+        fixer._apply_gradle_fixes()
+        
+        # Assert
+        content = build_file.read_text()
+        assert 'force("test:test:1.0")' in content
+
+    @patch('builtins.input', return_value='n')
+    def test_apply_gradle_fixes_to_build_gradle_kts(self, mock_input, tmp_path):
+        """Test applying Gradle fixes to build.gradle.kts."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        build_file = project_dir / "build.gradle.kts"
+        build_file.write_text("plugins { }")
+        
+        fixer = InteractiveFixer(findings_file, project_dir)
+        fixer.fixes_applied = [{
+            'fix': 'force("test:test:1.0")'
+        }]
+        
+        # Act
+        fixer._apply_gradle_fixes()
+        
+        # Assert
+        content = build_file.read_text()
+        assert 'force("test:test:1.0")' in content
+
+
+class TestApplyBazelFixes:
+    """Test applying Bazel fixes."""
+
+    @patch('builtins.input', return_value='n')
+    def test_apply_bazel_fixes(self, mock_input, tmp_path):
+        """Test applying Bazel fixes to WORKSPACE."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        workspace_file = project_dir / "WORKSPACE"
+        workspace_file.write_text("workspace(name = 'test')")
+        
+        fixer = InteractiveFixer(findings_file, project_dir)
+        fixer.fixes_applied = [{
+            'fix': 'override_targets = {\n  "test:test": "@maven//:test"\n}'
+        }]
+        
+        # Act
+        fixer._apply_bazel_fixes()
+        
+        # Assert
+        content = workspace_file.read_text()
+        assert '# BazBOM fixes' in content
+        assert 'override_targets' in content
+
+
+class TestMainFunction:
+    """Test main CLI function."""
+
+    @patch('sys.argv', ['bazbom-fix', '--findings', '/tmp/findings.json', '--project', '/tmp/project'])
+    @patch('interactive_fix.InteractiveFixer')
+    def test_main_success(self, mock_fixer_class):
+        """Test main function successful execution."""
+        # Arrange
+        mock_fixer = MagicMock()
+        mock_fixer.run_interactive.return_value = 0
+        mock_fixer_class.return_value = mock_fixer
+        from interactive_fix import main
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 0
+        mock_fixer.run_interactive.assert_called_once()
+
+    @patch('sys.argv', ['bazbom-fix', '--findings', '/nonexistent.json'])
+    @patch('interactive_fix.InteractiveFixer')
+    def test_main_file_not_found(self, mock_fixer_class):
+        """Test main function with nonexistent findings file."""
+        # Arrange
+        mock_fixer_class.side_effect = FileNotFoundError("File not found")
+        from interactive_fix import main
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 1
+
+    @patch('sys.argv', ['bazbom-fix', '--findings', '/tmp/invalid.json'])
+    @patch('interactive_fix.InteractiveFixer')
+    def test_main_value_error(self, mock_fixer_class):
+        """Test main function with invalid JSON."""
+        # Arrange
+        mock_fixer_class.side_effect = ValueError("Invalid JSON")
+        from interactive_fix import main
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 1
+
+    @patch('sys.argv', ['bazbom-fix', '--findings', '/tmp/findings.json'])
+    @patch('interactive_fix.InteractiveFixer')
+    def test_main_runtime_error(self, mock_fixer_class):
+        """Test main function with runtime error."""
+        # Arrange
+        mock_fixer_class.side_effect = RuntimeError("Build system error")
+        from interactive_fix import main
+        
+        # Act
+        result = main()
+        
+        # Assert
+        assert result == 1
+
+
+class TestRunInteractive:
+    """Test interactive run session."""
+
+    @patch('builtins.input', return_value='n')
+    @patch('builtins.print')
+    def test_run_interactive_no_fixable_vulnerabilities(self, mock_print, mock_input, tmp_path):
+        """Test interactive run with no fixable vulnerabilities."""
+        # Arrange
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps({"vulnerabilities": []}))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer.run_interactive()
+        
+        # Assert
+        assert result == 0
+
+    @patch('builtins.input', return_value='skip all')
+    @patch('builtins.print')
+    def test_run_interactive_skip_all(self, mock_print, mock_input, tmp_path):
+        """Test interactive run with skip all."""
+        # Arrange
+        findings = {
+            "vulnerabilities": [
+                {"id": "CVE-1", "package": "test", "severity": "HIGH", "fixed_in": ["1.0"]},
+                {"id": "CVE-2", "package": "test2", "severity": "HIGH", "fixed_in": ["2.0"]}
+            ]
+        }
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps(findings))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project></project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer.run_interactive()
+        
+        # Assert
+        assert result == 0
+        assert len(fixer.fixes_applied) == 0
+
+    @patch('builtins.input', side_effect=['y', 'n'])
+    @patch('builtins.print')
+    def test_run_interactive_apply_one_fix(self, mock_print, mock_input, tmp_path):
+        """Test interactive run applying one fix."""
+        # Arrange
+        findings = {
+            "vulnerabilities": [
+                {"id": "CVE-1", "package": "test:test", "version": "1.0", "severity": "HIGH", "fixed_in": ["2.0"]},
+                {"id": "CVE-2", "package": "test2:test2", "version": "1.0", "severity": "MEDIUM", "fixed_in": ["2.0"]}
+            ]
+        }
+        findings_file = tmp_path / "findings.json"
+        findings_file.write_text(json.dumps(findings))
+        project_dir = tmp_path / "project"
+        project_dir.mkdir()
+        (project_dir / "pom.xml").write_text("<project>\n</project>")
+        fixer = InteractiveFixer(findings_file, project_dir)
+        
+        # Act
+        result = fixer.run_interactive()
+        
+        # Assert
+        assert result == 0
+        assert len(fixer.fixes_applied) == 1
 
 
 class TestGenerateGradleFix:
