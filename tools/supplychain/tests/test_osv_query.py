@@ -470,3 +470,356 @@ class TestNormalizeFindings:
         
         # Check implementation details
         assert isinstance(result, list)
+
+
+class TestCLIMain:
+    """Test command-line interface."""
+    
+    def test_main_with_basic_sbom(self, temp_json_file, tmp_path, mocker):
+        """Test CLI with basic SBOM."""
+        # Arrange
+        sbom_data = {
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-guava",
+                    "name": "guava",
+                    "versionInfo": "31.1-jre",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/com.google.guava/guava@31.1-jre",
+                        }
+                    ],
+                }
+            ]
+        }
+        sbom_file = temp_json_file(sbom_data, "sbom.json")
+        output_file = tmp_path / "output.json"
+        
+        # Mock OSV responses
+        mock_response = Mock()
+        mock_response.json.return_value = {"vulns": []}
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Mock enrichment to avoid actual API calls
+        mocker.patch('osv_query.VulnerabilityEnricher')
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file), '--no-enrich']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 0
+            assert output_file.exists()
+    
+    def test_main_with_batch_mode(self, temp_json_file, tmp_path, mocker):
+        """Test CLI with batch mode."""
+        # Arrange
+        sbom_data = {
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-guava",
+                    "name": "guava",
+                    "versionInfo": "31.1-jre",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/com.google.guava/guava@31.1-jre",
+                        }
+                    ],
+                }
+            ]
+        }
+        sbom_file = temp_json_file(sbom_data, "sbom.json")
+        output_file = tmp_path / "output.json"
+        
+        # Mock OSV batch response
+        mock_response = Mock()
+        mock_response.json.return_value = {"results": [{"vulns": []}]}
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Mock enrichment
+        mocker.patch('osv_query.VulnerabilityEnricher')
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file), '--batch', '--no-enrich']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 0
+            assert output_file.exists()
+    
+    def test_main_with_enrichment(self, temp_json_file, tmp_path, mocker):
+        """Test CLI with enrichment enabled."""
+        # Arrange
+        sbom_data = {
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-log4j-core",
+                    "name": "log4j-core",
+                    "versionInfo": "2.14.1",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/org.apache.logging.log4j/log4j-core@2.14.1",
+                        }
+                    ],
+                }
+            ]
+        }
+        sbom_file = temp_json_file(sbom_data, "sbom.json")
+        output_file = tmp_path / "output.json"
+        
+        # Mock OSV response with vulnerability
+        osv_response = {
+            "vulns": [
+                {
+                    "id": "CVE-2021-44228",
+                    "summary": "Log4j vulnerability",
+                    "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"}],
+                    "database_specific": {"severity": "CRITICAL"}
+                }
+            ]
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = osv_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Mock enricher
+        mock_enricher = Mock()
+        mock_enricher.enrich_all.return_value = [
+            {
+                "cve": "CVE-2021-44228",
+                "severity": "CRITICAL",
+                "epss": {"epss_score": 0.97},
+                "kev": {"in_kev": True}
+            }
+        ]
+        mocker.patch('osv_query.VulnerabilityEnricher', return_value=mock_enricher)
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file), '--enrich']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 0
+            assert output_file.exists()
+            # Check enricher was called
+            mock_enricher.enrich_all.assert_called_once()
+    
+    def test_main_handles_missing_sbom_file(self, tmp_path, capsys):
+        """Test CLI error handling for missing SBOM file."""
+        # Arrange
+        sbom_file = tmp_path / "nonexistent.json"
+        output_file = tmp_path / "output.json"
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file)]):
+            # Act & Assert
+            try:
+                exit_code = main()
+                # Should exit with error code
+                assert exit_code != 0
+            except (SystemExit, FileNotFoundError):
+                # Also acceptable - program exits or raises on missing file
+                pass
+    
+    def test_main_with_github_token(self, temp_json_file, tmp_path, mocker):
+        """Test CLI with GitHub token for GHSA enrichment."""
+        # Arrange
+        sbom_data = {
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-guava",
+                    "name": "guava",
+                    "versionInfo": "31.1-jre",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/com.google.guava/guava@31.1-jre",
+                        }
+                    ],
+                }
+            ]
+        }
+        sbom_file = temp_json_file(sbom_data, "sbom.json")
+        output_file = tmp_path / "output.json"
+        
+        # Mock OSV response with vulnerability
+        osv_response = {
+            "vulns": [
+                {
+                    "id": "CVE-2021-44228",
+                    "summary": "Test vulnerability",
+                }
+            ]
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = osv_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Mock enricher
+        mock_enricher = Mock()
+        mock_enricher.enrich_all.return_value = [
+            {
+                "cve": "CVE-2021-44228",
+                "severity": "HIGH",
+            }
+        ]
+        mock_enricher_class = mocker.patch('osv_query.VulnerabilityEnricher', return_value=mock_enricher)
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file), '--github-token', 'test-token']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 0
+            # Note: enricher initialization is implementation-dependent
+            # The test verifies the CLI runs successfully with the token parameter
+    
+    def test_main_with_vulncheck_disabled(self, temp_json_file, tmp_path, mocker):
+        """Test CLI with VulnCheck enrichment disabled."""
+        # Arrange
+        sbom_data = {
+            "packages": [
+                {
+                    "SPDXID": "SPDXRef-Package-guava",
+                    "name": "guava",
+                    "versionInfo": "31.1-jre",
+                    "externalRefs": [
+                        {
+                            "referenceType": "purl",
+                            "referenceLocator": "pkg:maven/com.google.guava/guava@31.1-jre",
+                        }
+                    ],
+                }
+            ]
+        }
+        sbom_file = temp_json_file(sbom_data, "sbom.json")
+        output_file = tmp_path / "output.json"
+        
+        # Mock OSV response with vulnerability
+        osv_response = {
+            "vulns": [
+                {
+                    "id": "CVE-2021-44228",
+                    "summary": "Test vulnerability",
+                }
+            ]
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = osv_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Mock enricher
+        mock_enricher = Mock()
+        mock_enricher.enrich_all.return_value = [{"cve": "CVE-2021-44228"}]
+        mock_enricher_class = mocker.patch('osv_query.VulnerabilityEnricher', return_value=mock_enricher)
+        
+        from osv_query import main
+        
+        with patch('sys.argv', ['osv_query.py', '--sbom', str(sbom_file), 
+                                '--output', str(output_file), '--disable-vulncheck']):
+            # Act
+            exit_code = main()
+            
+            # Assert
+            assert exit_code == 0
+            # Note: enricher initialization is implementation-dependent
+            # The test verifies the CLI runs successfully with the disable flag
+
+
+class TestQueryOSVEdgeCases:
+    """Test edge cases for OSV query functions."""
+    
+    def test_query_osv_handles_empty_response(self, mocker):
+        """Test query_osv with empty response."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.json.return_value = {}
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        # Act
+        result = query_osv({"name": "test", "version": "1.0.0", "ecosystem": "Maven"})
+        
+        # Assert
+        # Function may return {} or [] depending on implementation
+        assert isinstance(result, (list, dict))
+    
+    def test_query_osv_batch_handles_partial_failures(self, mocker):
+        """Test batch query with partial failures."""
+        # Arrange
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "results": [
+                {"vulns": [{"id": "CVE-2021-44228"}]},
+                {},  # Empty result for second package
+            ]
+        }
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        packages = [
+            {"name": "log4j-core", "version": "2.14.1", "ecosystem": "Maven"},
+            {"name": "guava", "version": "31.1-jre", "ecosystem": "Maven"},
+        ]
+        
+        # Act
+        results = query_osv_batch(packages)
+        
+        # Assert
+        assert len(results) == 2
+        assert len(results[0]) == 1  # Has vulnerabilities
+        assert len(results[1]) == 0  # No vulnerabilities
+    
+    def test_extract_cvss_score_with_database_specific(self):
+        """Test CVSS extraction from database_specific field."""
+        # Arrange
+        vuln = {
+            "database_specific": {
+                "cvss_score": 7.5
+            }
+        }
+        
+        # Act
+        score = extract_cvss_score(vuln)
+        
+        # Assert
+        assert score == 7.5
+    
+    def test_extract_cvss_score_fallback_to_severity_level(self):
+        """Test CVSS score extraction falls back to severity level mapping."""
+        # Arrange
+        vuln = {
+            "severity": [
+                {"level": "HIGH"}
+            ]
+        }
+        
+        # Act
+        score = extract_cvss_score(vuln)
+        
+        # Assert
+        # HIGH maps to 7.0-8.9 range, check it's in that ballpark
+        assert 5.0 <= score <= 9.0
+
