@@ -87,6 +87,10 @@ def check_deprecated_maven(group_id: str, artifact_id: str, version: str) -> Opt
         # Check if there's a much newer version available
         search_url = f"https://search.maven.org/solrsearch/select?q=g:{group_id}+AND+a:{artifact_id}&rows=1&wt=json"
         
+        # Validate URL scheme for security (prevent file:/ and other schemes)
+        if not search_url.startswith(('http://', 'https://')):
+            return []
+        
         with urllib.request.urlopen(search_url, timeout=5) as response:
             data = json.loads(response.read())
             if data.get('response', {}).get('numFound', 0) > 0:

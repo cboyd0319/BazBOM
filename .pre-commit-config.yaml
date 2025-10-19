@@ -1,0 +1,112 @@
+# Pre-commit hooks configuration for BazBOM
+# Configured according to PYSEC_OMEGA security standards
+
+repos:
+  # Secret detection
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.87.2
+    hooks:
+      - id: trufflehog
+        name: TruffleHog Secret Scanner
+        entry: trufflehog filesystem --json --no-update
+        language: system
+        pass_filenames: false
+        
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.22.2
+    hooks:
+      - id: gitleaks
+        name: GitLeaks Secret Scanner
+        entry: gitleaks detect --source . --verbose --no-git
+        language: system
+        pass_filenames: false
+
+  # Python code quality
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        name: Black Python Formatter
+        language_version: python3
+        
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: ruff
+        name: Ruff Python Linter
+        args: [--fix, --exit-non-zero-on-fix]
+        
+      - id: ruff-format
+        name: Ruff Python Formatter
+
+  # Python security
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.6
+    hooks:
+      - id: bandit
+        name: Bandit Security Scanner
+        args: [-r, tools/supplychain, -c, .bandit, --severity-level, medium]
+        pass_filenames: false
+
+  # YAML validation
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-yaml
+        name: Check YAML Syntax
+        args: [--safe]
+        
+      - id: check-json
+        name: Check JSON Syntax
+        
+      - id: check-added-large-files
+        name: Check for Large Files
+        args: [--maxkb=1000]
+        
+      - id: check-merge-conflict
+        name: Check for Merge Conflicts
+        
+      - id: detect-private-key
+        name: Detect Private Keys
+        
+      - id: end-of-file-fixer
+        name: Fix End of Files
+        
+      - id: trailing-whitespace
+        name: Trim Trailing Whitespace
+        args: [--markdown-linebreak-ext=md]
+        
+      - id: mixed-line-ending
+        name: Fix Mixed Line Endings
+        args: [--fix=lf]
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.43.0
+    hooks:
+      - id: markdownlint
+        name: Markdown Linter
+        args: [--config, .markdownlint.json]
+
+  # Buildifier for Bazel files
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 7.3.1
+    hooks:
+      - id: buildifier
+        name: Buildifier (Bazel Formatter)
+        
+      - id: buildifier-lint
+        name: Buildifier Lint
+
+# Global configuration
+default_language_version:
+  python: python3.12
+
+# Run these stages
+default_stages: [commit, push]
+
+# Fail fast on first error
+fail_fast: false
+
+# Minimum pre-commit version
+minimum_pre_commit_version: '3.5.0'

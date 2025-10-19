@@ -5,7 +5,7 @@ import argparse
 import json
 import sys
 import zipfile
-import xml.etree.ElementTree as ET
+from defusedxml import ElementTree as ET
 from typing import Dict, List, Any, Optional, Set
 from pathlib import Path
 import re
