@@ -652,6 +652,37 @@ class TestMainFunction:
 
         assert exc_info.value.code == 2  # argparse error
 
+    def test_main_with_dict_no_known_keys(self, tmp_path, monkeypatch):
+        """Test main with dict input having neither dependencies nor packages key."""
+        input_file = tmp_path / "input.json"
+        output_file = tmp_path / "output.json"
+
+        input_data = {
+            "unknown_key": [
+                {"name": "pkg1", "version": "1.0", "license": "MIT"},
+            ]
+        }
+        input_file.write_text(json.dumps(input_data))
+
+        monkeypatch.setattr(
+            "sys.argv",
+            [
+                "license_analyzer.py",
+                "--input",
+                str(input_file),
+                "--output",
+                str(output_file),
+            ],
+        )
+
+        main()
+
+        # Should process with empty dependencies list
+        assert output_file.exists()
+        with open(output_file) as f:
+            report = json.load(f)
+        assert report["summary"]["total_dependencies"] == 0
+
 
 class TestEdgeCases:
     """Test edge cases and boundary conditions."""

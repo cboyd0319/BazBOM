@@ -1382,6 +1382,17 @@ class TestKEVCaching(unittest.TestCase):
         catalog2 = self.enricher.fetch_kev_catalog()
         self.assertEqual(mock_get.call_count, call_count_first)  # No new call
 
+    @patch('kev_enrichment.requests.get')
+    def test_fetch_kev_catalog_failure_no_cache(self, mock_get):
+        """Test KEV catalog fetch failure with no cache raises RuntimeError."""
+        import requests
+        mock_get.side_effect = requests.RequestException("Network error")
+        
+        with self.assertRaises(RuntimeError) as context:
+            self.enricher.fetch_kev_catalog()
+        
+        self.assertIn("Failed to fetch KEV catalog and no cache available", str(context.exception))
+
 
 class TestResponseValidation(unittest.TestCase):
     """Test validation of API responses."""
