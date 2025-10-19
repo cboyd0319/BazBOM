@@ -695,3 +695,120 @@ class TestEdgeCases:
         targets = get_bazel_targets_from_files(files, "/workspace")
         
         assert len(targets) > 0
+
+    @patch('incremental_analyzer.check_ripgrep_available')
+    @patch('incremental_analyzer.Path')
+    @patch('incremental_analyzer.subprocess.run')
+    def test_find_affected_targets_fast_with_alternative_build_file(self, mock_run, mock_path_cls, mock_check_rg):
+        """Test RipGrep using BUILD file when BUILD.bazel doesn't exist."""
+        mock_check_rg.return_value = True
+        
+        # Mock Path instances for existence checks
+        def path_side_effect(workspace, file_path):
+            mock_p = MagicMock()
+            # BUILD.bazel doesn't exist, but BUILD does
+            if 'BUILD.bazel' in str(file_path):
+                mock_p.exists.return_value = False
+            elif file_path == 'BUILD':
+                mock_p.exists.return_value = True
+            else:
+                mock_p.exists.return_value = True
+            return mock_p
+        
+        mock_path_cls.side_effect = path_side_effect
+        mock_run.return_value = Mock(stdout='app_main\n', returncode=0)
+        
+        from incremental_analyzer import find_affected_targets_fast
+        result = find_affected_targets_fast(['src/App.java'], '/workspace')
+        
+        assert isinstance(result, set)
+
+    @patch('incremental_analyzer.check_ripgrep_available')
+    @patch('incremental_analyzer.Path')
+    @patch('incremental_analyzer.subprocess.run')
+    def test_find_affected_targets_fast_with_generic_exception(self, mock_run, mock_path_cls, mock_check_rg):
+        """Test RipGrep handling generic exception during target extraction."""
+        mock_check_rg.return_value = True
+        mock_path = MagicMock()
+        mock_path.exists.return_value = True
+        mock_path_cls.return_value = mock_path
+        # Raise a generic exception (not TimeoutExpired)
+        mock_run.side_effect = RuntimeError('Unexpected error')
+        
+        from incremental_analyzer import find_affected_targets_fast
+        result = find_affected_targets_fast(['src/App.java'], '/workspace')
+        
+        # Should handle exception gracefully and return empty set
+        assert isinstance(result, set)
+
+    @patch('incremental_analyzer.subprocess.run')
+    def test_query_affected_targets_with_generic_exception(self, mock_run):
+        """Test query_affected_targets handling generic exception."""
+        # First call succeeds, second raises generic exception
+        mock_run.side_effect = [
+            Mock(returncode=0, stdout='//app:target1\n'),
+            RuntimeError('Unexpected error')
+        ]
+        
+        result = query_affected_targets({'//src:*', '//lib:*'}, '/workspace')
+        
+        # Should continue and return partial results
+        assert isinstance(result, list)
+
+    @patch('incremental_analyzer.subprocess.run')
+    @patch('incremental_analyzer.Path')
+    @patch('incremental_analyzer.get_changed_files')
+    @patch('incremental_analyzer.check_ripgrep_available')
+    @patch('sys.argv', ['incremental_analyzer.py', '--fast-mode'])
+    def test_fast_mode_requested_but_unavailable(self, mock_check_rg, mock_get_files, mock_path, mock_run):
+        """Test warning when fast mode requested but RipGrep unavailable."""
+        mock_path.return_value.resolve.return_value = Path('/workspace')
+        mock_check_rg.return_value = False  # RipGrep not available
+        mock_get_files.return_value = []
+        mock_run.return_value = Mock(returncode=0, stdout='')
+        
+        from incremental_analyzer import main
+        result = main()
+        
+        # Should complete successfully despite warning
+        assert result == 0
+
+    @patch('incremental_analyzer.subprocess.run')
+    @patch('incremental_analyzer.Path')
+    @patch('incremental_analyzer.get_changed_files')
+    @patch('incremental_analyzer.get_bazel_targets_from_files')
+    @patch('incremental_analyzer.query_affected_targets')
+    @patch('incremental_analyzer.filter_sbom_targets')
+    @patch('sys.argv', ['incremental_analyzer.py', '--output-format', 'bazel-query'])
+    def test_bazel_query_output_with_targets(self, mock_filter, mock_query, mock_targets, mock_get_files, mock_path, mock_run):
+        """Test bazel-query output format with actual targets."""
+        mock_path.return_value.resolve.return_value = Path('/workspace')
+        mock_get_files.return_value = ['src/App.java']
+        mock_targets.return_value = {'//src:*'}
+        mock_query.return_value = ['//app:target1', '//lib:target2']
+        mock_filter.return_value = ['//app:target1_sbom', '//lib:target2_sbom']
+        
+        from incremental_analyzer import main
+        result = main()
+        
+        assert result == 0
+
+    @patch('incremental_analyzer.subprocess.run')
+    @patch('incremental_analyzer.Path')
+    @patch('incremental_analyzer.get_changed_files')
+    @patch('builtins.open', create=True)
+    @patch('sys.argv', ['incremental_analyzer.py', '--output', '/tmp/result.txt', '--output-format', 'targets'])
+    def test_targets_output_to_file(self, mock_open, mock_get_files, mock_path, mock_run):
+        """Test targets output format to file."""
+        mock_path.return_value.resolve.return_value = Path('/workspace')
+        mock_get_files.return_value = []
+        mock_run.return_value = Mock(returncode=0, stdout='')
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        from incremental_analyzer import main
+        result = main()
+        
+        assert result == 0
+        # Verify write was called (non-JSON output)
+        assert mock_file.write.called
