@@ -622,8 +622,14 @@ class TestEdgeCases:
         result = generator.generate(diff, format="markdown")
         assert "test-lib-日本語" in result
 
+    @pytest.mark.slow
+    @pytest.mark.performance
     def test_large_number_of_changes(self):
-        """Test handling of large number of changes."""
+        """Test handling of large number of changes.
+        
+        Marked as slow since it creates 1000 mock packages to test
+        changelog generation performance.
+        """
         generator = ChangelogGenerator()
         
         diff = Mock(spec=SBOMDiff)

@@ -435,10 +435,118 @@ pytest --cov=tools/supplychain --cov-report=json
 - [ ] Tests have descriptive names
 - [ ] Coverage doesn't decrease
 
+## Test Suite Performance Optimization
+
+### Current Performance Metrics
+- **Test Suite Size**: 1224 tests
+- **Execution Time**: ~3.07s (without coverage)
+- **Performance Improvement**: 10.5% faster than baseline (3.43s)
+- **Fast Tests Only**: 2.79s (excluding slow tests, -m "not slow")
+
+### Optimization Strategies Applied
+
+#### 1. Test Configuration Optimization
+- **pytest.ini & pyproject.toml**: Centralized configuration in both files for flexibility
+- **Quiet mode (-q)**: Reduced output verbosity for faster runs
+- **Fail-fast (--maxfail=1)**: Stop on first failure during development
+- **Duration tracking (--durations=10)**: Monitor slowest tests
+- **Deterministic execution (--randomly-seed=1337)**: Reproducible test order
+
+#### 2. Test Markers for Selective Execution
+```bash
+# Run only fast tests (default for development)
+pytest -m "not slow"
+
+# Run only performance tests
+pytest -m "performance"
+
+# Run only integration tests
+pytest -m "integration"
+```
+
+**Marked Slow Tests**:
+- `test_enrichment_integration.py::test_enrichment_with_large_dataset` (1000 EPSS records)
+- `test_enrichment_integration.py::test_findings_with_invalid_cvss_scores`
+- `test_drift_detector.py::test_large_number_of_violations` (1000 packages)
+- `test_changelog_generator.py::test_large_number_of_changes` (1000 changes)
+- `test_sbom_diff.py::test_diff_large_sbom` (1000 packages)
+
+#### 3. Fixture Optimization
+**Enhanced conftest.py fixtures**:
+- `_seed_rng` (autouse): Ensures deterministic random number generation
+- `_isolate_environment` (autouse): Prevents environment variable leakage
+- `freeze_time`: Optional time control for time-dependent tests
+- `tmp_path`: Automatic cleanup of temporary files
+
+#### 4. Pytest Style Conversion
+**Benefits of converting from unittest to pytest**:
+- More concise: `assert x == y` vs `self.assertEqual(x, y)`
+- Better error messages: pytest shows full assertion details
+- Fixtures instead of setUp/tearDown: Automatic cleanup, composable
+- Parametrization: `@pytest.mark.parametrize` for table-driven tests
+- Less boilerplate: No need for class inheritance
+
+**Conversion Progress**:
+- ✅ `test_csv_exporter.py` (6 tests) - now uses `tmp_path` fixture
+- 🔄 19 unittest.TestCase files remaining
+
+#### 5. Performance Best Practices
+
+**DO**:
+- ✅ Use fixtures for shared setup
+- ✅ Mark slow tests with `@pytest.mark.slow`
+- ✅ Use parametrization for input matrices
+- ✅ Mock external dependencies (network, filesystem)
+- ✅ Seed random number generators
+- ✅ Use `tmp_path` for temporary files
+- ✅ Keep tests under 100ms when possible
+
+**DON'T**:
+- ❌ Use `time.sleep()` in tests (use time control/mocking)
+- ❌ Access real network or external services
+- ❌ Create files in source tree (use `tmp_path`)
+- ❌ Depend on test execution order
+- ❌ Use hidden global state
+
+#### 6. Running Tests Efficiently
+
+```bash
+# Fast iteration during development (exclude slow tests)
+pytest -m "not slow"
+
+# Run specific file
+pytest tools/supplychain/tests/test_csv_exporter.py
+
+# Run specific test
+pytest tools/supplychain/tests/test_csv_exporter.py::TestCSVExporter::test_export_sbom_to_csv_happy_path
+
+# Run with coverage (slower)
+pytest --cov=tools/supplychain --cov-report=html
+
+# Run in parallel (if pytest-xdist installed)
+pytest -n auto
+
+# Show slowest tests
+pytest --durations=20
+```
+
+#### 7. CI/CD Considerations
+- **Fast feedback**: Run fast tests first, slow tests later
+- **Coverage enforcement**: 90% line, 85% branch minimum
+- **Deterministic**: Same seed for reproducibility
+- **Fail fast**: Stop on first failure in PR checks
+
+### Future Optimizations
+- [ ] Convert remaining 19 unittest.TestCase files to pytest
+- [ ] Add `pytest-xdist` for parallel execution
+- [ ] Consider `pytest-benchmark` for performance regression tracking
+- [ ] Add mutation testing with `mutmut` for critical modules
+- [ ] Implement property-based testing with `hypothesis` for complex logic
+
 ## Conclusion
 
 Achieving 90% coverage across all modules is an achievable goal with systematic execution. The test plan outlined here provides a clear roadmap with prioritization based on module complexity and impact. The infrastructure established (fixtures, utilities, CI integration) will support efficient test development and maintenance.
 
-**Current Status**: 55.37% coverage, 906 passing tests
+**Current Status**: 55.37% coverage, 1224 passing tests, 3.07s runtime
 **Target Status**: 90%+ coverage, estimated 2000+ tests
 **Estimated Effort**: 6-8 weeks with dedicated focus

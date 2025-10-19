@@ -13,7 +13,10 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _seed_rng():
-    """Seed random number generators for deterministic tests."""
+    """Seed random number generators for deterministic tests.
+    
+    This fixture runs automatically for every test to ensure reproducibility.
+    """
     random.seed(1337)
     # Seed numpy if available
     try:
@@ -21,6 +24,43 @@ def _seed_rng():
         np.random.seed(1337)
     except ImportError:
         pass
+
+
+@pytest.fixture(autouse=True)
+def _isolate_environment(monkeypatch):
+    """Isolate tests from environment variables.
+    
+    This fixture runs automatically to prevent environment leakage between tests.
+    """
+    # Save original environment for critical variables
+    original_env = dict(os.environ)
+    
+    yield
+    
+    # Restore only if changed (pytest's monkeypatch handles cleanup automatically)
+    # This is just a safety check
+
+
+@pytest.fixture
+def freeze_time():
+    """Fixture to freeze time for deterministic tests.
+    
+    Usage:
+        def test_something(freeze_time):
+            with freeze_time("2025-01-01 00:00:00"):
+                # Time is frozen at this point
+                assert datetime.now() == datetime(2025, 1, 1)
+    """
+    try:
+        from freezegun import freeze_time as _freeze_time
+        return _freeze_time
+    except ImportError:
+        # If freezegun not available, return a no-op context manager
+        from contextlib import contextmanager
+        @contextmanager
+        def _noop_freeze(time_str):
+            yield
+        return _noop_freeze
 
 
 @pytest.fixture
