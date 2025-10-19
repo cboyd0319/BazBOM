@@ -823,3 +823,126 @@ class TestQueryOSVEdgeCases:
         # HIGH maps to 7.0-8.9 range, check it's in that ballpark
         assert 5.0 <= score <= 9.0
 
+
+class TestMissingCoverageScenarios:
+    """Tests for missing coverage scenarios to achieve 100% coverage."""
+    
+    def test_extract_cvss_score_with_cvss_v3_vector_parse_error(self):
+        """Test CVSS V3 vector parsing with malformed vector that triggers exception."""
+        from osv_query import extract_cvss_score
+        
+        vuln = {
+            "severity": [{
+                "type": "CVSS_V3",
+                "score": "CVSS:3.1/InvalidVector"  # Malformed vector
+            }]
+        }
+        
+        # Act - should handle ValueError/IndexError and fall back to severity level
+        score = extract_cvss_score(vuln)
+        
+        # Assert - should return default fallback score
+        assert isinstance(score, float)
+        assert score == 5.0  # Default MEDIUM severity
+    
+    def test_extract_cvss_score_with_cvss_v2(self):
+        """Test CVSS V2 score extraction path."""
+        from osv_query import extract_cvss_score
+        
+        vuln = {
+            "severity": [{
+                "type": "CVSS_V2",
+                "score": "6.8"
+            }],
+            "database_specific": {
+                "cvss_score": 6.8
+            }
+        }
+        
+        # Act
+        score = extract_cvss_score(vuln)
+        
+        # Assert
+        assert score == 6.8
+    
+    def test_normalize_findings_with_cve_alias(self):
+        """Test extracting CVE from aliases list."""
+        from osv_query import normalize_findings
+        
+        vulnerabilities = [{
+            "package": "test-pkg",
+            "version": "1.0.0",
+            "purl": "pkg:maven/test/test-pkg@1.0.0",
+            "vulnerability": {
+                "id": "GHSA-xxxx-yyyy-zzzz",
+                "aliases": ["CVE-2023-12345", "OTHER-ID-456"],
+                "summary": "Test vulnerability",
+                "severity": [{"level": "HIGH"}]
+            }
+        }]
+        
+        # Act
+        findings = normalize_findings(vulnerabilities)
+        
+        # Assert
+        assert len(findings) == 1
+        assert findings[0]["cve"] == "CVE-2023-12345"
+    
+    def test_normalize_findings_with_cve_as_id_and_no_aliases(self):
+        """Test extracting CVE when it's the ID and no aliases exist."""
+        from osv_query import normalize_findings
+        
+        vulnerabilities = [{
+            "package": "test-pkg",
+            "version": "1.0.0",
+            "purl": "pkg:maven/test/test-pkg@1.0.0",
+            "vulnerability": {
+                "id": "CVE-2023-99999",
+                "summary": "Test vulnerability",
+                "severity": [{"level": "MEDIUM"}]
+            }
+        }]
+        
+        # Act
+        findings = normalize_findings(vulnerabilities)
+        
+        # Assert
+        assert len(findings) == 1
+        assert findings[0]["cve"] == "CVE-2023-99999"
+    
+    def test_query_osv_batch_extracts_vulnerabilities_from_results(self, mocker):
+        """Test that batch query properly extracts vulns from results."""
+        from osv_query import query_osv_batch
+        from unittest.mock import Mock
+        
+        # Mock response with vulnerabilities in results format
+        osv_response = {
+            "results": [
+                {
+                    "vulns": [{
+                        "id": "CVE-2021-44228",
+                        "summary": "Log4Shell",
+                        "severity": [{"level": "CRITICAL"}]
+                    }]
+                },
+                {}  # No vulns for second package
+            ]
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = osv_response
+        mock_response.raise_for_status.return_value = None
+        mocker.patch('osv_query.requests.post', return_value=mock_response)
+        
+        packages = [
+            {"name": "log4j-core", "version": "2.14.0", "ecosystem": "Maven"},
+            {"name": "safe-pkg", "version": "1.0.0", "ecosystem": "Maven"}
+        ]
+        
+        # Act
+        results = query_osv_batch(packages)
+        
+        # Assert
+        assert len(results) == 2
+        assert results[0]["vulns"][0]["id"] == "CVE-2021-44228"
+        assert results[1] == {}
+

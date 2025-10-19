@@ -946,7 +946,7 @@ License: Apache License 2.0
         from tools.supplychain.license_extractor import extract_jar_licenses
         import zipfile
         
-        # Create a mock JAR with a license file that will cause an error when read
+        # Create a JAR with a LICENSE file that will cause a read error
         jar_path = tmp_path / "corrupt.jar"
         with zipfile.ZipFile(jar_path, 'w') as zf:
             # Add a valid manifest
@@ -954,25 +954,28 @@ License: Apache License 2.0
 
 """
             zf.writestr("META-INF/MANIFEST.MF", manifest)
+            # Add a LICENSE file - this is critical to trigger the code path
+            zf.writestr("LICENSE.txt", "Some license content")
         
-        # Mock zipfile to raise exception when reading LICENSE
+        # Mock zipfile.ZipFile.read to raise exception when reading LICENSE
         import unittest.mock as mock
-        original_open = zipfile.ZipFile.open
+        original_read = zipfile.ZipFile.read
         
-        def mock_open(self, name, *args, **kwargs):
+        def mock_read(self, name, *args, **kwargs):
             if 'LICENSE' in name:
                 raise Exception("Simulated read error")
-            return original_open(self, name, *args, **kwargs)
+            return original_read(self, name, *args, **kwargs)
         
-        with mock.patch.object(zipfile.ZipFile, 'open', mock_open):
+        with mock.patch.object(zipfile.ZipFile, 'read', mock_read):
             # Act
             result = extract_jar_licenses(str(jar_path))
             
-            # Assert - should not crash
-            assert result is not None
-            # Warning should be printed
+            # Assert - should not crash, returns dict with empty or partial results
+            assert isinstance(result, dict)
+            assert 'spdx_licenses' in result
+            # Warning should be printed to stderr
             captured = capsys.readouterr()
-            # May or may not have warnings depending on whether there were license files
+            assert "Warning: Error reading" in captured.err
 
 
 class TestMainFunction:
