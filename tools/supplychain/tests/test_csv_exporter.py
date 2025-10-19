@@ -4,12 +4,12 @@
 import csv
 import json
 import os
-import tempfile
-import unittest
+import sys
 from pathlib import Path
 
+import pytest
+
 # Import the module under test
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from csv_exporter import (
     export_sbom_to_csv,
@@ -18,19 +18,10 @@ from csv_exporter import (
 )
 
 
-class TestCSVExporter(unittest.TestCase):
+class TestCSVExporter:
     """Test CSV export functionality."""
     
-    def setUp(self):
-        """Create temporary directory for test outputs."""
-        self.test_dir = tempfile.mkdtemp()
-    
-    def tearDown(self):
-        """Clean up test directory."""
-        import shutil
-        shutil.rmtree(self.test_dir, ignore_errors=True)
-    
-    def test_export_sbom_to_csv_happy_path(self):
+    def test_export_sbom_to_csv_happy_path(self, tmp_path):
         """Test exporting a valid SBOM to CSV."""
         sbom_data = {
             "packages": [
@@ -57,35 +48,35 @@ class TestCSVExporter(unittest.TestCase):
             ]
         }
         
-        output_path = os.path.join(self.test_dir, "sbom.csv")
-        export_sbom_to_csv(sbom_data, output_path)
+        output_path = tmp_path / "sbom.csv"
+        export_sbom_to_csv(sbom_data, str(output_path))
         
         # Verify file was created
-        self.assertTrue(os.path.exists(output_path))
+        assert output_path.exists()
         
         # Verify CSV content
         with open(output_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]['Name'], 'example-package')
-            self.assertEqual(rows[0]['Version'], '1.0.0')
-            self.assertEqual(rows[0]['License'], 'Apache-2.0')
-            self.assertIn('pkg:maven', rows[0]['Package URL (PURL)'])
+            assert len(rows) == 1
+            assert rows[0]['Name'] == 'example-package'
+            assert rows[0]['Version'] == '1.0.0'
+            assert rows[0]['License'] == 'Apache-2.0'
+            assert 'pkg:maven' in rows[0]['Package URL (PURL)']
     
-    def test_export_sbom_missing_packages_field(self):
+    def test_export_sbom_missing_packages_field(self, tmp_path):
         """Test error handling for SBOM missing packages field."""
         sbom_data = {}
         
-        output_path = os.path.join(self.test_dir, "sbom.csv")
+        output_path = tmp_path / "sbom.csv"
         
-        with self.assertRaises(ValueError) as ctx:
-            export_sbom_to_csv(sbom_data, output_path)
+        with pytest.raises(ValueError) as ctx:
+            export_sbom_to_csv(sbom_data, str(output_path))
         
-        self.assertIn('packages', str(ctx.exception))
+        assert 'packages' in str(ctx.value)
     
-    def test_export_vulnerabilities_to_csv_happy_path(self):
+    def test_export_vulnerabilities_to_csv_happy_path(self, tmp_path):
         """Test exporting vulnerability findings to CSV."""
         findings_data = {
             "vulnerabilities": [
@@ -111,39 +102,39 @@ class TestCSVExporter(unittest.TestCase):
             ]
         }
         
-        output_path = os.path.join(self.test_dir, "vulnerabilities.csv")
-        export_vulnerabilities_to_csv(findings_data, output_path)
+        output_path = tmp_path / "vulnerabilities.csv"
+        export_vulnerabilities_to_csv(findings_data, str(output_path))
         
         # Verify file was created
-        self.assertTrue(os.path.exists(output_path))
+        assert output_path.exists()
         
         # Verify CSV content
         with open(output_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]['CVE ID'], 'CVE-2023-12345')
-            self.assertEqual(rows[0]['Package Name'], 'vulnerable-lib')
-            self.assertEqual(rows[0]['Severity'], 'CRITICAL')
-            self.assertEqual(rows[0]['CVSS Score'], '9.8')
+            assert len(rows) == 1
+            assert rows[0]['CVE ID'] == 'CVE-2023-12345'
+            assert rows[0]['Package Name'] == 'vulnerable-lib'
+            assert rows[0]['Severity'] == 'CRITICAL'
+            assert rows[0]['CVSS Score'] == '9.8'
     
-    def test_export_vulnerabilities_empty_list(self):
+    def test_export_vulnerabilities_empty_list(self, tmp_path):
         """Test exporting empty vulnerability list."""
         findings_data = {"vulnerabilities": []}
         
-        output_path = os.path.join(self.test_dir, "vulnerabilities.csv")
-        export_vulnerabilities_to_csv(findings_data, output_path)
+        output_path = tmp_path / "vulnerabilities.csv"
+        export_vulnerabilities_to_csv(findings_data, str(output_path))
         
         # Verify file was created with header only
-        self.assertTrue(os.path.exists(output_path))
+        assert output_path.exists()
         
         with open(output_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
-            self.assertEqual(len(rows), 0)
+            assert len(rows) == 0
     
-    def test_export_license_report_to_csv_happy_path(self):
+    def test_export_license_report_to_csv_happy_path(self, tmp_path):
         """Test exporting license report to CSV."""
         license_data = {
             "packages": [
@@ -168,25 +159,25 @@ class TestCSVExporter(unittest.TestCase):
             ]
         }
         
-        output_path = os.path.join(self.test_dir, "licenses.csv")
-        export_license_report_to_csv(license_data, output_path)
+        output_path = tmp_path / "licenses.csv"
+        export_license_report_to_csv(license_data, str(output_path))
         
         # Verify file was created
-        self.assertTrue(os.path.exists(output_path))
+        assert output_path.exists()
         
         # Verify CSV content
         with open(output_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             
-            self.assertEqual(len(rows), 2)
-            self.assertEqual(rows[0]['Package Name'], 'example-lib')
-            self.assertEqual(rows[0]['License'], 'MIT')
-            self.assertEqual(rows[0]['Is Copyleft'], 'No')
-            self.assertEqual(rows[1]['Is Copyleft'], 'Yes')
-            self.assertIn('Apache-2.0', rows[1]['Conflicts'])
+            assert len(rows) == 2
+            assert rows[0]['Package Name'] == 'example-lib'
+            assert rows[0]['License'] == 'MIT'
+            assert rows[0]['Is Copyleft'] == 'No'
+            assert rows[1]['Is Copyleft'] == 'Yes'
+            assert 'Apache-2.0' in rows[1]['Conflicts']
     
-    def test_export_sbom_handles_missing_optional_fields(self):
+    def test_export_sbom_handles_missing_optional_fields(self, tmp_path):
         """Test that export handles packages with missing optional fields gracefully."""
         sbom_data = {
             "packages": [
@@ -199,21 +190,21 @@ class TestCSVExporter(unittest.TestCase):
             ]
         }
         
-        output_path = os.path.join(self.test_dir, "sbom_minimal.csv")
-        export_sbom_to_csv(sbom_data, output_path)
+        output_path = tmp_path / "sbom_minimal.csv"
+        export_sbom_to_csv(sbom_data, str(output_path))
         
         # Verify file was created and contains expected defaults
-        self.assertTrue(os.path.exists(output_path))
+        assert output_path.exists()
         
         with open(output_path, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
             rows = list(reader)
             
-            self.assertEqual(len(rows), 1)
-            self.assertEqual(rows[0]['Name'], 'minimal-package')
-            self.assertEqual(rows[0]['License'], 'NOASSERTION')
-            self.assertEqual(rows[0]['Package URL (PURL)'], '')
+            assert len(rows) == 1
+            assert rows[0]['Name'] == 'minimal-package'
+            assert rows[0]['License'] == 'NOASSERTION'
+            assert rows[0]['Package URL (PURL)'] == ''
 
 
 if __name__ == '__main__':
-    unittest.main()
+    pytest.main([__file__])
