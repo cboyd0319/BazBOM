@@ -9,6 +9,10 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "Apache-2.0"}
 
+[tool.bandit]
+exclude_dirs = ["/tests/fixtures/", "/.git/", "/__pycache__/", "/bazel-*/"]
+skips = ["B108"]
+
 [tool.pytest.ini_options]
 # Test discovery
 testpaths = ["tools/supplychain/tests"]
