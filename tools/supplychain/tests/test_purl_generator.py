@@ -176,5 +176,120 @@ def test_main_file_processing():
             mock_process.assert_called_once_with('in.json', 'out.json')
 
 
+def test_process_dependencies_error_handling(tmp_path):
+    """Test error handling when file processing fails."""
+    # Create invalid JSON file
+    input_file = tmp_path / "invalid.json"
+    input_file.write_text("{ not valid json }")
+    output_file = tmp_path / "output.json"
+    
+    # Should exit with error code 1
+    with pytest.raises(SystemExit) as exc_info:
+        process_dependencies(str(input_file), str(output_file))
+    
+    assert exc_info.value.code == 1
+
+
+def test_maven_to_purl_with_jar_packaging():
+    """Test that jar packaging is not added (it's the default)."""
+    purl = maven_to_purl("com.example", "lib", "1.0", packaging="jar")
+    # jar is default packaging, so should not appear in qualifiers
+    assert "type=jar" not in purl
+
+
+def test_maven_to_purl_special_characters():
+    """Test PURL generation with special characters needing encoding."""
+    purl = maven_to_purl("com.example", "my lib", "1.0+build.1")
+    # Spaces and + should be URL encoded
+    assert "my%20lib" in purl or "my+lib" in purl
+
+
+def test_process_dependencies_with_classifier_and_packaging(tmp_path, temp_json_file):
+    """Test processing dependencies with classifier and packaging."""
+    test_data = {
+        "dependencies": [
+            {
+                "group": "com.example",
+                "artifact": "lib",
+                "version": "1.0",
+                "classifier": "sources",
+                "packaging": "war"
+            },
+        ]
+    }
+    
+    input_file = temp_json_file(test_data, "input.json")
+    output_file = tmp_path / "output.json"
+    
+    process_dependencies(str(input_file), str(output_file))
+    
+    result = json.loads(output_file.read_text())
+    purl = result["dependencies"][0]["purl"]
+    assert "classifier=sources" in purl
+    assert "type=war" in purl
+
+
+def test_process_dependencies_list_without_coordinates(tmp_path, temp_json_file):
+    """Test processing list format without coordinates field."""
+    test_data = [
+        {
+            "name": "test-lib",
+            # No coordinates, no group/artifact/version
+        },
+    ]
+    
+    input_file = temp_json_file(test_data, "input.json")
+    output_file = tmp_path / "output.json"
+    
+    process_dependencies(str(input_file), str(output_file))
+    
+    result = json.loads(output_file.read_text())
+    # Should not crash, just skip entries without coordinates
+    assert isinstance(result, list)
+
+
+def test_process_dependencies_dict_without_valid_keys(tmp_path, temp_json_file):
+    """Test processing dict format where deps lack both coordinates and group/artifact/version."""
+    test_data = {
+        "dependencies": [
+            {
+                "name": "test-lib",
+                # No coordinates, and missing one of group/artifact/version
+                "group": "com.example",
+                "artifact": "lib",
+                # Missing version
+            },
+        ]
+    }
+    
+    input_file = temp_json_file(test_data, "input.json")
+    output_file = tmp_path / "output.json"
+    
+    process_dependencies(str(input_file), str(output_file))
+    
+    result = json.loads(output_file.read_text())
+    # Should not crash, just skip entries that don't match either pattern
+    assert "dependencies" in result
+    # The dep should not have purl added since it doesn't match any pattern
+    assert "purl" not in result["dependencies"][0]
+
+
+def test_process_dependencies_neither_dict_nor_list(tmp_path, temp_json_file):
+    """Test processing data that is neither dict with dependencies nor list."""
+    test_data = {
+        "packages": [],  # Not "dependencies"
+        "metadata": {}
+    }
+    
+    input_file = temp_json_file(test_data, "input.json")
+    output_file = tmp_path / "output.json"
+    
+    process_dependencies(str(input_file), str(output_file))
+    
+    # Should still write output without crashing
+    result = json.loads(output_file.read_text())
+    assert "packages" in result
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
