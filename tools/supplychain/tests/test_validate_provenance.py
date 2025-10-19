@@ -224,3 +224,460 @@ class TestProvenanceValidator:
         else:
             # Invalid type should fail
             pass  # Schema validation will determine
+
+    def test_validate_file_permission_error(self, tmp_path, mocker):
+        """Test validate_file handles PermissionError."""
+        prov_file = tmp_path / "noperm.json"
+        prov_file.write_text(json.dumps({"_type": "test"}))
+        prov_file.chmod(0o000)
+        
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        
+        validator = ProvenanceValidator()
+        
+        try:
+            result = validator.validate_file(str(prov_file))
+            
+            assert result is False
+            assert len(validator.errors) > 0
+            assert "Permission denied" in validator.errors[0]
+        finally:
+            prov_file.chmod(0o644)
+    
+    def test_validate_file_generic_exception(self, tmp_path, mocker):
+        """Test validate_file handles generic exceptions."""
+        prov_file = tmp_path / "prov.json"
+        prov_file.write_text(json.dumps({"_type": "test"}))
+        
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        mocker.patch('builtins.open', side_effect=IOError("Disk error"))
+        
+        validator = ProvenanceValidator()
+        result = validator.validate_file(str(prov_file))
+        
+        assert result is False
+        assert len(validator.errors) > 0
+        assert "Failed to read" in validator.errors[0]
+
+    def test_validate_schema_generic_exception(self, tmp_path, mocker):
+        """Test _validate_schema handles generic exceptions."""
+        prov_file = tmp_path / "prov.json"
+        prov_file.write_text(json.dumps({"_type": "test"}))
+        
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        
+        validator = ProvenanceValidator()
+        
+        # Mock validate in the validators module to raise a generic exception
+        mocker.patch('validators.validate_provenance.validate', side_effect=Exception("Generic error"))
+        
+        result = validator.validate_file(str(prov_file))
+        
+        assert result is False
+        assert len(validator.errors) > 0
+        assert "Schema validation error" in validator.errors[0]
+
+    def test_get_errors(self, mocker):
+        """Test get_errors returns error list."""
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        
+        validator = ProvenanceValidator()
+        validator.errors = ["error1", "error2"]
+        
+        errors = validator.get_errors()
+        
+        assert errors == ["error1", "error2"]
+
+    def test_get_warnings(self, mocker):
+        """Test get_warnings returns warning list."""
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        
+        validator = ProvenanceValidator()
+        validator.warnings = ["warning1", "warning2"]
+        
+        warnings = validator.get_warnings()
+        
+        assert warnings == ["warning1", "warning2"]
+
+
+class TestSemanticValidation:
+    """Tests for semantic validation beyond schema checks."""
+
+    def test_validate_semantics_unexpected_predicate_type(self, tmp_path, mocker):
+        """Test warning for non-SLSA predicate type."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "predicateType": "https://example.com/custom/v1",
+            "subject": [],
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.warnings) > 0
+        assert "Unexpected predicate type" in validator.warnings[0]
+
+    def test_validate_semantics_slsa_predicate_type_accepted(self, tmp_path, mocker):
+        """Test SLSA predicate type is accepted without warnings."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "predicateType": "https://slsa.dev/provenance/v1.0",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        # Should not have warnings about predicate type
+        assert not any("predicate type" in w.lower() for w in validator.warnings)
+
+    def test_validate_semantics_subject_missing_digest(self, tmp_path, mocker):
+        """Test error for subject missing digest."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test"}],  # Missing digest
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.errors) > 0
+        assert "missing digest" in validator.errors[0].lower()
+
+    def test_validate_semantics_subject_empty_digest(self, tmp_path, mocker):
+        """Test error for subject with empty digest values."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": ""}}],  # Empty digest
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.errors) > 0
+        assert "empty digest" in validator.errors[0].lower()
+
+    def test_validate_semantics_builder_id_not_uri(self, tmp_path, mocker):
+        """Test warning for builder ID that's not a URI."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {
+                "runDetails": {
+                    "builder": {
+                        "id": "not-a-uri"  # Not a URI
+                    }
+                }
+            }
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.warnings) > 0
+        assert "Builder ID should be a URI" in validator.warnings[0]
+
+    def test_validate_semantics_builder_id_https_uri_accepted(self, tmp_path, mocker):
+        """Test HTTPS builder ID is accepted without warnings."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {
+                "runDetails": {
+                    "builder": {
+                        "id": "https://github.com/actions/runner"
+                    }
+                }
+            }
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        # Should not have warnings about builder ID
+        assert not any("Builder ID" in w for w in validator.warnings)
+
+    def test_validate_semantics_finished_before_started(self, tmp_path, mocker):
+        """Test error when finishedOn is before startedOn."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {
+                "runDetails": {
+                    "builder": {"id": "https://example.com/builder"},
+                    "metadata": {
+                        "startedOn": "2024-01-02T10:00:00Z",
+                        "finishedOn": "2024-01-01T09:00:00Z"  # Before started
+                    }
+                }
+            }
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.errors) > 0
+        assert "finishedOn timestamp is before startedOn" in validator.errors[0]
+
+    def test_validate_semantics_timestamps_valid_order(self, tmp_path, mocker):
+        """Test valid timestamp order passes without errors."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {
+                "runDetails": {
+                    "builder": {"id": "https://example.com/builder"},
+                    "metadata": {
+                        "startedOn": "2024-01-01T09:00:00Z",
+                        "finishedOn": "2024-01-01T10:00:00Z"  # After started
+                    }
+                }
+            }
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        # Should not have errors about timestamps
+        assert not any("timestamp" in e.lower() for e in validator.errors)
+
+    def test_validate_semantics_invalid_timestamp_format(self, tmp_path, mocker):
+        """Test warning for unparseable timestamps."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "subject": [{"name": "test", "digest": {"sha256": "abc123"}}],
+            "predicate": {
+                "runDetails": {
+                    "builder": {"id": "https://example.com/builder"},
+                    "metadata": {
+                        "startedOn": "invalid-timestamp",
+                        "finishedOn": "also-invalid"
+                    }
+                }
+            }
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        
+        validator = ProvenanceValidator()
+        validator.validate_file(str(prov_file))
+        
+        assert len(validator.warnings) > 0
+        assert "Could not parse timestamps" in validator.warnings[0]
+
+
+class TestMain:
+    """Tests for main() CLI function."""
+
+    def test_main_success_single_file(self, tmp_path, mocker):
+        """Test main with single valid file."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {"_type": "https://in-toto.io/Statement/v1"}
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        mocker.patch('sys.argv', ['validate_provenance.py', str(prov_file)])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 0
+
+    def test_main_failure_invalid_file(self, tmp_path, mocker):
+        """Test main with invalid file."""
+        prov_file = tmp_path / "invalid.json"
+        prov_file.write_text("{ invalid }")
+        
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={})
+        mocker.patch('sys.argv', ['validate_provenance.py', str(prov_file)])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 1
+
+    def test_main_custom_schema(self, tmp_path, mocker):
+        """Test main with custom schema argument."""
+        schema_file = tmp_path / "schema.json"
+        schema_file.write_text(json.dumps({"type": "object"}))
+        
+        prov_file = tmp_path / "prov.json"
+        prov_file.write_text(json.dumps({}))
+        
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value={"type": "object"})
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            '--schema', str(schema_file),
+            str(prov_file)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 0
+
+    def test_main_strict_mode_treats_warnings_as_errors(self, tmp_path, mocker):
+        """Test main with --strict flag treats warnings as errors."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "predicateType": "https://example.com/custom",  # Will generate warning
+            "subject": [],
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            '--strict',
+            str(prov_file)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 1  # Should fail due to warning in strict mode
+
+    def test_main_quiet_mode(self, tmp_path, mocker, capsys):
+        """Test main with --quiet flag suppresses success messages."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {"_type": "https://in-toto.io/Statement/v1"}
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            '--quiet',
+            str(prov_file)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 0
+        captured = capsys.readouterr()
+        # In quiet mode, should not print success message for valid file
+        assert "VALID" not in captured.out or captured.out == ""
+
+    def test_main_multiple_files(self, tmp_path, mocker):
+        """Test main with multiple files shows summary."""
+        prov1 = tmp_path / "prov1.json"
+        prov1.write_text(json.dumps({"_type": "test"}))
+        
+        prov2 = tmp_path / "prov2.json"
+        prov2.write_text(json.dumps({"_type": "test"}))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            str(prov1),
+            str(prov2)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        # Should show summary for multiple files
+        assert result == 0
+
+    def test_main_schema_initialization_error(self, tmp_path, mocker):
+        """Test main handles schema initialization errors."""
+        prov_file = tmp_path / "prov.json"
+        prov_file.write_text(json.dumps({}))
+        
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            '--schema', '/nonexistent/schema.json',
+            str(prov_file)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        assert result == 2  # Initialization error
+
+    def test_main_warnings_not_quiet_not_strict(self, tmp_path, mocker, capsys):
+        """Test main with warnings in non-strict, non-quiet mode."""
+        prov_file = tmp_path / "prov.json"
+        prov_data = {
+            "_type": "https://in-toto.io/Statement/v1",
+            "predicateType": "https://example.com/custom",  # Generates warning
+            "subject": [{"name": "test", "digest": {"sha256": "abc"}}],
+            "predicate": {}
+        }
+        prov_file.write_text(json.dumps(prov_data))
+        
+        schema = {"type": "object"}
+        mocker.patch.object(ProvenanceValidator, '_load_schema', return_value=schema)
+        mocker.patch('sys.argv', [
+            'validate_provenance.py',
+            str(prov_file)
+        ])
+        
+        from validators.validate_provenance import main
+        
+        result = main()
+        
+        # Should succeed but show warnings
+        assert result == 0
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.out or "⚠️" in captured.out

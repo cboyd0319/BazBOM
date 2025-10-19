@@ -718,7 +718,7 @@ class TestSaveCacheError:
     def test_enrich_findings_fetch_exception(self, enricher, mocker, capsys):
         """Test handling of fetch_epss_scores exceptions."""
         # Arrange
-        findings = [{"cve_id": "CVE-2023-0001"}]
+        findings = [{"cve": "CVE-2023-0001"}]  # Use "cve" key which the code looks for
         mocker.patch.object(
             enricher, 
             'fetch_epss_scores',
