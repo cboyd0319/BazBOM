@@ -693,3 +693,44 @@ class TestCLIMain:
             captured = capsys.readouterr()
             # Should show warning about API failure
             assert "Warning" in captured.err or "0.00" in captured.out
+
+
+class TestSaveCacheError:
+    """Test save_cache error handling."""
+    
+    def test_save_cache_io_error(self, enricher, mocker, capsys):
+        """Test save_cache handles IOError gracefully."""
+        # Arrange
+        enricher._cache = {"CVE-2023-0001": {"epss_score": 0.5}}
+        mock_open = mocker.patch('builtins.open', side_effect=IOError("Permission denied"))
+        
+        # Act
+        enricher._save_cache()
+        
+        # Assert
+        captured = capsys.readouterr()
+        assert "Warning: Failed to save EPSS cache" in captured.err
+        assert "Permission denied" in captured.err
+
+
+    """Test fetch error handling."""
+    
+    def test_enrich_findings_fetch_exception(self, enricher, mocker, capsys):
+        """Test handling of fetch_epss_scores exceptions."""
+        # Arrange
+        findings = [{"cve_id": "CVE-2023-0001"}]
+        mocker.patch.object(
+            enricher, 
+            'fetch_epss_scores',
+            side_effect=Exception("Network error")
+        )
+        
+        # Act
+        result = enricher.enrich_findings(findings)
+        
+        # Assert
+        captured = capsys.readouterr()
+        assert "Error: Failed to fetch EPSS scores" in captured.err
+        assert len(result) == 1  # Should continue with empty scores
+
+
