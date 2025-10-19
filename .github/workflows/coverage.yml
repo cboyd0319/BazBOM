@@ -51,22 +51,21 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-test.txt
-          pip install requests pyyaml
+          pip install requests pyyaml jinja2
 
       - name: Run tests with coverage
         working-directory: tools/supplychain
         run: |
           set -euo pipefail
           pytest tests/ \
-            --cov=. \
             --cov-report=xml:../../coverage.xml \
             --cov-report=html:../../htmlcov \
-            --cov-report=term \
             --ignore=tests/fixtures \
             | tee ../../coverage-output.txt
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        if: always() && hashFiles('coverage.xml') != ''
         with:
           files: ./coverage.xml
           flags: unittests
