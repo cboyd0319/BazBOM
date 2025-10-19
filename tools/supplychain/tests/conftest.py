@@ -1,21 +1,29 @@
 #!/usr/bin/env python3
-"""Shared pytest fixtures and configuration for BazBOM test suite."""
+"""Shared pytest fixtures and configuration for BazBOM test suite.
+
+This module provides shared fixtures following pytest best practices:
+- Session-scoped fixtures for expensive setup
+- Function-scoped fixtures for test isolation
+- Factory fixtures for flexible test data creation
+- Automatic cleanup via pytest fixture lifecycle
+"""
 
 import json
 import os
 import random
-import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Callable
+from unittest.mock import Mock
 
 import pytest
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 def _seed_rng():
     """Seed random number generators for deterministic tests.
     
     This fixture runs automatically for every test to ensure reproducibility.
+    Function-scoped to reset RNG state for each test.
     """
     random.seed(1337)
     # Seed numpy if available
@@ -26,19 +34,15 @@ def _seed_rng():
         pass
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture(autouse=True, scope="function")
 def _isolate_environment(monkeypatch):
     """Isolate tests from environment variables.
     
     This fixture runs automatically to prevent environment leakage between tests.
+    Monkeypatch automatically restores environment after test completion.
     """
-    # Save original environment for critical variables
-    original_env = dict(os.environ)
-    
+    # Monkeypatch handles all cleanup automatically
     yield
-    
-    # Restore only if changed (pytest's monkeypatch handles cleanup automatically)
-    # This is just a safety check
 
 
 @pytest.fixture
@@ -65,13 +69,21 @@ def freeze_time():
 
 @pytest.fixture
 def tmp_dir(tmp_path):
-    """Provide a temporary directory for test files."""
+    """Provide a temporary directory for test files.
+    
+    Note: Prefer tmp_path directly in new tests. This is for backward compatibility.
+    Pytest's tmp_path is automatically cleaned up after test completion.
+    """
     return tmp_path
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sample_sbom_data() -> Dict[str, Any]:
-    """Provide sample SPDX SBOM data for tests."""
+    """Provide sample SPDX SBOM data for tests.
+    
+    Session-scoped as this data is immutable and expensive to recreate.
+    Tests should copy this data if they need to modify it.
+    """
     return {
         "spdxVersion": "SPDX-2.3",
         "dataLicense": "CC0-1.0",
@@ -138,9 +150,12 @@ def sample_sbom_data() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sample_vulnerability_data() -> Dict[str, Any]:
-    """Provide sample vulnerability data for tests."""
+    """Provide sample vulnerability data for tests.
+    
+    Session-scoped for performance. Tests should copy if modification needed.
+    """
     return {
         "vulnerabilities": [
             {
@@ -208,9 +223,12 @@ def sample_vulnerability_data() -> Dict[str, Any]:
     }
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sample_maven_coordinates() -> Dict[str, Any]:
-    """Provide sample Maven coordinates data."""
+    """Provide sample Maven coordinates data.
+    
+    Session-scoped for performance. Tests should copy if modification needed.
+    """
     return {
         "dependencies": [
             {
@@ -262,10 +280,124 @@ def mock_http_response():
 
 @pytest.fixture
 def temp_json_file(tmp_path):
-    """Factory fixture for creating temporary JSON files."""
+    """Factory fixture for creating temporary JSON files.
+    
+    Returns a function that creates JSON files in tmp_path.
+    Files are automatically cleaned up by pytest after test completion.
+    
+    Args:
+        data: Dictionary to write as JSON
+        filename: Name of the file (default: "test.json")
+    
+    Returns:
+        Path object pointing to the created file
+    """
     def _create(data: Dict[str, Any], filename: str = "test.json") -> Path:
         file_path = tmp_path / filename
         with open(file_path, "w") as f:
             json.dump(data, f)
         return file_path
     return _create
+
+
+@pytest.fixture
+def mock_requests_get():
+    """Factory fixture for creating mock requests.get responses.
+    
+    Returns a function that creates Mock responses with specified behavior.
+    More efficient than creating mocks repeatedly in tests.
+    
+    Usage:
+        def test_api_call(mock_requests_get, mocker):
+            mock_resp = mock_requests_get(json_data={"key": "value"}, status=200)
+            mocker.patch('module.requests.get', return_value=mock_resp)
+    """
+    def _create(json_data=None, status_code=200, text="", raise_error=None):
+        mock = Mock()
+        mock.status_code = status_code
+        mock.text = text
+        mock.content = text.encode() if isinstance(text, str) else text
+        
+        if raise_error:
+            mock.raise_for_status.side_effect = raise_error
+        elif 400 <= status_code < 600:
+            mock.raise_for_status.side_effect = Exception(f"HTTP {status_code}")
+        else:
+            mock.raise_for_status.return_value = None
+        
+        if json_data is not None:
+            mock.json.return_value = json_data
+        else:
+            mock.json.side_effect = ValueError("No JSON data")
+        
+        return mock
+    return _create
+
+
+@pytest.fixture
+def kev_catalog_data() -> Dict[str, Any]:
+    """Provide sample KEV catalog data for enrichment tests.
+    
+    Extracted as a shared fixture to avoid repetition across tests.
+    """
+    return {
+        "catalogVersion": "2025.01.17",
+        "vulnerabilities": [
+            {
+                "cveID": "CVE-2021-44228",
+                "vendorProject": "Apache",
+                "product": "Log4j",
+                "vulnerabilityName": "Log4Shell",
+                "dateAdded": "2021-12-10",
+                "shortDescription": "Remote code execution via JNDI",
+                "requiredAction": "Apply updates immediately",
+                "dueDate": "2021-12-24"
+            }
+        ]
+    }
+
+
+@pytest.fixture
+def epss_data() -> Dict[str, Any]:
+    """Provide sample EPSS scoring data for enrichment tests.
+    
+    Extracted as a shared fixture to avoid repetition.
+    """
+    return {
+        "CVE-2021-44228": {
+            "epss": 0.97542,
+            "percentile": 0.99995,
+            "date": "2025-01-17"
+        },
+        "CVE-2023-12345": {
+            "epss": 0.00234,
+            "percentile": 0.45632,
+            "date": "2025-01-17"
+        }
+    }
+
+
+@pytest.fixture
+def ghsa_advisory_data() -> Dict[str, Any]:
+    """Provide sample GitHub Security Advisory data.
+    
+    Extracted as a shared fixture for GHSA enrichment tests.
+    """
+    return {
+        "data": {
+            "securityAdvisory": {
+                "ghsaId": "GHSA-jfh8-c2jp-5v3q",
+                "summary": "Remote Code Execution in Apache Log4j",
+                "description": "Apache Log4j2 vulnerability allows remote code execution.",
+                "severity": "CRITICAL",
+                "publishedAt": "2021-12-10T00:00:00Z",
+                "updatedAt": "2021-12-14T00:00:00Z",
+                "identifiers": [
+                    {"type": "CVE", "value": "CVE-2021-44228"}
+                ],
+                "references": [
+                    {"url": "https://nvd.nist.gov/vuln/detail/CVE-2021-44228"}
+                ]
+            }
+        }
+    }

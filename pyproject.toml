@@ -27,7 +27,6 @@ addopts = [
     "--cov-report=term-missing:skip-covered",
     "--cov-branch",
     "--cov-fail-under=90",
-    "--maxfail=1",
     "--randomly-seed=1337",
     "--durations=10",
 ]
