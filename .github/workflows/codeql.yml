@@ -40,7 +40,7 @@ jobs:
           persist-credentials: false
       
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/init@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
         with:
           languages: ${{ matrix.language }}
           # Use security-extended query suite for comprehensive analysis
@@ -54,10 +54,10 @@ jobs:
               - '**/bazel-*/**'
       
       - name: Autobuild
-        uses: github/codeql-action/autobuild@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/autobuild@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/analyze@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
         with:
           category: "/language:${{matrix.language}}"
           # Upload SARIF to GitHub Security tab
@@ -66,7 +66,7 @@ jobs:
           output: sarif-results
       
       - name: Upload CodeQL SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
         if: always()
         with:
           sarif_file: sarif-results/${{ matrix.language }}.sarif
@@ -143,7 +143,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
         if: always() && steps.bandit.outcome != 'skipped'
         with:
           sarif_file: bandit-results.sarif
@@ -151,7 +151,7 @@ jobs:
         continue-on-error: true
       
       - name: Upload Semgrep SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@42213152a85ae7569bdb6bec7bcd74cd691bfe41 # v3.27.9
         if: always() && steps.semgrep.outcome != 'skipped'
         with:
           sarif_file: semgrep-results.sarif
