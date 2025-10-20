@@ -18,23 +18,25 @@ jobs:
   incremental-scan:
     runs-on: ubuntu-latest
     name: Incremental SBOM and SCA
+    timeout-minutes: 45
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
           fetch-depth: 0  # Need full history for git diff
+          persist-credentials: false
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@5896cecc08fd8a1fbdfbb517a8bd08b42909ff46 # v4.7.0
         with:
           distribution: 'temurin'
           java-version: '11'
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.9'
+          python-version: '3.12'
 
       - name: Install Python dependencies
         run: |
@@ -47,7 +49,7 @@ jobs:
           rg --version
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.8.1
+        uses: bazel-contrib/setup-bazel@e403ad507104847c3539436a14f16b779aa17af5 # v0.8.1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -116,7 +118,7 @@ jobs:
           bazel build //:sca_scan_osv || echo "⚠ SCA scan requires network access, skipping"
 
       - name: Upload incremental SBOM
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: incremental-sbom
@@ -124,9 +126,10 @@ jobs:
             bazel-bin/**/*.spdx.json
             incremental-analysis.json
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload SCA findings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: incremental-sca-findings
@@ -134,9 +137,10 @@ jobs:
             bazel-bin/sca_findings.json
             bazel-bin/sca_findings.sarif
           retention-days: 30
+          if-no-files-found: warn
 
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
         if: always() && hashFiles('bazel-bin/sca_findings.sarif') != ''
         with:
           sarif_file: bazel-bin/sca_findings.sarif
