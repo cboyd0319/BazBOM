@@ -28,6 +28,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
 - **[VEX Statements](VEX.md)** - Managing false positives and accepted risks
 - **[Dependency Graph Analysis](GRAPH_ANALYSIS.md)** - Querying and visualizing dependencies
+ - **[Capabilities Reference](reference/capabilities-reference.md)** - Complete feature catalog
 
 ## Operations
 
