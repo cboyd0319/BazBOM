@@ -1,25 +1,21 @@
 # Bandit Security Configuration for BazBOM
 # Following PYSEC_OMEGA security standards
+# Format: YAML
 
-[bandit]
-# Exclude test fixtures and build artifacts
-exclude_dirs = [
-    '/tests/fixtures/',
-    '/.git/',
-    '/__pycache__/',
-    '/bazel-*/',
-    '/htmlcov/',
-    '/.pytest_cache/',
-    '/venv/',
-    '/.venv/'
-]
+exclude_dirs:
+  - /tests/fixtures/
+  - /.git/
+  - /__pycache__/
+  - /bazel-*/
+  - /htmlcov/
+  - /.pytest_cache/
+  - /venv/
+  - /.venv/
 
 # Skip specific test IDs that are false positives
 # B108: hardcoded_tmp_directory - Only in test code with mock arguments
-skips = ['B108']
-
-# Test execution
-# Run with: bandit -c .bandit -r tools/supplychain
+skips:
+  - B108
 
 # Severity levels:
 # - LOW: Minor issues, informational
@@ -31,12 +27,8 @@ skips = ['B108']
 # - MEDIUM: Some false positives
 # - HIGH: Few false positives
 
-[bandit.formatters]
-# Available formatters: csv, custom, html, json, screen, txt, xml, yaml
-
-[bandit.plugins]
-# All plugins enabled by default
-# Can selectively disable if needed
+# Test execution:
+# Run with: bandit -c .bandit -r tools/supplychain
 
 # Security checks (selection of important ones):
 # - B201: flask_debug_true
