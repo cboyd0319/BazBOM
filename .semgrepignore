@@ -1,0 +1,24 @@
+# Semgrep ignore patterns for BazBOM
+
+# Build artifacts
+bazel-*
+dist/
+build/
+*.egg-info/
+
+# Dependencies
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+node_modules/
+
+# Test fixtures (static test data)
+**/tests/fixtures/**
+
+# Documentation
+docs/
+
+# Git
+.git/

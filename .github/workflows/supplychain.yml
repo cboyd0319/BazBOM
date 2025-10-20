@@ -8,38 +8,54 @@ on:
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
+  workflow_dispatch:
 
+# Restrict default permissions following PYSEC_OMEGA standards
 permissions:
   contents: read
-  security-events: write  # For SARIF upload
-  id-token: write  # For Sigstore OIDC signing
+
+# Prevent concurrent runs
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   sbom-and-sca:
     name: SBOM Generation and SCA
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    
+    permissions:
+      contents: read
+      security-events: write  # For SARIF upload
+      id-token: write  # For Sigstore OIDC signing
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
       
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@5896cecc08fd8a1fbdfbb517a8bd08b42909ff46 # v4.7.0
         with:
           distribution: 'temurin'
           java-version: '11'
+          cache: 'maven'
       
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.9'
+          python-version: '3.12'
+          cache: 'pip'
       
       - name: Install Python dependencies
         run: |
-          pip install requests jsonschema
+          python -m pip install --upgrade pip
+          pip install requests jsonschema defusedxml
       
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.8.1
+        uses: bazel-contrib/setup-bazel@e403ad507104847c3539436a14f16b779aa17af5 # v0.8.1
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -96,16 +112,17 @@ jobs:
           echo "✓ VEX statements applied"
       
       - name: Upload SBOMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: sboms
           path: |
             bazel-bin/**/*.spdx.json
           if-no-files-found: warn
+          retention-days: 90
       
       - name: Upload Dependency Graphs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: dependency-graphs
@@ -113,107 +130,122 @@ jobs:
             bazel-bin/**/*.json
             bazel-bin/**/*.graphml
           if-no-files-found: warn
+          retention-days: 30
       
       - name: Upload Provenance
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: provenance
           path: |
             bazel-bin/**/*.provenance.json
           if-no-files-found: warn
+          retention-days: 90
       
       - name: Upload SARIF reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: sarif-reports
           path: |
             bazel-bin/**/*.sarif
           if-no-files-found: warn
+          retention-days: 90
       
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           sarif_file: bazel-bin/sca_findings.sarif
+          category: supply-chain-sca
         continue-on-error: true  # Don't fail if no SARIF file exists yet
       
       - name: Upload Conflict Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: conflict-reports
           path: |
             bazel-bin/conflicts.json
           if-no-files-found: warn
+          retention-days: 30
       
       - name: Upload License Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: license-reports
           path: |
             bazel-bin/license_report.json
           if-no-files-found: warn
+          retention-days: 30
       
       - name: Upload Metrics
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: supply-chain-metrics
           path: |
             bazel-bin/supply_chain_metrics.json
           if-no-files-found: warn
+          retention-days: 30
       
       - name: Upload Supply Chain Risk Reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: supply-chain-risks
           path: |
             bazel-bin/supply_chain_risks.json
           if-no-files-found: warn
+          retention-days: 30
       
       - name: Upload VEX-Filtered Findings
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
           name: vex-filtered-findings
           path: |
             bazel-bin/sca_findings_filtered.json
           if-no-files-found: warn
+          retention-days: 30
   
   sign-and-attest:
     name: Sign SBOMs and Generate Attestations
     runs-on: ubuntu-latest
     needs: sbom-and-sca
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    timeout-minutes: 30
     
     permissions:
       contents: read
       id-token: write  # Required for Sigstore keyless signing
+      attestations: write  # For GitHub attestations
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
       
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
         with:
-          python-version: '3.9'
+          python-version: '3.12'
+          cache: 'pip'
       
       - name: Install Python dependencies
         run: |
-          pip install requests
+          python -m pip install --upgrade pip
+          pip install requests defusedxml
       
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.4.0
+        uses: sigstore/cosign-installer@d7b7c0b5c656411ffb43dc6fa73a7d66e41ea3d5 # v3.8.1
         with:
-          cosign-release: 'v2.2.3'
+          cosign-release: 'v2.4.1'
       
       - name: Download SBOM artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: sboms
           path: bazel-bin/
@@ -283,21 +315,23 @@ jobs:
           done
       
       - name: Upload Signed SBOMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name: signed-sboms
           path: |
             bazel-bin/**/*.spdx.json
             bazel-bin/signatures/**/*.bundle.json
           retention-days: 90
+          if-no-files-found: error
       
       - name: Upload Attestations
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         with:
           name: attestations
           path: |
             bazel-bin/attestations/**/*.attestation.json
           retention-days: 90
+          if-no-files-found: warn
       
       - name: Generate Signing Summary
         run: |

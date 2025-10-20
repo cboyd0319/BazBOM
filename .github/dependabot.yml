@@ -1,0 +1,107 @@
+# Dependabot configuration for BazBOM
+# Automated dependency updates following PYSEC_OMEGA security standards
+
+version: 2
+
+updates:
+  # GitHub Actions - Weekly updates for security patches
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+      - "security"
+    reviewers:
+      - "cboyd0319"
+    open-pull-requests-limit: 10
+    # Auto-approve minor and patch updates
+    groups:
+      github-actions-security:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Python dependencies - Weekly updates
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "tuesday"
+      time: "09:00"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "security"
+    reviewers:
+      - "cboyd0319"
+    open-pull-requests-limit: 10
+    # Group test dependencies together
+    groups:
+      test-dependencies:
+        patterns:
+          - "pytest*"
+          - "coverage"
+          - "responses"
+          - "freezegun"
+        update-types:
+          - "minor"
+          - "patch"
+      security-tools:
+        patterns:
+          - "bandit"
+          - "semgrep"
+          - "safety"
+          - "pip-audit"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # npm dependencies for documentation tools
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "wednesday"
+      time: "09:00"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "npm"
+      - "documentation"
+    open-pull-requests-limit: 5
+    groups:
+      doc-tools:
+        patterns:
+          - "markdownlint*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Bazel dependencies - Monthly updates (more stable)
+  - package-ecosystem: "maven"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      day: "friday"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "maven"
+      - "bazel"
+    open-pull-requests-limit: 10
