@@ -13,8 +13,8 @@ Universal support for Maven, Gradle, and Bazel • Zero configuration • Produc
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/PROVENANCE.md)
 [![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
 
-[Quickstart](#-quickstart) •
-[Features](#-features) •
+[Quickstart](#quickstart) •
+[Features](#features) •
 [Documentation](docs/README.md) •
 [Contributing](CONTRIBUTING.md)
 

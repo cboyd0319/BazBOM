@@ -34,6 +34,11 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[Validation](VALIDATION.md)** - SPDX and SARIF validation steps
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 
+## Testing & Coverage
+
+- **[Test Plan](TEST_PLAN.md)** - Strategy and scope
+- **[Testing Reports](testing/)** - Coverage, summaries, and optimization reports
+
 ## Diagrams
 
 Architecture diagrams are available in the [diagrams](diagrams/) directory in Mermaid format.
