@@ -1,0 +1,54 @@
+# Bandit Security Configuration for BazBOM
+# Following PYSEC_OMEGA security standards
+
+[bandit]
+# Exclude test fixtures and build artifacts
+exclude_dirs = [
+    '/tests/fixtures/',
+    '/.git/',
+    '/__pycache__/',
+    '/bazel-*/',
+    '/htmlcov/',
+    '/.pytest_cache/',
+    '/venv/',
+    '/.venv/'
+]
+
+# Skip specific test IDs that are false positives
+# B108: hardcoded_tmp_directory - Only in test code with mock arguments
+skips = ['B108']
+
+# Test execution
+# Run with: bandit -c .bandit -r tools/supplychain
+
+# Severity levels:
+# - LOW: Minor issues, informational
+# - MEDIUM: Potential security issues that should be reviewed
+# - HIGH: Serious security issues that must be fixed
+
+# Confidence levels:
+# - LOW: Many false positives
+# - MEDIUM: Some false positives
+# - HIGH: Few false positives
+
+[bandit.formatters]
+# Available formatters: csv, custom, html, json, screen, txt, xml, yaml
+
+[bandit.plugins]
+# All plugins enabled by default
+# Can selectively disable if needed
+
+# Security checks (selection of important ones):
+# - B201: flask_debug_true
+# - B301-B308: pickle/marshal/yaml/shelve/dill/jsonpickle/pyyaml unsafe loads
+# - B310: urllib_urlopen (file:/ scheme risk)
+# - B314: xml_bad_etree (XXE vulnerability)
+# - B320: xml_bad_minidom (XXE vulnerability)
+# - B321: xml_bad_expatreader (XXE vulnerability)
+# - B322: input (Python 2 input is eval)
+# - B323: unverified_context (SSL/TLS)
+# - B501-B509: Weak crypto/hashing
+# - B601-B609: Shell injection risks
+# - B701-B703: Jinja2 autoescape disabled
+
+# Reference: https://bandit.readthedocs.io/en/latest/plugins/index.html

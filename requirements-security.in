@@ -1,0 +1,24 @@
+# Security tools for BazBOM development
+# Generate locked requirements with: pip-compile --generate-hashes requirements-security.in
+
+# Static Analysis Security Testing (SAST)
+bandit[toml]>=1.8.6
+semgrep>=1.140.0
+
+# Dependency Security
+pip-audit>=2.9.0
+safety>=3.6.2
+
+# Pre-commit framework
+pre-commit>=4.3.0
+
+# Code Quality
+ruff>=0.14.1
+black>=25.9.0
+
+# XML Security (Core dependency)
+defusedxml>=0.7.1
+
+# Development utilities
+ipython>=9.6.0
+ipdb>=0.13.13
