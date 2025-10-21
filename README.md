@@ -23,6 +23,29 @@ Universal support for Maven, Gradle, and Bazel • Zero configuration • Produc
 
 ---
 
+## Table of Contents
+
+- [What is BazBOM?](#what-is-bazbom)
+- [Quickstart](#quickstart)
+- [See It In Action](#see-it-in-action)
+- [Why Build-Time Analysis Matters](#why-build-time-analysis-matters)
+- [Comparison with Alternatives](#comparison-with-alternatives)
+- [Features](#features)
+- [Core Workflows](#core-workflows)
+- [How It Works](#how-it-works)
+- [Installation](#installation)
+- [Usage Examples](#usage-examples)
+- [Configuration](#configuration)
+- [Performance](#performance)
+- [Security](#security)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [Industry Adoption & Use Cases](#industry-adoption--use-cases)
+- [License](#license)
+- [Support & Community](#support--community)
+
 ## 💡 What is BazBOM?
 
 BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **any JVM project**—whether you use **Maven, Gradle, or Bazel**. It automatically discovers dependencies and produces accurate, standards-compliant security artifacts.
