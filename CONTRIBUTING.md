@@ -118,7 +118,13 @@ BazBOM follows **PYSEC_OMEGA** security standards. All contributions must meet t
 5. **No secrets** - Never commit secrets, keys, or credentials
 6. **Code review** - Security-sensitive changes require security team review
 
-See [Secure Coding Guide](security/SECURE_CODING_GUIDE.md) for detailed guidelines.
+See [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) for detailed guidelines.
+
+## Project Rules (Critical)
+
+- Zero emojis in code, ever. Do not add emojis to source files, generated code, or code comments. Code examples intended for copy/paste must be emoji‑free.
+- Avoid documentation sprawl. Do not create a new document for each small change. Update canonical docs under `docs/` whenever possible. Create new docs only when a clear gap exists, and add them to `docs/README.md`.
+- All canonical documentation must live under `docs/` (root files like `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `MAINTAINERS.md` act as stubs/entry points).
 
 ## Code Review
 

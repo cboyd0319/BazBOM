@@ -4,9 +4,9 @@
 
 # BazBOM
 
-### **Build-time SBOM generation and vulnerability scanning for JVM projects**
+### Enterprise-grade build-time SBOM, SCA, and dependency graph for JVM
 
-Universal support for Maven, Gradle, and Bazel • Zero configuration • Production-ready
+Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview) • Zero telemetry • Offline-first
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -17,6 +17,7 @@ Universal support for Maven, Gradle, and Bazel • Zero configuration • Produc
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Documentation](docs/README.md) •
+[Docs Standards](docs/copilot/DOCUMENTATION_STANDARDS.md) •
 [Contributing](CONTRIBUTING.md)
 
 </div>
@@ -63,7 +64,11 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### 🆕 What's New
 
-- **🚀 Zero-Config Installer**: One-line installation with auto-configuration
+- **🦀 Rust-first CLI (preview)**: Memory-safe single binary roadmap with signed releases
+- **🧠 Reachability (OPAL, opt-in)**: Bytecode call graphs for real-risk prioritization
+- **📜 Policy-as-Code**: YAML core with optional Rego/CUE; CI gating and VEX auto-application
+- **🔒 Zero Telemetry**: No background network calls; explicit offline DB sync
+- **🚀 Zero-Config Installer**: One-line install for today’s Python-based tooling
 - **🔄 Watch Mode**: Continuous monitoring and auto-scanning on file changes
 - **⚙️ GitHub Action**: Automated security scanning in CI/CD pipelines
 - **🐳 Container SBOM**: Scan Docker/Podman images for dependencies and OS packages
@@ -75,6 +80,21 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 ---
 
 ## ⚡ Quickstart
+
+### Option 0: Rust CLI (Preview)
+
+Build the new Rust-based CLI locally.
+
+```bash
+# Prerequisites: Rust (stable) and Java 11+ for reachability (when enabled)
+cargo build -p bazbom
+./target/debug/bazbom --help
+
+# Example
+./target/debug/bazbom scan . --format spdx
+```
+
+Note: The Rust CLI is an active migration path. Core scanning capabilities continue to be available via the existing installer and Bazel integration below.
 
 ### Option 1: One-Line Install (Recommended)
 
@@ -193,7 +213,7 @@ cat bazel-bin/app/app_sbom.spdx.json
 bazbom scan . --format spdx  # TODO: Add vulnerability scanning to CLI
 
 # Bazel mode
-bazel run //:sca_scan
+bazel build //:sca_scan
 ```
 
 **Output:**
@@ -449,6 +469,8 @@ Most SBOM tools scan **after** your application is built, analyzing JAR files an
 - ✅ License compliance checking
 - ✅ Typosquatting detection
 - ✅ Outdated dependency detection
+ - ✅ Zero telemetry + offline-first operation 🆕
+ - ✅ Memory-safe Rust CLI (preview) 🆕
 
 **Configuration & Customization** 🆕
 - ✅ Project-level config (bazbom.yml)
@@ -852,6 +874,12 @@ BazBOM operates with **least privilege**:
 - **Hermetic builds** (no network during SBOM generation)
 - **Signed releases** (Sigstore keyless signing)
 
+### Privacy & Telemetry
+
+- **Zero telemetry**: No analytics, no phoning home, no tracking.
+- **Offline-first**: Use `bazbom db sync` to explicitly update advisory mirrors; scans run without network access.
+- **Deterministic outputs**: Identical inputs produce identical outputs.
+
 See [Threat Model](docs/THREAT_MODEL.md) for complete analysis.
 
 ### SLSA Compliance
@@ -930,7 +958,12 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 ## 🗺️ Roadmap
 
 **In Progress:**
-- [ ] Gradle support (in addition to Maven)
+- [ ] Rust single-binary CLI (signed, memory-safe)
+- [ ] OPAL-based reachability (opt-in)
+- [ ] Maven authoritative plugin (effective POM, shading/relocation)
+- [ ] Gradle plugin (variants + Android)
+- [ ] Policy-as-code + VEX auto-application
+- [ ] Offline advisory DB sync
 - [ ] Container image SBOM (`rules_oci` integration)
 
 **Planned:**
@@ -974,7 +1007,12 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and fixes
 
 ### Full Documentation Index
-See [docs/README.md](docs/README.md) for complete documentation map.
+See [docs/README.md](docs/README.md) for the complete documentation map.
+
+Documentation Standards
+- All canonical documentation lives under `docs/`.
+- Root files (like `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `MAINTAINERS.md`) are allowed as stubs/entry points.
+- See standards: [docs/copilot/DOCUMENTATION_STANDARDS.md](docs/copilot/DOCUMENTATION_STANDARDS.md).
 
 ---
 

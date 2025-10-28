@@ -1,0 +1,37 @@
+name: Docs Location Enforcement
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  docs-location:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Enforce docs location policy
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Checking for Markdown files outside docs/ and allowed stubs..."
+          mapfile -t files < <(git ls-files '**/*.md')
+          violations=()
+          for f in "${files[@]}"; do
+            case "$f" in
+              docs/*) continue;;
+              README.md|CHANGELOG.md|CONTRIBUTING.md|CODE_OF_CONDUCT.md|SECURITY.md|MAINTAINERS.md) continue;;
+              .github/copilot-instructions.md) continue;;
+              *) violations+=("$f");;
+            esac
+          done
+          if (( ${#violations[@]} > 0 )); then
+            echo "Found Markdown files outside docs/:"
+            printf ' - %s\n' "${violations[@]}"
+            echo "\nTo comply, move docs under docs/ and leave minimal root stubs if needed."
+            exit 1
+          fi
+          echo "Docs location check passed."

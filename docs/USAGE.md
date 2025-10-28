@@ -1623,7 +1623,7 @@ bazel run //tools/supplychain:vex_processor -- \
   --validate-only
 ```
 
-See [vex/statements/README.md](../vex/statements/README.md) for more details on VEX format and best practices.
+See [docs/vex/README.md](vex/README.md) for more details on VEX format and best practices.
 
 ## Incremental Analysis
 
@@ -1689,7 +1689,7 @@ bazel run //benchmarks:runner -- --tools bazbom --sizes small_100_deps medium_50
 - `benchmarks/results/benchmark_results.json` - Detailed metrics
 - `benchmarks/results/leaderboard.md` - Human-readable comparison
 
-See [benchmarks/README.md](../benchmarks/README.md) for creating custom benchmark repositories.
+See [docs/benchmarks/README.md](benchmarks/README.md) for creating custom benchmark repositories.
 
 ## AI-Powered Query Interface
 

@@ -549,4 +549,4 @@ Before submitting tests, verify:
 - [pytest parametrize](https://docs.pytest.org/en/stable/parametrize.html)
 - [pytest-xdist for parallel execution](https://pytest-xdist.readthedocs.io/)
 - [BazBOM TEST_PLAN.md](./TEST_PLAN.md)
-- [BazBOM TESTING.md](../TESTING.md)
+- [BazBOM Testing Guide](testing/TESTING_GUIDE.md)

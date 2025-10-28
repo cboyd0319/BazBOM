@@ -35,7 +35,7 @@ When we receive a security bug report, we will:
 2. Audit code to find any similar problems
 3. Prepare fixes for all supported versions
 4. Release patches as soon as possible
-5. Update the [Risk Ledger](security/RISK_LEDGER.md) with findings and remediation
+5. Update the [Risk Ledger](docs/security/RISK_LEDGER.md) with findings and remediation
 6. Publish security advisories for critical/high severity issues
 
 ## Security Architecture
@@ -137,8 +137,8 @@ BazBOM adheres to:
 
 Comprehensive security documentation:
 
-- [Secure Coding Guide](security/SECURE_CODING_GUIDE.md) - Python security best practices
-- [Risk Ledger](security/RISK_LEDGER.md) - Current security posture and findings
+- [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) - Python security best practices
+- [Risk Ledger](docs/security/RISK_LEDGER.md) - Current security posture and findings
 - [Threat Model](docs/THREAT_MODEL.md) - Attack vectors and mitigations
 - [PYSEC_OMEGA Guide](docs/copilot/PYSEC.md) - Security standards reference
 
@@ -153,7 +153,7 @@ Current security posture (updated weekly):
 - **Test Coverage**: 90%+
 - **Security Scan Pass Rate**: 100%
 
-See [Risk Ledger](security/RISK_LEDGER.md) for detailed metrics and history.
+See [Risk Ledger](docs/security/RISK_LEDGER.md) for detailed metrics and history.
 
 ## Security Contact
 

@@ -430,7 +430,7 @@ responses>=0.24.0
 ## Resources
 
 ### Documentation
-- `docs/TESTING.md` - Testing philosophy and standards
+- `docs/testing/TESTING_GUIDE.md` - Testing philosophy and standards
 - `TEST_COVERAGE_IMPROVEMENTS.md` - Improvement log
 - This file - Comprehensive roadmap
 

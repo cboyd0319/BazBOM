@@ -1,0 +1,11 @@
+[workspace]
+members = [
+  "crates/bazbom",
+  "crates/bazbom-core",
+  "crates/bazbom-formats",
+  "crates/bazbom-advisories",
+  "crates/bazbom-policy",
+  "crates/bazbom-graph",
+]
+resolver = "2"
+

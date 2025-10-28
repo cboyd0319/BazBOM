@@ -1,5 +1,6 @@
 """Bazel rules and macros for supply chain security."""
 
+load("@bazel_skylib//lib:json.bzl", "json")
 load(":aspects.bzl", "SbomInfo", "sbom_aspect")
 
 def _sbom_impl(ctx):

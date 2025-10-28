@@ -1,127 +1,116 @@
 # Copilot Instructions — BazBOM
 
-**Purpose:** Help maintainers and Copilot keep BazBOM docs, capabilities, and workflows consistent and up to date.
+Purpose: Provide clear, enforceable guidance so changes remain aligned with BazBOM’s mission, security posture, testing rigor, and documentation standards.
 
-## Project Overview
+## Mission & Non‑Negotiables
 
-BazBOM is a JVM supply chain security toolkit with:
-- **99 Python files**, 45,000+ lines of code, 49 test files, 90%+ coverage target
-- **Universal build system support** (Maven, Gradle, Bazel)
-- **SBOM generation** (SPDX 2.3, CycloneDX 1.5)
-- **Vulnerability scanning** (OSV, NVD, GHSA, CISA KEV, EPSS)
-- **SLSA Level 3** provenance and Sigstore signing
-- **GitHub Action** for automated CI/CD integration
-- **VEX support** for false positive management
+- World‑class JVM SBOM, SCA, and dependency graph across Maven, Gradle, and Bazel.
+- Private-by-default: 100% privacy, zero telemetry. Offline-first operation is required.
+- Memory‑safe distribution: Rust‑first single binary; OPAL (JVM) helper for reachability. Avoid unsafe; no embedded Python in shipped binaries.
+- Policy‑as‑code at the core: YAML (plus optional Rego/CUE), VEX auto‑application, CI gating.
+- Explainability and remediation: default “suggest‑only” with “why fix this?”; safe `--apply` opens PRs and runs checks.
+- Deterministic, reproducible outputs with signed artifacts and SLSA provenance.
+
+CRITICAL Repo Rules (must follow)
+- Zero emojis in code, ever. Do not add emojis to source files, generated code, or code comments. Code examples in docs that users might copy/paste must also be emoji‑free.
+- Avoid doc sprawl. Do not create a new doc for every small task. Prefer updating canonical docs under `docs/`. Create new documents only when a clear gap exists, and then link them from `docs/README.md`.
+
+Primary audience: Enterprise/AppSec engineers; secondary: Platform/DevSecOps; tertiary: JVM developers.
+Target OS: macOS → Linux → Windows.
+
+## Architecture Snapshot
+
+- Rust workspace: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`.
+- Reachability: OPAL‑based `bazbom-reachability.jar` invoked with `java -jar`; no network; JSON I/O.
+- Build integrations:
+  - Maven: `bazbom-maven-plugin` emits authoritative JSON (scopes, BOM, effective POM, shading/relocation).
+  - Gradle: `io.bazbom.gradle-plugin` with per‑configuration/variant graphs (incl. Android); Shadow support.
+  - Bazel: aspects for `java_*` (priority), then Kotlin, then broader JVM rules; bzlmod + rules_jvm_external.
+- Intelligence: OSV/NVD/GHSA + KEV + EPSS; canonical severity + P0–P4 priority.
+- Outputs: SPDX 2.3 (primary), CycloneDX 1.5 (optional), SARIF 2.1.0, CSAF VEX, CSV.
+
+## Documentation Policy (must follow)
+
+- All canonical docs live under `docs/` only.
+- Allowed root stubs (minimal link‑only): `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `MAINTAINERS.md`.
+- This file (`.github/copilot-instructions.md`) is an operational exception.
+- Standards: see `docs/copilot/DOCUMENTATION_STANDARDS.md`.
+  - markdownlint + Vale enforced; active voice; consistent terminology; relative links.
+  - ADRs in `docs/ADR/`; images in `docs/images/`; diagrams in `docs/diagrams/`.
+
+## Testing & Coverage Requirements
+
+- Repo‑wide coverage ≥ 90%; critical modules ~100% (merge engine, policy, exporters, graph normalizer).
+- Branch coverage on; coverage enforced in CI (fail‑under gates).
+- Python (transition period): pytest + pytest‑cov.
+- Rust: `cargo test` (or nextest), coverage via tarpaulin (Linux) or grcov/llvm‑profile; enforce thresholds.
+- Golden files for schema outputs; property‑based tests for normalization/dedup; fuzz parsers; perf benchmarks.
+
+## CI Rules & Required Checks
+
+- Coverage job with fail‑under thresholds (repo ≥90%; critical pkgs ≥98%).
+- Docs checks: markdownlint, Vale, link check; verify docs are under `docs/` except allowlisted stubs and this file.
+- Security: CodeQL, dependency review, supply chain policies, signed releases.
+- Build: reproducible outputs; schema validation (SPDX/CycloneDX/SARIF/VEX) in tests.
 
 ## Single Source of Truth
 
-- **Capabilities Reference:** `docs/reference/capabilities-reference.md` — Complete feature catalog
-- **README:** Must link to Capabilities Reference and reflect current features
-- **All user docs:** Live under `docs/` (reference, guides, ADRs, testing, copilot)
-
-## Key Documentation
-
-Essential guides to keep updated:
-- `docs/USAGE.md` — All commands and workflows
-- `docs/PROVENANCE.md` — SLSA Level 3 attestation
-- `docs/VEX.md` — Vulnerability Exploitability eXchange
-- `docs/PERFORMANCE.md` — Large monorepo optimization
-- `docs/ARCHITECTURE.md` — System design and data flow
-- `docs/copilot/PYSEC.md` — Python security engineering guide
+- Capabilities Reference: `docs/reference/capabilities-reference.md` (complete feature catalog).
+- Root README: overview, quickstart, and links into `docs/` (don’t duplicate).
+- All user/developer docs: under `docs/` (reference, guides, ADRs, testing, copilot).
 
 ## When Adding or Changing Features
 
-1. Update `docs/reference/capabilities-reference.md` with:
-   - New build system support
-   - SBOM format additions
-   - Vulnerability data sources
-   - CI/CD integration changes
-2. Update README.md:
-   - Feature bullets in "Features" section
-   - Quickstart examples if CLI changes
-   - Performance benchmarks if applicable
-3. Update relevant guides:
-   - `docs/USAGE.md` for command changes
-   - `docs/PROVENANCE.md` for SLSA changes
-   - `docs/VEX.md` for VEX workflow updates
-4. If GitHub Action changes:
-   - Update `action.yml` inputs/outputs documentation
-   - Update examples in README and docs
-5. Run validation:
+1) Update reference and guides:
+   - `docs/reference/capabilities-reference.md`
+   - `docs/USAGE.md` for CLI changes; examples for Maven/Gradle/Bazel
+   - `docs/PROVENANCE.md`, `docs/VEX.md`, `docs/PERFORMANCE.md` as needed
+2) Update root `README.md` where applicable (Features bullets, Quickstart snippets, performance table).
+3) If outputs/schemas change: bump schema versions; update JSON Schemas and golden tests.
+4) If GitHub Action changes: update `action.yml`, README snippets, and docs examples.
+5) Run validation:
    ```bash
-   pre-commit run --all-files  # Markdown, links, security
-   pytest                      # All tests must pass
+   pre-commit run --all-files
+   pytest -q  # until fully ported to Rust
+   cargo test --all --locked
    ```
-
-## Current Statistics (Keep Updated)
-
-Track these in `docs/reference/capabilities-reference.md` and README.md:
-- **Python Files:** 99 (verify with `find . -name "*.py" | wc -l`)
-- **Lines of Code:** 45,000+ (verify with `find tools/supplychain -name "*.py" | xargs wc -l`)
-- **Test Files:** 49 (verify with `find . -name "test_*.py" | wc -l`)
-- **Test Coverage:** 90%+ target (from pytest-cov output)
-- **Build Systems:** Maven, Gradle, Bazel (3 supported)
-- **SBOM Formats:** SPDX 2.3, CycloneDX 1.5
-- **Vulnerability Sources:** OSV, NVD, GHSA, CISA KEV, EPSS
-- **SLSA Level:** 3 (provenance + signing)
-
-## Documentation Style Guidelines
-
-- **Format:** Concise, scannable bullets; line length ≤ 120 chars
-- **Examples:** Runnable code snippets with expected output
-- **Headings:** Use Title Case consistently
-- **Links:** Prefer relative paths within repo; validate all links
-- **Commands:** Include full command syntax with flags
 
 ## Build Systems & Examples Checklist
 
-**Must cover all three build systems:**
-- ✅ Maven examples (pom.xml)
-- ✅ Gradle examples (build.gradle / build.gradle.kts)
-- ✅ Bazel examples (WORKSPACE / MODULE.bazel)
+- Cover all three build systems in examples and tests:
+  - Maven (pom.xml)
+  - Gradle (build.gradle / build.gradle.kts; Android variants)
+  - Bazel (WORKSPACE / MODULE.bazel; rules_jvm_external; aspects)
+- Include: offline mode, VEX flow, GitHub Action, shaded/fat JAR examples.
 
-**Additional examples:**
-- Container SBOM scanning (Docker/Podman)
-- VEX statements for false positive management
-- GitHub Action CI/CD integration
-- Offline/air-gapped mode
+## Security & Supply Chain Requirements
 
-## Security & Supply Chain
+- SLSA Level 3 provenance; Sigstore keyless signing; checksums.
+- Zero telemetry; explicit `bazbom db sync` for advisory updates.
+- Policy‑as‑code (YAML; optional Rego/CUE). VEX auto‑generation on unreachable when policy allows.
+- CWE mapping, SARIF 2.1.0 validation, SPDX 2.3 and CycloneDX 1.5 validation.
 
-**Keep these features documented:**
-- SLSA Level 3 provenance generation
-- Sigstore keyless signing
-- VEX (Vulnerability Exploitability eXchange)
-- Policy enforcement thresholds
-- Dependency pinning strategies
-- License compliance checking
+## Homebrew Tap and Distribution
 
-**Security standards:**
-- CWE mapping for vulnerabilities
-- SARIF 2.1.0 output format
-- SPDX 2.3 / CycloneDX 1.5 compliance
-- CISA KEV integration
-- EPSS risk scoring
+- Create and use a user‑owned tap before upstreaming to homebrew‑core.
+- See `docs/copilot/HOMEBREW_TAP.md` for formula template and steps.
+- Release assets: macOS (x86_64/arm64), Linux (x86_64/aarch64); signatures + provenance.
 
 ## Sanity Checks Before Merge
 
-- [ ] Capabilities Reference updated with new features
-- [ ] README "Features" section matches Capabilities Reference
-- [ ] Build system examples updated (Maven, Gradle, Bazel)
-- [ ] `docs/README.md` includes link to Capabilities Reference
-- [ ] No duplicate "Capabilities" docs elsewhere
-- [ ] All cross-references valid (no broken links)
-- [ ] GitHub Action examples tested
-- [ ] Pre-commit hooks pass
-- [ ] All tests pass (pytest)
+- [ ] Capabilities Reference updated and consistent with README
+- [ ] CLI docs updated; examples for Maven/Gradle/Bazel verified
+- [ ] Schema changes versioned; golden tests updated; validators pass
+- [ ] Coverage gates met (repo ≥90%; critical pkgs ≥98%; branch coverage on)
+- [ ] Docs only under `docs/` (except allowed stubs and this file); links valid
+- [ ] Action examples tested; pre‑commit, tests, and build pipelines green
 
-## For Comprehensive Development Guide
+## Additional Sources
 
-See `docs/copilot/PYSEC.md` for:
-- Python security engineering standards
-- Supply chain security best practices
-- GitHub Actions workflow security
-- Vulnerability detection patterns
-- Testing and quality requirements
+- Documentation standards: `docs/copilot/DOCUMENTATION_STANDARDS.md`
+- Rust packaging: `docs/copilot/RUST_PACKAGING_PLAN.md`
+- OPAL reachability plan: `docs/copilot/REACHABILITY_OPAL.md`
+- Python→Rust porting plan: `docs/copilot/EPICS_PORTING.md`
+- Repo reorg checklist: `docs/copilot/REPO_REORG_RECOMMENDATIONS.md`
 
 Questions? Open a docs issue and tag `@cboyd0319`.

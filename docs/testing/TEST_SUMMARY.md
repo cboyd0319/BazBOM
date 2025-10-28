@@ -348,10 +348,10 @@ This document summarizes the comprehensive pytest test suite implementation for 
 
 This implementation establishes a **solid foundation** for testing in BazBOM:
 
-✅ **Infrastructure is complete** - pytest.ini, conftest.py, TESTING.md
+✅ **Infrastructure is complete** - pytest.ini, conftest.py, TESTING_GUIDE.md
 ✅ **Standards are defined** - Quality bar is clear
 ✅ **Examples are provided** - 223 tests demonstrate best practices
-✅ **Documentation exists** - TESTING.md guides future contributors
+✅ **Documentation exists** - TESTING_GUIDE.md guides future contributors
 ✅ **Progress is measurable** - Coverage metrics track improvement
 
 The test suite is **maintainable**, **scalable**, and **follows industry best practices**. Future contributors have clear examples and documentation to follow.

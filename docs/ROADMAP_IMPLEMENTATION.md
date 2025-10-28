@@ -167,7 +167,7 @@ bazel run //tools/supplychain:bazbom_cli -- init
 4. `tools/supplychain/bazbom_config.py` - Configuration file support
 5. `tools/supplychain/bazbom_cli.py` - Unified CLI interface
 6. `tools/supplychain/tests/test_csv_exporter.py` - CSV export tests
-7. `examples/CLI_EXAMPLES.md` - CLI usage examples
+7. `docs/examples/CLI_EXAMPLES.md` - CLI usage examples
 
 ### Updated Files (4 files)
 1. `tools/supplychain/BUILD.bazel` - New tool targets

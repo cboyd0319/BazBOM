@@ -46,13 +46,16 @@ Architecture diagrams are available in the [diagrams](diagrams/) directory in Me
 
 ## Documentation Standards
 
-All BazBOM documentation follows:
+All canonical documentation lives under `docs/` only. Root-level files are minimal stubs when required by GitHub UX.
+
+Standards:
+- **[Documentation Standards](copilot/DOCUMENTATION_STANDARDS.md)** (canonical)
 - **[Google Developer Documentation Style Guide](https://developers.google.com/style)**
 - **[Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/)**
 - **Diátaxis Framework** (Tutorial, How-to, Explanation, Reference)
 
-Documentation is validated in CI using:
+Validation (CI):
 - `markdownlint` for structure
 - `vale` for style and tone
 - Link validation
-- Example code execution tests
+- Examples verified where applicable

@@ -44,6 +44,13 @@ genrule(
     visibility = ["//visibility:public"],
 )
 
+# Convenience alias to match docs/simple invocations
+alias(
+    name = "sca_scan",
+    actual = ":sca_scan_osv",
+    visibility = ["//visibility:public"],
+)
+
 # Convert SCA findings to SARIF
 genrule(
     name = "sca_sarif",

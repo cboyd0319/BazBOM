@@ -286,7 +286,7 @@ agent:
       - "omit examples, tests, migrations"
   deliverables:
     - "PR with atomic commits and unified diffs"
-    - "security/RISK_LEDGER.md, SBOM.spdx.json, THREAT_MODEL.md"
+    - "docs/security/RISK_LEDGER.md, SBOM.spdx.json, THREAT_MODEL.md"
     - "Updated SECURITY.md and CI workflows"
     - "Coverage configuration audit report"
   guardrails:

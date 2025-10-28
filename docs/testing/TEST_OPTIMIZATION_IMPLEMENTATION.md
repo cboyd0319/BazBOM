@@ -175,7 +175,7 @@ Added extensive performance optimization section:
 - Performance measurement commands
 - Before/after metrics showing improvements
 
-#### TESTING.md (UPDATED)
+#### TESTING_GUIDE.md (UPDATED)
 
 Enhanced with:
 - Quick start section with dependency installation
@@ -185,7 +185,7 @@ Enhanced with:
 - Performance targets table
 - Profiling commands for identifying slow tests
 
-#### tools/supplychain/tests/README.md (UPDATED)
+#### tools/supplychain/tests/README.md (MOVED → docs/testing/TOOLS_TESTS_README.md)
 
 Updated with:
 - Performance metrics and targets
@@ -336,7 +336,7 @@ Following the PyTest Architect Agent playbook:
 ### Documentation (UPDATED)
 - `docs/TEST_PLAN.md` - Performance optimization section
 - `TESTING.md` - Parallel execution and performance tips
-- `tools/supplychain/tests/README.md` - Updated metrics and resources
+- `docs/testing/TOOLS_TESTS_README.md` - Updated metrics and resources
 
 ## Conclusion
 

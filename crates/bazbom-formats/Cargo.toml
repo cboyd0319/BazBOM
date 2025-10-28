@@ -1,0 +1,9 @@
+[package]
+name = "bazbom-formats"
+version = "0.0.1-dev"
+edition = "2021"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
