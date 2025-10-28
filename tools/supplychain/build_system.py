@@ -160,16 +160,12 @@ class MavenBuildSystem(BuildSystem):
         
         try:
             # Run mvn dependency:list to get dependencies
+            # Note: We don't use -DincludeScope as it doesn't work correctly with multiple scopes
+            # Instead, we get all dependencies and filter by scope in parsing
             cmd = [
                 "mvn",
                 "dependency:list",
-                "-DoutputFile=/dev/stdout",
-                "-DoutputAbsoluteArtifactFilename=false",
-                "-DincludeScope=compile,runtime",
             ]
-            
-            if include_test_deps:
-                cmd[-1] = "-DincludeScope=compile,runtime,test"
             
             result = subprocess.run(
                 cmd,
@@ -185,7 +181,7 @@ class MavenBuildSystem(BuildSystem):
                 )
             
             # Parse output to extract dependencies
-            dependencies = self._parse_maven_output(result.stdout)
+            dependencies = self._parse_maven_output(result.stdout, include_test_deps)
             return dependencies
             
         except subprocess.TimeoutExpired:
@@ -207,11 +203,12 @@ class MavenBuildSystem(BuildSystem):
         except (subprocess.SubprocessError, FileNotFoundError):
             return False
     
-    def _parse_maven_output(self, output: str) -> List[Dependency]:
+    def _parse_maven_output(self, output: str, include_test_deps: bool = False) -> List[Dependency]:
         """Parse Maven dependency:list output.
         
         Args:
             output: Maven command output
+            include_test_deps: Whether to include test scope dependencies
             
         Returns:
             List of dependencies
@@ -219,32 +216,53 @@ class MavenBuildSystem(BuildSystem):
         dependencies = []
         
         for line in output.splitlines():
+            original_line = line
             line = line.strip()
             
-            # Look for dependency lines (format: groupId:artifactId:type:version:scope)
-            if ":" in line and not line.startswith("["):
-                parts = line.split(":")
+            # Maven dependency:list format: "[INFO]    groupId:artifactId:packaging:version:scope -- module info"
+            # Example: "[INFO]    org.springframework.boot:spring-boot-starter-web:jar:3.2.0:compile -- module spring.boot.starter.web [auto]"
+            
+            # Skip non-INFO lines
+            if not original_line.strip().startswith("[INFO]"):
+                continue
+            
+            # Remove [INFO] prefix
+            line = line.replace("[INFO]", "").strip()
+            
+            # Must contain colons for artifact coordinates
+            if ":" not in line:
+                continue
+            
+            # Remove module info if present
+            if " -- " in line:
+                line = line.split(" -- ")[0].strip()
+            
+            parts = line.split(":")
+            
+            # Maven dependency format: groupId:artifactId:packaging:version:scope
+            if len(parts) >= 4:
+                group_id = parts[0].strip()
+                artifact_id = parts[1].strip()
+                # parts[2] is packaging (jar, war, etc.)
+                version = parts[3].strip()
+                scope = parts[4].strip() if len(parts) > 4 else "compile"
                 
-                # Maven dependency format: groupId:artifactId:packaging:version:scope
-                if len(parts) >= 4:
-                    group_id = parts[0].strip()
-                    artifact_id = parts[1].strip()
-                    # parts[2] is packaging (jar, war, etc.)
-                    version = parts[3].strip()
-                    scope = parts[4].strip() if len(parts) > 4 else "compile"
-                    
-                    # Skip invalid entries
-                    if not group_id or not artifact_id or not version:
-                        continue
-                    
-                    dep = Dependency(
-                        name=f"{group_id}:{artifact_id}",
-                        version=version,
-                        group_id=group_id,
-                        artifact_id=artifact_id,
-                        scope=scope,
-                    )
-                    dependencies.append(dep)
+                # Skip invalid entries
+                if not group_id or not artifact_id or not version:
+                    continue
+                
+                # Filter by scope
+                if not include_test_deps and scope == "test":
+                    continue
+                
+                dep = Dependency(
+                    name=f"{group_id}:{artifact_id}",
+                    version=version,
+                    group_id=group_id,
+                    artifact_id=artifact_id,
+                    scope=scope,
+                )
+                dependencies.append(dep)
         
         return dependencies
 
@@ -286,7 +304,7 @@ class GradleBuildSystem(BuildSystem):
         # Check if gradlew or gradle is available
         gradlew = path / "gradlew"
         if gradlew.exists():
-            gradle_cmd = str(gradlew)
+            gradle_cmd = "./gradlew"  # Use relative path from cwd
         elif self._check_gradle_available():
             gradle_cmd = "gradle"
         else:

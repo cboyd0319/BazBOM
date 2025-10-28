@@ -176,7 +176,7 @@ class TestMavenBuildSystem:
         # Mock Maven being available
         mock_run.return_value = Mock(
             returncode=0,
-            stdout="com.google.guava:guava:jar:31.1-jre:compile\norg.slf4j:slf4j-api:jar:1.7.36:compile",
+            stdout="[INFO]    com.google.guava:guava:jar:31.1-jre:compile\n[INFO]    org.slf4j:slf4j-api:jar:1.7.36:compile",
             stderr=""
         )
         
@@ -198,9 +198,10 @@ class TestMavenBuildSystem:
         
         maven.resolve_dependencies(tmp_path, include_test_deps=True)
         
-        # Verify test scope is included
+        # Verify Maven command is called (we no longer use -DincludeScope)
         call_args = mock_run.call_args[0][0]
-        assert "-DincludeScope=compile,runtime,test" in call_args
+        assert "mvn" in call_args
+        assert "dependency:list" in call_args
 
     @patch('tools.supplychain.build_system.subprocess.run')
     def test_resolve_dependencies_timeout(self, mock_run, tmp_path):
@@ -238,12 +239,12 @@ class TestMavenBuildSystem:
         maven = MavenBuildSystem()
         output = """
         [INFO] The following dependencies are:
-        com.google.guava:guava:jar:31.1-jre:compile
-        org.slf4j:slf4j-api:jar:1.7.36:runtime
-        junit:junit:jar:4.13.2:test
+        [INFO]    com.google.guava:guava:jar:31.1-jre:compile
+        [INFO]    org.slf4j:slf4j-api:jar:1.7.36:runtime
+        [INFO]    junit:junit:jar:4.13.2:test
         """
         
-        deps = maven._parse_maven_output(output)
+        deps = maven._parse_maven_output(output, include_test_deps=True)
         
         assert len(deps) == 3
         assert deps[0].purl == "pkg:maven/com.google.guava/guava@31.1-jre"
@@ -253,7 +254,7 @@ class TestMavenBuildSystem:
     def test_parse_maven_output_empty(self):
         """Test parsing empty Maven output."""
         maven = MavenBuildSystem()
-        deps = maven._parse_maven_output("")
+        deps = maven._parse_maven_output("", include_test_deps=False)
         
         assert deps == []
 
@@ -316,9 +317,9 @@ class TestGradleBuildSystem:
         
         gradle.resolve_dependencies(tmp_path)
         
-        # Verify gradlew is used
+        # Verify ./gradlew is used (relative path from cwd)
         call_args = mock_run.call_args[0][0]
-        assert str(tmp_path / "gradlew") in call_args[0]
+        assert "./gradlew" in call_args[0]
 
     @patch('tools.supplychain.build_system.subprocess.run')
     def test_resolve_dependencies_no_gradle_available(self, mock_run, tmp_path):
