@@ -1,9 +1,26 @@
 """Bazel aspects for dependency discovery and SBOM generation."""
 
+load("@rules_java//java:defs.bzl", "JavaInfo")
+
+# Immutable struct to represent package information (for use in depsets)
+PackageInfo = provider(
+    doc = "Immutable package information for SBOM",
+    fields = {
+        "name": "Package name",
+        "group": "Maven group ID",
+        "version": "Package version",
+        "purl": "Package URL",
+        "type": "Package type (e.g., maven)",
+        "label": "Bazel target label (provenance)",
+        "sha256": "SHA256 checksum if available",
+        "is_direct": "Whether this is a direct dependency",
+    },
+)
+
 SbomInfo = provider(
     doc = "Information about dependencies for SBOM generation",
     fields = {
-        "packages": "Depset of package information dicts",
+        "packages": "Depset of PackageInfo structs",
         "target_label": "Label of the target",
     },
 )
@@ -16,11 +33,13 @@ def _extract_maven_coordinates(target, ctx):
         ctx: The aspect context
         
     Returns:
-        Dict with package info or None
+        PackageInfo struct with package info or None
     """
+    label_str = str(ctx.label)
+    
     # Check if this is a Maven artifact (from rules_jvm_external)
     if JavaInfo in target:
-        # Try to extract Maven coordinates from tags or labels
+        # Try to extract Maven coordinates from tags
         tags = getattr(ctx.rule.attr, "tags", [])
         for tag in tags:
             if tag.startswith("maven_coordinates="):
@@ -28,25 +47,38 @@ def _extract_maven_coordinates(target, ctx):
                 # Parse group:artifact:version
                 parts = coords.split(":")
                 if len(parts) >= 3:
-                    return {
-                        "name": parts[1],
-                        "group": parts[0],
-                        "version": parts[2],
-                        "purl": "pkg:maven/{}/{}@{}".format(parts[0], parts[1], parts[2]),
-                        "type": "maven",
-                    }
+                    group = parts[0]
+                    name = parts[1]
+                    version = parts[2]
+                    return PackageInfo(
+                        name = name,
+                        group = group,
+                        version = version,
+                        purl = "pkg:maven/{}/{}@{}".format(group, name, version),
+                        type = "maven",
+                        label = label_str,
+                        sha256 = "",
+                        is_direct = False,  # Will be determined by parent
+                    )
     
-    # For targets without Maven coordinates, extract from label
-    label = str(ctx.label)
-    if label.startswith("@maven//"):
-        # Parse @maven//:group_artifact format
-        parts = label.replace("@maven//:", "").replace("_", ".")
-        # This is a simplified parser - real implementation would need maven_install.json
-        return {
-            "name": parts,
-            "type": "maven",
-            "label": label,
-        }
+    # For targets from @maven repository, try to parse the label
+    if label_str.startswith("@maven//"):
+        # Extract artifact name from label like @maven//:com_google_guava_guava
+        artifact_name = label_str.replace("@maven//:", "")
+        
+        # The artifact name uses underscores, we need to map this back to Maven coordinates
+        # This is a heuristic - ideally we'd read maven_install.json
+        # For now, just record the label for provenance
+        return PackageInfo(
+            name = artifact_name,
+            group = "",  # Unknown without maven_install.json
+            version = "",  # Unknown without maven_install.json
+            purl = "",  # Cannot construct without full coordinates
+            type = "maven",
+            label = label_str,
+            sha256 = "",
+            is_direct = False,
+        )
     
     return None
 
@@ -63,11 +95,11 @@ def _sbom_aspect_impl(target, ctx):
     Returns:
         SbomInfo provider with package information
     """
-    # Collect packages from this target
-    direct_packages = []
-    
     # Extract package information from this target
     pkg_info = _extract_maven_coordinates(target, ctx)
+    
+    # Build list of direct packages
+    direct_packages = []
     if pkg_info:
         direct_packages.append(pkg_info)
     
@@ -79,6 +111,7 @@ def _sbom_aspect_impl(target, ctx):
                 transitive_packages.append(dep[SbomInfo].packages)
     
     # Combine direct and transitive into a depset
+    # Note: PackageInfo is a provider (immutable struct), so it's safe to use in depsets
     all_packages = depset(
         direct = direct_packages,
         transitive = transitive_packages,
