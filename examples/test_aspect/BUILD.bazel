@@ -1,0 +1,13 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//tools/supplychain:defs.bzl", "sbom")
+
+java_library(
+    name = "test_lib",
+    srcs = ["Test.java"],
+    deps = ["@maven//:com_google_guava_guava"],
+)
+
+sbom(
+    name = "test_sbom",
+    target = ":test_lib",
+)
