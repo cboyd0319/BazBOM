@@ -10,4 +10,4 @@ dependencies.json
 *.sbom.json
 sbom.spdx.json
 sbom.cyclonedx.json
-gradle-deps.json
+*-dependencies.json
