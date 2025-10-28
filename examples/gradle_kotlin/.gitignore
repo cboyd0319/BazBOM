@@ -1,0 +1,13 @@
+# Gradle build artifacts
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Generated SBOM files
+dependencies.json
+*.sbom.json
+sbom.spdx.json
+sbom.cyclonedx.json
+gradle-deps.json
