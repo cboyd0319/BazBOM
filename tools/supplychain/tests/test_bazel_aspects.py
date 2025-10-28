@@ -12,20 +12,25 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
+# Test configuration constants
+BAZEL_QUERY_TIMEOUT = 30
+BAZEL_BUILD_TIMEOUT = 120
+
+
+@pytest.fixture(scope="module")
+def workspace_root():
+    """Return the actual workspace root for testing."""
+    # Find the workspace root by looking for WORKSPACE file
+    current = Path(__file__).parent
+    while current != current.parent:
+        if (current / "WORKSPACE").exists():
+            return current
+        current = current.parent
+    pytest.skip("WORKSPACE not found")
+
 
 class TestBazelAspectIntegration:
     """Integration tests for Bazel aspects."""
-
-    @pytest.fixture
-    def workspace_root(self):
-        """Return the actual workspace root for testing."""
-        # Find the workspace root by looking for WORKSPACE file
-        current = Path(__file__).parent
-        while current != current.parent:
-            if (current / "WORKSPACE").exists():
-                return current
-            current = current.parent
-        pytest.skip("WORKSPACE not found")
 
     def test_workspace_has_required_files(self, workspace_root):
         """Test that workspace has required Bazel files."""
@@ -40,7 +45,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=BAZEL_QUERY_TIMEOUT,
         )
         
         assert result.returncode == 0
@@ -53,7 +58,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=BAZEL_QUERY_TIMEOUT,
         )
         
         assert result.returncode == 0
@@ -66,7 +71,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         assert result.returncode == 0, f"Build failed: {result.stderr}"
@@ -83,7 +88,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         deps_json = workspace_root / "bazel-bin" / "workspace_deps.json"
@@ -114,7 +119,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         assert result.returncode == 0, f"Build failed: {result.stderr}"
@@ -131,7 +136,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         sbom_file = workspace_root / "bazel-bin" / "workspace_sbom.spdx.json"
@@ -160,7 +165,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         assert result.returncode == 0, f"Build failed: {result.stderr}"
@@ -183,7 +188,7 @@ class TestBazelAspectIntegration:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         deps_json = workspace_root / "bazel-bin" / "examples" / "test_aspect" / "test_sbom_deps.json"
@@ -216,16 +221,6 @@ class TestBazelAspectIntegration:
 class TestBazelAspectProvenance:
     """Tests for provenance tracking in Bazel aspects."""
 
-    @pytest.fixture
-    def workspace_root(self):
-        """Return the actual workspace root for testing."""
-        current = Path(__file__).parent
-        while current != current.parent:
-            if (current / "WORKSPACE").exists():
-                return current
-            current = current.parent
-        pytest.skip("WORKSPACE not found")
-
     def test_aspect_tracks_labels(self, workspace_root):
         """Test that aspect tracks Bazel target labels for provenance."""
         example_dir = workspace_root / "examples" / "test_aspect"
@@ -239,7 +234,7 @@ class TestBazelAspectProvenance:
             cwd=str(workspace_root),
             capture_output=True,
             text=True,
-            timeout=120,
+            timeout=BAZEL_BUILD_TIMEOUT,
         )
         
         deps_json = workspace_root / "bazel-bin" / "examples" / "test_aspect" / "test_sbom_deps.json"
@@ -255,16 +250,6 @@ class TestBazelAspectProvenance:
 
 class TestBazelCLIIntegration:
     """Tests for bazbom_cli.py Bazel integration."""
-
-    @pytest.fixture
-    def workspace_root(self):
-        """Return the actual workspace root for testing."""
-        current = Path(__file__).parent
-        while current != current.parent:
-            if (current / "WORKSPACE").exists():
-                return current
-            current = current.parent
-        pytest.skip("WORKSPACE not found")
 
     def test_cli_detects_bazel(self, workspace_root, tmp_path):
         """Test that CLI detects Bazel build system."""
@@ -293,21 +278,15 @@ class TestBazelCLIIntegration:
 
     def test_cli_scan_command_with_bazel(self, workspace_root, tmp_path):
         """Test CLI scan command on Bazel project."""
-        import sys
-        from pathlib import Path
+        from tools.supplychain.bazbom_cli import scan_command
+        from argparse import Namespace
         
-        # Add tools/supplychain to path
-        sys.path.insert(0, str(workspace_root / "tools" / "supplychain"))
-        
-        from bazbom_cli import scan_command
-        
-        # Create mock args
-        class MockArgs:
-            path = str(workspace_root)
-            include_test = False
-            output = str(tmp_path / "scan-output.json")
-        
-        args = MockArgs()
+        # Create mock args using Namespace (better than class with attributes)
+        args = Namespace(
+            path=str(workspace_root),
+            include_test=False,
+            output=str(tmp_path / "scan-output.json")
+        )
         
         # Run scan
         result = scan_command(args)
