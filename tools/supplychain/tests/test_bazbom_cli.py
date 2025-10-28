@@ -49,8 +49,16 @@ class TestPerformScan:
             'tools.supplychain.bazbom_cli.detect_build_system',
             return_value=mock_build_system
         )
+        # Mock run_bazel_aspect_scan to return empty dependencies
+        mock_run_bazel = mocker.patch(
+            'tools.supplychain.bazbom_cli.run_bazel_aspect_scan',
+            return_value=[]
+        )
         mock_config = Mock()
+        mock_config.get_include_test_deps.return_value = False
         args = Mock()
+        args.include_test = False
+        args.output = None
         
         # Act
         result = bazbom_cli.perform_scan(tmp_path, mock_config, args)
@@ -59,8 +67,9 @@ class TestPerformScan:
         assert result == 0
         captured = capsys.readouterr()
         assert "Detected build system: Bazel" in captured.out
-        assert "bazel build //:sbom_all" in captured.out
-        assert "bazel build //:sca_scan_osv" in captured.out
+        assert "Found 0 dependencies from Bazel aspect" in captured.out
+        # Check that output file was created
+        assert (tmp_path / "bazel-dependencies.json").exists() or "Dependencies exported to:" in captured.out
 
     def test_perform_scan_maven_success_writes_json(
         self, tmp_path, mocker, capsys, monkeypatch
