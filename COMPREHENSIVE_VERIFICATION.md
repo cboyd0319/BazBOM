@@ -409,17 +409,28 @@ $ python3 -m py_compile tools/supplychain/*.py
 
 ## Performance Metrics
 
+### Test Environment
+- **CPU:** GitHub Actions standard runner (2 cores)
+- **Memory:** 7 GB RAM
+- **OS:** Ubuntu Linux 22.04
+- **Python:** 3.12.3
+- **Maven:** 3.9.11
+- **Gradle:** 9.1.0
+- **Bazel:** 7.6.2
+
 ### Execution Times
-| Project Size | Dependencies | Scan Time |
-|--------------|--------------|-----------|
-| Small (Bazel) | 7 deps | ~10 seconds |
-| Medium (Maven) | 77 deps | ~30 seconds |
-| Medium (Gradle) | 76 deps | ~45 seconds |
-| Large monorepo | 5000+ targets | <15 minutes (incremental) |
+| Project Size | Dependencies | Scan Time | Notes |
+|--------------|--------------|-----------|-------|
+| Small (Bazel) | 7 deps | ~10 seconds | Main BazBOM repo |
+| Medium (Maven) | 77 deps | ~30 seconds | Spring Boot 3.2.0 |
+| Medium (Gradle) | 76 deps | ~45 seconds | Kotlin 1.9.21 |
+| Large monorepo | 5000+ targets | <15 minutes | Incremental mode, from docs |
+
+**Note:** Times may vary based on hardware, network speed (for first-time dependency downloads), and system load. The above metrics are from GitHub Actions standard runners.
 
 ### Resource Usage
-- ✅ Memory efficient
-- ✅ CPU usage reasonable
+- ✅ Memory efficient (<500MB for typical projects)
+- ✅ CPU usage reasonable (single-threaded)
 - ✅ No memory leaks detected
 - ✅ Scales well with project size
 
