@@ -17,7 +17,23 @@ def _sbom_impl(ctx):
     
     # Get dependency information from the aspect
     if SbomInfo in target:
-        packages = target[SbomInfo].packages.to_list()
+        packages_depset = target[SbomInfo].packages
+        packages_list = packages_depset.to_list()
+        
+        # Convert PackageInfo structs to dicts for JSON serialization
+        packages = []
+        for pkg in packages_list:
+            pkg_dict = {
+                "name": pkg.name,
+                "group": pkg.group,
+                "version": pkg.version,
+                "purl": pkg.purl,
+                "type": pkg.type,
+                "label": pkg.label,
+                "sha256": pkg.sha256,
+                "is_direct": pkg.is_direct,
+            }
+            packages.append(pkg_dict)
     else:
         packages = []
     
