@@ -4,6 +4,7 @@ use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ReachabilityResult {
     pub tool: String,
     pub version: String,
@@ -13,6 +14,7 @@ pub struct ReachabilityResult {
     pub reachable_methods: Vec<String>,
     pub reachable_classes: Vec<String>,
     pub reachable_packages: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
 }
 
@@ -23,10 +25,8 @@ impl ReachabilityResult {
     }
 
     pub fn is_package_reachable(&self, package_name: &str) -> bool {
-        // Check if the package or any parent package is reachable
-        self.reachable_packages.iter().any(|p| {
-            p == package_name || p.starts_with(package_name)
-        })
+        // Check if the package is exactly in the reachable list
+        self.reachable_packages.iter().any(|p| p == package_name)
     }
 
     #[allow(dead_code)]

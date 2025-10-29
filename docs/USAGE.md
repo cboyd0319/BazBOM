@@ -202,7 +202,7 @@ git diff --name-only origin/main...HEAD > changed_files.txt
 bazbom scan . --bazel-affected-by-files $(cat changed_files.txt)
 ```
 
-**Example: Incremental scan on PR**
+#### Example: Incremental scan on PR
 
 ```bash
 # Changed file in PR: src/java/main/lib/top_x.java
@@ -220,6 +220,7 @@ $ bazbom scan . --bazel-affected-by-files src/java/main/lib/top_x.java
 ```
 
 **Performance comparison:**
+
 | Scan Type | Targets | Time | Use Case |
 |-----------|---------|------|----------|
 | Full workspace | 5247 | ~45 min | Main branch, releases |
@@ -490,7 +491,7 @@ When you run `bazbom policy check`, two files are generated:
    - Machine-readable pass/fail result
    - List of all policy violations
    - Includes vulnerability details for each violation
-   
+
 2. **SARIF Report** (`policy_violations.sarif`)
    - GitHub Security compatible format
    - Violations mapped to SARIF levels
@@ -580,6 +581,206 @@ bazbom fix --apply
 - Runs tests to verify compatibility
 - Opens pull request with changes
 - Includes rollback capability
+
+### Advanced: Reachability Analysis
+
+**Bytecode reachability analysis** helps reduce false positives by identifying which vulnerable code paths are actually reachable from your application's entry points.
+
+**Setup:**
+
+First, build the reachability analyzer:
+
+```bash
+cd tools/reachability
+mvn clean package
+```
+
+This creates `target/bazbom-reachability-0.1.0-SNAPSHOT.jar` (~690KB).
+
+**Usage:**
+
+```bash
+# Set environment variable
+export BAZBOM_REACHABILITY_JAR=/path/to/BazBOM/tools/reachability/target/bazbom-reachability-0.1.0-SNAPSHOT.jar
+
+# Run scan with reachability analysis
+bazbom scan . --reachability --out-dir ./reports
+```
+
+**What it Does:**
+
+1. **Extracts classpath** from your build system (Maven, Gradle, or Bazel)
+2. **Analyzes bytecode** using ASM library to build call graphs
+3. **Detects entry points** (main methods, public constructors)
+4. **Tags vulnerabilities** as `[REACHABLE]` or `[NOT REACHABLE]` in SARIF output
+5. **Caches results** (Blake3 hashing) for fast subsequent runs
+
+**Performance:**
+- Small projects (<100 classes): <1 second
+- Medium projects (100-1000 classes): 1-5 seconds  
+- Large projects (1000+ classes): 5-30 seconds
+- **Cache hit**: ~1ms (99% faster on unchanged code)
+
+**Example Output:**
+
+```bash
+[bazbom] running reachability analysis
+[bazbom] jar: "/path/to/bazbom-reachability.jar"
+[bazbom] classpath entries: 47
+[bazbom] reachability complete:
+  - detected entrypoints: 12
+  - reachable methods: 1,243
+  - reachable classes: 287
+  - reachable packages: 53
+```
+
+**SARIF Integration:**
+
+Reachability results are automatically included in `sca_findings.sarif`:
+
+```json
+{
+  "message": {
+    "text": "[NOT REACHABLE] CVE-2023-12345: Remote Code Execution in org.apache.commons:commons-text:1.9"
+  }
+}
+```
+
+**Cache Behavior:**
+
+Reachability results are cached in `.bazbom/cache/reachability/` based on:
+- Classpath content (all JAR files)
+- Entry points configuration
+- Blake3 hash for integrity
+
+Cache is automatically invalidated when:
+- Dependencies change
+- Entry points change
+- Class files are recompiled
+
+**Policy Integration:**
+
+Reachability-aware policy checks can be configured in `bazbom.yml`:
+
+```yaml
+policy:
+  severity_threshold: HIGH
+  ignore_unreachable: true  # Skip NOT REACHABLE findings
+```
+
+**Limitations:**
+
+- **Dynamic dispatch**: Conservative analysis includes all potential targets
+- **Reflection**: Methods invoked via reflection are not tracked
+- **Native code**: JNI calls are not analyzed
+- **Dynamic class loading**: Runtime-loaded classes not included
+
+### Advanced: Shading and Relocation Detection
+
+**Fat JAR and shaded dependency analysis** identifies and maps relocated classes back to their original artifacts, enabling accurate vulnerability attribution.
+
+**What Are Shaded JARs?**
+
+Shading (also called "fat JAR" or "uber JAR") is a technique that:
+1. Bundles all dependencies into a single JAR
+2. Relocates packages to avoid conflicts (e.g., `org.apache` → `myapp.shaded.org.apache`)
+
+Popular plugins:
+- Maven: `maven-shade-plugin`
+- Gradle: `com.github.johnrengelman.shadow`
+
+**Detection:**
+
+BazBOM automatically detects shading configurations:
+
+```bash
+# Maven projects: reads pom.xml for maven-shade-plugin
+bazbom scan my-maven-app/
+
+# Gradle projects: reads build.gradle[.kts] for shadow plugin
+bazbom scan my-gradle-app/
+```
+
+**Configuration Parsing:**
+
+**Maven Shade (pom.xml):**
+```xml
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-shade-plugin</artifactId>
+  <configuration>
+    <relocations>
+      <relocation>
+        <pattern>org.apache</pattern>
+        <shadedPattern>myapp.shaded.org.apache</shadedPattern>
+      </relocation>
+    </relocations>
+  </configuration>
+</plugin>
+```
+
+**Gradle Shadow (build.gradle.kts):**
+```kotlin
+shadowJar {
+    relocate("org.apache", "myapp.shaded.org.apache")
+    relocate("com.google.common", "myapp.shaded.guava")
+}
+```
+
+**Relocation Mapping:**
+
+BazBOM builds reverse mapping tables:
+
+```
+Shaded Class                        → Original Class
+myapp.shaded.org.apache.commons.Lang → org.apache.commons.Lang
+myapp.shaded.guava.collect.Lists     → com.google.common.collect.Lists
+```
+
+**Class Fingerprinting:**
+
+For ambiguous cases, BazBOM uses bytecode fingerprinting:
+- **Blake3 hash** of class bytecode
+- **Method signatures** (name + parameter types)
+- **Field signatures** (name + type)
+- **Confidence scoring** (0.0-1.0)
+
+**Vulnerability Attribution:**
+
+Findings are mapped to original artifacts:
+
+```json
+{
+  "shadedClass": "myapp.shaded.org.apache.commons.text.StringEscapeUtils",
+  "originalClass": "org.apache.commons.text.StringEscapeUtils",
+  "originalArtifact": "org.apache.commons:commons-text:1.9",
+  "vulnerability": "CVE-2022-42889",
+  "confidence": 1.0
+}
+```
+
+**SARIF Output:**
+
+```json
+{
+  "message": {
+    "text": "CVE-2022-42889 in shaded class myapp.shaded.org.apache.commons.text.* (original: org.apache.commons:commons-text:1.9)"
+  }
+}
+```
+
+**Best Practices:**
+
+1. **Document relocations**: Keep shading configs up-to-date
+2. **Minimize shading**: Only relocate conflicting packages
+3. **Version tracking**: Use `finalName` to embed version info
+4. **Test coverage**: Ensure shaded code has adequate tests
+
+**Limitations:**
+
+- XML/DSL parsing is regex-based (production will use proper parsers)
+- Nested JAR extraction not yet implemented
+- Requires build files to be present (pom.xml or build.gradle[.kts])
 
 ### Environment Variables
 
