@@ -37,6 +37,14 @@ class BazBomPlugin implements Plugin<Project> {
             task.dependsOn('bazbomGraph')
         }
         
+        // Register the classpath extraction task
+        project.tasks.register('bazbomClasspath', BazBomClasspathTask) { task ->
+            task.group = 'bazbom'
+            task.description = 'Extract runtime classpath for reachability analysis'
+            task.outputFile.set(project.layout.buildDirectory.file('bazbom-classpath.txt'))
+            task.dependsOn('classes')
+        }
+        
         project.logger.info("BazBOM Gradle Plugin applied to project: ${project.name}")
     }
 }

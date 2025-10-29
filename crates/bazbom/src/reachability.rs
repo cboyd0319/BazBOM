@@ -109,28 +109,37 @@ pub fn extract_maven_classpath(project_path: &Path) -> Result<String> {
 
 /// Extract classpath from Gradle project
 pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
-    // Run gradle dependencies --configuration runtimeClasspath to get the classpath
+    // Check if BazBOM Gradle plugin is applied
+    // If so, run the bazbomClasspath task
+    let classpath_file = project_path.join("build").join("bazbom-classpath.txt");
+    
+    // Try to run the bazbomClasspath task
+    println!("[bazbom] Running Gradle bazbomClasspath task...");
     let output = Command::new("gradle")
-        .arg("dependencies")
-        .arg("--configuration")
-        .arg("runtimeClasspath")
+        .arg("bazbomClasspath")
         .arg("-q")
         .current_dir(project_path)
         .output()
-        .context("failed to run gradle dependencies")?;
+        .context("failed to run gradle bazbomClasspath")?;
 
     if !output.status.success() {
-        anyhow::bail!("gradle dependencies failed");
+        let error = String::from_utf8_lossy(&output.stderr);
+        println!("[bazbom] Warning: gradle bazbomClasspath failed: {}", error);
+        println!("[bazbom] Make sure the BazBOM Gradle plugin is applied");
+        return Ok(String::new());
     }
 
-    // Parse Gradle output to extract JAR paths
-    // This is simplified - in production, we'd use a custom Gradle task
-    let _output_str = String::from_utf8(output.stdout)
-        .context("invalid UTF-8 in Gradle output")?;
-
-    // For now, return empty - this needs proper implementation via Gradle plugin
-    println!("[bazbom] Gradle classpath extraction needs gradle plugin integration");
-    Ok(String::new())
+    // Read the classpath from the output file
+    if classpath_file.exists() {
+        let classpath = std::fs::read_to_string(&classpath_file)
+            .context("failed to read gradle classpath file")?;
+        println!("[bazbom] Extracted classpath with {} entries", 
+                 classpath.split(':').count());
+        Ok(classpath.trim().to_string())
+    } else {
+        println!("[bazbom] Warning: classpath file not created by Gradle task");
+        Ok(String::new())
+    }
 }
 
 /// Extract classpath from Bazel project
