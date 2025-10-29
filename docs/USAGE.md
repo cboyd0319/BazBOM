@@ -246,13 +246,77 @@ bazbom policy check
 
 **Policy Rules:**
 
-- `severity_threshold` - Block vulnerabilities at or above severity level
+- `severity_threshold` - Block vulnerabilities at or above severity level (NONE, LOW, MEDIUM, HIGH, CRITICAL)
 - `kev_gate` - Block any vulnerability in CISA's Known Exploited Vulnerabilities list
-- `epss_threshold` - Block vulnerabilities with EPSS score above threshold
+- `epss_threshold` - Block vulnerabilities with EPSS score above threshold (0.0 to 1.0)
 - `license_allowlist` - Only allow specified licenses
 - `license_denylist` - Block specified licenses
-- `reachability_required` - Require reachability analysis
-- `vex_auto_apply` - Auto-generate VEX for unreachable vulnerabilities
+- `reachability_required` - Require reachability analysis (future capability)
+- `vex_auto_apply` - Auto-generate VEX for unreachable vulnerabilities (future capability)
+
+**Output Files:**
+
+When you run `bazbom policy check`, two files are generated:
+
+1. **Policy Result** (`policy_result.json`)
+   - Machine-readable pass/fail result
+   - List of all policy violations
+   - Includes vulnerability details for each violation
+   
+2. **SARIF Report** (`policy_violations.sarif`)
+   - GitHub Security compatible format
+   - Violations mapped to SARIF levels
+   - Upload to GitHub Code Scanning for PR annotations
+
+**Exit Codes:**
+
+- `0` - All policy checks passed
+- `1` - One or more policy violations found
+
+**Policy Integration with Scan:**
+
+The `scan` command automatically applies policy checks if a `bazbom.yml` file exists:
+
+```bash
+# Create policy configuration
+cat > bazbom.yml << EOF
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+EOF
+
+# Run scan - policy checks applied automatically
+bazbom scan .
+```
+
+When policy violations are detected during scan:
+- Violations are printed to console
+- Additional file `policy_violations.json` is created in output directory
+- Exit code remains 0 (scan completes, policy check is informational)
+
+To enforce policy violations in CI, use `bazbom policy check` as a separate step:
+
+```bash
+# First, generate SBOM and findings
+bazbom scan .
+
+# Then, enforce policy (exits non-zero on violations)
+bazbom policy check
+```
+
+**Example Policy Configurations:**
+
+BazBOM includes three example policy configurations in the `examples/` directory:
+
+- `bazbom.yml` - Balanced policy for most projects
+- `bazbom-strict.yml` - Strict policy for critical systems
+- `bazbom-permissive.yml` - Permissive policy for development
+
+Copy one to your project root and customize as needed:
+
+```bash
+cp examples/bazbom-strict.yml bazbom.yml
+```
 
 ### `bazbom fix` - Remediation Suggestions
 

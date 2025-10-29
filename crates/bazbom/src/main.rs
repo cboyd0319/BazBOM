@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 mod advisory;
+mod policy_integration;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -156,6 +157,30 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed writing {:?}", sarif_path))?;
             println!("[bazbom] wrote {:?}", sarif_path);
 
+            // Apply policy checks if policy file exists
+            let policy_path = PathBuf::from("bazbom.yml");
+            if policy_path.exists() {
+                let policy = policy_integration::load_policy_config(&policy_path)
+                    .context("failed to load policy configuration")?;
+                
+                let policy_result = policy_integration::check_policy(&vulnerabilities, &policy);
+                
+                if !policy_result.passed {
+                    println!("[bazbom] ⚠ policy violations detected ({} violations)", policy_result.violations.len());
+                    for violation in &policy_result.violations {
+                        println!("  - {}: {}", violation.rule, violation.message);
+                    }
+                    
+                    // Write policy violations to separate file
+                    let policy_violations_path = out.join("policy_violations.json");
+                    fs::write(&policy_violations_path, serde_json::to_vec_pretty(&policy_result).unwrap())
+                        .with_context(|| format!("failed writing {:?}", policy_violations_path))?;
+                    println!("[bazbom] wrote {:?}", policy_violations_path);
+                } else {
+                    println!("[bazbom] ✓ all policy checks passed");
+                }
+            }
+
             if reachability {
                 // Attempt to run reachability skeleton if configured
                 if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
@@ -195,6 +220,77 @@ fn main() -> Result<()> {
         Commands::Policy { action } => match action {
             PolicyCmd::Check {} => {
                 println!("[bazbom] policy check");
+                
+                // Load policy configuration
+                let policy_path = PathBuf::from("bazbom.yml");
+                let policy = policy_integration::load_policy_config(&policy_path)
+                    .context("failed to load policy configuration")?;
+                println!("[bazbom] loaded policy config (threshold={:?})", policy.severity_threshold);
+                
+                // Load advisories from cache
+                let cache_dir = PathBuf::from(".bazbom/cache");
+                let vulnerabilities = if cache_dir.exists() {
+                    match advisory::load_advisories(&cache_dir) {
+                        Ok(vulns) => {
+                            println!("[bazbom] loaded {} vulnerabilities from cache", vulns.len());
+                            vulns
+                        }
+                        Err(e) => {
+                            eprintln!("[bazbom] warning: failed to load advisories: {}", e);
+                            Vec::new()
+                        }
+                    }
+                } else {
+                    eprintln!("[bazbom] warning: advisory cache not found at {:?}, run 'bazbom db sync' first", cache_dir);
+                    Vec::new()
+                };
+                
+                // Check vulnerabilities against policy
+                let result = policy_integration::check_policy(&vulnerabilities, &policy);
+                
+                // Write policy result to JSON
+                let policy_output = PathBuf::from("policy_result.json");
+                fs::write(&policy_output, serde_json::to_vec_pretty(&result).unwrap())
+                    .with_context(|| format!("failed writing {:?}", policy_output))?;
+                println!("[bazbom] wrote {:?}", policy_output);
+                
+                // Write policy violations to SARIF
+                let sarif_path = PathBuf::from("policy_violations.sarif");
+                let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom-policy", bazbom_core::VERSION);
+                
+                for violation in &result.violations {
+                    let level = if violation.rule == "kev_gate" {
+                        "error"
+                    } else if let Some(vuln) = &violation.vulnerability {
+                        match vuln.severity {
+                            bazbom_policy::SeverityLevel::Critical => "error",
+                            bazbom_policy::SeverityLevel::High => "error",
+                            bazbom_policy::SeverityLevel::Medium => "warning",
+                            _ => "note",
+                        }
+                    } else {
+                        "warning"
+                    };
+                    
+                    let rule_id = format!("policy/{}", violation.rule);
+                    let result_item = bazbom_formats::sarif::Result::new(&rule_id, level, &violation.message);
+                    sarif.add_result(result_item);
+                }
+                
+                fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
+                    .with_context(|| format!("failed writing {:?}", sarif_path))?;
+                println!("[bazbom] wrote {:?} ({} violations)", sarif_path, result.violations.len());
+                
+                // Print summary
+                if result.passed {
+                    println!("[bazbom] ✓ policy check passed (no violations)");
+                } else {
+                    println!("[bazbom] ✗ policy check failed ({} violations)", result.violations.len());
+                    for violation in &result.violations {
+                        println!("  - {}: {}", violation.rule, violation.message);
+                    }
+                    std::process::exit(1);
+                }
             }
         },
         Commands::Fix { suggest, apply } => {

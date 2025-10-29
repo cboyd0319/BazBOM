@@ -55,6 +55,9 @@ sca_findings.*
 *.spdx.json
 *.cyclonedx.json
 *.sarif
+policy_result.json
+policy_violations.json
+policy_violations.sarif
 
 # Homebrew generated files
 homebrew/bazbom.rb

@@ -1,0 +1,90 @@
+# Example GitHub Actions workflow for BazBOM policy enforcement
+name: BazBOM Policy Check
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  policy-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      
+      - name: Install BazBOM
+        run: |
+          # Install from GitHub releases
+          curl -L https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-linux-x86_64 -o bazbom
+          chmod +x bazbom
+          sudo mv bazbom /usr/local/bin/
+      
+      - name: Sync Advisory Database
+        run: |
+          bazbom db sync
+      
+      - name: Run SBOM Scan
+        run: |
+          bazbom scan . --format spdx --out-dir ./bazbom-output
+      
+      - name: Run Policy Check
+        id: policy
+        run: |
+          bazbom policy check
+        continue-on-error: true
+      
+      - name: Upload SBOM Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bazbom-sbom
+          path: |
+            bazbom-output/sbom.spdx.json
+            bazbom-output/sca_findings.json
+            bazbom-output/sca_findings.sarif
+            policy_result.json
+            policy_violations.sarif
+      
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: policy_violations.sarif
+          category: bazbom-policy
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && steps.policy.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const policyResult = JSON.parse(fs.readFileSync('policy_result.json', 'utf8'));
+            
+            let comment = '## 🔒 BazBOM Policy Check Failed\n\n';
+            comment += `Found ${policyResult.violations.length} policy violation(s):\n\n`;
+            
+            policyResult.violations.forEach(v => {
+              comment += `- **${v.rule}**: ${v.message}\n`;
+            });
+            
+            comment += '\n📋 See attached SARIF report for full details.';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+      
+      - name: Fail if policy violations found
+        if: steps.policy.outcome == 'failure'
+        run: exit 1
