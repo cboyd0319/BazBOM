@@ -1,0 +1,26 @@
+# BazBOM Strict Policy Configuration
+# Recommended for critical production systems and compliance-heavy environments
+
+# Only critical vulnerabilities trigger violations
+severity_threshold: CRITICAL
+
+# Strict license allowlist (open source friendly, commercially safe)
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+
+# KEV gate enabled - any KEV vulnerability is a critical issue
+kev_gate: true
+
+# High EPSS threshold - only highly exploitable vulnerabilities trigger violations
+epss_threshold: 0.8
+
+# Reachability not required - better safe than sorry
+reachability_required: false
+
+# VEX auto-apply enabled for documentation
+vex_auto_apply: true

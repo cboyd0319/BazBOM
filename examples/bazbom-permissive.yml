@@ -1,0 +1,21 @@
+# BazBOM Permissive Policy Configuration
+# Suitable for development environments and early-stage projects
+
+# Medium severity threshold - focus on more serious issues
+severity_threshold: MEDIUM
+
+# No license restrictions in development
+# license_allowlist: []
+# license_denylist: []
+
+# KEV gate disabled for development flexibility
+kev_gate: false
+
+# Lower EPSS threshold - catch more potential issues
+epss_threshold: 0.1
+
+# Reachability not required
+reachability_required: false
+
+# VEX auto-apply enabled
+vex_auto_apply: true

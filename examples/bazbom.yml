@@ -1,0 +1,37 @@
+# BazBOM Policy Configuration
+# This file defines security and license policies for your project
+
+# Severity threshold: vulnerabilities at or above this level trigger violations
+# Options: NONE, LOW, MEDIUM, HIGH, CRITICAL
+severity_threshold: HIGH
+
+# License allowlist: only these licenses are permitted
+# If specified, any license not in this list will be flagged
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+
+# License denylist: these licenses are prohibited
+# If specified, any license in this list will be flagged
+# license_denylist:
+#   - GPL-3.0
+#   - AGPL-3.0
+
+# KEV gate: if true, any vulnerability in the CISA KEV catalog triggers a violation
+# Recommended: true for production systems
+kev_gate: true
+
+# EPSS threshold: vulnerabilities with an EPSS score at or above this value trigger violations
+# EPSS scores range from 0.0 to 1.0 (probability of exploitation)
+# Recommended values: 0.1 (low bar), 0.5 (medium), 0.8 (high)
+epss_threshold: 0.5
+
+# Reachability required: if true, only reachable vulnerabilities trigger violations
+# Requires --reachability flag to be used during scan
+reachability_required: false
+
+# VEX auto-apply: if true, automatically generate VEX statements for unreachable vulnerabilities
+vex_auto_apply: true
