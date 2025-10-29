@@ -134,22 +134,60 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
 }
 
 /// Extract classpath from Bazel project
-pub fn extract_bazel_classpath(project_path: &Path, target: &str) -> Result<String> {
-    // Run bazel query to get the runtime classpath for a target
+pub fn extract_bazel_classpath(project_path: &Path, _target: &str) -> Result<String> {
+    // For Bazel projects, we need to extract JARs from the external repository
+    // These are typically in bazel-bin and bazel-<workspace>/external/maven
+    
+    // Try to find the Bazel external directory
+    let external_dir = project_path.join("bazel-bin").join("external").join("maven");
+    if !external_dir.exists() {
+        // Try alternate location
+        let workspace_name = project_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("workspace");
+        let alt_external = project_path
+            .join(format!("bazel-{}", workspace_name))
+            .join("external")
+            .join("maven");
+        
+        if !alt_external.exists() {
+            println!(
+                "[bazbom] Warning: Could not find Bazel external directory at {:?} or {:?}",
+                external_dir, alt_external
+            );
+            return Ok(String::new());
+        }
+    }
+    
+    // For now, we'll use a simpler approach via bazel query
+    // In production, this should use proper aspects
     let output = Command::new("bazel")
-        .arg("aquery")
-        .arg(format!("{}//...", target))
+        .arg("query")
+        .arg("@maven//:all")
+        .arg("--output=location")
         .current_dir(project_path)
         .output()
-        .context("failed to run bazel aquery")?;
+        .context("failed to run bazel query")?;
 
     if !output.status.success() {
-        anyhow::bail!("bazel aquery failed");
+        println!("[bazbom] Bazel query failed, classpath extraction requires aspect integration");
+        return Ok(String::new());
     }
 
-    // Parse Bazel output to extract JAR paths
-    // This is simplified - in production, we'd use Bazel aspects
-    println!("[bazbom] Bazel classpath extraction needs aspect integration");
+    // Parse output to extract JAR locations
+    // This is a simplified implementation
+    let output_str = String::from_utf8(output.stdout)
+        .context("invalid UTF-8 in Bazel output")?;
+    
+    let jars: Vec<&str> = output_str
+        .lines()
+        .filter(|line| line.contains(".jar"))
+        .collect();
+    
+    println!("[bazbom] Found {} JAR references from Bazel", jars.len());
+    
+    // Return empty for now - proper implementation needs aspect-based extraction
     Ok(String::new())
 }
 

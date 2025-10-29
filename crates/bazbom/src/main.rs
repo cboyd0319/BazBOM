@@ -5,6 +5,7 @@ use std::fs;
 use std::path::PathBuf;
 
 mod advisory;
+mod bazel;
 mod policy_integration;
 mod reachability;
 
@@ -86,6 +87,28 @@ fn main() -> Result<()> {
                 path, reachability, format, system
             );
             let out = PathBuf::from(&out_dir);
+            
+            // For Bazel projects, extract dependencies first
+            if system == bazbom_core::BuildSystem::Bazel {
+                let deps_json_path = out.join("bazel_deps.json");
+                match bazel::extract_bazel_dependencies(&root, &deps_json_path) {
+                    Ok(graph) => {
+                        println!(
+                            "[bazbom] extracted {} Bazel components",
+                            graph.components.len()
+                        );
+                        
+                        // TODO: Convert BazelDependencyGraph to SBOM format
+                        // For now, we'll write the dependency graph as-is
+                        println!("[bazbom] wrote dependency graph to {:?}", deps_json_path);
+                    }
+                    Err(e) => {
+                        eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
+                        eprintln!("[bazbom] falling back to stub SBOM");
+                    }
+                }
+            }
+            
             let sbom_path = write_stub_sbom(&out, &format, system)
                 .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
             println!("[bazbom] wrote {:?}", sbom_path);
