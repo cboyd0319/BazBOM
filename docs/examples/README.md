@@ -52,6 +52,68 @@ BazBOM now leverages **maven_install.json** as the source of truth, providing:
 }
 ```
 
+## Bazel/Java Example
+
+BazBOM provides full Software Composition Analysis (SCA) for Bazel projects using `rules_jvm_external`.
+
+### Prerequisites
+
+For Bazel projects, you need:
+1. A Bazel workspace with `maven_install()` defined
+2. Generated `maven_install.json` (run `bazel run @maven//:pin`)
+3. The `bazbom` CLI (built with `cargo build --release`)
+
+### Generating SBOM with BazBOM CLI (Recommended)
+
+```bash
+# From the repository root (which is a Bazel workspace)
+./target/release/bazbom scan . --out-dir ./output
+
+# Or from any Bazel workspace
+./target/release/bazbom scan /path/to/bazel/project
+```
+
+**What BazBOM extracts:**
+- ✅ Complete dependency graph from maven_install.json
+- ✅ Maven coordinates (group:artifact:version)
+- ✅ Package URLs (PURLs) for all artifacts
+- ✅ SHA256 checksums for verification
+- ✅ Dependency relationships (DEPENDS_ON edges)
+- ✅ Repository URLs
+- ✅ SPDX 2.3 compliant SBOM
+
+**Output files:**
+- `sbom.spdx.json` - SPDX 2.3 document with packages and relationships
+- `bazel_deps.json` - Raw dependency graph (components + edges)
+- `sca_findings.json` - Vulnerability findings (if advisory cache exists)
+- `sca_findings.sarif` - GitHub Security format
+
+### Example: Scanning BazBOM itself
+
+```bash
+# BazBOM can scan itself (it's a Bazel workspace)
+cd /path/to/BazBOM
+cargo build --release
+
+# Scan the workspace
+./target/release/bazbom scan . --out-dir ./reports
+
+# View results
+cat ./reports/sbom.spdx.json | python3 -m json.tool | head -50
+cat ./reports/bazel_deps.json | python3 -m json.tool
+```
+
+**Expected output:**
+```
+[bazbom] scan path=. reachability=false format=spdx system=Bazel
+[bazbom] extracting Bazel dependencies from "./maven_install.json"
+Extracted 7 components
+Extracted 6 edges
+[bazbom] extracted 7 components and 6 edges
+[bazbom] wrote dependency graph to "./reports/bazel_deps.json"
+[bazbom] wrote "./reports/sbom.spdx.json"
+```
+
 ## Minimal Java Example
 
 The `minimal_java` directory contains a simple Java application that demonstrates:
@@ -67,20 +129,20 @@ bazel build :app
 bazel run :app
 ```
 
-### Generating SBOM for the example
+### Legacy: Generating SBOM with Python tools
 
 From the repository root:
 
 ```bash
-# Using Bazel (recommended)
+# Using Bazel (original approach)
 bazel build //:workspace_sbom
 
 # View the SBOM
 cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool
 
-# Or manually with enhanced extraction
-python3 tools/supplychain/extract_maven_deps.py \
-  --workspace WORKSPACE \
+# Or manually with Python scripts
+python3 tools/supplychain/bazbom_extract_bazel_deps.py \
+  --workspace . \
   --maven-install-json maven_install.json \
   --output /tmp/deps.json
 
