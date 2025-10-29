@@ -55,6 +55,232 @@ cargo build --release
 - `sca_findings.json` - Machine-readable vulnerability findings
 - `sca_findings.sarif` - GitHub Security format for Code Scanning
 
+## Command Reference
+
+### `bazbom scan` - Generate SBOM and Findings
+
+Generate Software Bill of Materials (SBOM) and perform Software Composition Analysis (SCA).
+
+**Synopsis:**
+```bash
+bazbom scan [OPTIONS] [PATH]
+```
+
+**Arguments:**
+- `[PATH]` - Path to project (defaults to current directory `.`)
+
+**Options:**
+- `--format <FORMAT>` - Output format: `spdx` (default), `cyclonedx`, or `sarif`
+- `--out-dir <DIR>` - Output directory (defaults to current directory `.`)
+- `--reachability` - Enable bytecode reachability analysis (requires Java 11+)
+
+**Examples:**
+
+```bash
+# Scan current directory with defaults
+bazbom scan
+
+# Scan specific project
+bazbom scan /path/to/my-java-app
+
+# Generate CycloneDX SBOM
+bazbom scan . --format cyclonedx
+
+# Save outputs to reports directory
+bazbom scan . --out-dir ./reports
+
+# Perform reachability analysis
+bazbom scan . --reachability --out-dir ./reports
+
+# Scan Maven project
+cd my-maven-project
+bazbom scan .
+
+# Scan Gradle project
+cd my-gradle-project
+bazbom scan .
+
+# Scan Bazel project
+cd my-bazel-project
+bazbom scan .
+```
+
+**Build System Detection:**
+
+BazBOM automatically detects your build system:
+- **Maven**: Looks for `pom.xml`
+- **Gradle**: Looks for `build.gradle` or `build.gradle.kts`
+- **Bazel**: Looks for `WORKSPACE`, `MODULE.bazel`, or `BUILD.bazel`
+
+**Output Files:**
+
+The scan command generates three files:
+
+1. **SBOM File** (`sbom.spdx.json` or `sbom.cyclonedx.json`)
+   - Complete dependency inventory
+   - License information
+   - Package URLs (PURLs)
+   - SPDX 2.3 or CycloneDX 1.5 compliant
+
+2. **Findings JSON** (`sca_findings.json`)
+   - Machine-readable vulnerability data
+   - Structured for automation and CI/CD
+
+3. **SARIF Report** (`sca_findings.sarif`)
+   - GitHub Code Scanning compatible format
+   - SARIF 2.1.0 standard
+   - Integrates with GitHub Security tab
+
+### `bazbom db sync` - Sync Advisory Database
+
+Download and cache vulnerability advisory databases for offline use.
+
+**Synopsis:**
+```bash
+bazbom db sync
+```
+
+**Environment Variables:**
+- `BAZBOM_OFFLINE=1` - Skip network requests, use placeholders
+
+**Examples:**
+
+```bash
+# Download latest advisories
+bazbom db sync
+
+# Offline mode (creates placeholder data)
+BAZBOM_OFFLINE=1 bazbom db sync
+```
+
+**Data Sources:**
+
+BazBOM syncs from multiple authoritative sources:
+- **OSV** (Open Source Vulnerabilities) - Cross-ecosystem database
+- **NVD** (National Vulnerability Database) - NIST-maintained CVE database
+- **GHSA** (GitHub Security Advisories) - GitHub's vulnerability database
+- **CISA KEV** (Known Exploited Vulnerabilities) - Actively exploited CVEs
+- **EPSS** (Exploit Prediction Scoring System) - Exploit likelihood scores
+
+**Cache Location:**
+- Default: `.bazbom/cache/`
+- Contains: `advisories/` directory with JSON/CSV files
+- Manifest: `manifest.json` with file hashes and timestamps
+
+**Offline Operation:**
+
+After syncing, you can work offline:
+```bash
+# Sync when online
+bazbom db sync
+
+# Later, work offline
+BAZBOM_OFFLINE=1 bazbom scan .
+```
+
+### `bazbom policy check` - Apply Policy Checks
+
+Run policy checks against generated findings.
+
+**Synopsis:**
+```bash
+bazbom policy check
+```
+
+**Configuration:**
+
+Create a `bazbom.yml` file in your project root (optional):
+
+```yaml
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: false
+vex_auto_apply: true
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+```
+
+**Examples:**
+
+```bash
+# Run policy checks
+bazbom policy check
+
+# Typical workflow
+bazbom scan .
+bazbom policy check
+```
+
+**Policy Rules:**
+
+- `severity_threshold` - Block vulnerabilities at or above severity level
+- `kev_gate` - Block any vulnerability in CISA's Known Exploited Vulnerabilities list
+- `epss_threshold` - Block vulnerabilities with EPSS score above threshold
+- `license_allowlist` - Only allow specified licenses
+- `license_denylist` - Block specified licenses
+- `reachability_required` - Require reachability analysis
+- `vex_auto_apply` - Auto-generate VEX for unreachable vulnerabilities
+
+### `bazbom fix` - Remediation Suggestions
+
+Suggest or apply dependency fixes.
+
+**Synopsis:**
+```bash
+bazbom fix [OPTIONS]
+```
+
+**Options:**
+- `--suggest` - Show fix suggestions without applying changes (recommend-only)
+- `--apply` - Apply fixes and open pull requests (when implemented)
+
+**Examples:**
+
+```bash
+# Get fix suggestions
+bazbom fix --suggest
+
+# Apply fixes (future capability)
+bazbom fix --apply
+```
+
+**Suggest Mode (Default):**
+- Shows recommended dependency upgrades
+- Explains why each fix matters
+- Educational context about vulnerabilities
+- Safe, non-invasive
+
+**Apply Mode (Roadmap):**
+- Automatically updates dependency files
+- Runs tests to verify compatibility
+- Opens pull request with changes
+- Includes rollback capability
+
+### Environment Variables
+
+**General:**
+- `BAZBOM_OFFLINE=1` - Enable offline mode (no network calls)
+
+**Reachability:**
+- `BAZBOM_REACHABILITY_JAR=/path/to/reachability.jar` - Path to reachability analyzer JAR
+
+**Examples:**
+
+```bash
+# Offline operation
+BAZBOM_OFFLINE=1 bazbom db sync
+BAZBOM_OFFLINE=1 bazbom scan .
+
+# Custom reachability JAR
+BAZBOM_REACHABILITY_JAR=/custom/path/analyzer.jar bazbom scan . --reachability
+```
+
 ### Python CLI Wrapper (Transition Phase)
 
 ### Quick Install (Recommended)
