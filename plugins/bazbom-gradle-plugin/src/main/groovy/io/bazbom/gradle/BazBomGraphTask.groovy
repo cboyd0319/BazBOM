@@ -31,9 +31,17 @@ abstract class BazBomGraphTask extends DefaultTask {
             configurations: []
         ]
         
+        // Focus on key configurations
+        def keyConfigurations = ['compileClasspath', 'runtimeClasspath', 'testCompileClasspath', 'testRuntimeClasspath']
+        
         // Iterate through resolvable configurations
         project.configurations.each { Configuration config ->
-            if (config.canBeResolved) {
+            // Skip if not a key configuration unless it contains 'runtime' or 'compile'
+            boolean isKeyConfig = config.name in keyConfigurations || 
+                                  config.name.toLowerCase().contains('runtime') || 
+                                  config.name.toLowerCase().contains('compile')
+            
+            if (config.canBeResolved && isKeyConfig) {
                 try {
                     def configData = [
                         name: config.name,
@@ -41,8 +49,20 @@ abstract class BazBomGraphTask extends DefaultTask {
                         dependencies: []
                     ]
                     
-                    config.resolvedConfiguration.firstLevelModuleDependencies.each { ResolvedDependency dep ->
-                        configData.dependencies.add(extractDependency(dep))
+                    def resolvedConfig = config.resolvedConfiguration
+                    def firstLevelDeps = resolvedConfig.firstLevelModuleDependencies
+                    
+                    logger.info("Processing configuration ${config.name} with ${firstLevelDeps.size()} dependencies")
+                    
+                    firstLevelDeps.each { ResolvedDependency dep ->
+                        def depMap = [
+                            group: dep.moduleGroup,
+                            name: dep.moduleName,
+                            version: dep.moduleVersion,
+                            configuration: config.name,
+                            purl: "pkg:maven/${dep.moduleGroup}/${dep.moduleName}@${dep.moduleVersion}".toString()
+                        ]
+                        configData.dependencies.add(depMap)
                     }
                     
                     if (!configData.dependencies.isEmpty()) {
@@ -67,15 +87,5 @@ abstract class BazBomGraphTask extends DefaultTask {
         
         logger.lifecycle("BazBOM: Generated dependency graph with ${totalDeps} dependencies")
         logger.lifecycle("BazBOM: Graph written to: ${outputFileObj.absolutePath}")
-    }
-    
-    private Map extractDependency(ResolvedDependency dep) {
-        return [
-            group: dep.moduleGroup,
-            name: dep.moduleName,
-            version: dep.moduleVersion,
-            configuration: dep.configuration,
-            purl: "pkg:maven/${dep.moduleGroup}/${dep.moduleName}@${dep.moduleVersion}"
-        ]
     }
 }
