@@ -5,6 +5,7 @@ use std::io::Read;
 use std::path::Path;
 use time::OffsetDateTime;
 
+pub mod enrichment;
 pub mod merge;
 pub mod parsers;
 
@@ -13,6 +14,7 @@ pub use merge::{
     Reference, Severity, SeverityLevel, VersionEvent, VersionRange, Vulnerability,
 };
 pub use parsers::{parse_ghsa_entry, parse_nvd_entry, parse_osv_entry};
+pub use enrichment::{load_epss_scores, load_kev_catalog};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ManifestEntry {
