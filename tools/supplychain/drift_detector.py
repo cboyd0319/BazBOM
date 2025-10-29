@@ -327,11 +327,11 @@ class DriftDetector:
         # Overall status
         status = results['status']
         if status == 'PASSED':
-            lines.append("✅ STATUS: PASSED (no critical issues)")
+            lines.append("[OK] STATUS: PASSED (no critical issues)")
         elif status == 'WARNING':
-            lines.append("⚠️  STATUS: WARNING (non-critical issues found)")
+            lines.append("[WARNING]  STATUS: WARNING (non-critical issues found)")
         else:
-            lines.append("❌ STATUS: FAILED (critical issues found)")
+            lines.append(" STATUS: FAILED (critical issues found)")
         lines.append("")
         
         # Summary
@@ -364,17 +364,17 @@ class DriftDetector:
             for violation in violations:
                 severity = violation['severity']
                 icon = {
-                    'CRITICAL': '🔴',
-                    'ERROR': '❌',
-                    'WARNING': '⚠️',
-                    'INFO': 'ℹ️'
+                    'CRITICAL': '[CRITICAL]',
+                    'ERROR': '',
+                    'WARNING': '[WARNING]',
+                    'INFO': 'ℹ'
                 }.get(severity, '•')
                 
                 lines.append(f"{icon} [{severity}] {violation['rule_id']}: {violation['rule_name']}")
                 lines.append(f"   {violation['message']}")
                 lines.append("")
         else:
-            lines.append("✅ No drift violations detected!")
+            lines.append("[OK] No drift violations detected!")
             lines.append("")
         
         lines.append("=" * 80)

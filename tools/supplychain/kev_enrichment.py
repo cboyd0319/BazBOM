@@ -176,7 +176,7 @@ class KEVEnricher:
             if kev_data["in_kev"]:
                 finding["effective_severity"] = "CRITICAL"
                 finding["priority"] = "IMMEDIATE"
-                finding["kev_context"] = f"⚠️ ACTIVELY EXPLOITED: {kev_data['vulnerability_name']}"
+                finding["kev_context"] = f"[WARNING] ACTIVELY EXPLOITED: {kev_data['vulnerability_name']}"
         except (ValueError, TypeError) as e:
             print(f"Warning: Failed to enrich {cve_id} with KEV data: {e}", file=sys.stderr)
             finding["kev"] = {"in_kev": False}
@@ -216,14 +216,14 @@ def main():
             print(json.dumps(result, indent=2))
         else:
             if result["in_kev"]:
-                print(f"✅ {args.cve_id} IS in CISA KEV catalog")
+                print(f"[OK] {args.cve_id} IS in CISA KEV catalog")
                 print(f"   Name: {result['vulnerability_name']}")
                 print(f"   Vendor/Product: {result['vendor_project']} / {result['product']}")
                 print(f"   Date Added: {result['date_added']}")
                 print(f"   Due Date: {result['due_date']}")
                 print(f"   Required Action: {result['required_action']}")
             else:
-                print(f"❌ {args.cve_id} is NOT in CISA KEV catalog")
+                print(f" {args.cve_id} is NOT in CISA KEV catalog")
         
         return 0
     except Exception as e:

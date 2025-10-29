@@ -105,7 +105,7 @@ def run_bazel_aspect_scan(path: Path, include_test: bool = False, target: Option
         # Extract packages from the JSON
         packages = data.get("packages", [])
         
-        print(f"✓ Successfully extracted {len(packages)} dependencies from maven_install.json")
+        print(f" Successfully extracted {len(packages)} dependencies from maven_install.json")
         
         return packages
         
@@ -273,21 +273,21 @@ def scan_command(args) -> int:
         try:
             from dependency_scanner import check_ripgrep_available, find_bazel_maven_jars
             if not check_ripgrep_available():
-                print("⚠️  RipGrep not found - fast discovery unavailable", file=sys.stderr)
+                print("[WARNING]  RipGrep not found - fast discovery unavailable", file=sys.stderr)
                 print("   Install: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
                 if not hasattr(args, 'no_fast_discovery') or not args.no_fast_discovery:
                     print("   Falling back to standard analysis", file=sys.stderr)
             else:
-                print("✅ RipGrep detected - enabling fast discovery mode")
+                print("[OK] RipGrep detected - enabling fast discovery mode")
                 # Fast dependency discovery will be used by build system
         except ImportError:
-            print("⚠️  dependency_scanner module not found", file=sys.stderr)
+            print("[WARNING]  dependency_scanner module not found", file=sys.stderr)
     
     print(f"Scanning project: {path}")
     
     # If watch mode, continuously monitor for changes
     if hasattr(args, 'watch') and args.watch:
-        print("\n🔍 Watch mode enabled - monitoring for file changes...")
+        print("\n Watch mode enabled - monitoring for file changes...")
         print("Press Ctrl+C to stop\n")
         
         # Detect build system once
@@ -430,7 +430,7 @@ def license_report_command(args) -> int:
             copyleft = check_copyleft_licenses(str(workspace))
             
             if copyleft:
-                print(f"\n⚠️  Found {sum(len(files) for files in copyleft.values())} files with copyleft licenses:")
+                print(f"\n[WARNING]  Found {sum(len(files) for files in copyleft.values())} files with copyleft licenses:")
                 for license_type, files in copyleft.items():
                     print(f"\n  {license_type}: {len(files)} files")
                     if args.verbose:
@@ -440,7 +440,7 @@ def license_report_command(args) -> int:
                             print(f"    ... and {len(files) - 10} more")
                 return 1  # Exit with error if copyleft found
             else:
-                print("\n✅ No copyleft licenses found")
+                print("\n[OK] No copyleft licenses found")
                 return 0
         
         elif args.find_unlicensed:
@@ -473,7 +473,7 @@ def license_report_command(args) -> int:
                 output_format = args.format or 'csv'
                 if output_format == 'csv':
                     generate_license_report(str(workspace), args.output)
-                    print(f"\n✅ License report saved to: {args.output}")
+                    print(f"\n[OK] License report saved to: {args.output}")
                 else:  # json
                     licenses = scan_license_headers(str(workspace))
                     unlicensed = find_unlicensed_files(str(workspace))
@@ -485,7 +485,7 @@ def license_report_command(args) -> int:
                     }
                     with open(args.output, 'w', encoding='utf-8') as f:
                         json.dump(result, f, indent=2)
-                    print(f"\n✅ License report saved to: {args.output}")
+                    print(f"\n[OK] License report saved to: {args.output}")
             else:
                 licenses = scan_license_headers(str(workspace))
                 unlicensed = find_unlicensed_files(str(workspace))
@@ -542,7 +542,7 @@ def scan_container_command(args) -> int:
             jars = extract_jars_from_image(args.layers_path)
             os_packages = find_os_packages(args.layers_path)
             
-            print(f"\n✅ Scan complete:")
+            print(f"\n[OK] Scan complete:")
             print(f"  JAR files found: {len(jars)}")
             print(f"  OS package systems: {', '.join(os_packages.keys()) or 'none'}")
             
@@ -570,7 +570,7 @@ def scan_container_command(args) -> int:
         try:
             sbom = scan_container_image(args.image, args.output)
             
-            print(f"\n✅ Scan complete:")
+            print(f"\n[OK] Scan complete:")
             print(f"  JAR files found: {sbom.get('jvm_dependency_count', 0)}")
             print(f"  OS package systems: {', '.join(sbom.get('os_packages', {}).keys()) or 'none'}")
             
@@ -624,7 +624,7 @@ def verify_command(args) -> int:
             print(f"\nFound {len(unused)} unused dependencies")
             
             if unused:
-                print("\n⚠️  Unused dependencies (consider removing):")
+                print("\n[WARNING]  Unused dependencies (consider removing):")
                 for dep in unused[:20]:  # Show first 20
                     print(f"  - {dep}")
                 if len(unused) > 20:
@@ -641,7 +641,7 @@ def verify_command(args) -> int:
                 
                 return 1  # Exit with error if unused deps found
             else:
-                print("\n✅ No unused dependencies found")
+                print("\n[OK] No unused dependencies found")
                 return 0
         
         elif args.check_undeclared:
@@ -651,7 +651,7 @@ def verify_command(args) -> int:
             print(f"\nFound {len(undeclared)} undeclared dependencies")
             
             if undeclared:
-                print("\n⚠️  Undeclared dependencies (missing from maven_install.json):")
+                print("\n[WARNING]  Undeclared dependencies (missing from maven_install.json):")
                 for dep in undeclared[:20]:
                     print(f"  - {dep}")
                 if len(undeclared) > 20:
@@ -668,7 +668,7 @@ def verify_command(args) -> int:
                 
                 return 1  # Exit with error if undeclared deps found
             else:
-                print("\n✅ No undeclared dependencies found")
+                print("\n[OK] No undeclared dependencies found")
                 return 0
         
         else:
@@ -684,10 +684,10 @@ def verify_command(args) -> int:
             print(f"  Dependency usage rate: {report['usage_rate']}%")
             
             if report['unused_count'] > 0:
-                print(f"\n⚠️  {report['unused_count']} unused dependencies found")
+                print(f"\n[WARNING]  {report['unused_count']} unused dependencies found")
             
             if report['undeclared_count'] > 0:
-                print(f"⚠️  {report['undeclared_count']} undeclared dependencies found")
+                print(f"[WARNING]  {report['undeclared_count']} undeclared dependencies found")
             
             if args.output:
                 with open(args.output, 'w', encoding='utf-8') as f:

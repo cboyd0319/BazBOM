@@ -361,9 +361,9 @@ class BenchmarkRunner:
                 self.results.append(result)
                 
                 if result.success:
-                    print(f"✅ {result.execution_time_seconds:.2f}s")
+                    print(f"[OK] {result.execution_time_seconds:.2f}s")
                 else:
-                    print(f"❌ {result.error_message[:50]}")
+                    print(f" {result.error_message[:50]}")
         
         return results
     
@@ -385,7 +385,7 @@ class BenchmarkRunner:
                     f,
                     indent=2
                 )
-            print(f"\n💾 Results saved to {output_path}")
+            print(f"\n Results saved to {output_path}")
         except IOError as e:
             raise IOError(f"Failed to write results to {output_path}: {e}")
     
@@ -521,12 +521,12 @@ Examples:
         if args.leaderboard:
             runner.generate_leaderboard()
         
-        print("\n✅ Benchmark suite complete!")
+        print("\n[OK] Benchmark suite complete!")
         
         return 0
         
     except Exception as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
+        print(f"\n Error: {e}", file=sys.stderr)
         return 1
 
 

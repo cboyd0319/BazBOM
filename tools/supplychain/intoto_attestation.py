@@ -383,7 +383,7 @@ def main() -> int:
             with open(args.output, 'w') as f:
                 json.dump(attestation, f, indent=2)
             
-            print(f"✓ Attestation generated: {args.output}")
+            print(f" Attestation generated: {args.output}")
             return 0
             
         elif args.command == "bundle":
@@ -399,7 +399,7 @@ def main() -> int:
                 output_path=args.output
             )
             
-            print(f"✓ Attestation bundle created: {args.output}")
+            print(f" Attestation bundle created: {args.output}")
             return 0
             
         elif args.command == "verify":
@@ -409,10 +409,10 @@ def main() -> int:
             valid = generator.verify_attestation_structure(attestation)
             
             if valid:
-                print(f"✓ Attestation structure is valid")
+                print(f" Attestation structure is valid")
                 return 0
             else:
-                print(f"✗ Attestation structure is invalid", file=sys.stderr)
+                print(f" Attestation structure is invalid", file=sys.stderr)
                 return 1
                 
     except FileNotFoundError as e:

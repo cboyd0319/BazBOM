@@ -268,7 +268,7 @@ class ComplianceReportGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_output)
         
-        print(f"✓ Executive summary generated: {output_path}", file=sys.stderr)
+        print(f" Executive summary generated: {output_path}", file=sys.stderr)
     
     def generate_soc2_report(
         self,
@@ -327,7 +327,7 @@ class ComplianceReportGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_output)
         
-        print(f"✓ SOC2 report generated: {output_path}", file=sys.stderr)
+        print(f" SOC2 report generated: {output_path}", file=sys.stderr)
     
     def generate_attribution_report(
         self,
@@ -385,7 +385,7 @@ class ComplianceReportGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_output)
         
-        print(f"✓ Attribution report generated: {output_path}", file=sys.stderr)
+        print(f" Attribution report generated: {output_path}", file=sys.stderr)
     
     def generate_audit_trail(
         self,
@@ -445,7 +445,7 @@ class ComplianceReportGenerator:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(html_output)
         
-        print(f"✓ Audit trail generated: {output_path}", file=sys.stderr)
+        print(f" Audit trail generated: {output_path}", file=sys.stderr)
     
     def generate_all_reports(
         self,
@@ -510,15 +510,15 @@ class ComplianceReportGenerator:
         
         # Convert to other formats if requested
         if 'pdf' in formats:
-            print("\n⚠ PDF generation requires additional tools (wkhtmltopdf or weasyprint)", file=sys.stderr)
+            print("\n PDF generation requires additional tools (wkhtmltopdf or weasyprint)", file=sys.stderr)
             print("HTML reports can be printed to PDF manually", file=sys.stderr)
         
         if 'docx' in formats:
-            print("\n⚠ DOCX generation requires additional tools (pandoc)", file=sys.stderr)
+            print("\n DOCX generation requires additional tools (pandoc)", file=sys.stderr)
             print("HTML reports can be converted to DOCX manually", file=sys.stderr)
         
         if 'xlsx' in formats:
-            print("\n⚠ XLSX generation requires additional implementation", file=sys.stderr)
+            print("\n XLSX generation requires additional implementation", file=sys.stderr)
             print("Consider extracting data to CSV format instead", file=sys.stderr)
         
         return generated_files
@@ -619,7 +619,7 @@ def main() -> int:
         
         # Print summary
         print("\n" + "="*60, file=sys.stderr)
-        print("✓ Compliance Reports Generated Successfully", file=sys.stderr)
+        print(" Compliance Reports Generated Successfully", file=sys.stderr)
         print("="*60, file=sys.stderr)
         
         for report_type, files in generated_files.items():

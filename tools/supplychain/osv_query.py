@@ -371,7 +371,7 @@ def main():
     if args.enrich and ENRICHMENT_AVAILABLE and findings:
         p0_findings = [f for f in findings if f.get("priority") == "P0-IMMEDIATE"]
         if p0_findings:
-            print(f"\n⚠️  {len(p0_findings)} P0-IMMEDIATE findings require immediate action!")
+            print(f"\n[WARNING]  {len(p0_findings)} P0-IMMEDIATE findings require immediate action!")
             for finding in p0_findings[:3]:  # Show top 3
                 cve = finding.get("cve", finding.get("id", "UNKNOWN"))
                 pkg = finding.get("package", "unknown")

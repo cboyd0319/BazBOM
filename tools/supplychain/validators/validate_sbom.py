@@ -156,10 +156,10 @@ def main():
         if is_valid:
             valid_files += 1
             if args.verbose:
-                print(f"✓ {filepath}: Valid")
+                print(f" {filepath}: Valid")
         else:
             all_valid = False
-            print(f"✗ {filepath}: Invalid")
+            print(f" {filepath}: Invalid")
             for error in errors:
                 print(f"  - {error}")
     

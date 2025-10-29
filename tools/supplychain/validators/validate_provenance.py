@@ -273,19 +273,19 @@ Examples:
         
         if not valid:
             all_valid = False
-            print(f"❌ INVALID: {file_path}", file=sys.stderr)
+            print(f" INVALID: {file_path}", file=sys.stderr)
             for error in errors:
                 print(f"  ERROR: {error}", file=sys.stderr)
         elif warnings:
             if args.strict:
                 all_valid = False
-                print(f"⚠️  WARNINGS: {file_path}", file=sys.stderr)
+                print(f"[WARNING]  WARNINGS: {file_path}", file=sys.stderr)
             else:
-                print(f"⚠️  VALID (with warnings): {file_path}")
+                print(f"[WARNING]  VALID (with warnings): {file_path}")
             for warning in warnings:
                 print(f"  WARNING: {warning}", file=sys.stderr if args.strict else sys.stdout)
         elif not args.quiet:
-            print(f"✅ VALID: {file_path}")
+            print(f"[OK] VALID: {file_path}")
     
     # Print summary
     if len(args.files) > 1:

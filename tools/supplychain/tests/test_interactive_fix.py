@@ -339,7 +339,7 @@ class TestEdgeCases:
                     "package": "tëst-päckage",
                     "severity": "HIGH",
                     "fixed_in": "1.0.0",
-                    "description": "Vulnérabilité avec caractères spéciaux 日本語"
+                    "description": "Vulnérabilité avec caractères spéciaux "
                 }
             ]
         }

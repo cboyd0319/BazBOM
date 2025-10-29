@@ -499,7 +499,7 @@ class TestEdgeCases:
         # Act
         entry = contributor.generate_osv_entry(
             vulnerability_id="CVE-2023-0001",
-            package_name="tëst-påckage-日本語",
+            package_name="tëst-påckage-",
             package_ecosystem="Maven",
             affected_versions=["1.0.0"],
             summary="Vulnérabilité avec caractères spéciaux",

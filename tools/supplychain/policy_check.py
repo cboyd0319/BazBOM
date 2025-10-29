@@ -228,10 +228,10 @@ class PolicyChecker:
     def print_report(self) -> None:
         """Print policy check report."""
         if not self.violations:
-            print("✓ All policy checks passed")
+            print(" All policy checks passed")
             return
         
-        print(f"\n❌ Policy violations found: {len(self.violations)}")
+        print(f"\n Policy violations found: {len(self.violations)}")
         print("=" * 80)
         
         # Group by severity

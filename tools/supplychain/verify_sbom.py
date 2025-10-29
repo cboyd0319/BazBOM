@@ -88,7 +88,7 @@ class SBOMVerifier:
                 results["errors"].append("Signature verification failed")
                 return results
             
-            print("  ✓ Signature valid")
+            print("   Signature valid")
             
         except Exception as e:
             results["errors"].append(f"Signature verification error: {e}")
@@ -102,7 +102,7 @@ class SBOMVerifier:
                 results["rekor_verified"] = rekor_verified
                 
                 if rekor_verified:
-                    print("  ✓ Rekor entry verified")
+                    print("   Rekor entry verified")
                 else:
                     results["warnings"].append("Rekor entry not found or invalid")
                     
@@ -119,7 +119,7 @@ class SBOMVerifier:
                 results["attestation_valid"] = attestation_valid
                 
                 if attestation_valid:
-                    print("  ✓ Attestation structure valid")
+                    print("   Attestation structure valid")
                 else:
                     results["warnings"].append("Attestation structure invalid")
                     
@@ -223,19 +223,19 @@ class SBOMVerifier:
         print()
         
         print("Verification Steps:")
-        print(f"  Signature:    {'✓ PASS' if results['signature_valid'] else '✗ FAIL'}")
-        print(f"  Rekor Log:    {'✓ PASS' if results['rekor_verified'] else '⚠ SKIP/WARN'}")
-        print(f"  Attestation:  {'✓ PASS' if results['attestation_valid'] else '⚠ SKIP/WARN'}")
+        print(f"  Signature:    {' PASS' if results['signature_valid'] else ' FAIL'}")
+        print(f"  Rekor Log:    {' PASS' if results['rekor_verified'] else ' SKIP/WARN'}")
+        print(f"  Attestation:  {' PASS' if results['attestation_valid'] else ' SKIP/WARN'}")
         
         if results['errors']:
             print("\nErrors:")
             for error in results['errors']:
-                print(f"  ✗ {error}")
+                print(f"   {error}")
         
         if results['warnings']:
             print("\nWarnings:")
             for warning in results['warnings']:
-                print(f"  ⚠ {warning}")
+                print(f"   {warning}")
         
         print("=" * 60)
 

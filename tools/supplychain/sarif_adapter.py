@@ -75,7 +75,7 @@ def format_enriched_message(vuln_data: Dict[str, Any]) -> str:
     # Add KEV warning (highest priority)
     kev = vuln_data.get("kev", {})
     if kev.get("in_kev"):
-        message += "\n\n⚠️ KNOWN EXPLOITED IN THE WILD (CISA KEV)"
+        message += "\n\n[WARNING] KNOWN EXPLOITED IN THE WILD (CISA KEV)"
         if kev.get("vulnerability_name"):
             message += f"\nVulnerability Name: {kev['vulnerability_name']}"
         if kev.get("due_date"):
@@ -94,7 +94,7 @@ def format_enriched_message(vuln_data: Dict[str, Any]) -> str:
     # Add exploit status
     exploit = vuln_data.get("exploit", {})
     if exploit.get("weaponized"):
-        message += "\n\n⚠️ WEAPONIZED EXPLOIT AVAILABLE"
+        message += "\n\n[WARNING] WEAPONIZED EXPLOIT AVAILABLE"
         if exploit.get("exploit_maturity"):
             message += f"\nExploit Maturity: {exploit['exploit_maturity']}"
     elif exploit.get("exploit_available"):

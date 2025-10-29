@@ -185,9 +185,9 @@ def main():
     
     print(f"Extracted {num_packages} Maven artifacts from {source}")
     if has_transitive:
-        print(f"✓ Included transitive dependencies and checksums")
+        print(f" Included transitive dependencies and checksums")
     else:
-        print(f"⚠ Warning: Transitive dependencies not included (use maven_install.json for complete graph)")
+        print(f" Warning: Transitive dependencies not included (use maven_install.json for complete graph)")
     print(f"Output written to {args.output}")
     
     return 0

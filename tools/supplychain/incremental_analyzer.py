@@ -322,9 +322,9 @@ def main():
         if args.fast_mode or check_ripgrep_available():
             use_fast_mode = check_ripgrep_available()
             if use_fast_mode:
-                print("✅ RipGrep detected - enabling fast mode", file=sys.stderr)
+                print("[OK] RipGrep detected - enabling fast mode", file=sys.stderr)
             elif args.fast_mode:
-                print("⚠️  RipGrep not found - fast mode requested but unavailable", file=sys.stderr)
+                print("[WARNING]  RipGrep not found - fast mode requested but unavailable", file=sys.stderr)
     
     if args.full_analysis:
         print("Full analysis mode: returning all targets", file=sys.stderr)

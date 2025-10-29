@@ -198,15 +198,15 @@ def generate_report(analysis: Dict[str, Any], output_file: str, check_conflicts:
     
     if flag_copyleft and analysis["copyleft_dependencies"]:
         report["copyleft_dependencies"] = analysis["copyleft_dependencies"]
-        print(f"⚠️  Found {len(analysis['copyleft_dependencies'])} copyleft dependencies", file=sys.stderr)
+        print(f"[WARNING]  Found {len(analysis['copyleft_dependencies'])} copyleft dependencies", file=sys.stderr)
     
     if analysis["unknown_license_dependencies"]:
         report["unknown_license_dependencies"] = analysis["unknown_license_dependencies"]
-        print(f"⚠️  Found {len(analysis['unknown_license_dependencies'])} dependencies with unknown licenses", file=sys.stderr)
+        print(f"[WARNING]  Found {len(analysis['unknown_license_dependencies'])} dependencies with unknown licenses", file=sys.stderr)
     
     if check_conflicts and analysis["conflicts"]:
         report["conflicts"] = analysis["conflicts"]
-        print(f"❌ Found {len(analysis['conflicts'])} license conflicts", file=sys.stderr)
+        print(f" Found {len(analysis['conflicts'])} license conflicts", file=sys.stderr)
     
     with open(output_file, "w") as f:
         json.dump(report, f, indent=2)

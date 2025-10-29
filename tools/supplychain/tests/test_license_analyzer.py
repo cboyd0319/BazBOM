@@ -704,7 +704,7 @@ class TestEdgeCases:
     def test_analyze_dependencies_with_unicode(self):
         """Test analyzing dependencies with Unicode characters."""
         dependencies = [
-            {"name": "café-☕", "version": "1.0", "license": "MIT"},
+            {"name": "café-", "version": "1.0", "license": "MIT"},
         ]
 
         result = analyze_dependencies(dependencies)

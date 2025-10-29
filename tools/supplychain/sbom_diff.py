@@ -439,7 +439,7 @@ class SBOMDiff:
             lines.append(f"LICENSE CHANGES ({len(self.license_changed)}):")
             lines.append("-" * 80)
             for old, new in self.get_license_changes():
-                lines.append(f"  ⚠️  {old.name}@{old.version}")
+                lines.append(f"  [WARNING]  {old.name}@{old.version}")
                 lines.append(f"      {old.license} → {new.license}")
             lines.append("")
         

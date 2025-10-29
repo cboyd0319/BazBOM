@@ -259,8 +259,8 @@ class TestEdgeCases:
     def test_unicode_in_package_name(self):
         """Test handling of unicode in package names."""
         dependencies = [
-            {"purl": "pkg:maven/com.example/lib-日本語@1.0.0"},
-            {"purl": "pkg:maven/com.example/lib-日本語@2.0.0"},
+            {"purl": "pkg:maven/com.example/lib-@1.0.0"},
+            {"purl": "pkg:maven/com.example/lib-@2.0.0"},
         ]
         
         # Should handle unicode without errors

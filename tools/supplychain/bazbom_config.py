@@ -288,7 +288,7 @@ Examples:
     elif args.validate:
         try:
             config = BazBOMConfig.from_file(Path(args.validate))
-            print(f"✓ Configuration file is valid: {args.validate}")
+            print(f" Configuration file is valid: {args.validate}")
             print(f"  Build system: {config.get_build_system()}")
             print(f"  Output formats: {', '.join(config.get_output_formats())}")
             print(f"  Severity threshold: {config.get_severity_threshold()}")

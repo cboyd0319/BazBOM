@@ -444,10 +444,10 @@ def interactive_mode(engine: AIQueryEngine) -> None:
             print()
             
         except KeyboardInterrupt:
-            print("\n\nGoodbye! 👋")
+            print("\n\nGoodbye! ")
             break
         except Exception as e:
-            print(f"\n❌ Error: {e}\n")
+            print(f"\n Error: {e}\n")
 
 
 def main():
@@ -526,13 +526,13 @@ Examples:
         return 0
         
     except FileNotFoundError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except ValueError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except Exception as e:
-        print(f"❌ Unexpected error: {e}", file=sys.stderr)
+        print(f" Unexpected error: {e}", file=sys.stderr)
         return 1
 
 

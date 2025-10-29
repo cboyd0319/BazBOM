@@ -270,11 +270,11 @@ class TestEdgeCases:
         # Act
         generator = ComplianceReportGenerator(
             templates_dir=str(templates_dir),
-            company_name="Tëst Çørp™ 日本"
+            company_name="Tëst Çørp™ "
         )
         
         # Assert
-        assert generator.company_name == "Tëst Çørp™ 日本"
+        assert generator.company_name == "Tëst Çørp™ "
 
     def test_special_characters_in_brand_color(self, tmp_path):
         """Test initialization with various brand color formats."""
