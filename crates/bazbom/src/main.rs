@@ -32,6 +32,18 @@ enum Commands {
         /// Output directory (defaults to current directory)
         #[arg(long, value_name = "DIR", default_value = ".")]
         out_dir: String,
+        /// Bazel-specific: query expression to select targets (e.g., 'kind(java_binary, //...)')
+        #[arg(long, value_name = "QUERY")]
+        bazel_targets_query: Option<String>,
+        /// Bazel-specific: explicit list of targets to scan
+        #[arg(long, value_name = "TARGET", num_args = 1..)]
+        bazel_targets: Option<Vec<String>>,
+        /// Bazel-specific: scan only targets affected by these files (incremental mode)
+        #[arg(long, value_name = "FILE", num_args = 1..)]
+        bazel_affected_by_files: Option<Vec<String>>,
+        /// Bazel-specific: universe pattern for rdeps queries (default: //...)
+        #[arg(long, value_name = "PATTERN", default_value = "//...")]
+        bazel_universe: String,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
@@ -73,15 +85,62 @@ fn main() -> Result<()> {
         reachability: false,
         format: "spdx".into(),
         out_dir: ".".into(),
+        bazel_targets_query: None,
+        bazel_targets: None,
+        bazel_affected_by_files: None,
+        bazel_universe: "//...".into(),
     }) {
         Commands::Scan {
             path,
             reachability,
             format,
             out_dir,
+            bazel_targets_query,
+            bazel_targets,
+            bazel_affected_by_files,
+            bazel_universe,
         } => {
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
+            
+            // Handle Bazel-specific target selection
+            let bazel_targets_to_scan = if system == bazbom_core::BuildSystem::Bazel {
+                if let Some(query) = &bazel_targets_query {
+                    println!("[bazbom] using Bazel query: {}", query);
+                    match bazel::query_bazel_targets(&root, Some(query), None, None, &bazel_universe) {
+                        Ok(targets) => Some(targets),
+                        Err(e) => {
+                            eprintln!("[bazbom] warning: Bazel query failed: {}", e);
+                            None
+                        }
+                    }
+                } else if let Some(targets) = &bazel_targets {
+                    println!("[bazbom] using explicit targets: {:?}", targets);
+                    Some(targets.clone())
+                } else if let Some(files) = &bazel_affected_by_files {
+                    println!("[bazbom] finding targets affected by {} files", files.len());
+                    match bazel::query_bazel_targets(&root, None, None, Some(files), &bazel_universe) {
+                        Ok(targets) => Some(targets),
+                        Err(e) => {
+                            eprintln!("[bazbom] warning: failed to find affected targets: {}", e);
+                            None
+                        }
+                    }
+                } else {
+                    None  // Scan all targets
+                }
+            } else {
+                None
+            };
+            
+            if let Some(ref targets) = bazel_targets_to_scan {
+                if targets.is_empty() {
+                    println!("[bazbom] warning: no targets selected, scanning entire workspace");
+                } else {
+                    println!("[bazbom] scanning {} selected targets", targets.len());
+                }
+            }
+            
             println!(
                 "[bazbom] scan path={} reachability={} format={} system={:?}",
                 path, reachability, format, system
@@ -91,7 +150,19 @@ fn main() -> Result<()> {
             // For Bazel projects, extract dependencies and generate SBOM
             let sbom_path = if system == bazbom_core::BuildSystem::Bazel {
                 let deps_json_path = out.join("bazel_deps.json");
-                match bazel::extract_bazel_dependencies(&root, &deps_json_path) {
+                
+                // If we have specific targets, extract dependencies for those
+                let extraction_result = if let Some(targets) = &bazel_targets_to_scan {
+                    if !targets.is_empty() {
+                        bazel::extract_bazel_dependencies_for_targets(&root, targets, &deps_json_path)
+                    } else {
+                        bazel::extract_bazel_dependencies(&root, &deps_json_path)
+                    }
+                } else {
+                    bazel::extract_bazel_dependencies(&root, &deps_json_path)
+                };
+                
+                match extraction_result {
                     Ok(graph) => {
                         println!(
                             "[bazbom] extracted {} Bazel components and {} edges",
