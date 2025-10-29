@@ -1,7 +1,8 @@
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::io::Read;
+use std::path::Path;
 use time::OffsetDateTime;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,7 +28,14 @@ fn write_file<P: AsRef<Path>>(path: P, content: &[u8]) -> Result<ManifestEntry> 
 
 fn fetch_or_placeholder(url: &str, placeholder: &[u8]) -> Vec<u8> {
     match ureq::get(url).call() {
-        Ok(resp) if resp.ok() => resp.into_bytes().unwrap_or_else(|_| placeholder.to_vec()),
+        Ok(resp) if resp.status() == 200 => {
+            let mut buf = Vec::new();
+            if resp.into_reader().read_to_end(&mut buf).is_ok() {
+                buf
+            } else {
+                placeholder.to_vec()
+            }
+        }
         _ => placeholder.to_vec(),
     }
 }

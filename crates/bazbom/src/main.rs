@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::fs;
-use bazbom_core::{detect_build_system, write_stub_sbom, BuildSystem};
+use bazbom_core::{detect_build_system, write_stub_sbom};
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
