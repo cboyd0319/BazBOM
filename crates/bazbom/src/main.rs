@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 mod advisory;
 mod policy_integration;
+mod reachability;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -182,38 +183,55 @@ fn main() -> Result<()> {
             }
 
             if reachability {
-                // Attempt to run reachability skeleton if configured
+                // Attempt to run reachability analysis if configured
                 if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
-                    let out_file = out.join("reachability.json");
-                    let status = std::process::Command::new("java")
-                        .arg("-cp")
-                        .arg(&jar)
-                        .arg("io.bazbom.reachability.Main")
-                        .arg("--classpath")
-                        .arg("")
-                        .arg("--entrypoints")
-                        .arg("")
-                        .arg("--output")
-                        .arg(&out_file)
-                        .status();
-                    match status {
-                        Ok(s) if s.success() => {
-                            println!("[bazbom] reachability wrote {:?}", out_file);
-                            if let Ok(bytes) = fs::read(&out_file) {
-                                if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes)
-                                {
-                                    println!(
-                                        "[bazbom] reachability summary: keys={}",
-                                        val.as_object().map(|m| m.len()).unwrap_or(0)
-                                    );
+                    let jar_path = PathBuf::from(&jar);
+                    if !jar_path.exists() {
+                        eprintln!("[bazbom] BAZBOM_REACHABILITY_JAR points to non-existent file: {:?}", jar_path);
+                    } else {
+                        let out_file = out.join("reachability.json");
+                        
+                        // Extract classpath based on build system
+                        let classpath = match system {
+                            bazbom_core::BuildSystem::Maven => {
+                                reachability::extract_maven_classpath(&root)
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Maven classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            bazbom_core::BuildSystem::Gradle => {
+                                reachability::extract_gradle_classpath(&root)
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Gradle classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            bazbom_core::BuildSystem::Bazel => {
+                                reachability::extract_bazel_classpath(&root, "")
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Bazel classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            _ => String::new(),
+                        };
+                        
+                        match reachability::analyze_reachability(&jar_path, &classpath, "", &out_file) {
+                            Ok(result) => {
+                                println!("[bazbom] reachability analysis complete");
+                                if result.reachable_classes.is_empty() {
+                                    println!("[bazbom] no reachable classes found (classpath may be empty)");
                                 }
                             }
+                            Err(e) => {
+                                eprintln!("[bazbom] reachability analysis failed: {}", e);
+                            }
                         }
-                        Ok(s) => eprintln!("[bazbom] reachability failed with status {:?}", s),
-                        Err(e) => eprintln!("[bazbom] failed to invoke java: {}", e),
                     }
                 } else {
-                    eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured; skipping");
+                    eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured");
+                    eprintln!("[bazbom] set BAZBOM_REACHABILITY_JAR to the path of bazbom-reachability.jar");
                 }
             }
         }
