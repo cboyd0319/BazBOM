@@ -4,100 +4,243 @@ This document describes the high-level architecture of BazBOM and how its compon
 
 ## Overview
 
-BazBOM is a Bazel-native solution for generating Software Bill of Materials (SBOM) and performing Software Composition Analysis (SCA) on JVM projects. It leverages Bazel's aspect system to traverse the build graph and collect dependency information.
+BazBOM is a memory-safe, Rust-first JVM supply chain security toolkit that generates Software Bill of Materials (SBOM) and performs Software Composition Analysis (SCA) for Maven, Gradle, and Bazel projects. The architecture emphasizes:
+
+- **Memory Safety**: Rust-first implementation with managed JVM helpers for reachability
+- **Zero Telemetry**: No background network calls; explicit offline sync
+- **Offline-First**: Advisory databases cached locally with deterministic updates
+- **Build-Native Accuracy**: Integration at build-time for authoritative dependency graphs
 
 ## Architecture Diagram
 
 ```mermaid
 graph TD
-    A[Bazel Build] -->|Aspect Traversal| B[Dependency Discovery]
-    B --> C[SBOM Generator]
-    C --> D[SPDX JSON Files]
-    D --> E[SCA Engine]
-    E -->|OSV Query| F[Vulnerability Database]
-    F --> G[SARIF Reports]
-    G --> H[GitHub Code Scanning]
+    A[bazbom CLI (Rust)] -->|Detect| B[Build System Detection]
+    B -->|Maven| C1[Maven Plugin]
+    B -->|Gradle| C2[Gradle Plugin]
+    B -->|Bazel| C3[Bazel Aspects]
     
-    C --> I[SBOM Validator]
-    E --> J[SARIF Validator]
+    C1 --> D[Normalized Graph]
+    C2 --> D
+    C3 --> D
     
-    style A fill:#e1f5ff
-    style D fill:#ffe1e1
-    style G fill:#ffe1e1
-    style H fill:#e1ffe1
+    D --> E[Enrichment Engine]
+    E -->|Local Cache| F[Advisory DB Sync]
+    F --> G[OSV/NVD/GHSA/KEV/EPSS]
+    
+    E --> H[Policy Engine]
+    H --> I[SBOM Exporters]
+    I --> J1[SPDX 2.3]
+    I --> J2[CycloneDX 1.5]
+    I --> J3[SARIF 2.1.0]
+    
+    E -->|Optional| K[Reachability OPAL]
+    K -->|Bytecode| L[Call Graph]
+    L --> E
+    
+    style A fill:#e67e22
+    style D fill:#3498db
+    style J1 fill:#2ecc71
+    style J2 fill:#2ecc71
+    style J3 fill:#2ecc71
 ```
 
 For the Mermaid source, see [diagrams/architecture.mmd](diagrams/architecture.mmd).
 
-## Components
+## Core Components
 
-### 1. Dependency Extraction
+### 1. Rust CLI (`bazbom`)
 
-**Location**: `tools/supplychain/extract_maven_deps.py`
+**Location**: `crates/bazbom/`
 
-Extracts Maven dependencies from the build configuration:
+The primary user interface and orchestration layer:
 
-- **Primary Source**: `maven_install.json` (lockfile, preferred)
-- **Fallback Source**: `WORKSPACE` file parsing
-- **Output**: Structured JSON with all dependencies
-
-**Key Features**:
-- **Transitive Dependencies**: Includes complete dependency graph from maven_install.json
-- **Checksums**: SHA256 hashes for verification
-- **Dependency Relationships**: Parent-child mapping for all dependencies
-- **Direct vs Transitive**: Distinguishes between direct and transitive deps
-
-**Data Flow**:
-```
-maven_install.json → extract_maven_deps.py → workspace_deps.json
-       ↓                                              ↓
-   (artifacts)                                  (packages)
-   (dependencies)                           (with relationships)
-   (checksums)                                  (with SHA256)
-```
-
-### 2. Dependency Discovery (Bazel Aspects)
-
-**Location**: `tools/supplychain/aspects.bzl`
-
-Bazel aspects traverse the build graph to collect dependency information:
-
-- **Input**: Bazel targets and their transitive dependencies
-- **Process**: Walks the dependency graph using aspects
-- **Output**: Structured dependency data (package, version, licenses)
+- **Commands**: `scan`, `policy check`, `fix`, `db sync`
+- **Build System Detection**: Auto-detects Maven, Gradle, or Bazel
+- **Output Management**: Generates SBOM, findings, and SARIF
+- **Zero Config**: Works out-of-the-box with sensible defaults
 
 **Key Features**:
-- Language-agnostic (works with Java, Kotlin, Scala, etc.)
-- Respects Bazel's dependency resolution
-- Handles transitive dependencies
-- Captures license information
+- Single binary distribution (no Python runtime required)
+- Memory-safe implementation (no unsafe blocks)
+- Cross-platform support (macOS, Linux, Windows)
+- Signed releases with SLSA provenance
 
-### 3. SBOM Generator
+### 2. Build System Integration Layer
 
-**Location**: `tools/supplychain/write_sbom.py`
+**Location**: 
+- Maven: `crates/bazbom-maven/` (planned)
+- Gradle: `crates/bazbom-gradle/` (planned)
+- Bazel: `tools/supplychain/aspects.bzl` (existing)
 
-Converts dependency data into standards-compliant SPDX documents:
+#### Maven Plugin (Planned)
+- Emits authoritative JSON including effective POM, BOM resolution, scopes, conflicts
+- Captures shading/relocation mappings from maven-shade-plugin
+- Per-module and reactor-aggregate modes
 
-- **Input**: Dependency data from extract_maven_deps.py
-- **Process**: Generates SPDX 2.3 JSON documents with relationships
-- **Output**: `.spdx.json` files with complete dependency graph
+#### Gradle Plugin (Planned)
+- Per-configuration/variant graphs using Gradle's resolution API
+- Android support (flavors, build types)
+- Shadow plugin detection and mapping
 
-**SPDX Document Structure**:
-```json
-{
-  "spdxVersion": "SPDX-2.3",
-  "dataLicense": "CC0-1.0",
-  "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "Package-SBOM",
-  "documentNamespace": "https://example.com/...",
-  "packages": [
-    {
-      "SPDXID": "SPDXRef-Package-guava",
-      "checksums": [{"algorithm": "SHA256", "checksumValue": "abc..."}],
-      "externalRefs": [{"referenceType": "purl", "referenceLocator": "pkg:maven/..."}]
-    }
-  ],
-  "relationships": [
+#### Bazel Aspects (Existing, Being Enhanced)
+- Traverses build graph for `java_*`, Kotlin, and broader JVM rules
+- bzlmod + rules_jvm_external integration
+- Incremental analysis using target diffs
+
+### 3. Dependency Graph Normalization
+
+**Location**: `crates/bazbom-graph/`
+
+Converts build-system-specific outputs into a canonical graph model:
+
+- **Input**: Build system JSON (Maven/Gradle/Bazel)
+- **Process**: Normalizes coordinates, deduplicates, resolves conflicts
+- **Output**: Unified dependency graph with PURLs and metadata
+
+**Key Features**:
+- Build-system agnostic internal representation
+- Conflict resolution tracking
+- Scope/configuration fidelity
+
+### 4. Advisory Intelligence & Enrichment
+
+**Location**: `crates/bazbom-advisories/`
+
+Manages vulnerability data from multiple sources:
+
+- **Sources**: OSV, NVD, GHSA, CISA KEV, EPSS
+- **Merge Engine**: Deduplicates CVE/GHSA/OSV identifiers
+- **Enrichment**: Adds KEV presence, EPSS probability, canonical severity
+- **Priority Scoring**: Computes P0–P4 based on severity, EPSS, KEV, reachability
+
+**Offline Sync (`bazbom db sync`)**:
+```
+.bazbom/cache/
+├── advisories/
+│   ├── osv.json
+│   ├── nvd.json
+│   ├── ghsa.json
+│   ├── kev.json
+│   └── epss.csv
+└── manifest.json (blake3 hashes)
+```
+
+### 5. Reachability Analysis (OPAL-based)
+
+**Location**: `bazbom-reachability.jar` (JVM helper, invoked via CLI)
+
+Optional bytecode-level call graph analysis:
+
+- **Input**: Compiled classes + runtime classpath
+- **Engine**: OPAL (Scala-based static analysis framework)
+- **Output**: Reachable/unreachable tags + method-level traces
+- **Integration**: Invoked by Rust CLI via `java -jar` when `--reachability` flag set
+
+**Performance**:
+- Cached call graphs per module/target
+- Scoped analysis to avoid full workspace scans
+
+### 6. Policy Engine
+
+**Location**: `crates/bazbom-policy/`
+
+Enforces security and compliance policies:
+
+- **Policy Language**: YAML (core), optional Rego/CUE
+- **Rules**: Severity thresholds, license allow/deny, KEV/EPSS gates, reachability requirements
+- **VEX Workflow**: Auto-generate VEX statements for unreachable findings (when policy allows)
+- **CI Integration**: Exit codes for gating, PR comments, SARIF annotations
+
+### 7. SBOM & Report Exporters
+
+**Location**: `crates/bazbom-formats/`
+
+Standards-compliant output generation:
+
+- **SPDX 2.3 JSON** (primary format)
+- **CycloneDX 1.5** (optional)
+- **SARIF 2.1.0** (GitHub Code Scanning integration)
+- **CSV** (business/compliance reports)
+- **CSAF VEX** (false positive suppression)
+
+**Validation**:
+- JSON Schema validation for all formats
+- Golden file tests for determinism
+
+## Legacy Components (Transition Phase)
+
+### Python-Based Supply Chain Tools
+
+**Location**: `tools/supplychain/`
+
+Existing Python implementation used during Rust migration:
+
+- Bazel aspect integration (`aspects.bzl`)
+- Dependency extraction (`extract_maven_deps.py`)
+- SBOM generation (`write_sbom.py`)
+- SCA scanning (`osv_query.py`, `ghsa_enrichment.py`)
+- SARIF adapters (`sarif_adapter.py`)
+
+**Migration Status**: 
+- Rust CLI is primary distribution
+- Python tools remain for:
+  - Bazel integration (until Rust Bazel rules mature)
+  - Dev utilities and prototyping
+  - Backwards compatibility during transition
+
+## Data Flow
+
+### End-to-End Scan Flow
+
+```
+User: bazbom scan .
+  ↓
+1. Build System Detection (Maven/Gradle/Bazel)
+  ↓
+2. Build-Native Graph Extraction
+   - Maven: effective POM + dependency:tree
+   - Gradle: configurations API
+   - Bazel: aspects traversal
+  ↓
+3. Graph Normalization (canonical model)
+  ↓
+4. Advisory Enrichment (local cache)
+   - OSV/NVD/GHSA merge
+   - KEV + EPSS tagging
+   - Canonical severity
+  ↓
+5. [Optional] Reachability Analysis (OPAL)
+   - Bytecode call graph
+   - Tag reachable/unreachable
+  ↓
+6. Policy Checks
+   - Apply rules
+   - Generate VEX (if applicable)
+  ↓
+7. Export
+   - sbom.spdx.json
+   - sca_findings.json
+   - sca_findings.sarif
+```
+
+## Security Architecture
+
+### Supply Chain Guarantees
+
+- **SLSA Level 3 Provenance**: Build provenance for all releases
+- **Sigstore Signing**: Keyless signing with transparency log
+- **Hermetic Builds**: No network access during scan (use local cache)
+- **Deterministic Outputs**: Same inputs → same outputs (bit-for-bit)
+
+### Privacy Model
+
+- **Zero Telemetry**: No analytics, tracking, or phoning home
+- **Explicit Sync**: Advisory updates only via `bazbom db sync` command
+- **Offline Operation**: Full functionality without network (after initial sync)
+- **Local-Only Data**: All caches and artifacts remain on user's machine
+
+## Build System-Specific Details
     {"spdxElementId": "root", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "guava"},
     {"spdxElementId": "guava", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "failureaccess"}
   ]
