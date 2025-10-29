@@ -2,7 +2,7 @@
 /// Tests parsing, enrichment, merging, and priority calculation
 use bazbom_advisories::{
     calculate_priority, load_epss_scores, load_kev_catalog, merge_vulnerabilities,
-    parse_ghsa_entry, parse_nvd_entry, parse_osv_entry, Vulnerability,
+    parse_ghsa_entry, parse_nvd_entry, parse_osv_entry,
 };
 use std::io::Write;
 use tempfile::NamedTempFile;
