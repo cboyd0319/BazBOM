@@ -958,12 +958,12 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 ## 🗺️ Roadmap
 
 **In Progress:**
-- [ ] Rust single-binary CLI (signed, memory-safe)
+- [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Foundation Complete**
+- [x] Offline advisory DB sync - **Implemented**
 - [ ] OPAL-based reachability (opt-in)
 - [ ] Maven authoritative plugin (effective POM, shading/relocation)
 - [ ] Gradle plugin (variants + Android)
 - [ ] Policy-as-code + VEX auto-application
-- [ ] Offline advisory DB sync
 - [ ] Container image SBOM (`rules_oci` integration)
 
 **Planned:**
@@ -974,10 +974,14 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 **Completed:**
 - [x] SPDX 2.3 SBOM generation
-- [x] OSV vulnerability scanning
+- [x] CycloneDX 1.5 SBOM generation
+- [x] SARIF 2.1.0 findings output
+- [x] OSV vulnerability scanning (placeholders)
 - [x] SLSA Level 3 provenance
 - [x] VEX statement support
 - [x] Large monorepo optimization
+
+**Implementation Status:** See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed progress tracking.
 
 Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
 
@@ -995,6 +999,8 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 - **[Supply Chain](docs/SUPPLY_CHAIN.md)** - SBOM/SCA implementation
 - **[Threat Model](docs/THREAT_MODEL.md)** - Security analysis
 - **[ADRs](docs/ADR/)** - Architecture Decision Records
+- **[Master Plan](docs/copilot/MASTER_PLAN.md)** - Complete vision and roadmap
+- **[Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)** - Current progress tracking
 
 ### Advanced Features
 - **[Performance](docs/PERFORMANCE.md)** - Large monorepo optimization
