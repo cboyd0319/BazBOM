@@ -43,6 +43,11 @@ hs_err_pid*
 target/
 dist/
 
+# Gradle
+.gradle/
+build/
+**/build/
+
 # BazBOM cache and output files
 .bazbom/
 sbom.*.json
@@ -50,3 +55,6 @@ sca_findings.*
 *.spdx.json
 *.cyclonedx.json
 *.sarif
+
+# Homebrew generated files
+homebrew/bazbom.rb
