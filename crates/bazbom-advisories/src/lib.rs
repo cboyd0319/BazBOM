@@ -6,11 +6,13 @@ use std::path::Path;
 use time::OffsetDateTime;
 
 pub mod merge;
+pub mod parsers;
 
 pub use merge::{
     calculate_priority, merge_vulnerabilities, AffectedPackage, EpssScore, KevEntry, Priority,
     Reference, Severity, SeverityLevel, VersionEvent, VersionRange, Vulnerability,
 };
+pub use parsers::{parse_ghsa_entry, parse_nvd_entry, parse_osv_entry};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ManifestEntry {
