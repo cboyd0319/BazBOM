@@ -137,7 +137,7 @@ pub fn parse_nvd_entry(nvd: &NvdEntry) -> Result<Vulnerability> {
                         .tags
                         .as_ref()
                         .and_then(|tags| tags.first())
-                        .map(|t| t.clone())
+                        .cloned()
                         .unwrap_or_else(|| "WEB".to_string());
                     Reference {
                         ref_type,

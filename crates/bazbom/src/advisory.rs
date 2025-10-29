@@ -142,6 +142,7 @@ pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability
 }
 
 /// Match vulnerabilities to components based on package ecosystem and name
+#[allow(dead_code)] // Will be used when integrating with dependency graph matching
 pub fn match_vulnerabilities(
     components: &[Component],
     vulnerabilities: &[Vulnerability],
@@ -158,7 +159,7 @@ pub fn match_vulnerabilities(
                 if affected.package == component.name {
                     matches
                         .entry(component_key.clone())
-                        .or_insert_with(Vec::new)
+                        .or_default()
                         .push(vuln.clone());
                 }
             }
@@ -171,7 +172,7 @@ pub fn match_vulnerabilities(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bazbom_advisories::{AffectedPackage, Severity, SeverityLevel, VersionRange};
+    use bazbom_advisories::{AffectedPackage, Severity, SeverityLevel};
     use bazbom_graph::ComponentId;
 
     #[test]
@@ -183,6 +184,98 @@ mod tests {
         let result = load_advisories(&cache_dir);
         assert!(result.is_ok());
         assert_eq!(result.unwrap().len(), 0);
+    }
+
+    #[test]
+    fn test_load_advisories_with_placeholder_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache/advisories");
+        fs::create_dir_all(&cache_dir).unwrap();
+
+        // Write placeholder files
+        fs::write(cache_dir.join("osv.json"), b"{\"note\": \"offline\"}").unwrap();
+        fs::write(cache_dir.join("nvd.json"), b"{\"note\": \"offline\"}").unwrap();
+        fs::write(cache_dir.join("ghsa.json"), b"{\"note\": \"offline\"}").unwrap();
+
+        let result = load_advisories(tmp.path().join("cache"));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 0);
+    }
+
+    #[test]
+    fn test_load_advisories_with_nvd_response() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache/advisories");
+        fs::create_dir_all(&cache_dir).unwrap();
+
+        // Write a minimal NVD API response
+        let nvd_response = r#"{
+            "vulnerabilities": [{
+                "cve": {
+                    "id": "CVE-2024-TEST",
+                    "descriptions": [{"lang": "en", "value": "Test vulnerability"}],
+                    "metrics": {
+                        "cvssMetricV31": [{
+                            "cvssData": {
+                                "version": "3.1",
+                                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                                "baseScore": 9.8
+                            }
+                        }]
+                    }
+                }
+            }]
+        }"#;
+        fs::write(cache_dir.join("nvd.json"), nvd_response).unwrap();
+        fs::write(cache_dir.join("osv.json"), b"{\"note\": \"offline\"}").unwrap();
+        fs::write(cache_dir.join("ghsa.json"), b"{\"note\": \"offline\"}").unwrap();
+
+        let result = load_advisories(tmp.path().join("cache"));
+        assert!(result.is_ok());
+        let vulns = result.unwrap();
+        assert_eq!(vulns.len(), 1);
+        assert_eq!(vulns[0].id, "CVE-2024-TEST");
+        assert!(vulns[0].severity.is_some());
+        assert!(vulns[0].priority.is_some());
+    }
+
+    #[test]
+    fn test_load_advisories_enriches_with_priority() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache/advisories");
+        fs::create_dir_all(&cache_dir).unwrap();
+
+        // Write a NVD entry with high CVSS
+        let nvd_response = r#"{
+            "vulnerabilities": [{
+                "cve": {
+                    "id": "CVE-2024-HIGH",
+                    "descriptions": [{"lang": "en", "value": "Critical test"}],
+                    "metrics": {
+                        "cvssMetricV31": [{
+                            "cvssData": {
+                                "version": "3.1",
+                                "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+                                "baseScore": 10.0
+                            }
+                        }]
+                    }
+                }
+            }]
+        }"#;
+        fs::write(cache_dir.join("nvd.json"), nvd_response).unwrap();
+        fs::write(cache_dir.join("osv.json"), b"{\"note\": \"offline\"}").unwrap();
+        fs::write(cache_dir.join("ghsa.json"), b"{\"note\": \"offline\"}").unwrap();
+
+        let result = load_advisories(tmp.path().join("cache"));
+        assert!(result.is_ok());
+        let vulns = result.unwrap();
+        assert_eq!(vulns.len(), 1);
+        
+        // Verify priority calculation
+        assert!(vulns[0].priority.is_some());
+        // CVSS 10.0 should be P0
+        assert_eq!(vulns[0].priority.unwrap(), bazbom_advisories::Priority::P0);
     }
 
     #[test]
