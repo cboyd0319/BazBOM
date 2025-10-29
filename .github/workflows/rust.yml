@@ -84,3 +84,13 @@ jobs:
       
       - name: Coverage summary
         run: cargo llvm-cov --workspace --all-features --summary-only
+      
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(cargo llvm-cov --workspace --all-features --summary-only 2>&1 | grep "TOTAL" | awk '{print $NF}' | sed 's/%//')
+          echo "Total coverage: ${COVERAGE}%"
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "Error: Coverage ${COVERAGE}% is below minimum threshold of 70%"
+            exit 1
+          fi
+          echo "Coverage check passed: ${COVERAGE}% >= 70%"

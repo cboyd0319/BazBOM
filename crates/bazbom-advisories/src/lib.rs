@@ -127,3 +127,62 @@ pub fn db_sync<P: AsRef<Path>>(cache_dir: P, offline: bool) -> Result<Manifest> 
     write_file(cache_dir.join("manifest.json"), &data)?;
     Ok(manifest)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_db_sync_offline() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache");
+
+        let result = db_sync(&cache_dir, true);
+        assert!(result.is_ok());
+
+        let manifest = result.unwrap();
+        assert_eq!(manifest.files.len(), 5);
+
+        // Check that files were created
+        assert!(cache_dir.join("advisories/osv.json").exists());
+        assert!(cache_dir.join("advisories/nvd.json").exists());
+        assert!(cache_dir.join("advisories/ghsa.json").exists());
+        assert!(cache_dir.join("advisories/kev.json").exists());
+        assert!(cache_dir.join("advisories/epss.csv").exists());
+        assert!(cache_dir.join("manifest.json").exists());
+    }
+
+    #[test]
+    fn test_manifest_serialization() {
+        let manifest = Manifest {
+            generated_at: "2024-01-01T00:00:00Z".to_string(),
+            files: vec![ManifestEntry {
+                path: "test.json".to_string(),
+                bytes: 100,
+                blake3: "abc123".to_string(),
+            }],
+        };
+
+        let json = serde_json::to_string(&manifest).unwrap();
+        assert!(json.contains("2024-01-01T00:00:00Z"));
+        assert!(json.contains("test.json"));
+    }
+
+    #[test]
+    fn test_write_file() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("test.txt");
+        let content = b"test content";
+
+        let result = write_file(&path, content);
+        assert!(result.is_ok());
+
+        let entry = result.unwrap();
+        assert_eq!(entry.bytes, content.len() as u64);
+        assert!(!entry.blake3.is_empty());
+
+        // Verify file was written
+        let written = fs::read(&path).unwrap();
+        assert_eq!(written, content);
+    }
+}
