@@ -126,26 +126,37 @@ fn test_bazel_full_scan_integration() {
         assert_eq!(edge["type"], "depends_on");
     }
     
-    // Verify PURLs are correctly formatted
-    let guava = components
+    // Verify PURLs are correctly formatted for any Maven package
+    let maven_packages: Vec<_> = components
         .iter()
-        .find(|c| c["name"] == "guava")
-        .expect("guava package not found");
+        .filter(|c| c["type"] == "maven")
+        .collect();
     
-    let purl = guava["purl"].as_str().unwrap();
     assert!(
-        purl.starts_with("pkg:maven/"),
-        "Invalid PURL format: {}",
-        purl
-    );
-    assert!(
-        purl.contains("guava"),
-        "PURL does not contain package name: {}",
-        purl
+        !maven_packages.is_empty(),
+        "No Maven packages found in components"
     );
     
-    // Cleanup
-    let _ = fs::remove_dir_all(&temp_dir);
+    for component in maven_packages {
+        let purl = component["purl"].as_str().unwrap();
+        let name = component["name"].as_str().unwrap();
+        
+        assert!(
+            purl.starts_with("pkg:maven/"),
+            "Invalid PURL format for {}: {}",
+            name,
+            purl
+        );
+        assert!(
+            purl.contains(name),
+            "PURL does not contain package name {}: {}",
+            name,
+            purl
+        );
+    }
+    
+    // Cleanup - intentionally ignore errors as cleanup failure doesn't affect test validity
+    std::mem::drop(fs::remove_dir_all(&temp_dir));
     
     println!("✓ Bazel integration test passed");
     println!("  - {} packages extracted", packages.len());

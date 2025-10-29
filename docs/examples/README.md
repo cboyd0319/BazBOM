@@ -140,10 +140,10 @@ bazel build //:workspace_sbom
 # View the SBOM
 cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool
 
-# Or manually with Python scripts
+# Or manually with Python scripts (from repository root)
 python3 tools/supplychain/bazbom_extract_bazel_deps.py \
-  --workspace . \
-  --maven-install-json maven_install.json \
+  --workspace /path/to/workspace \
+  --maven-install-json /path/to/workspace/maven_install.json \
   --output /tmp/deps.json
 
 python3 tools/supplychain/write_sbom.py \
