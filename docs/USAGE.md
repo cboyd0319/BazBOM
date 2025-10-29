@@ -124,12 +124,39 @@ The scan command generates three files:
 
 2. **Findings JSON** (`sca_findings.json`)
    - Machine-readable vulnerability data
+   - Enriched with KEV and EPSS metadata
+   - Priority scoring (P0-P4) based on CVSS, KEV, and EPSS
+   - Severity summary (critical, high, medium, low counts)
    - Structured for automation and CI/CD
 
 3. **SARIF Report** (`sca_findings.sarif`)
    - GitHub Code Scanning compatible format
    - SARIF 2.1.0 standard
    - Integrates with GitHub Security tab
+   - Maps severity levels to SARIF levels (error/warning/note)
+
+**Advisory Integration:**
+
+The scan command automatically loads vulnerability data from the local cache (`.bazbom/cache/`) if available. To ensure you have the latest vulnerability data:
+
+```bash
+# First, sync the advisory database
+bazbom db sync
+
+# Then scan your project
+bazbom scan .
+```
+
+Each vulnerability in the findings is enriched with:
+- **Severity**: CVSS v3/v4 scores (falls back to v2 for legacy CVEs)
+- **Priority**: P0-P4 classification based on:
+  - P0: Critical (CVSS ≥9.0, or KEV with CVSS ≥7.0, or EPSS ≥0.9)
+  - P1: High (CVSS ≥7.0 with KEV or EPSS ≥0.5)
+  - P2: Medium-High (CVSS ≥7.0 or CVSS ≥4.0 with EPSS ≥0.1)
+  - P3: Medium (CVSS ≥4.0)
+  - P4: Low (CVSS <4.0 or unknown)
+- **KEV Status**: Whether the vulnerability is in CISA's Known Exploited Vulnerabilities catalog
+- **EPSS Score**: Exploit prediction probability (0.0 to 1.0)
 
 ### `bazbom db sync` - Sync Advisory Database
 

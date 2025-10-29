@@ -4,6 +4,8 @@ use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::PathBuf;
 
+mod advisory;
+
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
 struct Cli {
@@ -85,19 +87,74 @@ fn main() -> Result<()> {
             let sbom_path = write_stub_sbom(&out, &format, system)
                 .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
             println!("[bazbom] wrote {:?}", sbom_path);
-            // Create placeholder findings file
+
+            // Load advisories from cache
+            let cache_dir = PathBuf::from(".bazbom/cache");
+            let vulnerabilities = if cache_dir.exists() {
+                match advisory::load_advisories(&cache_dir) {
+                    Ok(vulns) => {
+                        println!("[bazbom] loaded {} vulnerabilities from cache", vulns.len());
+                        vulns
+                    }
+                    Err(e) => {
+                        eprintln!("[bazbom] warning: failed to load advisories: {}", e);
+                        Vec::new()
+                    }
+                }
+            } else {
+                eprintln!("[bazbom] warning: advisory cache not found at {:?}, run 'bazbom db sync' first", cache_dir);
+                Vec::new()
+            };
+
+            // Create findings file with vulnerability data
             let findings_path = out.join("sca_findings.json");
-            if !findings_path.exists() {
-                fs::write(&findings_path, b"{\n  \"vulnerabilities\": []\n}\n")
-                    .with_context(|| format!("failed writing {:?}", findings_path))?;
-            }
-            // Create minimal SARIF stub
+            let findings_data = serde_json::json!({
+                "vulnerabilities": vulnerabilities,
+                "summary": {
+                    "total": vulnerabilities.len(),
+                    "critical": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Critical))
+                    }).count(),
+                    "high": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::High))
+                    }).count(),
+                    "medium": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Medium))
+                    }).count(),
+                    "low": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Low))
+                    }).count(),
+                }
+            });
+            fs::write(&findings_path, serde_json::to_vec_pretty(&findings_data).unwrap())
+                .with_context(|| format!("failed writing {:?}", findings_path))?;
+            println!("[bazbom] wrote {:?} ({} vulnerabilities)", findings_path, vulnerabilities.len());
+
+            // Create SARIF report with vulnerability results
             let sarif_path = out.join("sca_findings.sarif");
-            if !sarif_path.exists() {
-                let sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
-                fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
-                    .with_context(|| format!("failed writing {:?}", sarif_path))?;
+            let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
+            
+            // Add vulnerability results to SARIF
+            for vuln in &vulnerabilities {
+                let level = match vuln.severity.as_ref().map(|s| s.level) {
+                    Some(bazbom_advisories::SeverityLevel::Critical) => "error",
+                    Some(bazbom_advisories::SeverityLevel::High) => "error",
+                    Some(bazbom_advisories::SeverityLevel::Medium) => "warning",
+                    Some(bazbom_advisories::SeverityLevel::Low) => "note",
+                    _ => "note",
+                };
+                
+                let message = vuln.summary.clone()
+                    .or_else(|| vuln.details.clone())
+                    .unwrap_or_else(|| format!("Vulnerability {}", vuln.id));
+                
+                let result = bazbom_formats::sarif::Result::new(&vuln.id, level, &message);
+                sarif.add_result(result);
             }
+            
+            fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
+                .with_context(|| format!("failed writing {:?}", sarif_path))?;
+            println!("[bazbom] wrote {:?}", sarif_path);
 
             if reachability {
                 // Attempt to run reachability skeleton if configured

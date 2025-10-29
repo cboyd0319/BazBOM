@@ -41,6 +41,8 @@ pub struct NvdMetrics {
     pub cvss_metric_v30: Option<Vec<NvdCvssMetric>>,
     #[serde(rename = "cvssMetricV40")]
     pub cvss_metric_v40: Option<Vec<NvdCvssMetric>>,
+    #[serde(rename = "cvssMetricV2")]
+    pub cvss_metric_v2: Option<Vec<NvdCvssMetric>>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -135,7 +137,7 @@ pub fn parse_nvd_entry(nvd: &NvdEntry) -> Result<Vulnerability> {
                         .tags
                         .as_ref()
                         .and_then(|tags| tags.first())
-                        .map(|t| t.clone())
+                        .cloned()
                         .unwrap_or_else(|| "WEB".to_string());
                     Reference {
                         ref_type,
@@ -164,7 +166,7 @@ pub fn parse_nvd_entry(nvd: &NvdEntry) -> Result<Vulnerability> {
 
 fn parse_nvd_severity(metrics: &Option<NvdMetrics>) -> Option<Severity> {
     if let Some(m) = metrics {
-        // Prefer v3.1, then v4.0, then v3.0
+        // Prefer v3.1, then v4.0, then v3.0, then v2
         if let Some(cvss_v31) = &m.cvss_metric_v31 {
             if let Some(metric) = cvss_v31.first() {
                 let score = metric.cvss_data.base_score;
@@ -195,6 +197,19 @@ fn parse_nvd_severity(metrics: &Option<NvdMetrics>) -> Option<Severity> {
                 let level = cvss_to_severity_level(score);
                 return Some(Severity {
                     cvss_v3: Some(score),
+                    cvss_v4: None,
+                    level,
+                });
+            }
+        }
+
+        // Fall back to CVSS v2 if no v3/v4 available
+        if let Some(cvss_v2) = &m.cvss_metric_v2 {
+            if let Some(metric) = cvss_v2.first() {
+                let score = metric.cvss_data.base_score;
+                let level = cvss_to_severity_level(score);
+                return Some(Severity {
+                    cvss_v3: Some(score), // Store v2 score in v3 field for simplicity
                     cvss_v4: None,
                     level,
                 });
