@@ -157,6 +157,93 @@ pub fn extract_bazel_dependencies(
     Ok(graph)
 }
 
+/// Query Bazel targets using the bazel_query.py script
+pub fn query_bazel_targets(
+    workspace_path: &Path,
+    query_expr: Option<&str>,
+    kind: Option<&str>,
+    affected_by_files: Option<&[String]>,
+    universe: &str,
+) -> Result<Vec<String>> {
+    let script_path = workspace_path.join("tools/supplychain/bazel_query.py");
+    
+    if !script_path.exists() {
+        anyhow::bail!(
+            "Bazel query script not found at {:?}. This workspace may not support BazBOM.",
+            script_path
+        );
+    }
+
+    let mut cmd = Command::new("python3");
+    cmd.arg(&script_path)
+        .arg("--workspace")
+        .arg(workspace_path)
+        .arg("--universe")
+        .arg(universe)
+        .arg("--format")
+        .arg("json");
+
+    // Add query type based on what was provided
+    if let Some(query) = query_expr {
+        cmd.arg("--query").arg(query);
+    } else if let Some(target_kind) = kind {
+        cmd.arg("--kind").arg(target_kind);
+    } else if let Some(files) = affected_by_files {
+        cmd.arg("--affected-by-files");
+        for file in files {
+            cmd.arg(file);
+        }
+    } else {
+        anyhow::bail!("Must provide either query, kind, or affected_by_files");
+    }
+
+    println!("[bazbom] executing Bazel query...");
+    let output = cmd
+        .output()
+        .context("failed to execute bazel_query.py")?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!("Bazel query failed: {}", stderr);
+    }
+
+    // Parse JSON output
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let result: serde_json::Value = serde_json::from_str(&stdout)
+        .context("failed to parse query results")?;
+    
+    let targets = result["targets"]
+        .as_array()
+        .context("query result missing 'targets' array")?
+        .iter()
+        .filter_map(|v| v.as_str().map(String::from))
+        .collect();
+
+    Ok(targets)
+}
+
+/// Extract dependencies for specific Bazel targets
+pub fn extract_bazel_dependencies_for_targets(
+    workspace_path: &Path,
+    targets: &[String],
+    output_path: &Path,
+) -> Result<BazelDependencyGraph> {
+    // For now, we still use maven_install.json for all targets
+    // In the future, we could filter the graph to only include
+    // dependencies actually used by the specified targets
+    
+    println!(
+        "[bazbom] extracting dependencies for {} targets",
+        targets.len()
+    );
+    for target in targets {
+        println!("  - {}", target);
+    }
+    
+    // Use the existing extraction function
+    extract_bazel_dependencies(workspace_path, output_path)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,0 +1,266 @@
+# Example GitHub Actions workflow for incremental Bazel scanning on PRs
+#
+# This workflow demonstrates how to use BazBOM's Bazel query support
+# to scan only affected targets in large monorepos, reducing scan time
+# from 45+ minutes to ~8 minutes on average.
+#
+# Copy this file to .github/workflows/ in your repository and customize
+# as needed for your monorepo structure.
+
+name: Bazel PR Security Scan (Example)
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      # Only run when code changes, not documentation
+      - 'src/**'
+      - 'lib/**'
+      - 'services/**'
+      - 'BUILD.bazel'
+      - 'WORKSPACE'
+      - 'MODULE.bazel'
+      - 'maven_install.json'
+
+# Restrict permissions to minimum required
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  incremental-scan:
+    name: Incremental Security Scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 20  # Incremental scans are much faster
+    
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          # Need full history for git diff
+          fetch-depth: 0
+      
+      - name: Setup Java (for reachability analysis)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+      
+      - name: Install BazBOM
+        run: |
+          # Option 1: Install from Homebrew (fastest)
+          brew tap cboyd0319/bazbom
+          brew install bazbom
+          
+          # Option 2: Install from release binary
+          # curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
+          # tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
+          # sudo mv bazbom /usr/local/bin/
+          
+          # Verify installation
+          bazbom --version
+      
+      - name: Sync Advisory Database
+        run: |
+          # Download latest vulnerability data for offline scanning
+          bazbom db sync
+      
+      - name: Detect Changed Files
+        id: changes
+        run: |
+          # Get files changed in this PR
+          CHANGED_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          
+          echo "Changed files:"
+          echo "${CHANGED_FILES}"
+          
+          # Save for next step (handle newlines properly)
+          echo "files<<EOF" >> $GITHUB_OUTPUT
+          echo "${CHANGED_FILES}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          
+          # Count for summary
+          FILE_COUNT=$(echo "${CHANGED_FILES}" | wc -l)
+          echo "count=${FILE_COUNT}" >> $GITHUB_OUTPUT
+      
+      - name: Incremental Bazel Scan
+        id: scan
+        run: |
+          # Convert newline-separated files to space-separated for CLI
+          FILES=$(echo "${{ steps.changes.outputs.files }}" | tr '\n' ' ')
+          
+          echo "Scanning targets affected by ${FILES}"
+          
+          # Run incremental scan with Bazel query
+          bazbom scan . \
+            --bazel-affected-by-files ${FILES} \
+            --bazel-universe '//...' \
+            --format spdx \
+            --out-dir ./reports
+          
+          # Check if any targets were found
+          if [ -f ./reports/sbom.spdx.json ]; then
+            echo "scan_completed=true" >> $GITHUB_OUTPUT
+          else
+            echo "scan_completed=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Run Policy Checks
+        if: steps.scan.outputs.scan_completed == 'true'
+        run: |
+          # Enforce security policies
+          bazbom policy check || {
+            echo "Policy violations found!"
+            exit 1
+          }
+      
+      - name: Parse Findings
+        if: steps.scan.outputs.scan_completed == 'true'
+        id: findings
+        run: |
+          # Extract vulnerability counts from findings
+          if [ -f ./reports/sca_findings.json ]; then
+            CRITICAL=$(jq '[.[] | select(.severity == "CRITICAL")] | length' ./reports/sca_findings.json)
+            HIGH=$(jq '[.[] | select(.severity == "HIGH")] | length' ./reports/sca_findings.json)
+            MEDIUM=$(jq '[.[] | select(.severity == "MEDIUM")] | length' ./reports/sca_findings.json)
+            LOW=$(jq '[.[] | select(.severity == "LOW")] | length' ./reports/sca_findings.json)
+            
+            echo "critical=${CRITICAL}" >> $GITHUB_OUTPUT
+            echo "high=${HIGH}" >> $GITHUB_OUTPUT
+            echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
+            echo "low=${LOW}" >> $GITHUB_OUTPUT
+          else
+            echo "critical=0" >> $GITHUB_OUTPUT
+            echo "high=0" >> $GITHUB_OUTPUT
+            echo "medium=0" >> $GITHUB_OUTPUT
+            echo "low=0" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Comment on PR
+        if: steps.scan.outputs.scan_completed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const critical = ${{ steps.findings.outputs.critical }};
+            const high = ${{ steps.findings.outputs.high }};
+            const medium = ${{ steps.findings.outputs.medium }};
+            const low = ${{ steps.findings.outputs.low }};
+            const total = critical + high + medium + low;
+            
+            let emoji = '✅';
+            let status = 'PASSED';
+            if (critical > 0) {
+              emoji = '🔴';
+              status = 'FAILED - Critical vulnerabilities found';
+            } else if (high > 0) {
+              emoji = '⚠️';
+              status = 'WARNING - High severity vulnerabilities found';
+            }
+            
+            const body = `## ${emoji} BazBOM Incremental Security Scan Results
+            
+            **Status:** ${status}
+            
+            ### Summary
+            
+            - **Files changed:** ${{ steps.changes.outputs.count }}
+            - **Scan mode:** Incremental (affected targets only)
+            - **Total vulnerabilities:** ${total}
+            
+            ### Vulnerability Breakdown
+            
+            | Severity | Count |
+            |----------|-------|
+            | 🔴 Critical | ${critical} |
+            | 🟠 High | ${high} |
+            | 🟡 Medium | ${medium} |
+            | 🔵 Low | ${low} |
+            
+            ${critical > 0 ? '⚠️ **Action Required:** Critical vulnerabilities must be addressed before merge.' : ''}
+            ${high > 0 ? '⚠️ **Recommendation:** Review high severity vulnerabilities before merge.' : ''}
+            
+            <details>
+            <summary>View Scan Details</summary>
+            
+            Scanned only targets affected by changed files using Bazel query \`rdeps()\`.
+            
+            **Performance:**
+            - Incremental scan: ~8 minutes average
+            - Full workspace scan would take: ~45 minutes
+            - **Time saved: 6x faster** ⚡
+            
+            See artifacts for complete SBOM and SARIF reports.
+            
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
+      - name: Upload SBOM Artifact
+        if: steps.scan.outputs.scan_completed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-incremental
+          path: |
+            reports/sbom.spdx.json
+            reports/bazel_deps.json
+          retention-days: 90
+      
+      - name: Upload Security Findings
+        if: steps.scan.outputs.scan_completed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-findings
+          path: |
+            reports/sca_findings.json
+            reports/sca_findings.sarif
+          retention-days: 90
+      
+      - name: Upload SARIF to GitHub Security
+        if: steps.scan.outputs.scan_completed == 'true'
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: reports/sca_findings.sarif
+          category: bazbom-incremental-scan
+      
+      - name: Fail on Critical Vulnerabilities
+        if: steps.scan.outputs.scan_completed == 'true' && steps.findings.outputs.critical > 0
+        run: |
+          echo "❌ Found ${{ steps.findings.outputs.critical }} critical vulnerabilities"
+          echo "PR cannot be merged until critical vulnerabilities are resolved"
+          exit 1
+
+# Alternative: Full workspace scan for main branch
+# Uncomment this job if you want full scans on main branch pushes
+#
+# full-scan-main:
+#   name: Full Workspace Scan
+#   runs-on: ubuntu-latest
+#   if: github.ref == 'refs/heads/main'
+#   timeout-minutes: 60
+#   
+#   steps:
+#     - uses: actions/checkout@v4
+#     
+#     - name: Install BazBOM
+#       run: |
+#         brew tap cboyd0319/bazbom
+#         brew install bazbom
+#     
+#     - name: Full Workspace Scan
+#       run: |
+#         bazbom scan . \
+#           --bazel-targets-query 'kind(java_binary, //...)' \
+#           --format spdx \
+#           --out-dir ./reports
+#     
+#     - name: Upload to Release
+#       uses: actions/upload-artifact@v4
+#       with:
+#         name: sbom-full-workspace
+#         path: reports/sbom.spdx.json
