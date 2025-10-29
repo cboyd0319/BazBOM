@@ -1,0 +1,15 @@
+{
+  "spdxVersion": "SPDX-2.3",
+  "dataLicense": "CC0-1.0",
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "name": "test-document",
+  "documentNamespace": "https://bazbom.io/test-document",
+  "creationInfo": {
+    "created": "2024-01-01T00:00:00Z",
+    "creators": [
+      "Tool: bazbom-0.0.1-dev"
+    ]
+  },
+  "packages": [],
+  "relationships": []
+}
