@@ -185,4 +185,127 @@ mod tests {
         let written = fs::read(&path).unwrap();
         assert_eq!(written, content);
     }
+
+    #[test]
+    fn test_write_file_creates_parent_dirs() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("nested/dir/test.txt");
+        let content = b"test";
+
+        let result = write_file(&path, content);
+        assert!(result.is_ok());
+        assert!(path.exists());
+    }
+
+    #[test]
+    fn test_write_file_with_empty_content() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("empty.txt");
+        let content = b"";
+
+        let result = write_file(&path, content);
+        assert!(result.is_ok());
+
+        let entry = result.unwrap();
+        assert_eq!(entry.bytes, 0);
+        assert!(!entry.blake3.is_empty()); // BLAKE3 of empty string
+    }
+
+    #[test]
+    fn test_manifest_deserialization() {
+        let json = r#"{
+            "generated_at": "2024-01-01T00:00:00Z",
+            "files": [
+                {
+                    "path": "test.json",
+                    "bytes": 100,
+                    "blake3": "abc123"
+                }
+            ]
+        }"#;
+
+        let manifest: Manifest = serde_json::from_str(json).unwrap();
+        assert_eq!(manifest.generated_at, "2024-01-01T00:00:00Z");
+        assert_eq!(manifest.files.len(), 1);
+        assert_eq!(manifest.files[0].path, "test.json");
+    }
+
+    #[test]
+    fn test_db_sync_creates_all_expected_files() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache");
+
+        let manifest = db_sync(&cache_dir, true).unwrap();
+
+        // Verify all expected files are in manifest
+        let file_paths: Vec<String> = manifest.files.iter().map(|f| f.path.clone()).collect();
+        assert!(file_paths.iter().any(|p| p.contains("osv.json")));
+        assert!(file_paths.iter().any(|p| p.contains("nvd.json")));
+        assert!(file_paths.iter().any(|p| p.contains("ghsa.json")));
+        assert!(file_paths.iter().any(|p| p.contains("kev.json")));
+        assert!(file_paths.iter().any(|p| p.contains("epss.csv")));
+    }
+
+    #[test]
+    fn test_db_sync_manifest_has_timestamp() {
+        let tmp = tempfile::tempdir().unwrap();
+        let cache_dir = tmp.path().join("cache");
+
+        let manifest = db_sync(&cache_dir, true).unwrap();
+        
+        // Verify timestamp is present and not empty
+        assert!(!manifest.generated_at.is_empty());
+    }
+
+    #[test]
+    fn test_manifest_entry_has_correct_fields() {
+        let entry = ManifestEntry {
+            path: "test.json".to_string(),
+            bytes: 42,
+            blake3: "hash123".to_string(),
+        };
+
+        assert_eq!(entry.path, "test.json");
+        assert_eq!(entry.bytes, 42);
+        assert_eq!(entry.blake3, "hash123");
+    }
+
+    #[test]
+    fn test_write_file_overwrite_existing() {
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("test.txt");
+        
+        // Write first time
+        let result1 = write_file(&path, b"first");
+        assert!(result1.is_ok());
+        let entry1 = result1.unwrap();
+        
+        // Write second time (overwrite)
+        let result2 = write_file(&path, b"second content");
+        assert!(result2.is_ok());
+        let entry2 = result2.unwrap();
+        
+        // Verify new content and different hash
+        assert_ne!(entry1.bytes, entry2.bytes);
+        assert_ne!(entry1.blake3, entry2.blake3);
+        
+        let content = fs::read(&path).unwrap();
+        assert_eq!(content, b"second content");
+    }
+
+    #[test]
+    fn test_blake3_hashes_are_deterministic() {
+        let tmp = tempfile::tempdir().unwrap();
+        let content = b"test content";
+        
+        // Write same content twice to different files
+        let path1 = tmp.path().join("file1.txt");
+        let path2 = tmp.path().join("file2.txt");
+        
+        let entry1 = write_file(&path1, content).unwrap();
+        let entry2 = write_file(&path2, content).unwrap();
+        
+        // Hashes should be identical for same content
+        assert_eq!(entry1.blake3, entry2.blake3);
+    }
 }

@@ -218,4 +218,206 @@ mod tests {
         assert!(violation.is_some());
         assert_eq!(violation.unwrap().rule, "kev_gate");
     }
+
+    #[test]
+    fn test_epss_threshold_violation() {
+        let policy = PolicyConfig {
+            epss_threshold: Some(0.5),
+            ..Default::default()
+        };
+
+        let vuln = Vulnerability {
+            id: "CVE-2024-5678".to_string(),
+            severity: SeverityLevel::Medium,
+            priority: Priority::P2,
+            description: "Test vuln".to_string(),
+            component: "test:lib:1.0".to_string(),
+            fixed_version: None,
+            kev: false,
+            epss_score: Some(0.75),
+            reachable: None,
+        };
+
+        let violation = policy.check_vulnerability(&vuln);
+        assert!(violation.is_some());
+        assert_eq!(violation.unwrap().rule, "epss_threshold");
+    }
+
+    #[test]
+    fn test_epss_below_threshold_no_violation() {
+        let policy = PolicyConfig {
+            epss_threshold: Some(0.5),
+            ..Default::default()
+        };
+
+        let vuln = Vulnerability {
+            id: "CVE-2024-5678".to_string(),
+            severity: SeverityLevel::Medium,
+            priority: Priority::P2,
+            description: "Test vuln".to_string(),
+            component: "test:lib:1.0".to_string(),
+            fixed_version: None,
+            kev: false,
+            epss_score: Some(0.25),
+            reachable: None,
+        };
+
+        let violation = policy.check_vulnerability(&vuln);
+        assert!(violation.is_none());
+    }
+
+    #[test]
+    fn test_license_denylist_violation() {
+        let policy = PolicyConfig {
+            license_denylist: Some(vec!["GPL-3.0".to_string(), "AGPL-3.0".to_string()]),
+            ..Default::default()
+        };
+
+        let violation = policy.check_license("GPL-3.0");
+        assert!(violation.is_some());
+        assert_eq!(violation.unwrap().rule, "license_denylist");
+    }
+
+    #[test]
+    fn test_license_denylist_no_violation() {
+        let policy = PolicyConfig {
+            license_denylist: Some(vec!["GPL-3.0".to_string()]),
+            ..Default::default()
+        };
+
+        let violation = policy.check_license("MIT");
+        assert!(violation.is_none());
+    }
+
+    #[test]
+    fn test_license_allowlist_violation() {
+        let policy = PolicyConfig {
+            license_allowlist: Some(vec!["MIT".to_string(), "Apache-2.0".to_string()]),
+            ..Default::default()
+        };
+
+        let violation = policy.check_license("GPL-3.0");
+        assert!(violation.is_some());
+        assert_eq!(violation.unwrap().rule, "license_allowlist");
+    }
+
+    #[test]
+    fn test_license_allowlist_no_violation() {
+        let policy = PolicyConfig {
+            license_allowlist: Some(vec!["MIT".to_string(), "Apache-2.0".to_string()]),
+            ..Default::default()
+        };
+
+        let violation = policy.check_license("MIT");
+        assert!(violation.is_none());
+    }
+
+    #[test]
+    fn test_severity_level_ordering() {
+        assert!(SeverityLevel::Critical > SeverityLevel::High);
+        assert!(SeverityLevel::High > SeverityLevel::Medium);
+        assert!(SeverityLevel::Medium > SeverityLevel::Low);
+        assert!(SeverityLevel::Low > SeverityLevel::None);
+    }
+
+    #[test]
+    fn test_policy_result_default() {
+        let result = PolicyResult::default();
+        assert!(!result.passed);
+        assert_eq!(result.violations.len(), 0);
+    }
+
+    #[test]
+    fn test_vulnerability_serialization() {
+        let vuln = Vulnerability {
+            id: "CVE-2024-1234".to_string(),
+            severity: SeverityLevel::High,
+            priority: Priority::P1,
+            description: "Test vulnerability".to_string(),
+            component: "test:component:1.0".to_string(),
+            fixed_version: Some("2.0".to_string()),
+            kev: true,
+            epss_score: Some(0.85),
+            reachable: Some(true),
+        };
+
+        let json = serde_json::to_string(&vuln).unwrap();
+        assert!(json.contains("CVE-2024-1234"));
+        assert!(json.contains("HIGH"));
+    }
+
+    #[test]
+    fn test_policy_config_serialization() {
+        let config = PolicyConfig::default();
+        let json = serde_json::to_string(&config).unwrap();
+        assert!(json.contains("severity_threshold"));
+        assert!(json.contains("kev_gate"));
+    }
+
+    #[test]
+    fn test_multiple_policy_rules_first_match_wins() {
+        let policy = PolicyConfig {
+            severity_threshold: Some(SeverityLevel::High),
+            kev_gate: true,
+            epss_threshold: Some(0.5),
+            ..Default::default()
+        };
+
+        let vuln = Vulnerability {
+            id: "CVE-2024-9999".to_string(),
+            severity: SeverityLevel::Critical, // This will match first
+            priority: Priority::P0,
+            description: "Test vuln".to_string(),
+            component: "test:lib:1.0".to_string(),
+            fixed_version: None,
+            kev: true, // This would also match
+            epss_score: Some(0.9), // This would also match
+            reachable: None,
+        };
+
+        let violation = policy.check_vulnerability(&vuln);
+        assert!(violation.is_some());
+        // Severity threshold is checked first
+        assert_eq!(violation.unwrap().rule, "severity_threshold");
+    }
+
+    #[test]
+    fn test_priority_enum_values() {
+        let p0 = Priority::P0;
+        let p1 = Priority::P1;
+        let p2 = Priority::P2;
+        let p3 = Priority::P3;
+        let p4 = Priority::P4;
+
+        assert_eq!(p0, Priority::P0);
+        assert_ne!(p0, p1);
+        assert_ne!(p1, p2);
+        assert_ne!(p2, p3);
+        assert_ne!(p3, p4);
+    }
+
+    #[test]
+    fn test_no_threshold_no_violation() {
+        let policy = PolicyConfig {
+            severity_threshold: None,
+            kev_gate: false,
+            epss_threshold: None,
+            ..Default::default()
+        };
+
+        let vuln = Vulnerability {
+            id: "CVE-2024-1234".to_string(),
+            severity: SeverityLevel::Critical,
+            priority: Priority::P0,
+            description: "Test vuln".to_string(),
+            component: "test:lib:1.0".to_string(),
+            fixed_version: None,
+            kev: false,
+            epss_score: None,
+            reachable: None,
+        };
+
+        let violation = policy.check_vulnerability(&vuln);
+        assert!(violation.is_none());
+    }
 }
