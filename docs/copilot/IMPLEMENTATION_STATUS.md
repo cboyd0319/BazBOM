@@ -8,7 +8,7 @@ This document tracks the implementation progress of the BazBOM Master Plan (see 
 
 ## Executive Summary
 
-Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%)**
+Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), Policy Integration Complete**
 
 - ✅ Rust CLI skeleton with core commands
 - ✅ Foundational crate implementations
@@ -19,6 +19,7 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%)**
 - ✅ Gradle plugin (complete and tested with 60 dependencies, 7 integration tests)
 - ✅ Advisory merge engine (parsers, enrichment, merging complete with 52 tests)
 - ✅ CLI advisory integration (fully functional with 6 tests, CVSS v2 support)
+- ✅ Policy engine integration (9 tests, SARIF output, CI examples)
 
 ---
 
@@ -217,13 +218,23 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%)**
 - ✅ Documentation updated (USAGE.md)
 - ✅ Zero clippy warnings
 
-### Remaining 📋
+### Completed ✅
 
-**Policy Engine**
+**Policy Engine Integration**
 - ✅ YAML policy schema (already implemented in bazbom-policy)
-- 📋 Integration with advisory findings
-- 📋 SARIF mapping for policy violations
-- 📋 CI enforcement examples
+- ✅ Integration with advisory findings
+  - Policy integration module with conversion functions
+  - Automatic policy checks during scan when bazbom.yml exists
+  - Explicit policy check command
+  - 9 new tests for policy integration
+- ✅ SARIF mapping for policy violations
+  - Policy violations mapped to SARIF levels
+  - GitHub Security compatible output
+  - Upload to Code Scanning for PR annotations
+- ✅ CI enforcement examples
+  - Complete GitHub Actions workflow
+  - Example policy configurations (default, strict, permissive)
+  - Comprehensive documentation and README
 
 ---
 
@@ -328,7 +339,7 @@ All priority modules have met or exceeded targets:
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
 6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
 
-**Total Test Count: 108 tests** (from 61 previously)
+**Total Test Count: 162 tests** (was 108, +54 from initial 61)
 
 ---
 
@@ -340,9 +351,13 @@ All priority modules have met or exceeded targets:
 - ✅ Phase 0 issues seeded
 - ✅ Copilot instructions updated
 
+### Completed ✅
+- ✅ USAGE.md (Command reference with policy integration)
+- ✅ Policy examples and CI workflows (examples/ directory)
+- ✅ Policy configuration guide (examples/README.md)
+
 ### In Progress 🔄
 - 🔄 QUICKSTART.md (Rust CLI examples)
-- 🔄 USAGE.md (Command reference)
 - 🔄 ARCHITECTURE.md (Rust architecture)
 
 ### Planned 📋
@@ -351,7 +366,6 @@ All priority modules have met or exceeded targets:
 - 📋 Gradle plugin guide
 - 📋 Bazel aspects guide
 - 📋 Offline mode guide
-- 📋 Policy-as-code guide
 
 ---
 
@@ -359,7 +373,7 @@ All priority modules have met or exceeded targets:
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Test Count | 149 | 100+ | ✅ |
+| Test Count | 162 | 100+ | ✅ |
 | Coverage (Repo) | 93.58% | 90% | ✅ |
 | Coverage (Critical) | ~99% | 98% | ✅ |
 | Build Time | <30s | <60s | ✅ |
@@ -380,12 +394,7 @@ All priority modules have met or exceeded targets:
    - Research OPAL integration approaches
    - Design shading/relocation mapping
 
-2. **Policy Engine Integration** 📋
-   - Connect policy checks with advisory findings
-   - SARIF output for policy violations
-   - CI enforcement examples
-
-3. **Distribution Testing** 📋
+2. **Distribution Testing** 📋
    - Test release workflow with signed binaries
    - Create Homebrew tap repository
    - Validate installation on macOS and Linux
@@ -397,10 +406,11 @@ All priority modules have met or exceeded targets:
    - Add rules_jvm_external support
    - Workspace SBOM merge capabilities
 
-2. **Policy Engine Integration**
-   - Connect policy checks with advisory findings
-   - SARIF output for policy violations
-   - CI enforcement examples
+2. **Reachability Engine (Phase 3)**
+   - OPAL integration for bytecode analysis
+   - Call graph generation
+   - Reachable/unreachable tagging
+   - Method-level traces
 
 3. **Distribution Testing**
    - Test release workflow with signed binaries
@@ -455,9 +465,15 @@ All priority modules have met or exceeded targets:
 - ✅ NVD API 2.0 response handling and CVSS v2 support
 - ✅ Findings JSON and SARIF output with enriched data
 - ✅ Documentation updated (USAGE.md)
-- 📋 Policy engine integration (future sprint)
+- ✅ Policy engine integration
+  - Policy integration module (9 tests)
+  - Automatic policy checks during scan
+  - Explicit policy check command
+  - SARIF output for policy violations
+  - Example configurations and CI workflows
+  - Complete documentation in USAGE.md and examples/
 
-**Phase 2 Progress: 100% Complete** (Advisory merge engine fully integrated into CLI)
+**Phase 2 Progress: 100% Complete** (Advisory merge engine fully integrated into CLI with policy enforcement)
 
 ---
 
