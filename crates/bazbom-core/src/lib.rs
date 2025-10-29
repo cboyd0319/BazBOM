@@ -22,7 +22,11 @@ pub fn detect_build_system<P: AsRef<Path>>(root: P) -> BuildSystem {
     if exists("pom.xml") {
         return BuildSystem::Maven;
     }
-    if exists("build.gradle") || exists("build.gradle.kts") || exists("settings.gradle") || exists("settings.gradle.kts") {
+    if exists("build.gradle")
+        || exists("build.gradle.kts")
+        || exists("settings.gradle")
+        || exists("settings.gradle.kts")
+    {
         return BuildSystem::Gradle;
     }
     if exists("MODULE.bazel") || exists("WORKSPACE") {
@@ -31,7 +35,11 @@ pub fn detect_build_system<P: AsRef<Path>>(root: P) -> BuildSystem {
     BuildSystem::Unknown
 }
 
-pub fn write_stub_sbom<P: AsRef<Path>>(dir: P, format: &str, system: BuildSystem) -> std::io::Result<PathBuf> {
+pub fn write_stub_sbom<P: AsRef<Path>>(
+    dir: P,
+    format: &str,
+    system: BuildSystem,
+) -> std::io::Result<PathBuf> {
     let dir = dir.as_ref();
     fs::create_dir_all(dir)?;
     match format {
