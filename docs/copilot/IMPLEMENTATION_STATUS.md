@@ -62,7 +62,7 @@ Current Status: **Phase 0 - Foundation (In Progress)**
 **Coverage Improvements**
 - ✅ Increased coverage to 93.58% repo-wide (exceeds 90% target)
 - ✅ Golden file tests for schema outputs (SPDX, CycloneDX, SARIF)
-- ✅ Added 47 new tests across all crates
+- ✅ Added 54 new tests across all crates (25 → 61 tests total)
 
 ### Planned 📋
 
