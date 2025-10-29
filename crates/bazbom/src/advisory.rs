@@ -38,11 +38,24 @@ pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability
         let content = fs::read_to_string(&nvd_path)
             .with_context(|| format!("failed to read NVD file at {:?}", nvd_path))?;
         
-        // Try to parse as a single entry or skip if it's a placeholder
+        // Try to parse as NVD API response wrapper or single entry
         if !content.contains("\"note\"") {
-            if let Ok(nvd_entry) = serde_json::from_str::<NvdEntry>(&content) {
-                if let Ok(vuln) = parse_nvd_entry(&nvd_entry) {
-                    vulnerabilities.push(vuln);
+            // Try parsing as API response wrapper first
+            if let Ok(response) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(vulns_array) = response.get("vulnerabilities").and_then(|v| v.as_array()) {
+                    // NVD API 2.0 response format
+                    for vuln_obj in vulns_array {
+                        if let Ok(nvd_entry) = serde_json::from_value::<NvdEntry>(vuln_obj.clone()) {
+                            if let Ok(vuln) = parse_nvd_entry(&nvd_entry) {
+                                vulnerabilities.push(vuln);
+                            }
+                        }
+                    }
+                } else if let Ok(nvd_entry) = serde_json::from_value::<NvdEntry>(response) {
+                    // Single entry format
+                    if let Ok(vuln) = parse_nvd_entry(&nvd_entry) {
+                        vulnerabilities.push(vuln);
+                    }
                 }
             }
         }
