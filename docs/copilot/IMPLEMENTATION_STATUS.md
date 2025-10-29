@@ -373,8 +373,9 @@ All priority modules have met or exceeded targets:
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
 6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
 
-**Total Test Count: 141 tests** (135 Rust + 6 Java)
-- Rust tests: 135 (unit + integration + workflow tests)
+**Total Test Count: 200 tests** (194 Rust + 6 Java)
+- Rust tests: 194 passing (unit + integration + workflow tests)
+- Rust tests: 7 ignored (require external tools or specific setup)
 - Java tests: 6 (bazbom-reachability tool tests)
 
 ---
