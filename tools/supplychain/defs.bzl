@@ -1,7 +1,7 @@
 """Bazel rules and macros for supply chain security."""
 
 load("@bazel_skylib//lib:json.bzl", "json")
-load(":aspects.bzl", "SbomInfo", "sbom_aspect")
+load(":aspects.bzl", "SbomInfo", "sbom_aspect", "ClasspathInfo", "classpath_aspect")
 
 def _sbom_impl(ctx):
     """Implementation of the sbom rule.
@@ -103,3 +103,54 @@ def sbom_for(name, target, **kwargs):
         target = target,
         **kwargs
     )
+
+def _extract_classpath_impl(ctx):
+    """Implementation of the extract_classpath rule.
+    
+    This rule applies the classpath_aspect to a target and writes
+    the runtime classpath to a file.
+    
+    Args:
+        ctx: Rule context
+        
+    Returns:
+        DefaultInfo with the generated classpath file
+    """
+    target = ctx.attr.target
+    
+    # Get classpath information from the aspect
+    jars = []
+    if ClasspathInfo in target:
+        jars = target[ClasspathInfo].jars.to_list()
+    
+    # Write classpath to file (colon-separated)
+    classpath_file = ctx.actions.declare_file(ctx.label.name + ".txt")
+    ctx.actions.write(
+        output = classpath_file,
+        content = ":".join(jars),
+    )
+    
+    return [DefaultInfo(files = depset([classpath_file]))]
+
+extract_classpath = rule(
+    implementation = _extract_classpath_impl,
+    attrs = {
+        "target": attr.label(
+            aspects = [classpath_aspect],
+            doc = "The target to extract classpath from",
+            mandatory = True,
+        ),
+    },
+    doc = """Extract runtime classpath for a Java target.
+    
+    This rule uses a Bazel aspect to collect all JAR files from the
+    runtime classpath of a Java target. The output is a text file with
+    colon-separated JAR paths suitable for reachability analysis.
+    
+    Example:
+        extract_classpath(
+            name = "app_classpath",
+            target = "//app:main",
+        )
+    """,
+)
