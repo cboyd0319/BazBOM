@@ -8,6 +8,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
 - **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
+- **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
 
 ## Architecture & Design
 
