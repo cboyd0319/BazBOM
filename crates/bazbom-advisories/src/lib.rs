@@ -5,6 +5,13 @@ use std::io::Read;
 use std::path::Path;
 use time::OffsetDateTime;
 
+pub mod merge;
+
+pub use merge::{
+    calculate_priority, merge_vulnerabilities, AffectedPackage, EpssScore, KevEntry, Priority,
+    Reference, Severity, SeverityLevel, VersionEvent, VersionRange, Vulnerability,
+};
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ManifestEntry {
     pub path: String,
