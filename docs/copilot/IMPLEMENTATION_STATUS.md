@@ -8,14 +8,14 @@ This document tracks the implementation progress of the BazBOM Master Plan (see 
 
 ## Executive Summary
 
-Current Status: **Phase 0 - Foundation (In Progress)**
+Current Status: **Phase 0 - Foundation (Near Complete)**
 
 - ✅ Rust CLI skeleton with core commands
 - ✅ Foundational crate implementations
 - ✅ Test infrastructure and coverage enforcement
-- ⏳ Schema validation (Planned)
-- ⏳ Enhanced advisory merge engine (Planned)
-- ⏳ Documentation updates (In Progress)
+- ✅ Schema validation (SPDX & SARIF)
+- ⏳ Enhanced advisory merge engine (Planned - Phase 2)
+- ✅ Documentation complete
 
 ---
 
@@ -38,11 +38,18 @@ Current Status: **Phase 0 - Foundation (In Progress)**
 - ✅ `bazbom-advisories`: Offline DB sync functionality
 
 **Testing Infrastructure**
-- ✅ 61 unit tests across all crates
+- ✅ 108 unit tests across all crates
 - ✅ 93.58% line coverage (target: 90% for critical modules) **ACHIEVED**
 - ✅ CI coverage enforcement (90% threshold)
 - ✅ Zero warnings, clippy clean
 - ✅ Golden file tests for schema validation
+
+**Schema Validation**
+- ✅ JSON Schema validation for SPDX 2.3 outputs
+- ✅ JSON Schema validation for SARIF 2.1.0 outputs
+- ✅ Automated validation tests in test suite
+- ✅ Fixed serialization issues (null value handling)
+- ⏸️ CycloneDX validation (blocked: external schema references incompatible with offline mode)
 
 **Offline Cache**
 - ✅ Deterministic advisory cache layout
@@ -50,19 +57,18 @@ Current Status: **Phase 0 - Foundation (In Progress)**
 - ✅ OSV, NVD, GHSA, KEV, EPSS placeholders
 - ✅ `bazbom db sync` command
 
-### Completed ✅
-
 **Documentation**
 - ✅ Update installation docs for Rust CLI
 - ✅ Document new command structure
 - ✅ Add examples for each format output
 - ✅ Comprehensive QUICKSTART.md with workflows
 - ✅ Complete USAGE.md command reference
+- ✅ VALIDATION.md for schema validation instructions
 
 **Coverage Improvements**
 - ✅ Increased coverage to 93.58% repo-wide (exceeds 90% target)
 - ✅ Golden file tests for schema outputs (SPDX, CycloneDX, SARIF)
-- ✅ Added 54 new tests across all crates (25 → 61 tests total)
+- ✅ Added 54 new tests across all crates (61 → 108 tests total)
 
 ### Planned 📋
 
@@ -220,6 +226,9 @@ All priority modules have met or exceeded targets:
 3. ✅ **bazbom-policy (99.66%)** - Added policy edge case tests (was 74.24%)
 4. ✅ **bazbom-advisories (87.50%)** - Added error handling tests (was 77.97%)
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
+6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
+
+**Total Test Count: 108 tests** (from 61 previously)
 
 ---
 
@@ -250,12 +259,15 @@ All priority modules have met or exceeded targets:
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Test Count | 61 | 100+ | 🔄 |
+| Test Count | 108 | 100+ | ✅ |
 | Coverage (Repo) | 93.58% | 90% | ✅ |
 | Coverage (Critical) | ~99% | 98% | ✅ |
 | Build Time | <30s | <60s | ✅ |
 | Linting | Pass | Pass | ✅ |
 | Warnings | 0 | 0 | ✅ |
+| Schema Validation | SPDX+SARIF | SPDX+CDX+SARIF | ⚠️ |
+
+**Note:** CycloneDX schema validation blocked by external schema references incompatible with offline-first design.
 
 ---
 
@@ -263,38 +275,37 @@ All priority modules have met or exceeded targets:
 
 ### Immediate (This Sprint)
 
-1. **Improve CLI Coverage**
-   - Add integration tests for all commands
-   - Test error handling paths
-   - Target: 70%+ coverage
+1. **Release Workflow Testing**
+   - Test signed binary generation for all platforms
+   - Verify Sigstore signing works
+   - Validate SLSA provenance generation
 
-2. **Complete Format Tests**
-   - Add FromStr test for OutputFormat
-   - Test SARIF rule additions
-   - Test error scenarios
+2. **Homebrew Tap Creation**
+   - Create `homebrew-bazbom` repository
+   - Generate formula with proper SHA256 hashes
+   - Test installation from tap
 
-3. **Documentation Updates**
-   - Update QUICKSTART.md with Rust CLI
-   - Update README.md feature table
-   - Document db sync workflow
+3. **Documentation Polish**
+   - Add release process documentation
+   - Document Homebrew tap usage
+   - Update troubleshooting guide
 
 ### Short Term (Next Sprint)
 
-1. **Schema Validation**
-   - Add JSON Schema validators
-   - Validate SPDX output against spec
-   - Validate CycloneDX output against spec
-   - Validate SARIF output against spec
+1. **Begin Phase 1: Maven Plugin**
+   - Create `bazbom-maven-plugin` module
+   - Implement effective POM capture
+   - Add BOM resolution logic
 
-2. **Advisory Merge Engine**
+2. **Advisory Merge Engine Enhancement**
    - Implement actual OSV/NVD/GHSA fetching
    - Add deduplication logic
    - Implement severity normalization
 
-3. **Release Automation**
-   - Setup GitHub Actions release workflow
-   - Add artifact signing
-   - Generate provenance
+3. **Performance Baseline**
+   - Add benchmark suite
+   - Establish performance regression tests
+   - Document target performance metrics
 
 ---
 
@@ -317,10 +328,13 @@ All priority modules have met or exceeded targets:
 - ✅ Test coverage ≥90% repo-wide (achieved 93.58%)
 - ✅ Documentation updated for Rust CLI
 - ✅ CI coverage enforcement at 90% threshold
-- 📋 Signed releases with provenance
-- 📋 Homebrew tap published
+- ✅ Schema validation for SPDX and SARIF outputs
+- 📋 Signed releases with provenance (workflow exists, needs testing)
+- 📋 Homebrew tap published (needs repository creation)
 
-**Current Progress: 80% Complete**
+**Current Progress: 90% Complete** (up from 80%)
+
+Phase 0 is near completion. Remaining work is primarily release infrastructure and packaging.
 
 ---
 

@@ -370,7 +370,7 @@ mod tests {
             description: "Test vuln".to_string(),
             component: "test:lib:1.0".to_string(),
             fixed_version: None,
-            kev: true, // This would also match
+            kev: true,             // This would also match
             epss_score: Some(0.9), // This would also match
             reachable: None,
         };

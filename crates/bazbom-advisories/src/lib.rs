@@ -252,7 +252,7 @@ mod tests {
         let cache_dir = tmp.path().join("cache");
 
         let manifest = db_sync(&cache_dir, true).unwrap();
-        
+
         // Verify timestamp is present and not empty
         assert!(!manifest.generated_at.is_empty());
     }
@@ -274,21 +274,21 @@ mod tests {
     fn test_write_file_overwrite_existing() {
         let tmp = tempfile::tempdir().unwrap();
         let path = tmp.path().join("test.txt");
-        
+
         // Write first time
         let result1 = write_file(&path, b"first");
         assert!(result1.is_ok());
         let entry1 = result1.unwrap();
-        
+
         // Write second time (overwrite)
         let result2 = write_file(&path, b"second content");
         assert!(result2.is_ok());
         let entry2 = result2.unwrap();
-        
+
         // Verify new content and different hash
         assert_ne!(entry1.bytes, entry2.bytes);
         assert_ne!(entry1.blake3, entry2.blake3);
-        
+
         let content = fs::read(&path).unwrap();
         assert_eq!(content, b"second content");
     }
@@ -297,14 +297,14 @@ mod tests {
     fn test_blake3_hashes_are_deterministic() {
         let tmp = tempfile::tempdir().unwrap();
         let content = b"test content";
-        
+
         // Write same content twice to different files
         let path1 = tmp.path().join("file1.txt");
         let path2 = tmp.path().join("file2.txt");
-        
+
         let entry1 = write_file(&path1, content).unwrap();
         let entry2 = write_file(&path2, content).unwrap();
-        
+
         // Hashes should be identical for same content
         assert_eq!(entry1.blake3, entry2.blake3);
     }

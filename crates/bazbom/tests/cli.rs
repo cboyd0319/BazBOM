@@ -66,10 +66,7 @@ fn scan_default_format_is_spdx() {
     fs::create_dir_all(&outdir).unwrap();
 
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
-    cmd.arg("scan")
-        .arg(".")
-        .arg("--out-dir")
-        .arg(&outdir);
+    cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
     assert!(outdir.join("sbom.spdx.json").exists());
@@ -108,14 +105,11 @@ fn scan_creates_sarif_output() {
     fs::create_dir_all(&outdir).unwrap();
 
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
-    cmd.arg("scan")
-        .arg(".")
-        .arg("--out-dir")
-        .arg(&outdir);
+    cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
     assert!(outdir.join("sca_findings.sarif").exists());
-    
+
     // Verify SARIF is valid JSON
     let sarif_content = fs::read_to_string(outdir.join("sca_findings.sarif")).unwrap();
     let sarif: serde_json::Value = serde_json::from_str(&sarif_content).unwrap();
@@ -166,17 +160,14 @@ fn scan_outputs_contain_valid_json() {
     fs::create_dir_all(&outdir).unwrap();
 
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
-    cmd.arg("scan")
-        .arg(".")
-        .arg("--out-dir")
-        .arg(&outdir);
+    cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
     // Verify SPDX SBOM is valid JSON
     let sbom_content = fs::read_to_string(outdir.join("sbom.spdx.json")).unwrap();
     let sbom: serde_json::Value = serde_json::from_str(&sbom_content).unwrap();
     assert!(sbom.is_object());
-    
+
     // Verify findings is valid JSON
     let findings_content = fs::read_to_string(outdir.join("sca_findings.json")).unwrap();
     let findings: serde_json::Value = serde_json::from_str(&findings_content).unwrap();
