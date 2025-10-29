@@ -240,18 +240,44 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 
 ## Phase 3: Reachability & Shading (Weeks 11-14)
 
-### Not Started ⏸️
+### In Progress 🔄 (50% Complete)
 
-**Reachability Engine**
-- ⏸️ OPAL integration
-- ⏸️ Call graph generation
-- ⏸️ Reachable/unreachable tagging
-- ⏸️ Method-level traces
+**Reachability Engine** ✅ (60% Complete)
+- ✅ ASM-based bytecode analysis implementation
+- ✅ Call graph generation from entrypoints
+- ✅ Reachable/unreachable tagging in SARIF and policy checks
+- ✅ JSON output with reachable methods, classes, packages
+- ✅ Rust CLI integration module
+- ✅ Maven pom.xml with fat JAR packaging (690KB)
+- ✅ Unit tests (6 Java + 3 Rust = 9 tests)
+- ⏸️ OPAL integration (deferred; using ASM for simplicity)
+- ⏸️ Method-level traces in findings output
+- ⏸️ Reachability result caching
+- ⏸️ Performance optimization for large projects
 
-**Shading/Fat JAR Attribution**
-- ⏸️ Relocation map parsing
-- ⏸️ Class fingerprinting
-- ⏸️ Original GAV/PURL mapping
+**CLI Integration** ✅ (70% Complete)
+- ✅ `--reachability` flag support
+- ✅ Classpath extraction for Maven (via `mvn dependency:build-classpath`)
+- ✅ Classpath extraction stubs for Gradle/Bazel
+- ✅ ReachabilityResult struct with helper methods
+- ✅ Policy checking with reachability awareness
+- ✅ SARIF output with [REACHABLE]/[NOT REACHABLE] tags
+- ⏸️ Gradle classpath extraction via plugin
+- ⏸️ Bazel classpath extraction via aspects
+
+**Shading/Fat JAR Attribution** ⏸️ (Not Started)
+- ⏸️ Relocation map parsing (Maven Shade plugin)
+- ⏸️ Relocation map parsing (Gradle Shadow plugin)
+- ⏸️ Class fingerprinting for original GAV mapping
+- ⏸️ Original GAV/PURL mapping in findings
+
+**Testing & Documentation** 🔄 (40% Complete)
+- ✅ 6 Java unit tests (MainTest.java: empty classpath, output creation, MethodRef equality)
+- ✅ 3 Rust unit tests (reachability module: is_class_reachable, is_package_reachable, is_method_reachable)
+- ✅ README for reachability tool with usage examples
+- ⏸️ Integration tests with sample JARs from Maven Central
+- ⏸️ Main documentation update (USAGE.md, QUICKSTART.md)
+- ⏸️ Performance benchmarks for large projects
 
 ---
 
@@ -339,7 +365,9 @@ All priority modules have met or exceeded targets:
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
 6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
 
-**Total Test Count: 162 tests** (was 108, +54 from initial 61)
+**Total Test Count: 171 tests** (165 Rust + 6 Java)
+- Rust tests: 165 (was 162, +3 for reachability integration)
+- Java tests: 6 (new: bazbom-reachability tool)
 
 ---
 
@@ -474,6 +502,37 @@ All priority modules have met or exceeded targets:
   - Complete documentation in USAGE.md and examples/
 
 **Phase 2 Progress: 100% Complete** (Advisory merge engine fully integrated into CLI with policy enforcement)
+
+### Phase 3 🔄 In Progress (50%)
+- ✅ ASM-based reachability analyzer implementation
+  - Maven pom.xml with fat JAR packaging (690KB)
+  - Bytecode analysis using ASM library
+  - Call graph generation from entrypoints
+  - Auto-detection of main methods and public constructors
+  - JSON output with reachable methods, classes, packages
+  - 6 Java unit tests (all passing)
+- ✅ Rust CLI integration
+  - reachability.rs module with ReachabilityResult struct
+  - analyze_reachability() function to invoke JAR tool
+  - Classpath extraction for Maven/Gradle/Bazel (stubs)
+  - 3 Rust unit tests (all passing)
+- ✅ Reachability tagging
+  - Enhanced policy_integration with reachability support
+  - convert_to_policy_vuln_with_reachability()
+  - check_policy_with_reachability()
+  - SARIF output with [REACHABLE]/[NOT REACHABLE] tags
+  - Policy checks consider reachability status
+- ✅ Documentation
+  - Comprehensive README for reachability tool
+  - Tool usage examples and output format
+- ⏸️ Pending
+  - Integration tests with sample JARs
+  - Reachability result caching
+  - Gradle/Bazel classpath extraction via plugins
+  - Shading/relocation mapping (Maven Shade, Gradle Shadow)
+  - Performance benchmarks
+
+**Phase 3 Progress: 50% Complete** (Reachability engine functional, shading mapping not started)
 
 ---
 

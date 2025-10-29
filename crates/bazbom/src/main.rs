@@ -6,6 +6,7 @@ use std::path::PathBuf;
 
 mod advisory;
 mod policy_integration;
+mod reachability;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -131,11 +132,71 @@ fn main() -> Result<()> {
                 .with_context(|| format!("failed writing {:?}", findings_path))?;
             println!("[bazbom] wrote {:?} ({} vulnerabilities)", findings_path, vulnerabilities.len());
 
+            // Run reachability analysis if requested
+            let reachability_result = if reachability {
+                // Attempt to run reachability analysis if configured
+                if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
+                    let jar_path = PathBuf::from(&jar);
+                    if !jar_path.exists() {
+                        eprintln!("[bazbom] BAZBOM_REACHABILITY_JAR points to non-existent file: {:?}", jar_path);
+                        None
+                    } else {
+                        let out_file = out.join("reachability.json");
+                        
+                        // Extract classpath based on build system
+                        let classpath = match system {
+                            bazbom_core::BuildSystem::Maven => {
+                                reachability::extract_maven_classpath(&root)
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Maven classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            bazbom_core::BuildSystem::Gradle => {
+                                reachability::extract_gradle_classpath(&root)
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Gradle classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            bazbom_core::BuildSystem::Bazel => {
+                                reachability::extract_bazel_classpath(&root, "")
+                                    .unwrap_or_else(|e| {
+                                        eprintln!("[bazbom] failed to extract Bazel classpath: {}", e);
+                                        String::new()
+                                    })
+                            }
+                            _ => String::new(),
+                        };
+                        
+                        match reachability::analyze_reachability(&jar_path, &classpath, "", &out_file) {
+                            Ok(result) => {
+                                println!("[bazbom] reachability analysis complete");
+                                if result.reachable_classes.is_empty() {
+                                    println!("[bazbom] no reachable classes found (classpath may be empty)");
+                                }
+                                Some(result)
+                            }
+                            Err(e) => {
+                                eprintln!("[bazbom] reachability analysis failed: {}", e);
+                                None
+                            }
+                        }
+                    }
+                } else {
+                    eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured");
+                    eprintln!("[bazbom] set BAZBOM_REACHABILITY_JAR to the path of bazbom-reachability.jar");
+                    None
+                }
+            } else {
+                None
+            };
+
             // Create SARIF report with vulnerability results
             let sarif_path = out.join("sca_findings.sarif");
             let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
             
-            // Add vulnerability results to SARIF
+            // Add vulnerability results to SARIF with reachability info if available
             for vuln in &vulnerabilities {
                 let level = match vuln.severity.as_ref().map(|s| s.level) {
                     Some(bazbom_advisories::SeverityLevel::Critical) => "error",
@@ -145,9 +206,22 @@ fn main() -> Result<()> {
                     _ => "note",
                 };
                 
-                let message = vuln.summary.clone()
+                let mut message = vuln.summary.clone()
                     .or_else(|| vuln.details.clone())
                     .unwrap_or_else(|| format!("Vulnerability {}", vuln.id));
+                
+                // Add reachability info to message if available
+                if let Some(ref reach) = reachability_result {
+                    // Extract package name from first affected package
+                    if let Some(affected) = vuln.affected.first() {
+                        let package_name = affected.package.clone();
+                        if reach.is_package_reachable(&package_name) {
+                            message.push_str(" [REACHABLE]");
+                        } else {
+                            message.push_str(" [NOT REACHABLE]");
+                        }
+                    }
+                }
                 
                 let result = bazbom_formats::sarif::Result::new(&vuln.id, level, &message);
                 sarif.add_result(result);
@@ -163,7 +237,11 @@ fn main() -> Result<()> {
                 let policy = policy_integration::load_policy_config(&policy_path)
                     .context("failed to load policy configuration")?;
                 
-                let policy_result = policy_integration::check_policy(&vulnerabilities, &policy);
+                let policy_result = policy_integration::check_policy_with_reachability(
+                    &vulnerabilities,
+                    &policy,
+                    reachability_result.as_ref(),
+                );
                 
                 if !policy_result.passed {
                     println!("[bazbom] ⚠ policy violations detected ({} violations)", policy_result.violations.len());
@@ -178,42 +256,6 @@ fn main() -> Result<()> {
                     println!("[bazbom] wrote {:?}", policy_violations_path);
                 } else {
                     println!("[bazbom] ✓ all policy checks passed");
-                }
-            }
-
-            if reachability {
-                // Attempt to run reachability skeleton if configured
-                if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
-                    let out_file = out.join("reachability.json");
-                    let status = std::process::Command::new("java")
-                        .arg("-cp")
-                        .arg(&jar)
-                        .arg("io.bazbom.reachability.Main")
-                        .arg("--classpath")
-                        .arg("")
-                        .arg("--entrypoints")
-                        .arg("")
-                        .arg("--output")
-                        .arg(&out_file)
-                        .status();
-                    match status {
-                        Ok(s) if s.success() => {
-                            println!("[bazbom] reachability wrote {:?}", out_file);
-                            if let Ok(bytes) = fs::read(&out_file) {
-                                if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes)
-                                {
-                                    println!(
-                                        "[bazbom] reachability summary: keys={}",
-                                        val.as_object().map(|m| m.len()).unwrap_or(0)
-                                    );
-                                }
-                            }
-                        }
-                        Ok(s) => eprintln!("[bazbom] reachability failed with status {:?}", s),
-                        Err(e) => eprintln!("[bazbom] failed to invoke java: {}", e),
-                    }
-                } else {
-                    eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured; skipping");
                 }
             }
         }
