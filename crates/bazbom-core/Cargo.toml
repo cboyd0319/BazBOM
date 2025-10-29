@@ -7,6 +7,8 @@ edition = "2021"
 anyhow = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+bazbom-formats = { path = "../bazbom-formats" }
+bazbom-graph = { path = "../bazbom-graph" }
 
 [dev-dependencies]
 tempfile = "3"

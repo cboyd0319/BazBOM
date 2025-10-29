@@ -94,13 +94,7 @@ fn main() -> Result<()> {
             // Create minimal SARIF stub
             let sarif_path = out.join("sca_findings.sarif");
             if !sarif_path.exists() {
-                let sarif = serde_json::json!({
-                    "version": "2.1.0",
-                    "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-                    "runs": [
-                        {"tool": {"driver": {"name": "bazbom", "version": bazbom_core::VERSION}}}
-                    ]
-                });
+                let sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
                 fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
                     .with_context(|| format!("failed writing {:?}", sarif_path))?;
             }
