@@ -4,6 +4,59 @@ This guide covers day-to-day commands and workflows for BazBOM.
 
 ## Installation
 
+### Rust CLI (Primary Distribution - Recommended)
+
+BazBOM is transitioning to a memory-safe, single-binary Rust CLI as the primary distribution method. This approach aligns with the project's architecture goals: zero telemetry, offline-first operation, and supply chain security.
+
+**Prerequisites:**
+- Rust 1.70+ (stable toolchain)
+- Java 11+ (optional, only needed for reachability analysis)
+
+**Build from source:**
+
+```bash
+# Clone repository
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+
+# Build release binary
+cargo build --release
+
+# Binary location: ./target/release/bazbom
+./target/release/bazbom --version
+./target/release/bazbom --help
+```
+
+**Basic usage with Rust CLI:**
+
+```bash
+# Scan any JVM project (auto-detects Maven, Gradle, Bazel)
+./target/release/bazbom scan .
+
+# Scan with specific format
+./target/release/bazbom scan . --format spdx
+./target/release/bazbom scan . --format cyclonedx
+
+# Enable reachability analysis (requires Java)
+./target/release/bazbom scan . --reachability
+
+# Sync advisory database for offline use (zero telemetry)
+./target/release/bazbom db sync
+
+# Policy checks
+./target/release/bazbom policy check
+
+# Show fix suggestions
+./target/release/bazbom fix --suggest
+```
+
+**Outputs:**
+- `sbom.spdx.json` or `sbom.cyclonedx.json` - SBOM in chosen format
+- `sca_findings.json` - Machine-readable vulnerability findings
+- `sca_findings.sarif` - GitHub Security format for Code Scanning
+
+### Python CLI Wrapper (Transition Phase)
+
 ### Quick Install (Recommended)
 
 Install BazBOM with zero configuration:

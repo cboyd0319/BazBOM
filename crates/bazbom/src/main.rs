@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
+use bazbom_core::{detect_build_system, write_stub_sbom};
 use clap::{Parser, Subcommand};
-use std::path::PathBuf;
 use std::fs;
-use bazbom_core::{detect_build_system, write_stub_sbom, BuildSystem};
+use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -63,11 +63,24 @@ enum DbCmd {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    match cli.command.unwrap_or(Commands::Scan { path: ".".into(), reachability: false, format: "spdx".into(), out_dir: ".".into() }) {
-        Commands::Scan { path, reachability, format, out_dir } => {
+    match cli.command.unwrap_or(Commands::Scan {
+        path: ".".into(),
+        reachability: false,
+        format: "spdx".into(),
+        out_dir: ".".into(),
+    }) {
+        Commands::Scan {
+            path,
+            reachability,
+            format,
+            out_dir,
+        } => {
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
-            println!("[bazbom] scan path={} reachability={} format={} system={:?}", path, reachability, format, system);
+            println!(
+                "[bazbom] scan path={} reachability={} format={} system={:?}",
+                path, reachability, format, system
+            );
             let out = PathBuf::from(&out_dir);
             let sbom_path = write_stub_sbom(&out, &format, system)
                 .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
@@ -100,16 +113,23 @@ fn main() -> Result<()> {
                         .arg("-cp")
                         .arg(&jar)
                         .arg("io.bazbom.reachability.Main")
-                        .arg("--classpath").arg("")
-                        .arg("--entrypoints").arg("")
-                        .arg("--output").arg(&out_file)
+                        .arg("--classpath")
+                        .arg("")
+                        .arg("--entrypoints")
+                        .arg("")
+                        .arg("--output")
+                        .arg(&out_file)
                         .status();
                     match status {
                         Ok(s) if s.success() => {
                             println!("[bazbom] reachability wrote {:?}", out_file);
                             if let Ok(bytes) = fs::read(&out_file) {
-                                if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-                                    println!("[bazbom] reachability summary: keys={}", val.as_object().map(|m| m.len()).unwrap_or(0));
+                                if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&bytes)
+                                {
+                                    println!(
+                                        "[bazbom] reachability summary: keys={}",
+                                        val.as_object().map(|m| m.len()).unwrap_or(0)
+                                    );
                                 }
                             }
                         }
@@ -136,7 +156,11 @@ fn main() -> Result<()> {
                 let offline = std::env::var("BAZBOM_OFFLINE").is_ok();
                 let manifest = bazbom_advisories::db_sync(&cache_dir, offline)
                     .context("failed advisory DB sync")?;
-                println!("[bazbom] advisories cached at {:?} ({} files)", cache_dir, manifest.files.len());
+                println!(
+                    "[bazbom] advisories cached at {:?} ({} files)",
+                    cache_dir,
+                    manifest.files.len()
+                );
             }
         },
     }

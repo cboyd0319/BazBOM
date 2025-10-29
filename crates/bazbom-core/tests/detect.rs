@@ -1,6 +1,6 @@
+use bazbom_core::{detect_build_system, BuildSystem};
 use std::fs;
 use tempfile::tempdir;
-use bazbom_core::{detect_build_system, BuildSystem};
 
 #[test]
 fn detect_maven() {
@@ -28,4 +28,3 @@ fn detect_unknown() {
     let dir = tempdir().unwrap();
     assert_eq!(detect_build_system(dir.path()), BuildSystem::Unknown);
 }
-
