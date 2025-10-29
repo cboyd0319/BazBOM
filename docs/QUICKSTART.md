@@ -11,7 +11,6 @@ Get BazBOM up and running in 5 minutes or less.
 ### For Bazel Integration
 - [Bazelisk](https://github.com/bazelbuild/bazelisk) or Bazel 7.0.0+
 - Java 11+ (for running examples)
-- Python 3.9+ (for supply chain tools during transition)
 
 ## Installation
 
@@ -19,67 +18,152 @@ Get BazBOM up and running in 5 minutes or less.
 
 The Rust CLI is the primary distribution method aligned with BazBOM's memory-safe, single-binary architecture.
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/cboyd0319/BazBOM.git
-   cd BazBOM
-   ```
+**Quick Install:**
 
-2. **Build the Rust CLI**:
-   ```bash
-   cargo build --release
-   ```
+```bash
+# Clone and build
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release
 
-3. **Verify installation**:
-   ```bash
-   ./target/release/bazbom --version
-   ./target/release/bazbom --help
-   ```
+# Add to PATH (optional)
+export PATH="$PWD/target/release:$PATH"
+
+# Verify installation
+bazbom --version
+bazbom --help
+```
+
+**Using the Binary:**
+
+```bash
+# The compiled binary is at:
+./target/release/bazbom
+
+# Or if added to PATH:
+bazbom
+```
 
 ### Option 2: Bazel Integration
 
-For Bazel-specific workflows:
+For Bazel-specific workflows or development:
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/cboyd0319/BazBOM.git
-   cd BazBOM
-   ```
-
-2. **Verify Bazel setup**:
-   ```bash
-   bazel version
-   ```
+```bash
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+bazel version
+```
 
 ## Basic Usage
 
-### Using the Rust CLI (Recommended)
+### Rust CLI Commands
 
 The Rust CLI provides a unified interface for all build systems (Maven, Gradle, Bazel):
 
+#### 1. Generate SBOM
+
 ```bash
-# Auto-detect build system and generate SBOM
-./target/release/bazbom scan .
+# Scan current directory (auto-detects build system)
+bazbom scan .
 
-# Generate SBOM in SPDX format (default)
-./target/release/bazbom scan /path/to/project --format spdx
+# Scan specific project path
+bazbom scan /path/to/project
 
-# Generate SBOM in CycloneDX format
-./target/release/bazbom scan /path/to/project --format cyclonedx
+# Generate SPDX format (default)
+bazbom scan . --format spdx
 
-# Enable reachability analysis (requires Java 11+)
-./target/release/bazbom scan . --reachability
+# Generate CycloneDX format
+bazbom scan . --format cyclonedx
 
-# Sync advisory database for offline use
-./target/release/bazbom db sync
+# Specify output directory
+bazbom scan . --out-dir ./reports
 ```
 
-**Outputs:**
-- `sbom.spdx.json` (or `sbom.cyclonedx.json`)
-- `sca_findings.json` (vulnerability findings)
-- `sca_findings.sarif` (GitHub Security format)
+**Default Outputs:**
+- `sbom.spdx.json` or `sbom.cyclonedx.json` - SBOM in requested format
+- `sca_findings.json` - Vulnerability findings (machine-readable)
+- `sca_findings.sarif` - Vulnerability findings (GitHub Security format)
 
-### Using Bazel Integration
+#### 2. Enable Reachability Analysis
+
+```bash
+# Perform bytecode reachability analysis (requires Java 11+)
+bazbom scan . --reachability
+
+# Note: Requires BAZBOM_REACHABILITY_JAR environment variable
+# when reachability engine is available
+```
+
+#### 3. Advisory Database Sync
+
+```bash
+# Download/update advisory databases for offline use
+bazbom db sync
+
+# Syncs from: OSV, NVD, GHSA, CISA KEV, EPSS
+# Creates cache at: .bazbom/cache/
+
+# Use in offline mode
+BAZBOM_OFFLINE=1 bazbom db sync
+```
+
+#### 4. Policy Checks
+
+```bash
+# Run policy checks against findings
+bazbom policy check
+
+# Policy configuration from bazbom.yml (if present)
+# Outputs: SARIF with policy verdicts
+```
+
+#### 5. Remediation
+
+```bash
+# Suggest fixes (recommend-only mode)
+bazbom fix --suggest
+
+# Apply fixes and open PRs (when implemented)
+bazbom fix --apply
+```
+
+### Example Workflows
+
+#### Complete Security Scan
+
+```bash
+# 1. Sync advisory database
+bazbom db sync
+
+# 2. Generate SBOM and find vulnerabilities
+bazbom scan . --format spdx
+
+# 3. Check policy compliance
+bazbom policy check
+
+# 4. Get remediation suggestions
+bazbom fix --suggest
+```
+
+#### Offline Operation
+
+```bash
+# 1. Sync data when online
+bazbom db sync
+
+# 2. Later, scan offline
+BAZBOM_OFFLINE=1 bazbom scan .
+```
+
+#### CI/CD Integration
+
+```bash
+# Typical CI pipeline step
+bazbom scan . --format spdx --out-dir ./artifacts
+bazbom policy check
+```
+
+### Bazel Integration
 
 For Bazel-native workflows:
 
