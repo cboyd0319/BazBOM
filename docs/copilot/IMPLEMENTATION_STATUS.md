@@ -242,7 +242,7 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 
 ### In Progress 🔄 (50% Complete)
 
-**Reachability Engine** ✅ (70% Complete)
+**Reachability Engine** ✅ (60% Complete)
 - ✅ ASM-based bytecode analysis implementation
 - ✅ Call graph generation from entrypoints
 - ✅ Reachable/unreachable tagging in SARIF and policy checks
@@ -255,7 +255,7 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 - ⏸️ Reachability result caching
 - ⏸️ Performance optimization for large projects
 
-**CLI Integration** ✅ (80% Complete)
+**CLI Integration** ✅ (70% Complete)
 - ✅ `--reachability` flag support
 - ✅ Classpath extraction for Maven (via `mvn dependency:build-classpath`)
 - ✅ Classpath extraction stubs for Gradle/Bazel
@@ -271,13 +271,13 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 - ⏸️ Class fingerprinting for original GAV mapping
 - ⏸️ Original GAV/PURL mapping in findings
 
-**Testing & Documentation** 🔄
-- ✅ 6 Java unit tests (MainTest.java)
-- ✅ 3 Rust unit tests (reachability module)
-- ✅ README for reachability tool
-- ⏸️ Integration tests with sample JARs
-- ⏸️ Main documentation update
-- ⏸️ Performance benchmarks
+**Testing & Documentation** 🔄 (40% Complete)
+- ✅ 6 Java unit tests (MainTest.java: empty classpath, output creation, MethodRef equality)
+- ✅ 3 Rust unit tests (reachability module: is_class_reachable, is_package_reachable, is_method_reachable)
+- ✅ README for reachability tool with usage examples
+- ⏸️ Integration tests with sample JARs from Maven Central
+- ⏸️ Main documentation update (USAGE.md, QUICKSTART.md)
+- ⏸️ Performance benchmarks for large projects
 
 ---
 
