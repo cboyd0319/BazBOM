@@ -50,3 +50,6 @@ sca_findings.*
 *.spdx.json
 *.cyclonedx.json
 *.sarif
+
+# Homebrew generated files
+homebrew/bazbom.rb

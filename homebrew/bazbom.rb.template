@@ -1,0 +1,34 @@
+class Bazbom < Formula
+  desc "Build-time SBOM, SCA, and dependency graph for JVM projects"
+  homepage "https://github.com/cboyd0319/BazBOM"
+  version "VERSION"
+  license "MIT"
+
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://github.com/cboyd0319/BazBOM/releases/download/vVERSION/bazbom-aarch64-apple-darwin.tar.gz"
+      sha256 "SHA256_MACOS_ARM64"
+    else
+      url "https://github.com/cboyd0319/BazBOM/releases/download/vVERSION/bazbom-x86_64-apple-darwin.tar.gz"
+      sha256 "SHA256_MACOS_X86_64"
+    end
+  end
+
+  on_linux do
+    if Hardware::CPU.arm?
+      url "https://github.com/cboyd0319/BazBOM/releases/download/vVERSION/bazbom-aarch64-unknown-linux-gnu.tar.gz"
+      sha256 "SHA256_LINUX_ARM64"
+    else
+      url "https://github.com/cboyd0319/BazBOM/releases/download/vVERSION/bazbom-x86_64-unknown-linux-gnu.tar.gz"
+      sha256 "SHA256_LINUX_X86_64"
+    end
+  end
+
+  def install
+    bin.install "bazbom"
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/bazbom --version")
+  end
+end
