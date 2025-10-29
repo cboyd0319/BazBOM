@@ -88,29 +88,48 @@ fn main() -> Result<()> {
             );
             let out = PathBuf::from(&out_dir);
             
-            // For Bazel projects, extract dependencies first
-            if system == bazbom_core::BuildSystem::Bazel {
+            // For Bazel projects, extract dependencies and generate SBOM
+            let sbom_path = if system == bazbom_core::BuildSystem::Bazel {
                 let deps_json_path = out.join("bazel_deps.json");
                 match bazel::extract_bazel_dependencies(&root, &deps_json_path) {
                     Ok(graph) => {
                         println!(
-                            "[bazbom] extracted {} Bazel components",
-                            graph.components.len()
+                            "[bazbom] extracted {} Bazel components and {} edges",
+                            graph.components.len(),
+                            graph.edges.len()
                         );
                         
-                        // TODO: Convert BazelDependencyGraph to SBOM format
-                        // For now, we'll write the dependency graph as-is
+                        // Write raw dependency graph
                         println!("[bazbom] wrote dependency graph to {:?}", deps_json_path);
+                        
+                        // Convert to SPDX format
+                        let project_name = root
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("bazel-project");
+                        let spdx_doc = graph.to_spdx(project_name);
+                        
+                        let sbom_path = match format.as_str() {
+                            "cyclonedx" => out.join("sbom.cyclonedx.json"),
+                            _ => out.join("sbom.spdx.json"),
+                        };
+                        
+                        fs::write(&sbom_path, serde_json::to_vec_pretty(&spdx_doc).unwrap())
+                            .with_context(|| format!("failed writing {:?}", sbom_path))?;
+                        
+                        sbom_path
                     }
                     Err(e) => {
                         eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
                         eprintln!("[bazbom] falling back to stub SBOM");
+                        write_stub_sbom(&out, &format, system)
+                            .with_context(|| format!("failed writing stub SBOM to {:?}", out))?
                     }
                 }
-            }
-            
-            let sbom_path = write_stub_sbom(&out, &format, system)
-                .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
+            } else {
+                write_stub_sbom(&out, &format, system)
+                    .with_context(|| format!("failed writing stub SBOM to {:?}", out))?
+            };
             println!("[bazbom] wrote {:?}", sbom_path);
 
             // Load advisories from cache

@@ -178,9 +178,18 @@ def build_dependency_graph(maven_data: Dict, workspace_path: Path) -> Dict:
             deps = dependencies.get(coord, [])
         
         for dep_coord in deps:
+            # dep_coord is in format "group:artifact", need to find the full coordinate
+            # Look it up in the artifacts dict
+            dep_version = artifacts.get(dep_coord, {}).get("version", "")
+            if dep_version:
+                full_dep_coord = f"{dep_coord}:{dep_version}"
+            else:
+                # Fall back to short coordinate
+                full_dep_coord = dep_coord
+            
             edges.append({
                 "from": full_coord,
-                "to": dep_coord,
+                "to": full_dep_coord,
                 "type": "depends_on",
             })
     
