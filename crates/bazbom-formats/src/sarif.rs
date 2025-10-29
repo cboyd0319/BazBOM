@@ -28,7 +28,9 @@ pub struct Tool {
 pub struct Driver {
     pub name: String,
     pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub information_uri: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub rules: Option<Vec<Rule>>,
 }
 
@@ -37,8 +39,11 @@ pub struct Driver {
 pub struct Rule {
     pub id: String,
     pub short_description: MessageString,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub full_description: Option<MessageString>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub help: Option<MessageString>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub default_configuration: Option<Configuration>,
 }
 
@@ -58,6 +63,7 @@ pub struct Result {
     pub rule_id: String,
     pub level: String,
     pub message: Message,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<Location>>,
 }
 

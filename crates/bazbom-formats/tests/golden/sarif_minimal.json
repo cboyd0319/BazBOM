@@ -6,9 +6,7 @@
       "tool": {
         "driver": {
           "name": "bazbom",
-          "version": "0.0.1-dev",
-          "informationUri": null,
-          "rules": null
+          "version": "0.0.1-dev"
         }
       },
       "results": []
