@@ -121,7 +121,11 @@ impl SarifReport {
 }
 
 impl Result {
-    pub fn new(rule_id: impl Into<String>, level: impl Into<String>, message: impl Into<String>) -> Self {
+    pub fn new(
+        rule_id: impl Into<String>,
+        level: impl Into<String>,
+        message: impl Into<String>,
+    ) -> Self {
         Self {
             rule_id: rule_id.into(),
             level: level.into(),
@@ -144,7 +148,11 @@ impl Result {
 }
 
 impl Rule {
-    pub fn new(id: impl Into<String>, description: impl Into<String>, level: impl Into<String>) -> Self {
+    pub fn new(
+        id: impl Into<String>,
+        description: impl Into<String>,
+        level: impl Into<String>,
+    ) -> Self {
         Self {
             id: id.into(),
             short_description: MessageString {

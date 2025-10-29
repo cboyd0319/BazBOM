@@ -219,4 +219,3 @@ mod tests {
         assert_eq!(violation.unwrap().rule, "kev_gate");
     }
 }
-

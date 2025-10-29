@@ -1,6 +1,8 @@
-pub mod spdx;
 pub mod cyclonedx;
 pub mod sarif;
+pub mod spdx;
+
+use std::str::FromStr;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputFormat {
@@ -9,16 +11,20 @@ pub enum OutputFormat {
     Sarif,
 }
 
-impl OutputFormat {
-    pub fn from_str(s: &str) -> Option<Self> {
+impl FromStr for OutputFormat {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
-            "spdx" => Some(Self::Spdx),
-            "cyclonedx" | "cdx" => Some(Self::CycloneDx),
-            "sarif" => Some(Self::Sarif),
-            _ => None,
+            "spdx" => Ok(Self::Spdx),
+            "cyclonedx" | "cdx" => Ok(Self::CycloneDx),
+            "sarif" => Ok(Self::Sarif),
+            _ => Err(format!("Unknown format: {}", s)),
         }
     }
+}
 
+impl OutputFormat {
     pub fn extension(&self) -> &'static str {
         match self {
             Self::Spdx => "spdx.json",

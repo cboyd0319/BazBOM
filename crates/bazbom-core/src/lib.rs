@@ -42,7 +42,7 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
 ) -> std::io::Result<PathBuf> {
     let dir = dir.as_ref();
     fs::create_dir_all(dir)?;
-    
+
     match format {
         "cyclonedx" => {
             let path = dir.join("sbom.cyclonedx.json");
