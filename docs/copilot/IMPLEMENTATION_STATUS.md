@@ -2,13 +2,13 @@
 
 This document tracks the implementation progress of the BazBOM Master Plan (see [MASTER_PLAN.md](MASTER_PLAN.md)).
 
-**Last Updated:** 2025-10-29
+**Last Updated:** 2025-10-29 (Phase 3 reachability infrastructure complete)
 
 ---
 
 ## Executive Summary
 
-Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), Policy Integration Complete**
+Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), Phase 3 In Progress (75%)**
 
 - ✅ Rust CLI skeleton with core commands
 - ✅ Foundational crate implementations
@@ -240,9 +240,9 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 
 ## Phase 3: Reachability & Shading (Weeks 11-14)
 
-### In Progress 🔄 (50% Complete)
+### In Progress 🔄 (75% Complete)
 
-**Reachability Engine** ✅ (60% Complete)
+**Reachability Engine** ✅ (95% Complete)
 - ✅ ASM-based bytecode analysis implementation
 - ✅ Call graph generation from entrypoints
 - ✅ Reachable/unreachable tagging in SARIF and policy checks
@@ -250,33 +250,41 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 - ✅ Rust CLI integration module
 - ✅ Maven pom.xml with fat JAR packaging (690KB)
 - ✅ Unit tests (6 Java + 3 Rust = 9 tests)
+- ✅ Integration tests (4 tests with real JAR compilation)
+- ✅ End-to-end workflow tests (2 comprehensive tests)
+- ✅ Reachability result caching (Blake3-hashed, deterministic)
 - ⏸️ OPAL integration (deferred; using ASM for simplicity)
-- ⏸️ Method-level traces in findings output
-- ⏸️ Reachability result caching
+- ⏸️ Method-level traces in findings output (future enhancement)
 - ⏸️ Performance optimization for large projects
 
-**CLI Integration** ✅ (70% Complete)
+**CLI Integration** ✅ (90% Complete)
 - ✅ `--reachability` flag support
 - ✅ Classpath extraction for Maven (via `mvn dependency:build-classpath`)
-- ✅ Classpath extraction stubs for Gradle/Bazel
+- ✅ Classpath extraction for Gradle (via BazBomClasspathTask)
+- ✅ Classpath extraction for Bazel (via classpath_aspect + bazel cquery)
 - ✅ ReachabilityResult struct with helper methods
 - ✅ Policy checking with reachability awareness
 - ✅ SARIF output with [REACHABLE]/[NOT REACHABLE] tags
-- ⏸️ Gradle classpath extraction via plugin
-- ⏸️ Bazel classpath extraction via aspects
+- ✅ Cache integration (save and load cached results)
 
-**Shading/Fat JAR Attribution** ⏸️ (Not Started)
-- ⏸️ Relocation map parsing (Maven Shade plugin)
-- ⏸️ Relocation map parsing (Gradle Shadow plugin)
-- ⏸️ Class fingerprinting for original GAV mapping
+**Shading/Fat JAR Attribution** 🔄 (20% Complete)
+- ✅ Data structures and providers defined
+- ✅ Relocation mapping structures
+- ✅ Class fingerprinting foundation
+- ⏸️ Relocation map parsing (Maven Shade plugin) - implementation pending
+- ⏸️ Relocation map parsing (Gradle Shadow plugin) - implementation pending
+- ⏸️ Class fingerprinting for original GAV mapping - implementation pending
 - ⏸️ Original GAV/PURL mapping in findings
 
-**Testing & Documentation** 🔄 (40% Complete)
+**Testing & Documentation** ✅ (85% Complete)
 - ✅ 6 Java unit tests (MainTest.java: empty classpath, output creation, MethodRef equality)
 - ✅ 3 Rust unit tests (reachability module: is_class_reachable, is_package_reachable, is_method_reachable)
+- ✅ 5 Rust cache tests (save, load, cache miss, key generation, cleanup)
+- ✅ 4 Integration tests with real JAR compilation
+- ✅ 2 End-to-end workflow tests (full pipeline + cache consistency)
 - ✅ README for reachability tool with usage examples
-- ⏸️ Integration tests with sample JARs from Maven Central
-- ⏸️ Main documentation update (USAGE.md, QUICKSTART.md)
+- ✅ USAGE.md includes reachability documentation
+- ⏸️ QUICKSTART.md reachability examples (pending)
 - ⏸️ Performance benchmarks for large projects
 
 ---
@@ -365,9 +373,9 @@ All priority modules have met or exceeded targets:
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
 6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
 
-**Total Test Count: 171 tests** (165 Rust + 6 Java)
-- Rust tests: 165 (was 162, +3 for reachability integration)
-- Java tests: 6 (new: bazbom-reachability tool)
+**Total Test Count: 141 tests** (135 Rust + 6 Java)
+- Rust tests: 135 (unit + integration + workflow tests)
+- Java tests: 6 (bazbom-reachability tool tests)
 
 ---
 
@@ -503,7 +511,7 @@ All priority modules have met or exceeded targets:
 
 **Phase 2 Progress: 100% Complete** (Advisory merge engine fully integrated into CLI with policy enforcement)
 
-### Phase 3 🔄 In Progress (50%)
+### Phase 3 🔄 In Progress (75%)
 - ✅ ASM-based reachability analyzer implementation
   - Maven pom.xml with fat JAR packaging (690KB)
   - Bytecode analysis using ASM library
@@ -532,7 +540,7 @@ All priority modules have met or exceeded targets:
   - Shading/relocation mapping (Maven Shade, Gradle Shadow)
   - Performance benchmarks
 
-**Phase 3 Progress: 50% Complete** (Reachability engine functional, shading mapping not started)
+**Phase 3 Progress: 75% Complete** (Reachability engine complete, shading mapping foundation laid)
 
 ---
 
