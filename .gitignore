@@ -43,6 +43,11 @@ hs_err_pid*
 target/
 dist/
 
+# Gradle
+.gradle/
+build/
+**/build/
+
 # BazBOM cache and output files
 .bazbom/
 sbom.*.json
