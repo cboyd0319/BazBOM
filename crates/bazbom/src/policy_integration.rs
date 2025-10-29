@@ -4,8 +4,18 @@ use bazbom_policy::{PolicyConfig, PolicyResult, Vulnerability as PolicyVuln, Sev
 use std::fs;
 use std::path::Path;
 
-/// Convert advisory vulnerability to policy vulnerability for checking
-pub fn convert_to_policy_vuln(advisory_vuln: &AdvisoryVuln, component: &str) -> PolicyVuln {
+/// Convert advisory vulnerability to policy vulnerability for checking (deprecated, use convert_to_policy_vuln_with_reachability)
+#[allow(dead_code)]
+fn convert_to_policy_vuln(advisory_vuln: &AdvisoryVuln, component: &str) -> PolicyVuln {
+    convert_to_policy_vuln_with_reachability(advisory_vuln, component, None)
+}
+
+/// Convert advisory vulnerability to policy vulnerability with optional reachability info
+pub fn convert_to_policy_vuln_with_reachability(
+    advisory_vuln: &AdvisoryVuln,
+    component: &str,
+    reachable: Option<bool>,
+) -> PolicyVuln {
     let severity = match advisory_vuln.severity.as_ref().map(|s| s.level) {
         Some(bazbom_advisories::SeverityLevel::Critical) => SeverityLevel::Critical,
         Some(bazbom_advisories::SeverityLevel::High) => SeverityLevel::High,
@@ -50,7 +60,7 @@ pub fn convert_to_policy_vuln(advisory_vuln: &AdvisoryVuln, component: &str) -> 
         fixed_version,
         kev: advisory_vuln.kev.is_some(),
         epss_score: advisory_vuln.epss.as_ref().map(|e| e.score),
-        reachable: None, // Will be set when reachability analysis is implemented
+        reachable,
     }
 }
 
@@ -76,6 +86,15 @@ pub fn check_policy(
     advisory_vulns: &[AdvisoryVuln],
     policy: &PolicyConfig,
 ) -> PolicyResult {
+    check_policy_with_reachability(advisory_vulns, policy, None)
+}
+
+/// Check vulnerabilities against policy with optional reachability information
+pub fn check_policy_with_reachability(
+    advisory_vulns: &[AdvisoryVuln],
+    policy: &PolicyConfig,
+    reachability: Option<&crate::reachability::ReachabilityResult>,
+) -> PolicyResult {
     let mut violations = Vec::new();
 
     for advisory_vuln in advisory_vulns {
@@ -85,7 +104,25 @@ pub fn check_policy(
             .map(|pkg| format!("{}:{}", pkg.ecosystem, pkg.package))
             .unwrap_or_else(|| "unknown".to_string());
         
-        let policy_vuln = convert_to_policy_vuln(advisory_vuln, &component);
+        // Determine reachability if analysis was performed
+        let is_reachable = if let Some(reach) = reachability {
+            // Extract package name from component (e.g., "maven:com.example:mylib" -> "com.example")
+            let package_name = component
+                .split(':')
+                .nth(1)
+                .unwrap_or("");
+            
+            // Check if the package is reachable
+            Some(reach.is_package_reachable(package_name))
+        } else {
+            None
+        };
+        
+        let policy_vuln = convert_to_policy_vuln_with_reachability(
+            advisory_vuln,
+            &component,
+            is_reachable,
+        );
         
         // Check vulnerability against policy
         if let Some(violation) = policy.check_vulnerability(&policy_vuln) {

@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,6 +17,7 @@ pub struct ReachabilityResult {
 }
 
 impl ReachabilityResult {
+    #[allow(dead_code)]
     pub fn is_class_reachable(&self, class_name: &str) -> bool {
         self.reachable_classes.iter().any(|c| c == class_name)
     }
@@ -28,6 +29,7 @@ impl ReachabilityResult {
         })
     }
 
+    #[allow(dead_code)]
     pub fn is_method_reachable(&self, method_signature: &str) -> bool {
         self.reachable_methods.iter().any(|m| m.contains(method_signature))
     }
@@ -123,7 +125,7 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
 
     // Parse Gradle output to extract JAR paths
     // This is simplified - in production, we'd use a custom Gradle task
-    let output_str = String::from_utf8(output.stdout)
+    let _output_str = String::from_utf8(output.stdout)
         .context("invalid UTF-8 in Gradle output")?;
 
     // For now, return empty - this needs proper implementation via Gradle plugin
