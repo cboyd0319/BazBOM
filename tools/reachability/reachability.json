@@ -1,0 +1,10 @@
+{
+  "tool": "bazbom-reachability",
+  "version": "0.1.0",
+  "classpath": "",
+  "entrypoints": "",
+  "detectedEntrypoints": [],
+  "reachableMethods": [],
+  "reachableClasses": [],
+  "reachablePackages": []
+}

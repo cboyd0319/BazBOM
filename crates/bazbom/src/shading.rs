@@ -6,6 +6,7 @@ use std::path::Path;
 
 /// Represents a class relocation mapping (e.g., org.foo -> com.shaded.org.foo)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(non_snake_case)]
 pub struct RelocationMapping {
     pub pattern: String,
     pub shadedPattern: String,
@@ -17,6 +18,7 @@ pub struct RelocationMapping {
 
 /// Represents configuration for a shaded JAR
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct ShadingConfiguration {
     pub source: String,  // "maven-shade-plugin" or "gradle-shadow"
     pub relocations: Vec<RelocationMapping>,
@@ -25,6 +27,7 @@ pub struct ShadingConfiguration {
 
 /// Class fingerprint for matching shaded classes to original artifacts
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(non_snake_case)]
 pub struct ClassFingerprint {
     pub className: String,
     pub methodSignatures: Vec<String>,
@@ -34,6 +37,7 @@ pub struct ClassFingerprint {
 
 /// Represents a match between a shaded class and its original artifact
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(non_snake_case)]
 pub struct ShadingMatch {
     pub shadedClassName: String,
     pub originalClassName: String,
@@ -240,10 +244,7 @@ fn parse_gradle_relocate_line(line: &str) -> Option<(String, String)> {
     
     let cleaned = line.trim()
         .replace("relocate", "")
-        .replace('(', "")
-        .replace(')', "")
-        .replace('\'', "")
-        .replace('"', "");
+        .replace(['(', ')', '\'', '"'], "");
     
     let parts: Vec<&str> = cleaned.split(',').map(|s| s.trim()).collect();
     
