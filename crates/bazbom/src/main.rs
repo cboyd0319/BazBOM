@@ -8,6 +8,7 @@ mod advisory;
 mod bazel;
 mod policy_integration;
 mod reachability;
+mod reachability_cache;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -282,19 +283,46 @@ fn main() -> Result<()> {
                             _ => String::new(),
                         };
                         
-                        match reachability::analyze_reachability(&jar_path, &classpath, "", &out_file) {
-                            Ok(result) => {
-                                println!("[bazbom] reachability analysis complete");
-                                if result.reachable_classes.is_empty() {
-                                    println!("[bazbom] no reachable classes found (classpath may be empty)");
+                        let entrypoints = "";
+                        let cache_dir = reachability_cache::get_cache_dir();
+                        
+                        // Check cache first
+                        let result = if let Ok(Some(cached)) = reachability_cache::load_cached_result(
+                            &cache_dir,
+                            &classpath,
+                            entrypoints,
+                        ) {
+                            println!("[bazbom] using cached reachability result");
+                            Some(cached)
+                        } else {
+                            // Run analysis and cache result
+                            match reachability::analyze_reachability(&jar_path, &classpath, entrypoints, &out_file) {
+                                Ok(result) => {
+                                    println!("[bazbom] reachability analysis complete");
+                                    if result.reachable_classes.is_empty() {
+                                        println!("[bazbom] no reachable classes found (classpath may be empty)");
+                                    }
+                                    
+                                    // Save to cache
+                                    if let Err(e) = reachability_cache::save_cached_result(
+                                        &cache_dir,
+                                        &classpath,
+                                        entrypoints,
+                                        &result,
+                                    ) {
+                                        eprintln!("[bazbom] warning: failed to cache reachability result: {}", e);
+                                    }
+                                    
+                                    Some(result)
                                 }
-                                Some(result)
+                                Err(e) => {
+                                    eprintln!("[bazbom] reachability analysis failed: {}", e);
+                                    None
+                                }
                             }
-                            Err(e) => {
-                                eprintln!("[bazbom] reachability analysis failed: {}", e);
-                                None
-                            }
-                        }
+                        };
+                        
+                        result
                     }
                 } else {
                     eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured");

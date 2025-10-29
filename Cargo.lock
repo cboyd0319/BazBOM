@@ -152,6 +152,8 @@ dependencies = [
  "bazbom-formats",
  "bazbom-graph",
  "bazbom-policy",
+ "blake3",
+ "chrono",
  "clap",
  "predicates",
  "serde",
