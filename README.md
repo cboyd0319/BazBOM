@@ -64,41 +64,98 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### 🆕 What's New
 
-- **🦀 Rust-first CLI (preview)**: Memory-safe single binary roadmap with signed releases
+- **🦀 Rust-first CLI (stable)**: Memory-safe single binary with signed releases and Homebrew distribution
+- **🍺 Homebrew Support**: One-command installation via brew tap
+- **✍️ Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
+- **🔐 SLSA Provenance**: Level 3 provenance for verifiable build integrity
 - **🧠 Reachability (OPAL, opt-in)**: Bytecode call graphs for real-risk prioritization
 - **📜 Policy-as-Code**: YAML core with optional Rego/CUE; CI gating and VEX auto-application
 - **🔒 Zero Telemetry**: No background network calls; explicit offline DB sync
-- **🚀 Zero-Config Installer**: One-line install for today’s Python-based tooling
-- **🔄 Watch Mode**: Continuous monitoring and auto-scanning on file changes
 - **⚙️ GitHub Action**: Automated security scanning in CI/CD pipelines
 - **🐳 Container SBOM**: Scan Docker/Podman images for dependencies and OS packages
 - **🔧 Interactive Fix**: Auto-generate and apply dependency upgrades
 - **🌍 Universal Build System Support**: Works with Maven, Gradle, and Bazel
 - **📊 CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
-- **🛡️ Security Badges**: Auto-generate shields.io badges for your README
+
 
 ---
 
 ## ⚡ Quickstart
 
-### Option 0: Rust CLI (Preview)
+### Option 0: Homebrew (Recommended for macOS/Linux)
 
-Build the new Rust-based CLI locally.
+Install BazBOM with a single command using Homebrew:
 
 ```bash
-# Prerequisites: Rust (stable) and Java 11+ for reachability (when enabled)
-cargo build -p bazbom
-./target/debug/bazbom --help
+# Add the tap
+brew tap cboyd0319/bazbom
 
-# Example
-./target/debug/bazbom scan . --format spdx
+# Install BazBOM
+brew install bazbom
+
+# Verify installation
+bazbom --version
+
+# Scan a project
+cd /path/to/your/jvm/project
+bazbom scan .
 ```
 
-Note: The Rust CLI is an active migration path. Core scanning capabilities continue to be available via the existing installer and Bazel integration below.
+**Benefits:**
+- Single command installation
+- Automatic updates with `brew upgrade`
+- Signed, verified binaries
+- Shell completions included
 
-### Option 1: One-Line Install (Recommended)
+See [Homebrew Installation Guide](docs/HOMEBREW_INSTALLATION.md) for detailed instructions.
 
-Install BazBOM with automatic configuration:
+### Option 1: Pre-built Binaries
+
+Download pre-built, signed binaries from [GitHub Releases](https://github.com/cboyd0319/BazBOM/releases):
+
+```bash
+# macOS (Apple Silicon)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-aarch64-apple-darwin.tar.gz
+tar -xzf bazbom-aarch64-apple-darwin.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# macOS (Intel)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz
+tar -xzf bazbom-x86_64-apple-darwin.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Linux (x86_64)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Verify installation
+bazbom --version
+```
+
+All binaries are signed with Sigstore cosign. See [Release Process](docs/RELEASE_PROCESS.md) for verification instructions.
+
+### Option 2: Build from Source (Rust CLI)
+
+Build the Rust CLI locally:
+
+```bash
+# Prerequisites: Rust (stable) and Java 11+ for reachability (optional)
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release -p bazbom
+
+# Install to system
+sudo cp target/release/bazbom /usr/local/bin/
+
+# Verify
+bazbom --version
+bazbom scan . --format spdx
+```
+
+### Option 3: Python-based Legacy Installer
+
+Legacy Python-based installation (maintained for compatibility):
 
 ```bash
 # Recommended: Download and inspect first
@@ -118,33 +175,9 @@ bazbom scan --watch
 
 **Security Note**: Always review scripts before executing them with bash. The recommended approach is to download, inspect, and then execute.
 
-**What it does:**
-- ✅ Detects your platform (Linux/macOS, amd64/arm64)
-- ✅ Checks prerequisites (Python 3, Git)
-- ✅ Installs BazBOM to `~/.bazbom`
-- ✅ Adds `bazbom` command to PATH
-- ✅ Auto-configures Bazel projects
+**Note:** The Rust CLI (Options 0-2) is the recommended installation method. The Python-based installer remains available during the transition period.
 
-### Option 2: Universal CLI (Manual Setup)
-
-Works with **Maven**, **Gradle**, or **Bazel** projects:
-
-```bash
-# Clone BazBOM
-git clone https://github.com/cboyd0319/BazBOM ~/.bazbom
-export PATH="$HOME/.bazbom:$PATH"
-
-# Scan any JVM project (auto-detects build system)
-bazbom scan /path/to/your/project
-
-# Initialize configuration (optional)
-cd /path/to/your/project
-bazbom init
-```
-
-**Output:** `dependencies.json` with all resolved dependencies and PURLs.
-
-### Option 3: GitHub Action (CI/CD)
+### Option 4: GitHub Action (CI/CD)
 
 Add to `.github/workflows/security.yml`:
 
@@ -173,14 +206,14 @@ jobs:
 ```
 
 **What it does:**
-- ✅ Auto-detects build system (Maven/Gradle/Bazel)
-- ✅ Generates SBOM
-- ✅ Scans for vulnerabilities
-- ✅ Uploads SARIF to GitHub Security tab
-- ✅ Comments on PRs with findings
-- ✅ Fails build on policy violations
+- Auto-detects build system (Maven/Gradle/Bazel)
+- Generates SBOM
+- Scans for vulnerabilities
+- Uploads SARIF to GitHub Security tab
+- Comments on PRs with findings
+- Fails build on policy violations
 
-### Option 4: Bazel-Native (For Bazel Projects Only)
+### Option 5: Bazel-Native (For Bazel Projects Only)
 
 ```python
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")

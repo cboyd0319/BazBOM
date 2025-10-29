@@ -6,6 +6,8 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
+- **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
+- **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
 
 ## Architecture & Design
 

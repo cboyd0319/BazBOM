@@ -644,3 +644,285 @@ bazel build //... --subcommands
 # Debug aspects
 bazel build //... --aspects=//tools/supplychain:aspects.bzl%sbom_aspect --output_groups=sbom
 ```
+
+## Rust CLI Issues
+
+### Binary Not Found After Installation
+
+**Symptom**: `bazbom: command not found` after installing via Homebrew or downloading binary
+
+**Solution**: Verify binary is in PATH:
+
+```bash
+# Check if binary exists
+which bazbom
+
+# If installed via Homebrew
+brew list bazbom | grep bin
+
+# Manually add to PATH if needed
+export PATH="$HOME/.local/bin:$PATH"
+
+# Or for Homebrew
+export PATH="$(brew --prefix)/bin:$PATH"
+```
+
+Add the PATH export to your shell configuration file (`.bashrc`, `.zshrc`, etc.) for persistence.
+
+### Build System Not Detected
+
+**Symptom**: `Error: Could not detect build system`
+
+**Solution**: Ensure you are in a project directory with one of the supported build files:
+
+- Maven: `pom.xml`
+- Gradle: `build.gradle` or `build.gradle.kts`
+- Bazel: `WORKSPACE`, `MODULE.bazel`, or `BUILD.bazel`
+
+```bash
+# Check current directory
+ls -la | grep -E "(pom.xml|build.gradle|WORKSPACE|MODULE.bazel)"
+
+# Run from project root
+cd /path/to/project/root
+bazbom scan .
+```
+
+### SPDX Output Validation Fails
+
+**Symptom**: Generated SPDX file fails validation
+
+**Solution**: Validate output against JSON schema:
+
+```bash
+# Install JSON schema validator
+pip install check-jsonschema
+
+# Validate SPDX output
+check-jsonschema \
+  --schemafile https://raw.githubusercontent.com/spdx/spdx-spec/v2.3/schemas/spdx-schema.json \
+  output.spdx.json
+
+# Check required fields
+jq '.spdxVersion, .dataLicense, .SPDXID, .name' output.spdx.json
+```
+
+Expected output:
+```json
+"SPDX-2.3"
+"CC0-1.0"
+"SPDXRef-DOCUMENT"
+"project-name"
+```
+
+### SARIF Output Not Valid
+
+**Symptom**: SARIF file fails GitHub Code Scanning upload
+
+**Solution**: Verify SARIF format:
+
+```bash
+# Validate SARIF schema
+jq '.$schema' output.sarif.json
+# Should be: https://json.schemastore.org/sarif-2.1.0.json
+
+# Check version
+jq '.version' output.sarif.json
+# Should be: "2.1.0"
+
+# Verify runs array exists
+jq '.runs | length' output.sarif.json
+# Should be: 1 or more
+```
+
+### Cargo Build Fails
+
+**Symptom**: `cargo build` fails with compilation errors
+
+**Solution**: Ensure you have the correct Rust version:
+
+```bash
+# Check Rust version
+rustc --version
+
+# Update Rust
+rustup update stable
+
+# Clean and rebuild
+cargo clean
+cargo build --release
+```
+
+If errors persist, check for:
+- Missing system dependencies (OpenSSL, pkg-config)
+- Network connectivity for crate downloads
+- Sufficient disk space
+
+### Advisory Database Sync Fails
+
+**Symptom**: `bazbom db sync` fails with network errors
+
+**Solution**: Check network connectivity and proxy settings:
+
+```bash
+# Test OSV connectivity
+curl -I https://osv.dev
+
+# Test NVD connectivity  
+curl -I https://nvd.nist.gov
+
+# Set proxy if needed
+export HTTP_PROXY=http://proxy.example.com:8080
+export HTTPS_PROXY=http://proxy.example.com:8080
+
+# Retry sync
+bazbom db sync
+```
+
+### Cache Directory Permission Denied
+
+**Symptom**: `Error: Permission denied` when accessing cache
+
+**Solution**: Fix cache directory permissions:
+
+```bash
+# Default cache location
+CACHE_DIR="$HOME/.bazbom/cache"
+
+# Check permissions
+ls -la "$CACHE_DIR"
+
+# Fix permissions
+chmod -R u+rw "$CACHE_DIR"
+
+# Or use custom cache location
+export BAZBOM_CACHE_DIR=/tmp/bazbom-cache
+mkdir -p "$BAZBOM_CACHE_DIR"
+bazbom scan .
+```
+
+### Reachability Analysis Fails
+
+**Symptom**: `Error: Java not found` or reachability fails
+
+**Solution**: Reachability requires Java 11 or later:
+
+```bash
+# Check Java installation
+java -version
+
+# Install Java if needed (macOS)
+brew install openjdk@11
+
+# Install Java if needed (Linux)
+sudo apt-get install openjdk-11-jdk
+
+# Add Java to PATH
+export PATH="/usr/local/opt/openjdk@11/bin:$PATH"
+
+# Disable reachability if Java not available
+bazbom scan . --no-reachability
+```
+
+Note: Reachability analysis is optional and can be omitted for basic SBOM generation.
+
+### Output File Already Exists
+
+**Symptom**: `Error: Output file already exists`
+
+**Solution**: Remove existing file or use overwrite flag:
+
+```bash
+# Remove existing output
+rm output.spdx.json
+
+# Or force overwrite (if supported)
+bazbom scan . --force
+
+# Or use different output location
+bazbom scan . --output custom-output.spdx.json
+```
+
+### Policy Check Fails Unexpectedly
+
+**Symptom**: Policy check fails but no violations are visible
+
+**Solution**: Verify policy configuration:
+
+```bash
+# Check for policy file
+ls -la bazbom.yml .bazbom.yml
+
+# Validate policy syntax
+cat bazbom.yml
+
+# Run with verbose output
+bazbom policy check --verbose
+
+# Use default policy if custom policy is invalid
+bazbom policy check --default-policy
+```
+
+### Binary Signature Verification Fails
+
+**Symptom**: Cosign verification fails for downloaded binary
+
+**Solution**: Ensure you have matching binary and signature files:
+
+```bash
+# Download both files
+curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz
+curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz.sig
+
+# Install cosign
+brew install cosign
+
+# Verify signature
+cosign verify-blob \
+  --signature bazbom-x86_64-apple-darwin.tar.gz.sig \
+  bazbom-x86_64-apple-darwin.tar.gz
+```
+
+If verification fails:
+- Ensure signature and binary are from the same release
+- Check cosign is up to date
+- Verify binary was not modified after download
+
+### Performance Issues with Large Projects
+
+**Symptom**: Scan takes too long on large projects
+
+**Solution**: Use incremental analysis and caching:
+
+```bash
+# Enable caching
+export BAZBOM_CACHE_DIR="$HOME/.bazbom/cache"
+
+# Scan specific modules (Maven)
+bazbom scan ./module-name
+
+# Exclude test dependencies
+bazbom scan . --exclude-test-scope
+
+# Parallel processing (if supported)
+bazbom scan . --parallel
+```
+
+### Memory Issues
+
+**Symptom**: Process killed or out of memory errors
+
+**Solution**: Increase memory limits or reduce scope:
+
+```bash
+# Increase Rust stack size
+export RUST_MIN_STACK=8388608
+
+# Scan smaller subsets
+bazbom scan ./src
+
+# For large monorepos, scan incrementally
+for dir in */; do
+  bazbom scan "$dir"
+done
+```
