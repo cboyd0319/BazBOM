@@ -85,7 +85,7 @@ class TestGenerateMethod:
         
         assert isinstance(result, str)
         assert "# Release Notes: v1.0.0 → v1.1.0" in result
-        assert "## 📊 Summary" in result
+        assert "## Summary" in result
         assert "Total Dependencies (old)" in result
 
     def test_generate_html_format(self, mock_diff):
@@ -217,7 +217,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## 📊 Summary" in result
+        assert "## Summary" in result
         assert "| Total Dependencies (old) | 5 |" in result
         assert "| Total Dependencies (new) | 7 |" in result
         assert "| ➕ Added | 2 |" in result
@@ -320,7 +320,7 @@ class TestGenerateMarkdown:
         
         # Should still have header and summary, but no change sections
         assert "# Release Notes" in result
-        assert "## 📊 Summary" in result
+        assert "## Summary" in result
         assert "| ➕ Added | 0 |" in result
         # Should not have specific change sections
         assert "## ➕ New Dependencies" not in result

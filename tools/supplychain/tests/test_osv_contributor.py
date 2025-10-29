@@ -503,7 +503,7 @@ class TestEdgeCases:
             package_ecosystem="Maven",
             affected_versions=["1.0.0"],
             summary="Vulnérabilité avec caractères spéciaux",
-            details="Description détaillée avec émojis 🔒🛡️"
+            details="Description détaillée avec caractères spéciaux"
         )
         
         # Assert

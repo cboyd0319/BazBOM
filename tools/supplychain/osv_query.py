@@ -341,12 +341,12 @@ def main():
             
             # Print summary
             summary = enricher.get_priority_summary(findings)
-            print(f"\n📊 Priority Summary:")
-            print(f"  🚨 P0 - IMMEDIATE (KEV):     {summary['P0-IMMEDIATE']}")
-            print(f"  🔴 P1 - CRITICAL:            {summary['P1-CRITICAL']}")
-            print(f"  🟠 P2 - HIGH:                {summary['P2-HIGH']}")
-            print(f"  🟡 P3 - MEDIUM:              {summary['P3-MEDIUM']}")
-            print(f"  🟢 P4 - LOW:                 {summary['P4-LOW']}")
+            print(f"\nPriority Summary:")
+            print(f"  P0 - IMMEDIATE (KEV):     {summary['P0-IMMEDIATE']}")
+            print(f"  P1 - CRITICAL:            {summary['P1-CRITICAL']}")
+            print(f"  P2 - HIGH:                {summary['P2-HIGH']}")
+            print(f"  P3 - MEDIUM:              {summary['P3-MEDIUM']}")
+            print(f"  P4 - LOW:                 {summary['P4-LOW']}")
         except Exception as e:
             print(f"Warning: Enrichment failed: {e}", file=sys.stderr)
             print("Continuing with unenriched findings...", file=sys.stderr)

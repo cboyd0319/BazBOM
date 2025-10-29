@@ -83,7 +83,7 @@ class ChangelogGenerator:
         lines.append("")
         
         # Executive summary
-        lines.append("## 📊 Summary")
+        lines.append("## Summary")
         lines.append("")
         
         summary = diff.to_dict()['summary']
