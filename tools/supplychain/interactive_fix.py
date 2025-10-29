@@ -231,10 +231,10 @@ override_targets = {{
         fixable = self.get_fixable_vulnerabilities()
         
         if not fixable:
-            print("✅ No fixable vulnerabilities found!")
+            print("[OK] No fixable vulnerabilities found!")
             return 0
         
-        print(f"\n🔍 Found {len(fixable)} fixable vulnerabilities\n")
+        print(f"\n Found {len(fixable)} fixable vulnerabilities\n")
         print(f"Build system: {self.build_system}")
         print("=" * 60)
         
@@ -253,10 +253,10 @@ override_targets = {{
             print(f"CVE: {vuln.get('cve_id', 'N/A')}")
             
             if fix_analysis['is_transitive']:
-                print(f"⚠️  Transitive dependency (via {fix_analysis.get('direct_parent', 'unknown')})")
+                print(f"[WARNING]  Transitive dependency (via {fix_analysis.get('direct_parent', 'unknown')})")
             
             if fix_analysis['breaking_changes_likely']:
-                print("⚠️  WARNING: Major version change detected - may have breaking changes")
+                print("[WARNING]  WARNING: Major version change detected - may have breaking changes")
             
             # Generate fix
             print("\nGenerated fix:")
@@ -284,7 +284,7 @@ override_targets = {{
                     'fix': fix_code,
                     'analysis': fix_analysis,
                 })
-                print("✅ Fix queued for application")
+                print("[OK] Fix queued for application")
             else:
                 print("⏭  Skipped")
         
@@ -295,7 +295,7 @@ override_targets = {{
             print("=" * 60)
             self._apply_fixes()
             
-            print(f"\n✅ Successfully applied {len(self.fixes_applied)} fixes")
+            print(f"\n[OK] Successfully applied {len(self.fixes_applied)} fixes")
             print(f"\nNext steps:")
             if self.build_system == "maven":
                 print("  1. Review changes in pom.xml")
@@ -365,7 +365,7 @@ override_targets = {{
         with open(pom_path, 'w', encoding='utf-8') as f:
             f.write(pom_content)
         
-        print(f"✓ Updated {pom_path}")
+        print(f" Updated {pom_path}")
     
     def _apply_gradle_fixes(self):
         """Apply fixes to Gradle build file."""
@@ -389,7 +389,7 @@ override_targets = {{
         with open(gradle_path, 'w', encoding='utf-8') as f:
             f.write(gradle_content)
         
-        print(f"✓ Updated {gradle_path}")
+        print(f" Updated {gradle_path}")
     
     def _apply_bazel_fixes(self):
         """Apply fixes to Bazel WORKSPACE."""
@@ -410,7 +410,7 @@ override_targets = {{
         with open(workspace_path, 'w', encoding='utf-8') as f:
             f.write(workspace_content)
         
-        print(f"✓ Updated {workspace_path} (with instructions)")
+        print(f" Updated {workspace_path} (with instructions)")
 
 
 def main():

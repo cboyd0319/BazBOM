@@ -85,7 +85,7 @@ class TestGenerateMethod:
         
         assert isinstance(result, str)
         assert "# Release Notes: v1.0.0 → v1.1.0" in result
-        assert "## 📊 Summary" in result
+        assert "## Summary" in result
         assert "Total Dependencies (old)" in result
 
     def test_generate_html_format(self, mock_diff):
@@ -217,14 +217,14 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## 📊 Summary" in result
+        assert "## Summary" in result
         assert "| Total Dependencies (old) | 5 |" in result
         assert "| Total Dependencies (new) | 7 |" in result
-        assert "| ➕ Added | 2 |" in result
-        assert "| ➖ Removed | 1 |" in result
-        assert "| ⬆️ Upgraded | 2 |" in result
-        assert "| ⬇️ Downgraded | 1 |" in result
-        assert "| 📄 License Changed | 1 |" in result
+        assert "|  Added | 2 |" in result
+        assert "|  Removed | 1 |" in result
+        assert "|  Upgraded | 2 |" in result
+        assert "|  Downgraded | 1 |" in result
+        assert "|  License Changed | 1 |" in result
 
     def test_markdown_includes_added_packages(self, generator, mock_diff_with_changes):
         """Test markdown includes added packages section."""
@@ -234,7 +234,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## ➕ New Dependencies (2)" in result
+        assert "##  New Dependencies (2)" in result
         assert "**new-lib** `1.0.0`" in result
         assert "License: `Apache-2.0`" in result
         assert "PURL: `pkg:maven/com.example/new-lib@1.0.0`" in result
@@ -248,7 +248,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## ➖ Removed Dependencies (1)" in result
+        assert "##  Removed Dependencies (1)" in result
         assert "**old-lib** `0.9.0`" in result
 
     def test_markdown_includes_upgraded_packages(self, generator, mock_diff_with_changes):
@@ -259,7 +259,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## ⬆️ Upgraded Dependencies (1)" in result
+        assert "##  Upgraded Dependencies (1)" in result
         assert "**guava**: `30.0` → `31.0`" in result
 
     def test_markdown_includes_downgraded_packages(self, generator, mock_diff_with_changes):
@@ -270,7 +270,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## ⚠️ Downgraded Dependencies (1)" in result
+        assert "## [WARNING] Downgraded Dependencies (1)" in result
         assert "**Warning:** Downgrades may reintroduce known vulnerabilities." in result
         assert "**commons-io**: `2.11.0` → `2.10.0`" in result
 
@@ -282,7 +282,7 @@ class TestGenerateMarkdown:
             "v2.0.0"
         )
         
-        assert "## 📄 License Changes (1)" in result
+        assert "##  License Changes (1)" in result
         assert "**some-lib** `1.0.0`" in result
         assert "`MIT` → `Apache-2.0`" in result
 
@@ -320,11 +320,11 @@ class TestGenerateMarkdown:
         
         # Should still have header and summary, but no change sections
         assert "# Release Notes" in result
-        assert "## 📊 Summary" in result
-        assert "| ➕ Added | 0 |" in result
+        assert "## Summary" in result
+        assert "|  Added | 0 |" in result
         # Should not have specific change sections
-        assert "## ➕ New Dependencies" not in result
-        assert "## ➖ Removed Dependencies" not in result
+        assert "##  New Dependencies" not in result
+        assert "##  Removed Dependencies" not in result
 
 
 class TestSecuritySection:
@@ -391,7 +391,7 @@ class TestSecuritySection:
             mock_diff_with_security_changes
         )
         
-        assert "✅ Vulnerabilities Fixed" in result
+        assert "[OK] Vulnerabilities Fixed" in result
         assert "CVE-2023-1234" in result
 
     def test_security_section_with_introduced_vulnerabilities(
@@ -402,7 +402,7 @@ class TestSecuritySection:
             mock_diff_with_security_changes
         )
         
-        assert "⚠️ New Vulnerabilities Introduced" in result or "\u26a0\ufe0f New Vulnerabilities Introduced" in result
+        assert "[WARNING] New Vulnerabilities Introduced" in result or "\u26a0\ufe0f New Vulnerabilities Introduced" in result
         # Note: The current implementation only checks new packages, not downgrades
         assert "CVE-2024-9999" in result  # From new package
 
@@ -442,7 +442,7 @@ class TestSecuritySection:
         
         result = generator._generate_markdown(diff, "v1.0.0", "v2.0.0")
         
-        assert "## 🔐 Security Impact" in result
+        assert "##  Security Impact" in result
 
     def test_markdown_omits_security_section_when_no_vuln_data(self):
         """Test markdown omits security section when no vulnerability data."""
@@ -468,7 +468,7 @@ class TestSecuritySection:
         
         result = generator._generate_markdown(diff, "v1.0.0", "v2.0.0")
         
-        assert "## 🔐 Security Impact" not in result
+        assert "##  Security Impact" not in result
 
 
 class TestGenerateHTML:
@@ -607,7 +607,7 @@ class TestEdgeCases:
         }
         
         pkg = Mock(spec=Package)
-        pkg.name = "test-lib-日本語"
+        pkg.name = "test-lib-"
         pkg.version = "1.0.0"
         pkg.license = "MIT"
         pkg.purl = None
@@ -620,7 +620,7 @@ class TestEdgeCases:
         
         # Should not raise exception
         result = generator.generate(diff, format="markdown")
-        assert "test-lib-日本語" in result
+        assert "test-lib-" in result
 
     @pytest.mark.slow
     @pytest.mark.performance

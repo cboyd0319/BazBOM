@@ -42,3 +42,11 @@ hs_err_pid*
 .coverage
 target/
 dist/
+
+# BazBOM cache and output files
+.bazbom/
+sbom.*.json
+sca_findings.*
+*.spdx.json
+*.cyclonedx.json
+*.sarif

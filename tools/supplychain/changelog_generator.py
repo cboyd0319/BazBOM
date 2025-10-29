@@ -83,7 +83,7 @@ class ChangelogGenerator:
         lines.append("")
         
         # Executive summary
-        lines.append("## 📊 Summary")
+        lines.append("## Summary")
         lines.append("")
         
         summary = diff.to_dict()['summary']
@@ -92,16 +92,16 @@ class ChangelogGenerator:
         lines.append("|--------|-------|")
         lines.append(f"| Total Dependencies (old) | {summary['total_old']} |")
         lines.append(f"| Total Dependencies (new) | {summary['total_new']} |")
-        lines.append(f"| ➕ Added | {summary['added']} |")
-        lines.append(f"| ➖ Removed | {summary['removed']} |")
-        lines.append(f"| ⬆️ Upgraded | {summary['upgraded']} |")
-        lines.append(f"| ⬇️ Downgraded | {summary['downgraded']} |")
-        lines.append(f"| 📄 License Changed | {summary['license_changed']} |")
+        lines.append(f"|  Added | {summary['added']} |")
+        lines.append(f"|  Removed | {summary['removed']} |")
+        lines.append(f"|  Upgraded | {summary['upgraded']} |")
+        lines.append(f"|  Downgraded | {summary['downgraded']} |")
+        lines.append(f"|  License Changed | {summary['license_changed']} |")
         lines.append("")
         
         # Security impact (if vulnerability data available)
         if self.vulnerability_data:
-            lines.append("## 🔐 Security Impact")
+            lines.append("##  Security Impact")
             lines.append("")
             lines.append(self._generate_security_section(diff))
             lines.append("")
@@ -109,7 +109,7 @@ class ChangelogGenerator:
         # New dependencies
         added = diff.get_added_packages()
         if added:
-            lines.append(f"## ➕ New Dependencies ({len(added)})")
+            lines.append(f"##  New Dependencies ({len(added)})")
             lines.append("")
             for pkg in added:
                 lines.append(f"- **{pkg.name}** `{pkg.version}`")
@@ -122,7 +122,7 @@ class ChangelogGenerator:
         # Removed dependencies
         removed = diff.get_removed_packages()
         if removed:
-            lines.append(f"## ➖ Removed Dependencies ({len(removed)})")
+            lines.append(f"##  Removed Dependencies ({len(removed)})")
             lines.append("")
             for pkg in removed:
                 lines.append(f"- **{pkg.name}** `{pkg.version}`")
@@ -131,7 +131,7 @@ class ChangelogGenerator:
         # Upgraded dependencies
         upgraded = diff.get_upgraded_packages()
         if upgraded:
-            lines.append(f"## ⬆️ Upgraded Dependencies ({len(upgraded)})")
+            lines.append(f"##  Upgraded Dependencies ({len(upgraded)})")
             lines.append("")
             for old, new in upgraded:
                 lines.append(f"- **{old.name}**: `{old.version}` → `{new.version}`")
@@ -142,7 +142,7 @@ class ChangelogGenerator:
         # Downgraded dependencies
         downgraded = diff.get_downgraded_packages()
         if downgraded:
-            lines.append(f"## ⚠️ Downgraded Dependencies ({len(downgraded)})")
+            lines.append(f"## [WARNING] Downgraded Dependencies ({len(downgraded)})")
             lines.append("")
             lines.append("> **Warning:** Downgrades may reintroduce known vulnerabilities.")
             lines.append("")
@@ -153,7 +153,7 @@ class ChangelogGenerator:
         # License changes
         license_changes = diff.get_license_changes()
         if license_changes:
-            lines.append(f"## 📄 License Changes ({len(license_changes)})")
+            lines.append(f"##  License Changes ({len(license_changes)})")
             lines.append("")
             for old, new in license_changes:
                 lines.append(f"- **{old.name}** `{old.version}`")
@@ -202,14 +202,14 @@ class ChangelogGenerator:
                 cves_introduced.extend(cves)
         
         if cves_fixed:
-            lines.append(f"### ✅ Vulnerabilities Fixed ({len(cves_fixed)})")
+            lines.append(f"### [OK] Vulnerabilities Fixed ({len(cves_fixed)})")
             lines.append("")
             for cve in sorted(set(cves_fixed)):
                 lines.append(f"- {cve}")
             lines.append("")
         
         if cves_introduced:
-            lines.append(f"### ⚠️ New Vulnerabilities Introduced ({len(cves_introduced)})")
+            lines.append(f"### [WARNING] New Vulnerabilities Introduced ({len(cves_introduced)})")
             lines.append("")
             for cve in sorted(set(cves_introduced)):
                 lines.append(f"- {cve}")

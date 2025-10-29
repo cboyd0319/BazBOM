@@ -341,12 +341,12 @@ def main():
             
             # Print summary
             summary = enricher.get_priority_summary(findings)
-            print(f"\n📊 Priority Summary:")
-            print(f"  🚨 P0 - IMMEDIATE (KEV):     {summary['P0-IMMEDIATE']}")
-            print(f"  🔴 P1 - CRITICAL:            {summary['P1-CRITICAL']}")
-            print(f"  🟠 P2 - HIGH:                {summary['P2-HIGH']}")
-            print(f"  🟡 P3 - MEDIUM:              {summary['P3-MEDIUM']}")
-            print(f"  🟢 P4 - LOW:                 {summary['P4-LOW']}")
+            print(f"\nPriority Summary:")
+            print(f"  P0 - IMMEDIATE (KEV):     {summary['P0-IMMEDIATE']}")
+            print(f"  P1 - CRITICAL:            {summary['P1-CRITICAL']}")
+            print(f"  P2 - HIGH:                {summary['P2-HIGH']}")
+            print(f"  P3 - MEDIUM:              {summary['P3-MEDIUM']}")
+            print(f"  P4 - LOW:                 {summary['P4-LOW']}")
         except Exception as e:
             print(f"Warning: Enrichment failed: {e}", file=sys.stderr)
             print("Continuing with unenriched findings...", file=sys.stderr)
@@ -371,7 +371,7 @@ def main():
     if args.enrich and ENRICHMENT_AVAILABLE and findings:
         p0_findings = [f for f in findings if f.get("priority") == "P0-IMMEDIATE"]
         if p0_findings:
-            print(f"\n⚠️  {len(p0_findings)} P0-IMMEDIATE findings require immediate action!")
+            print(f"\n[WARNING]  {len(p0_findings)} P0-IMMEDIATE findings require immediate action!")
             for finding in p0_findings[:3]:  # Show top 3
                 cve = finding.get("cve", finding.get("id", "UNKNOWN"))
                 pkg = finding.get("package", "unknown")

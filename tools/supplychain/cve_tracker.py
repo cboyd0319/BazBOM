@@ -245,10 +245,10 @@ def main():
     # Check mode
     if args.check:
         if check_ripgrep_available():
-            print("✅ RipGrep detected - enabling fast mode", file=sys.stderr)
+            print("[OK] RipGrep detected - enabling fast mode", file=sys.stderr)
             return 0
         else:
-            print("⚠️  RipGrep not found - fast scanning disabled", file=sys.stderr)
+            print("[WARNING]  RipGrep not found - fast scanning disabled", file=sys.stderr)
             print("   Install: https://github.com/BurntSushi/ripgrep#installation", file=sys.stderr)
             return 1
     

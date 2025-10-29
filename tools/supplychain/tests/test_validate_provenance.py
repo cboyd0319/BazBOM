@@ -680,4 +680,4 @@ class TestMain:
         # Should succeed but show warnings
         assert result == 0
         captured = capsys.readouterr()
-        assert "WARNING" in captured.out or "⚠️" in captured.out
+        assert "WARNING" in captured.out or "[WARNING]" in captured.out

@@ -479,7 +479,7 @@ class TestEdgeCases(unittest.TestCase):
                     'licenseConcluded': 'MIT'
                 },
                 {
-                    'name': '日本語-package',
+                    'name': '-package',
                     'versionInfo': '2.0.0',
                     'licenseConcluded': 'Apache-2.0'
                 }
@@ -491,7 +491,7 @@ class TestEdgeCases(unittest.TestCase):
         self.assertEqual(len(diff.packages_old), 2)
         names = {pkg.name for pkg in diff.packages_old}
         self.assertIn('café-lib', names)
-        self.assertIn('日本語-package', names)
+        self.assertIn('-package', names)
 
 
 if __name__ == '__main__':

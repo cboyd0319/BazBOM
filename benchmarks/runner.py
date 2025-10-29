@@ -331,10 +331,10 @@ class BenchmarkRunner:
             repo_path = Path(f"benchmarks/repos/{repo_size}")
             
             if not repo_path.exists():
-                print(f"⚠️  Repository {repo_size} not found, skipping...")
+                print(f"Warning: Repository {repo_size} not found, skipping...")
                 continue
             
-            print(f"\n📊 Benchmarking {repo_size}...")
+            print(f"\nBenchmarking {repo_size}...")
             
             for tool in tools:
                 print(f"  Running {tool}...", end=" ", flush=True)
@@ -361,9 +361,9 @@ class BenchmarkRunner:
                 self.results.append(result)
                 
                 if result.success:
-                    print(f"✅ {result.execution_time_seconds:.2f}s")
+                    print(f"[OK] {result.execution_time_seconds:.2f}s")
                 else:
-                    print(f"❌ {result.error_message[:50]}")
+                    print(f" {result.error_message[:50]}")
         
         return results
     
@@ -385,7 +385,7 @@ class BenchmarkRunner:
                     f,
                     indent=2
                 )
-            print(f"\n💾 Results saved to {output_path}")
+            print(f"\n Results saved to {output_path}")
         except IOError as e:
             raise IOError(f"Failed to write results to {output_path}: {e}")
     
@@ -442,14 +442,14 @@ class BenchmarkRunner:
                     fastest = sorted_results[0]
                     
                     f.write(f"\n**{repo_size}:**\n")
-                    f.write(f"- 🥇 **Fastest:** {fastest.tool} ({fastest.execution_time_seconds:.2f}s)\n")
+                    f.write(f"- **Fastest:** {fastest.tool} ({fastest.execution_time_seconds:.2f}s)\n")
                     
                     # Compare others to fastest
                     for result in sorted_results[1:]:
                         speedup = result.execution_time_seconds / fastest.execution_time_seconds
                         f.write(f"- {result.tool}: {speedup:.1f}x slower\n")
             
-            print(f"📊 Leaderboard generated at {output_path}")
+            print(f"Leaderboard generated at {output_path}")
             
         except IOError as e:
             raise IOError(f"Failed to write leaderboard to {output_path}: {e}")
@@ -511,7 +511,7 @@ Examples:
     try:
         runner = BenchmarkRunner(args.output_dir)
         
-        print("🚀 Starting BazBOM Benchmark Suite")
+        print("Starting BazBOM Benchmark Suite")
         print(f"Tools: {', '.join(args.tools)}")
         print(f"Sizes: {', '.join(sizes)}")
         
@@ -521,12 +521,12 @@ Examples:
         if args.leaderboard:
             runner.generate_leaderboard()
         
-        print("\n✅ Benchmark suite complete!")
+        print("\n[OK] Benchmark suite complete!")
         
         return 0
         
     except Exception as e:
-        print(f"\n❌ Error: {e}", file=sys.stderr)
+        print(f"\n Error: {e}", file=sys.stderr)
         return 1
 
 

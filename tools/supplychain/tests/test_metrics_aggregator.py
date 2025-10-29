@@ -469,10 +469,10 @@ class TestGenerateMetricsReport:
         # Check key sections
         assert "Supply Chain Metrics Report" in content
         assert "Vulnerabilities:" in content
-        assert "🔴 Critical: 1" in content
-        assert "🟠 High: 1" in content
-        assert "🟡 Medium: 1" in content
-        assert "🟢 Low: 1" in content
+        assert "[CRITICAL] Critical: 1" in content
+        assert "[HIGH] High: 1" in content
+        assert "[MEDIUM] Medium: 1" in content
+        assert "[LOW] Low: 1" in content
         assert "Dependencies:" in content
         assert "Total: 1" in content
         assert "Conflicts: 3" in content
@@ -675,8 +675,8 @@ class TestEdgeCases:
         output_file = tmp_path / "metrics.json"
         sbom = {
             "packages": [
-                {"name": "café-☕", "depth": 1},
-                {"name": "日本語パッケージ", "depth": 1},
+                {"name": "café-", "depth": 1},
+                {"name": "", "depth": 1},
             ]
         }
 

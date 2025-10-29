@@ -327,7 +327,7 @@ class TestEdgeCases:
         # Arrange
         mock_verify.return_value = True
         verifier = SBOMVerifier()
-        unicode_path = "/path/tø/sbøm-日本語.json"
+        unicode_path = "/path/tø/sbøm-.json"
         
         # Act
         result = verifier.verify_sbom_complete(

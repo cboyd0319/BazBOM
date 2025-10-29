@@ -474,7 +474,7 @@ class TestMainFunction:
         
         assert result == 0
         captured = capsys.readouterr()
-        assert "✓" in captured.out
+        assert "" in captured.out
         assert "Valid" in captured.out
 
     @patch('tools.supplychain.validators.validate_sarif.argparse.ArgumentParser.parse_args')

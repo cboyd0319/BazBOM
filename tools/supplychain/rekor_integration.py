@@ -406,10 +406,10 @@ def main() -> int:
             verified = client.verify_entry_inclusion(args.uuid)
             
             if verified:
-                print(f"✓ Entry {args.uuid} is included in Rekor log")
+                print(f" Entry {args.uuid} is included in Rekor log")
                 return 0
             else:
-                print(f"✗ Entry {args.uuid} could not be verified", file=sys.stderr)
+                print(f" Entry {args.uuid} could not be verified", file=sys.stderr)
                 return 1
                 
         elif args.command == "checkpoint":

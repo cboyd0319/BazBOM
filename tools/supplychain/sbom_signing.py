@@ -170,7 +170,7 @@ class SBOMSigner:
                 response["bundle_path"] = bundle_path
                 print(f"Signature bundle written to: {bundle_path}")
             
-            print(f"✓ SBOM signed successfully")
+            print(f" SBOM signed successfully")
             print(f"  Rekor entry: {rekor_entry}")
             
             return response
@@ -349,18 +349,18 @@ def verify_sbom_signature(
         )
         
         if result.returncode == 0:
-            print(f"✓ Signature verification PASSED for: {sbom_path}")
+            print(f" Signature verification PASSED for: {sbom_path}")
             return True
         else:
-            print(f"✗ Signature verification FAILED for: {sbom_path}", file=sys.stderr)
+            print(f" Signature verification FAILED for: {sbom_path}", file=sys.stderr)
             print(f"  Error: {result.stderr}", file=sys.stderr)
             return False
             
     except subprocess.TimeoutExpired:
-        print(f"✗ Verification timed out for: {sbom_path}", file=sys.stderr)
+        print(f" Verification timed out for: {sbom_path}", file=sys.stderr)
         return False
     except Exception as e:
-        print(f"✗ Verification error for {sbom_path}: {e}", file=sys.stderr)
+        print(f" Verification error for {sbom_path}: {e}", file=sys.stderr)
         return False
 
 
@@ -431,7 +431,7 @@ def main() -> int:
                 output_dir=args.output_dir
             )
             
-            print(f"\n✓ Successfully signed {len(results)} SBOM(s)")
+            print(f"\n Successfully signed {len(results)} SBOM(s)")
             return 0
             
         elif args.command == "verify":

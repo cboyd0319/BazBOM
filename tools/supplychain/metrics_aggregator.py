@@ -176,10 +176,10 @@ def generate_metrics_report(
         output.append("Vulnerabilities:")
         vuln = metrics["vulnerabilities"]
         output.append(f"  Total: {vuln['total']}")
-        output.append(f"  🔴 Critical: {vuln['critical']}")
-        output.append(f"  🟠 High: {vuln['high']}")
-        output.append(f"  🟡 Medium: {vuln['medium']}")
-        output.append(f"  🟢 Low: {vuln['low']}")
+        output.append(f"  [CRITICAL] Critical: {vuln['critical']}")
+        output.append(f"  [HIGH] High: {vuln['high']}")
+        output.append(f"  [MEDIUM] Medium: {vuln['medium']}")
+        output.append(f"  [LOW] Low: {vuln['low']}")
         output.append("")
         
         output.append("Dependencies:")

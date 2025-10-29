@@ -184,7 +184,7 @@ class VulnCheckEnricher:
             if exploit_data.get("weaponized"):
                 if "priority" not in finding or finding["priority"] not in ["P0-IMMEDIATE", "IMMEDIATE"]:
                     finding["priority"] = "P1-CRITICAL"
-                finding["exploit_context"] = "⚠️ WEAPONIZED EXPLOIT AVAILABLE"
+                finding["exploit_context"] = "[WARNING] WEAPONIZED EXPLOIT AVAILABLE"
         except Exception as e:
             print(f"Warning: Failed to enrich {cve_id} with VulnCheck data: {e}", file=sys.stderr)
             finding["exploit"] = {
@@ -227,15 +227,15 @@ def main():
             print(json.dumps(result, indent=2))
         else:
             if result.get("exploit_available"):
-                print(f"✅ Exploit intelligence found for {args.cve_id}")
+                print(f"[OK] Exploit intelligence found for {args.cve_id}")
                 print(f"   Exploit Available: Yes")
                 print(f"   Exploit Maturity: {result['exploit_maturity']}")
                 print(f"   Attack Vector: {result['attack_vector']}")
                 print(f"   Weaponized: {'Yes' if result.get('weaponized') else 'No'}")
                 if result.get("ransomware_use"):
-                    print(f"   ⚠️ Used in Ransomware Campaigns")
+                    print(f"   [WARNING] Used in Ransomware Campaigns")
             else:
-                print(f"ℹ️  No exploit intelligence found for {args.cve_id}")
+                print(f"ℹ  No exploit intelligence found for {args.cve_id}")
                 if result.get("note"):
                     print(f"   Note: {result['note']}")
         

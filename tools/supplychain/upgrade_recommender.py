@@ -605,40 +605,40 @@ Examples:
             print(json.dumps(asdict(recommendation), indent=2))
         else:
             # Human-readable output
-            print(f"🔍 Upgrade Analysis: {recommendation.package}")
+            print(f" Upgrade Analysis: {recommendation.package}")
             print("=" * 60)
             print(f"\nCurrent Version:     {recommendation.current_version}")
-            print(f"✅ Recommended:      {recommendation.recommended_version}")
-            print(f"⚠️  Latest Available:  {recommendation.latest_version}")
-            print(f"\n📊 Compatibility Score: {recommendation.compatibility_score:.0%}")
-            print(f"⏱️  Effort Estimate:    {recommendation.effort_estimate}")
-            print(f"🎯 Confidence:         {recommendation.confidence:.0%}")
+            print(f"Recommended:         {recommendation.recommended_version}")
+            print(f"Latest Available:    {recommendation.latest_version}")
+            print(f"\nCompatibility Score: {recommendation.compatibility_score:.0%}")
+            print(f"Effort Estimate:     {recommendation.effort_estimate}")
+            print(f"Confidence:          {recommendation.confidence:.0%}")
             
             if recommendation.breaking_changes:
-                print(f"\n⚠️  Breaking Changes:")
+                print(f"\nBreaking Changes:")
                 for change in recommendation.breaking_changes:
                     print(f"   - {change[:100]}")
             else:
-                print(f"\n✅ No breaking changes detected")
+                print(f"\nNo breaking changes detected")
             
             if recommendation.security_fixes:
-                print(f"\n🔒 Security Fixes:")
+                print(f"\nSecurity Fixes:")
                 for fix in recommendation.security_fixes:
                     print(f"   - {fix}")
             
-            print(f"\n📝 Migration Guide:")
+            print(f"\n Migration Guide:")
             print(recommendation.migration_guide)
         
         return 0
         
     except FileNotFoundError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except ValueError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except Exception as e:
-        print(f"❌ Unexpected error: {e}", file=sys.stderr)
+        print(f" Unexpected error: {e}", file=sys.stderr)
         return 1
 
 

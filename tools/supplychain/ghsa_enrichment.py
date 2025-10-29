@@ -250,7 +250,7 @@ def main():
             print(json.dumps(result, indent=2))
         else:
             if result.get("ghsa_id"):
-                print(f"✅ Found GHSA for {args.cve_id}")
+                print(f"[OK] Found GHSA for {args.cve_id}")
                 print(f"   GHSA ID: {result['ghsa_id']}")
                 print(f"   Summary: {result['summary']}")
                 print(f"   Severity: {result['severity']}")
@@ -263,7 +263,7 @@ def main():
                     if vuln['first_patched_version']:
                         print(f"       Fixed in: {vuln['first_patched_version']}")
             else:
-                print(f"❌ No GHSA found for {args.cve_id}")
+                print(f" No GHSA found for {args.cve_id}")
         
         return 0
     except Exception as e:

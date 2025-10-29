@@ -267,7 +267,7 @@ class ContributionTracker:
         lines.append("=" * 80)
         badges = self._calculate_badges(total, stats)
         for badge in badges:
-            icon = "🏆" if badge['achieved'] else "🔒"
+            icon = "[*]" if badge['achieved'] else "[ ]"
             status = "UNLOCKED" if badge['achieved'] else "LOCKED"
             lines.append(f"{icon} {badge['name']:30} {status:10}  {badge['description']}")
         lines.append("")
@@ -422,7 +422,7 @@ Examples:
                 notes=args.notes
             )
             
-            print(f"✅ Added contribution: {args.id}", file=sys.stderr)
+            print(f"[OK] Added contribution: {args.id}", file=sys.stderr)
             print(f"   Package: {args.package}", file=sys.stderr)
             print(f"   Ecosystem: {args.ecosystem}", file=sys.stderr)
             if args.severity:

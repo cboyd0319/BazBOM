@@ -389,7 +389,7 @@ class AIQueryEngine:
             stats["licenses"][license_str] = stats["licenses"].get(license_str, 0) + 1
         
         # Format answer
-        answer = "📊 SBOM Statistics:\n\n"
+        answer = "SBOM Statistics:\n\n"
         answer += f"Total Packages: {stats['total_packages']}\n"
         answer += f"Vulnerabilities: {stats['total_vulnerabilities']}\n\n"
         
@@ -413,7 +413,7 @@ def interactive_mode(engine: AIQueryEngine) -> None:
     Args:
         engine: Initialized AIQueryEngine instance
     """
-    print("🤖 BazBOM AI Query Engine")
+    print("BazBOM AI Query Engine")
     print("=" * 50)
     print("Ask questions about your SBOM in natural language.")
     print("Type 'exit' or 'quit' to end the session.")
@@ -422,32 +422,32 @@ def interactive_mode(engine: AIQueryEngine) -> None:
     
     while True:
         try:
-            query = input("💬 You: ").strip()
+            query = input("You: ").strip()
             
             if not query:
                 continue
             
             if query.lower() in ["exit", "quit", "q"]:
-                print("\nGoodbye! 👋")
+                print("\nGoodbye!")
                 break
             
             result = engine.query(query)
             
-            print(f"\n🤖 Assistant (confidence: {result.confidence:.0%}):")
+            print(f"\nAssistant (confidence: {result.confidence:.0%}):")
             print(result.answer)
             
             if result.suggestions:
-                print(f"\n💡 Suggestions:")
+                print(f"\nSuggestions:")
                 for suggestion in result.suggestions:
                     print(f"  - {suggestion}")
             
             print()
             
         except KeyboardInterrupt:
-            print("\n\nGoodbye! 👋")
+            print("\n\nGoodbye! ")
             break
         except Exception as e:
-            print(f"\n❌ Error: {e}\n")
+            print(f"\n Error: {e}\n")
 
 
 def main():
@@ -526,13 +526,13 @@ Examples:
         return 0
         
     except FileNotFoundError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except ValueError as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f" Error: {e}", file=sys.stderr)
         return 1
     except Exception as e:
-        print(f"❌ Unexpected error: {e}", file=sys.stderr)
+        print(f" Unexpected error: {e}", file=sys.stderr)
         return 1
 
 

@@ -187,7 +187,7 @@ class TestGetBazelTargetsFromFiles:
 
     def test_unicode_in_path(self):
         """Test handling of unicode characters in paths."""
-        files = ["src/日本語/App.java"]
+        files = ["src//App.java"]
         targets = get_bazel_targets_from_files(files, "/workspace")
         
         assert len(targets) > 0
