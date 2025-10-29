@@ -4,7 +4,11 @@ Get BazBOM up and running in 5 minutes or less.
 
 ## Prerequisites
 
-### For Rust CLI (Recommended)
+### For Homebrew Installation (Easiest)
+- Homebrew package manager (macOS/Linux)
+- Java 11+ (optional, for reachability analysis when enabled)
+
+### For Building from Source
 - Rust 1.70+ (stable)
 - Java 11+ (optional, for reachability analysis when enabled)
 
@@ -14,11 +18,48 @@ Get BazBOM up and running in 5 minutes or less.
 
 ## Installation
 
-### Option 1: Rust CLI (Recommended)
+### Option 1: Homebrew (Recommended)
+
+The easiest way to install BazBOM is via Homebrew:
+
+```bash
+# Add the tap
+brew tap cboyd0319/bazbom
+
+# Install BazBOM
+brew install bazbom
+
+# Verify installation
+bazbom --version
+bazbom --help
+```
+
+See [Homebrew Installation Guide](HOMEBREW_INSTALLATION.md) for more details.
+
+### Option 2: Pre-built Binaries
+
+Download pre-built, signed binaries from [GitHub Releases](https://github.com/cboyd0319/BazBOM/releases):
+
+```bash
+# macOS (Intel)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz
+tar -xzf bazbom-x86_64-apple-darwin.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Linux (x86_64)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Verify installation
+bazbom --version
+```
+
+### Option 3: Build from Source
 
 The Rust CLI is the primary distribution method aligned with BazBOM's memory-safe, single-binary architecture.
 
-**Quick Install:**
+**Build from Source:**
 
 ```bash
 # Clone and build
@@ -44,7 +85,7 @@ bazbom --help
 bazbom
 ```
 
-### Option 2: Bazel Integration
+### Option 4: Bazel Integration
 
 For Bazel-specific workflows or development:
 

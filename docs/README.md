@@ -6,6 +6,10 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
+- **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
+- **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from Python to Rust CLI
+- **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
+- **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
 
 ## Architecture & Design
 
