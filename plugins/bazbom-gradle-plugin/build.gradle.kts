@@ -18,6 +18,7 @@ dependencies {
     
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.spockframework:spock-core:2.3-groovy-3.0")
+    testImplementation(gradleTestKit())
 }
 
 gradlePlugin {
