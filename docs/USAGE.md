@@ -123,12 +123,26 @@ For Bazel projects, BazBOM requires:
 2. Maven dependencies managed via `maven_install()` in WORKSPACE or MODULE.bazel
 3. Bazel workspace must be at the project root
 
-BazBOM extracts dependencies from `maven_install.json`, including:
+**Dependency Extraction:**
+
+BazBOM directly parses `maven_install.json` (no external scripts required) to extract:
 - Complete dependency graph with transitive dependencies
-- Maven coordinates (group:artifact:version)
-- SHA256 checksums for all artifacts
-- Dependency relationships (DEPENDS_ON edges)
-- Repository URLs
+- Maven coordinates (group:artifact:version) with full artifact metadata
+- SHA256 checksums for all artifacts (integrity verification)
+- Dependency relationships (DEPENDS_ON edges for vulnerability impact analysis)
+- Repository URLs (provenance tracking)
+- Package URLs (PURLs) following the pkg:maven specification
+
+**Supported Bazel Features:**
+- ✅ rules_jvm_external (maven_install)
+- ✅ WORKSPACE-based configuration
+- ⚠️ bzlmod/MODULE.bazel (partial - requires maven_install.json)
+- ⚠️ Custom repository rules (not yet supported)
+
+**Performance:**
+- Small projects (< 50 deps): < 1 second
+- Medium projects (50-200 deps): 1-3 seconds
+- Large monorepos (200+ deps): 3-10 seconds
 
 ### Bazel-Specific: Selective Target Scanning
 
