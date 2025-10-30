@@ -36,7 +36,7 @@ jobs:
     
     steps:
       - name: Checkout PR code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           # Need full history for git diff
           fetch-depth: 0
@@ -245,7 +245,7 @@ jobs:
 #   timeout-minutes: 60
 #   
 #   steps:
-#     - uses: actions/checkout@v4
+#     - uses: actions/checkout@v5
 #     
 #     - name: Install BazBOM
 #       run: |
