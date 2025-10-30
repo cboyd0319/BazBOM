@@ -1,7 +1,10 @@
 use anyhow::{Context, Result};
+use quick_xml::events::Event;
+use quick_xml::Reader;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::io::Read;
 use std::path::Path;
 
 /// Represents a class relocation mapping (e.g., org.foo -> com.shaded.org.foo)
@@ -90,30 +93,116 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
     let content = fs::read_to_string(pom_path)
         .context("failed to read pom.xml")?;
     
-    // Look for maven-shade-plugin configuration
+    // Quick check if shade plugin is present
     if !content.contains("maven-shade-plugin") {
         return Ok(None);
     }
     
-    // Parse XML to find relocations
-    // For now, use a simple regex-based approach
-    // In production, use a proper XML parser
-    let mut relocations = Vec::new();
+    let mut reader = Reader::from_str(&content);
+    reader.trim_text(true);
     
-    // Look for <relocation> blocks
-    for line in content.lines() {
-        if line.contains("<pattern>") && line.contains("</pattern>") {
-            if let Some(pattern) = extract_xml_value(line, "pattern") {
-                // Look ahead for shadedPattern
-                // This is simplified - real implementation would parse the whole relocation block
-                relocations.push(RelocationMapping {
-                    pattern: pattern.clone(),
-                    shadedPattern: format!("shaded.{}", pattern), // Default assumption
-                    includes: None,
-                    excludes: None,
-                });
+    let mut relocations = Vec::new();
+    let mut in_shade_plugin = false;
+    let mut in_configuration = false;
+    let mut in_relocations = false;
+    let mut in_relocation = false;
+    
+    let mut current_pattern = String::new();
+    let mut current_shaded_pattern = String::new();
+    let mut current_includes: Vec<String> = Vec::new();
+    let mut current_excludes: Vec<String> = Vec::new();
+    let mut in_pattern = false;
+    let mut in_shaded_pattern = false;
+    let mut in_includes = false;
+    let mut in_excludes = false;
+    let mut in_include = false;
+    let mut in_exclude = false;
+    let mut final_name: Option<String> = None;
+    let mut in_final_name = false;
+    
+    let mut buf = Vec::new();
+    
+    loop {
+        match reader.read_event_into(&mut buf) {
+            Ok(Event::Start(ref e)) => {
+                let name = e.name();
+                match name.as_ref() {
+                    b"artifactId" => {
+                        // Check if this is maven-shade-plugin
+                        if let Ok(Event::Text(text)) = reader.read_event_into(&mut buf) {
+                            if text.unescape().ok().as_deref() == Some("maven-shade-plugin") {
+                                in_shade_plugin = true;
+                            }
+                        }
+                    }
+                    b"configuration" if in_shade_plugin => in_configuration = true,
+                    b"relocations" if in_configuration => in_relocations = true,
+                    b"relocation" if in_relocations => {
+                        in_relocation = true;
+                        // Reset current relocation data
+                        current_pattern.clear();
+                        current_shaded_pattern.clear();
+                        current_includes.clear();
+                        current_excludes.clear();
+                    }
+                    b"pattern" if in_relocation => in_pattern = true,
+                    b"shadedPattern" if in_relocation => in_shaded_pattern = true,
+                    b"includes" if in_relocation => in_includes = true,
+                    b"excludes" if in_relocation => in_excludes = true,
+                    b"include" if in_includes => in_include = true,
+                    b"exclude" if in_excludes => in_exclude = true,
+                    b"finalName" if in_configuration => in_final_name = true,
+                    _ => {}
+                }
             }
+            Ok(Event::Text(e)) => {
+                let text = e.unescape().unwrap_or_default().to_string();
+                if in_pattern {
+                    current_pattern = text;
+                } else if in_shaded_pattern {
+                    current_shaded_pattern = text;
+                } else if in_include {
+                    current_includes.push(text);
+                } else if in_exclude {
+                    current_excludes.push(text);
+                } else if in_final_name {
+                    final_name = Some(text);
+                }
+            }
+            Ok(Event::End(ref e)) => {
+                match e.name().as_ref() {
+                    b"plugin" => in_shade_plugin = false,
+                    b"configuration" => in_configuration = false,
+                    b"relocations" => in_relocations = false,
+                    b"relocation" => {
+                        // Save completed relocation
+                        if !current_pattern.is_empty() && !current_shaded_pattern.is_empty() {
+                            relocations.push(RelocationMapping {
+                                pattern: current_pattern.clone(),
+                                shadedPattern: current_shaded_pattern.clone(),
+                                includes: if current_includes.is_empty() { None } else { Some(current_includes.clone()) },
+                                excludes: if current_excludes.is_empty() { None } else { Some(current_excludes.clone()) },
+                            });
+                        }
+                        in_relocation = false;
+                    }
+                    b"pattern" => in_pattern = false,
+                    b"shadedPattern" => in_shaded_pattern = false,
+                    b"includes" => in_includes = false,
+                    b"excludes" => in_excludes = false,
+                    b"include" => in_include = false,
+                    b"exclude" => in_exclude = false,
+                    b"finalName" => in_final_name = false,
+                    _ => {}
+                }
+            }
+            Ok(Event::Eof) => break,
+            Err(e) => {
+                return Err(anyhow::anyhow!("XML parse error at position {}: {}", reader.buffer_position(), e));
+            }
+            _ => {}
         }
+        buf.clear();
     }
     
     if relocations.is_empty() {
@@ -123,7 +212,7 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
     Ok(Some(ShadingConfiguration {
         source: "maven-shade-plugin".to_string(),
         relocations,
-        finalName: None,
+        finalName: final_name,
     }))
 }
 
@@ -173,28 +262,124 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
 
 /// Extract nested JARs from a fat JAR
 pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<String>> {
-    // Use jar command or zip utilities to extract nested JARs
-    // This would be implemented using std::process::Command
+    use zip::ZipArchive;
     
-    // For now, return empty list as placeholder
-    let _ = (jar_path, output_dir);
-    Ok(Vec::new())
+    if !jar_path.exists() {
+        return Err(anyhow::anyhow!("JAR file not found: {:?}", jar_path));
+    }
+    
+    // Ensure output directory exists
+    fs::create_dir_all(output_dir)
+        .context("failed to create output directory")?;
+    
+    let file = fs::File::open(jar_path)
+        .context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file)
+        .context("failed to read ZIP archive")?;
+    
+    let mut nested_jars = Vec::new();
+    
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)
+            .context("failed to read archive entry")?;
+        let name = file.name().to_string();
+        
+        // Look for nested JAR files
+        if name.ends_with(".jar") {
+            let output_path = output_dir.join(&name);
+            
+            // Create parent directories
+            if let Some(parent) = output_path.parent() {
+                fs::create_dir_all(parent)
+                    .context("failed to create nested directory")?;
+            }
+            
+            // Extract the nested JAR
+            let mut output_file = fs::File::create(&output_path)
+                .context("failed to create output file")?;
+            std::io::copy(&mut file, &mut output_file)
+                .context("failed to copy nested JAR")?;
+            
+            nested_jars.push(name);
+        }
+    }
+    
+    Ok(nested_jars)
 }
 
 /// Generate a fingerprint for a class file
 pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
-    // Use ASM or similar bytecode library to parse class
-    // Extract method signatures, field signatures, and compute hash
-    
-    // Placeholder implementation
+    // Compute bytecode hash for matching
     let hash = blake3::hash(class_bytes).to_hex().to_string();
     
+    // Extract class name from bytecode
+    // The class file format has the class name at a specific offset
+    // For a proper implementation, we would parse the constant pool
+    // Here we provide a basic implementation that extracts the class name
+    let class_name = extract_class_name_from_bytecode(class_bytes)
+        .unwrap_or_else(|| "Unknown".to_string());
+    
+    // Note: For production use, method and field signatures should be extracted
+    // using ASM or similar bytecode parsing library. This would ideally be done
+    // in the Java-based bazbom-reachability tool and the results provided to Rust.
+    // For now, we rely on bytecode hash for matching.
+    
     Ok(ClassFingerprint {
-        className: "placeholder.Class".to_string(),
+        className: class_name,
         methodSignatures: vec![],
         fieldSignatures: vec![],
         bytecodeHash: hash,
     })
+}
+
+/// Extract class name from bytecode (basic implementation)
+fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
+    // Basic validation - check for Java class file magic number
+    if class_bytes.len() < 10 || &class_bytes[0..4] != b"\xCA\xFE\xBA\xBE" {
+        return None;
+    }
+    
+    // For a complete implementation, we would need to:
+    // 1. Parse the constant pool
+    // 2. Find the this_class index
+    // 3. Resolve the class name from the constant pool
+    // This is complex and better done with a proper bytecode library
+    
+    // For now, return None and rely on bytecode hash matching
+    None
+}
+
+/// Scan a JAR file and create fingerprints for all classes
+pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerprint>> {
+    use zip::ZipArchive;
+    
+    let file = fs::File::open(jar_path)
+        .context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file)
+        .context("failed to read ZIP archive")?;
+    
+    let mut fingerprints = HashMap::new();
+    
+    for i in 0..archive.len() {
+        let mut file = archive.by_index(i)
+            .context("failed to read archive entry")?;
+        let name = file.name().to_string();
+        
+        // Only process .class files
+        if name.ends_with(".class") && !name.contains("module-info") {
+            let mut class_bytes = Vec::new();
+            file.read_to_end(&mut class_bytes)
+                .context("failed to read class file")?;
+            
+            if let Ok(fingerprint) = fingerprint_class(&class_bytes) {
+                // Use the file path as the key (without .class extension)
+                let class_key = name.trim_end_matches(".class").replace('/', ".");
+                fingerprints.insert(class_key, fingerprint);
+            }
+        }
+    }
+    
+    Ok(fingerprints)
 }
 
 /// Match a shaded class to its original artifact using fingerprints
@@ -217,6 +402,47 @@ pub fn match_shaded_class(
     }
     
     None
+}
+
+/// Detect shading in a JAR by comparing its classes against a relocation map
+pub fn detect_shading_in_jar(
+    jar_path: &Path,
+    relocation: &RelocationMapping,
+) -> Result<Vec<ShadingMatch>> {
+    use zip::ZipArchive;
+    
+    let file = fs::File::open(jar_path)
+        .context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file)
+        .context("failed to read ZIP archive")?;
+    
+    let mut matches = Vec::new();
+    
+    for i in 0..archive.len() {
+        let file = archive.by_index(i)
+            .context("failed to read archive entry")?;
+        let name = file.name().to_string();
+        
+        // Only process .class files
+        if name.ends_with(".class") {
+            // Convert file path to class name
+            let class_name = name
+                .trim_end_matches(".class")
+                .replace('/', ".");
+            
+            // Check if this class matches the relocation pattern
+            if let Some(original_name) = relocation.reverse_relocate(&class_name) {
+                matches.push(ShadingMatch {
+                    shadedClassName: class_name,
+                    originalClassName: original_name.clone(),
+                    originalArtifact: None, // Would need fingerprint matching to determine
+                    confidence: 0.8, // High confidence based on relocation pattern match
+                });
+            }
+        }
+    }
+    
+    Ok(matches)
 }
 
 // Helper functions
@@ -367,5 +593,109 @@ mod tests {
         let matched = match_result.unwrap();
         assert_eq!(matched.confidence, 1.0);
         assert_eq!(matched.originalClassName, "org.apache.commons.Lang");
+    }
+
+    #[test]
+    fn test_parse_maven_shade_config_complete() {
+        use tempfile::NamedTempFile;
+        use std::io::Write;
+        
+        let pom_content = r#"<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>shaded-app</artifactId>
+    <version>1.0.0</version>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.4</version>
+                <configuration>
+                    <finalName>shaded-app</finalName>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.apache.commons</pattern>
+                            <shadedPattern>com.example.shaded.commons</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>com.google.guava</pattern>
+                            <shadedPattern>com.example.shaded.guava</shadedPattern>
+                            <includes>
+                                <include>com.google.guava.collect</include>
+                            </includes>
+                            <excludes>
+                                <exclude>com.google.guava.base</exclude>
+                            </excludes>
+                        </relocation>
+                    </relocations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+"#;
+        
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(pom_content.as_bytes()).unwrap();
+        
+        let config = parse_maven_shade_config(temp_file.path()).unwrap();
+        assert!(config.is_some());
+        
+        let config = config.unwrap();
+        assert_eq!(config.source, "maven-shade-plugin");
+        assert_eq!(config.finalName, Some("shaded-app".to_string()));
+        assert_eq!(config.relocations.len(), 2);
+        
+        let first = &config.relocations[0];
+        assert_eq!(first.pattern, "org.apache.commons");
+        assert_eq!(first.shadedPattern, "com.example.shaded.commons");
+        assert!(first.includes.is_none());
+        assert!(first.excludes.is_none());
+        
+        let second = &config.relocations[1];
+        assert_eq!(second.pattern, "com.google.guava");
+        assert_eq!(second.shadedPattern, "com.example.shaded.guava");
+        assert!(second.includes.is_some());
+        assert_eq!(second.includes.as_ref().unwrap().len(), 1);
+        assert!(second.excludes.is_some());
+        assert_eq!(second.excludes.as_ref().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn test_parse_maven_shade_config_no_plugin() {
+        use tempfile::NamedTempFile;
+        use std::io::Write;
+        
+        let pom_content = r#"<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>normal-app</artifactId>
+    <version>1.0.0</version>
+</project>
+"#;
+        
+        let mut temp_file = NamedTempFile::new().unwrap();
+        temp_file.write_all(pom_content.as_bytes()).unwrap();
+        
+        let config = parse_maven_shade_config(temp_file.path()).unwrap();
+        assert!(config.is_none());
+    }
+
+    #[test]
+    fn test_extract_class_name_from_bytecode() {
+        // Test with invalid bytecode
+        let invalid = b"not a class file";
+        let result = super::extract_class_name_from_bytecode(invalid);
+        assert!(result.is_none());
+        
+        // Test with valid magic number but short content
+        let short_valid = b"\xCA\xFE\xBA\xBE\x00\x00\x00\x34";
+        let result = super::extract_class_name_from_bytecode(short_valid);
+        // Should return None as we don't fully parse the constant pool
+        assert!(result.is_none());
     }
 }
