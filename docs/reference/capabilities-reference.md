@@ -157,6 +157,47 @@ Examples:
 bazel build //:dep_graph_all
 ```
 
+## 6.5. Shading and Relocation Detection
+
+- Maven Shade plugin configuration parsing (XML)
+- Gradle Shadow plugin configuration parsing (DSL)
+- Nested JAR extraction and analysis
+- Class fingerprinting with Blake3 bytecode hashing
+- Relocation pattern matching and reverse mapping
+- Accurate vulnerability attribution for shaded dependencies
+
+**Features:**
+- Automatic detection of shading configurations in build files
+- Support for multiple relocation mappings
+- Include/exclude pattern filtering
+- Bytecode-level class fingerprinting for ambiguous cases
+- Confidence scoring for shading matches (0.0-1.0)
+
+Examples:
+```bash
+# Automatically detects shading in Maven projects
+bazbom scan my-maven-project/  # Reads pom.xml for maven-shade-plugin
+
+# Automatically detects shading in Gradle projects  
+bazbom scan my-gradle-project/  # Reads build.gradle[.kts] for shadow plugin
+
+# Analyzes fat JARs with relocation mappings
+# Outputs include original artifact attribution
+```
+
+**Supported Configurations:**
+
+Maven Shade Plugin:
+- Multiple `<relocation>` blocks
+- `<includes>` and `<excludes>` patterns
+- `<finalName>` configuration
+- Nested plugin configurations
+
+Gradle Shadow Plugin:
+- `relocate()` DSL statements
+- Multiple relocations per task
+- Pattern-based matching
+
 ## 7. Configuration
 
 - Project-level `bazbom.yml`

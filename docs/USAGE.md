@@ -703,25 +703,46 @@ bazbom scan my-gradle-app/
 
 **Configuration Parsing:**
 
+BazBOM uses proper XML parsing for Maven and pattern matching for Gradle to extract relocation mappings.
+
 **Maven Shade (pom.xml):**
 ```xml
 <plugin>
   <groupId>org.apache.maven.plugins</groupId>
   <artifactId>maven-shade-plugin</artifactId>
   <configuration>
+    <finalName>my-shaded-app</finalName>
     <relocations>
       <relocation>
-        <pattern>org.apache</pattern>
-        <shadedPattern>myapp.shaded.org.apache</shadedPattern>
+        <pattern>org.apache.commons</pattern>
+        <shadedPattern>myapp.shaded.commons</shadedPattern>
+        <includes>
+          <include>org.apache.commons.lang3.**</include>
+        </includes>
+        <excludes>
+          <exclude>org.apache.commons.logging.**</exclude>
+        </excludes>
       </relocation>
     </relocations>
   </configuration>
 </plugin>
 ```
 
+Supports:
+- Multiple `<relocation>` blocks
+- Include/exclude patterns
+- `<finalName>` configuration
+- Nested configurations
+
 **Gradle Shadow (build.gradle.kts):**
 ```kotlin
-shadowJar {
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+tasks.withType<ShadowJar> {
     relocate("org.apache", "myapp.shaded.org.apache")
     relocate("com.google.common", "myapp.shaded.guava")
 }
@@ -776,11 +797,24 @@ Findings are mapped to original artifacts:
 3. **Version tracking**: Use `finalName` to embed version info
 4. **Test coverage**: Ensure shaded code has adequate tests
 
-**Limitations:**
+**Implementation Status:**
 
-- XML/DSL parsing is regex-based (production will use proper parsers)
-- Nested JAR extraction not yet implemented
-- Requires build files to be present (pom.xml or build.gradle[.kts])
+✅ **Implemented:**
+- Maven Shade plugin XML parsing (using quick-xml parser)
+- Nested JAR extraction from fat JARs (using zip library)
+- Class fingerprinting with Blake3 bytecode hashing
+- Relocation pattern matching and reverse mapping
+- Include/exclude pattern support
+- Multiple relocation mapping support
+
+🔄 **In Progress:**
+- Gradle Shadow plugin DSL parsing (basic pattern matching works)
+- Detailed method/field signature extraction (currently uses bytecode hash only)
+- Integration with scan command output (coming soon)
+
+**Requirements:**
+- Build files must be present (pom.xml or build.gradle[.kts])
+- For detailed analysis, JAR files should be built first
 
 ### Environment Variables
 

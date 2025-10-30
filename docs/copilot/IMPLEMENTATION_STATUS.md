@@ -8,7 +8,7 @@ This document tracks the implementation progress of the BazBOM Master Plan (see 
 
 ## Executive Summary
 
-Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), Phase 3 In Progress (75%)**
+Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), Phase 3 In Progress (90%)**
 
 - ✅ Rust CLI skeleton with core commands
 - ✅ Foundational crate implementations
@@ -267,24 +267,31 @@ Current Status: **Phase 0 Complete, Phase 1 Complete, Phase 2 Complete (100%), P
 - ✅ SARIF output with [REACHABLE]/[NOT REACHABLE] tags
 - ✅ Cache integration (save and load cached results)
 
-**Shading/Fat JAR Attribution** 🔄 (20% Complete)
+**Shading/Fat JAR Attribution** ✅ (85% Complete)
 - ✅ Data structures and providers defined
 - ✅ Relocation mapping structures
-- ✅ Class fingerprinting foundation
-- ⏸️ Relocation map parsing (Maven Shade plugin) - implementation pending
-- ⏸️ Relocation map parsing (Gradle Shadow plugin) - implementation pending
-- ⏸️ Class fingerprinting for original GAV mapping - implementation pending
-- ⏸️ Original GAV/PURL mapping in findings
+- ✅ Class fingerprinting foundation with Blake3 bytecode hashing
+- ✅ Relocation map parsing (Maven Shade plugin) - complete XML parser using quick-xml
+- ✅ Nested JAR extraction using zip library
+- ✅ JAR scanning and class fingerprinting
+- ✅ Pattern-based shading detection in JARs
+- ✅ Multiple relocation mapping support with includes/excludes
+- 🔄 Relocation map parsing (Gradle Shadow plugin) - basic pattern matching works
+- ⏸️ Integration into scan command output with SARIF/findings
+- ⏸️ Complete bytecode analysis with method/field signatures (currently hash-based)
 
-**Testing & Documentation** ✅ (85% Complete)
+**Testing & Documentation** ✅ (95% Complete)
 - ✅ 6 Java unit tests (MainTest.java: empty classpath, output creation, MethodRef equality)
 - ✅ 3 Rust unit tests (reachability module: is_class_reachable, is_package_reachable, is_method_reachable)
 - ✅ 5 Rust cache tests (save, load, cache miss, key generation, cleanup)
 - ✅ 4 Integration tests with real JAR compilation
 - ✅ 2 End-to-end workflow tests (full pipeline + cache consistency)
+- ✅ 11 Shading tests (relocation matching, XML parsing, class fingerprinting)
 - ✅ README for reachability tool with usage examples
-- ✅ USAGE.md includes reachability documentation
-- ⏸️ QUICKSTART.md reachability examples (pending)
+- ✅ USAGE.md includes reachability and shading documentation
+- ✅ QUICKSTART.md reachability examples with all build systems
+- ✅ QUICKSTART.md shading detection examples
+- ✅ Capabilities reference updated with shading features
 - ⏸️ Performance benchmarks for large projects
 
 ---
@@ -373,10 +380,11 @@ All priority modules have met or exceeded targets:
 5. ✅ **bazbom CLI (66.27%)** - Added 12 integration tests (was 39.76%)
 6. ✅ **Schema validation** - Added 5 new validation tests for SPDX and SARIF
 
-**Total Test Count: 200 tests** (194 Rust + 6 Java)
-- Rust tests: 194 passing (unit + integration + workflow tests)
+**Total Test Count: 203 tests** (197 Rust + 6 Java)
+- Rust tests: 197 passing (unit + integration + workflow tests, including 11 shading tests)
 - Rust tests: 7 ignored (require external tools or specific setup)
 - Java tests: 6 (bazbom-reachability tool tests)
+- New dependencies: quick-xml (0.31) for XML parsing, zip (0.6) for JAR analysis
 
 ---
 
@@ -541,7 +549,7 @@ All priority modules have met or exceeded targets:
   - Shading/relocation mapping (Maven Shade, Gradle Shadow)
   - Performance benchmarks
 
-**Phase 3 Progress: 75% Complete** (Reachability engine complete, shading mapping foundation laid)
+**Phase 3 Progress: 90% Complete** (Reachability engine complete, shading detection substantially implemented)
 
 ---
 
