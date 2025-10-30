@@ -1,0 +1,37 @@
+# BazBOM Integration Example Configuration
+# This file demonstrates the configuration options from the integration plan
+
+[analysis]
+# Emit CycloneDX SBOM in addition to SPDX
+cyclonedx = false
+
+# Semgrep configuration (optional)
+# When enabled, uses curated JVM ruleset from rules/semgrep/semgrep-jvm.yml
+semgrep = { enabled = false }
+
+# CodeQL configuration (optional)
+# Suite options: "default" or "security-extended"
+codeql = { enabled = false, suite = "default" }
+
+[enrich]
+# Query deps.dev API for license and version intelligence
+depsdev = false
+
+[autofix]
+# Autofix mode: "off", "dry-run", or "pr"
+mode = "off"
+
+# Allowlist of packages that can be auto-upgraded
+recipe_allowlist = ["commons-io", "jackson", "log4j", "spring-core"]
+
+[containers]
+# Container SBOM strategy: "auto", "syft", or "bazbom"
+strategy = "auto"
+
+[publish]
+# Upload merged SARIF to GitHub Code Scanning
+# Typically done via github/codeql-action/upload-sarif@v3
+github_code_scanning = false
+
+# Archive all outputs as build artifacts
+artifact = true
