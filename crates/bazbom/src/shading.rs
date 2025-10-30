@@ -447,22 +447,6 @@ pub fn detect_shading_in_jar(
 
 // Helper functions
 
-fn extract_xml_value(line: &str, tag: &str) -> Option<String> {
-    let start_tag = format!("<{}>", tag);
-    let end_tag = format!("</{}>", tag);
-    
-    if let Some(start_idx) = line.find(&start_tag) {
-        if let Some(end_idx) = line.find(&end_tag) {
-            let value_start = start_idx + start_tag.len();
-            if value_start < end_idx {
-                return Some(line[value_start..end_idx].trim().to_string());
-            }
-        }
-    }
-    
-    None
-}
-
 fn parse_gradle_relocate_line(line: &str) -> Option<(String, String)> {
     // Parse patterns like:
     // relocate 'org.apache', 'myapp.shaded.apache'
@@ -537,16 +521,6 @@ mod tests {
         assert_eq!(original, Some("org.apache.commons.Lang".to_string()));
         
         let no_match = relocation.reverse_relocate("com.example.Foo");
-        assert_eq!(no_match, None);
-    }
-
-    #[test]
-    fn test_extract_xml_value() {
-        let line = "  <pattern>org.apache</pattern>  ";
-        let value = extract_xml_value(line, "pattern");
-        assert_eq!(value, Some("org.apache".to_string()));
-        
-        let no_match = extract_xml_value(line, "other");
         assert_eq!(no_match, None);
     }
 
