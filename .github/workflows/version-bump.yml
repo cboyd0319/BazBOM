@@ -47,23 +47,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b version-bump-${{ inputs.version }}
       
-      - name: Run version bump script
+      - name: Run version bump via script
         run: |
-          # Update all Cargo.toml files
-          for cargo_file in crates/*/Cargo.toml; do
-            sed -i 's/^version = ".*"/version = "${{ inputs.version }}"/' "$cargo_file"
-            echo "Updated $cargo_file"
-          done
-          
-          # Update CHANGELOG.md
-          DATE=$(date +%Y-%m-%d)
-          if grep -q "## \[Unreleased\]" CHANGELOG.md; then
-            sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [${{ inputs.version }}] - $DATE/" CHANGELOG.md
-            echo "Updated CHANGELOG.md"
-          fi
-          
-          # Update Cargo.lock
-          cargo update --workspace
+          # Make script executable and run it non-interactively
+          chmod +x tools/dev/bump-version.sh
+          echo "y" | tools/dev/bump-version.sh ${{ inputs.version }}
       
       - name: Commit changes
         run: |
@@ -72,7 +60,7 @@ jobs:
           git push origin version-bump-${{ inputs.version }}
       
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773d # v6.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: bump version to ${{ inputs.version }}"

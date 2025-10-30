@@ -112,7 +112,9 @@ main() {
     # Update Cargo.lock
     info "Updating Cargo.lock..."
     cd "$REPO_ROOT"
-    cargo update --workspace 2>/dev/null || true
+    if ! cargo update --workspace; then
+        warn "Warning: cargo update failed, but continuing..."
+    fi
     
     info ""
     info "Version bump complete!"

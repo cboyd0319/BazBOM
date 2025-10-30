@@ -9,7 +9,7 @@ This document provides information about third-party tools and software that Baz
 - **License**: LGPL v2.1 (Semgrep CE engine)
 - **Usage**: BazBOM can optionally invoke Semgrep for static application security testing (SAST)
 - **Installation**: User-installed via `pip install semgrep` or system package manager
-- **Website**: https://semgrep.dev/
+- **Website**: <https://semgrep.dev/>
 - **Note**: BazBOM includes custom security rules written by the BazBOM project, not rules from Semgrep's registry
 
 ### CodeQL
@@ -17,7 +17,7 @@ This document provides information about third-party tools and software that Baz
 - **License**: GitHub CodeQL Terms & Conditions (free for open-source analysis)
 - **Usage**: BazBOM can optionally invoke CodeQL CLI for code analysis
 - **Installation**: User-installed or available via GitHub Actions
-- **Website**: https://codeql.github.com/
+- **Website**: <https://codeql.github.com/>
 - **Note**: BazBOM does not redistribute CodeQL binaries or queries
 
 ### Syft
@@ -25,8 +25,8 @@ This document provides information about third-party tools and software that Baz
 - **License**: Apache License 2.0
 - **Copyright**: Anchore, Inc.
 - **Usage**: BazBOM can optionally invoke Syft for container SBOM generation
-- **Installation**: User-installed via `brew install syft` or from https://github.com/anchore/syft
-- **Website**: https://github.com/anchore/syft
+- **Installation**: User-installed via `brew install syft` or from <https://github.com/anchore/syft>
+- **Website**: <https://github.com/anchore/syft>
 - **Note**: BazBOM does not redistribute Syft binaries
 
 ## Rust Dependencies
@@ -70,4 +70,4 @@ The custom Semgrep rules and CodeQL configurations included in this repository a
 ## Questions?
 
 If you have questions about BazBOM's use of third-party tools or licensing compliance, please open an issue at:
-https://github.com/cboyd0319/BazBOM/issues
+<https://github.com/cboyd0319/BazBOM/issues>

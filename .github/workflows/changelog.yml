@@ -78,43 +78,43 @@ jobs:
             fi
             
             # Breaking changes
-            if git log $RANGE --pretty=format:"%s" | grep -i "breaking" > /dev/null; then
+            if git log $RANGE --pretty=format:"%s" | grep -i "breaking" > /dev/null 2>&1; then
               echo "#### Breaking Changes"
-              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "breaking"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "breaking" || true
               echo ""
             fi
             
             # Features
-            if git log $RANGE --pretty=format:"%s" | grep -iE "^feat|^feature" > /dev/null; then
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^feat|^feature" > /dev/null 2>&1; then
               echo "#### New Features"
-              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^feat|^feature"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^feat|^feature" || true
               echo ""
             fi
             
             # Bug fixes
-            if git log $RANGE --pretty=format:"%s" | grep -iE "^fix" > /dev/null; then
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^fix" > /dev/null 2>&1; then
               echo "#### Bug Fixes"
-              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^fix"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^fix" || true
               echo ""
             fi
             
             # Security
-            if git log $RANGE --pretty=format:"%s" | grep -i "security" > /dev/null; then
+            if git log $RANGE --pretty=format:"%s" | grep -i "security" > /dev/null 2>&1; then
               echo "#### Security"
-              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "security"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "security" || true
               echo ""
             fi
             
             # Documentation
-            if git log $RANGE --pretty=format:"%s" | grep -iE "^docs" > /dev/null; then
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^docs" > /dev/null 2>&1; then
               echo "#### Documentation"
-              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^docs"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^docs" || true
               echo ""
             fi
             
             # Other changes
             echo "#### Other Changes"
-            git log $RANGE --pretty=format:"- %s (%h)" | grep -viE "^feat|^feature|^fix|^docs|breaking|security" | head -20
+            git log $RANGE --pretty=format:"- %s (%h)" | grep -viE "^feat|^feature|^fix|^docs|breaking|security" | head -20 || true
             echo ""
           } > changelog-fragment.md
           
