@@ -43,7 +43,6 @@ impl Analyzer for ScaAnalyzer {
 mod tests {
     use super::*;
     use tempfile::tempdir;
-    use std::path::PathBuf;
 
     #[test]
     fn test_sca_analyzer_enabled() {

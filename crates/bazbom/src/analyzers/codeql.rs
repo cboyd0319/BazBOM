@@ -1,10 +1,8 @@
 use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
-use crate::toolchain::run_tool;
-use anyhow::{Context as _, Result};
+use anyhow::Result;
 use bazbom_formats::sarif::SarifReport;
-use std::path::PathBuf;
 
 pub struct CodeqlAnalyzer {
     suite: String,
@@ -78,7 +76,6 @@ impl Analyzer for CodeqlAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
 
     #[test]
     fn test_codeql_analyzer_enabled() {
