@@ -20,6 +20,7 @@ clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
+toml = "0.8"
 blake3 = "1"
 chrono = "0.4"
 quick-xml = "0.31"
@@ -29,6 +30,7 @@ bazbom-formats = { path = "../bazbom-formats" }
 bazbom-advisories = { path = "../bazbom-advisories" }
 bazbom-policy = { path = "../bazbom-policy" }
 bazbom-graph = { path = "../bazbom-graph" }
+tempfile = "3"
 
 [dev-dependencies]
 assert_cmd = "2"

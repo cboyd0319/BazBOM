@@ -59,7 +59,7 @@ pub struct PublishConfig {
 impl Config {
     pub fn load(path: &Path) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
-        let config: Config = serde_yaml::from_str(&content)?;
+        let config: Config = toml::from_str(&content)?;
         Ok(config)
     }
 
@@ -107,7 +107,7 @@ strategy = "auto"
 github_code_scanning = true
 artifact = true
 "#;
-        let config: Config = serde_yaml::from_str(toml).unwrap();
+        let config: Config = toml::from_str(toml).unwrap();
         assert_eq!(config.analysis.cyclonedx, Some(true));
         assert_eq!(
             config.analysis.semgrep.as_ref().and_then(|s| s.enabled),
