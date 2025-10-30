@@ -25,6 +25,7 @@ pub struct VersionInfo {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct DepsDevResponse {
     #[serde(rename = "packageKey")]
     package_key: PackageKey,
@@ -33,12 +34,14 @@ struct DepsDevResponse {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PackageKey {
     name: String,
     system: String,
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct VersionDetails {
     #[serde(rename = "versionKey")]
     version_key: VersionKey,
