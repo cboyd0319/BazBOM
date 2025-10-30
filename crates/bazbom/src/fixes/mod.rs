@@ -1,3 +1,3 @@
 pub mod openrewrite;
 
-pub use openrewrite::{OpenRewriteRecipe, OpenRewriteRunner};
+pub use openrewrite::{AutofixMode, OpenRewriteRecipe, OpenRewriteRunner, VulnerabilityFinding};
