@@ -1,0 +1,129 @@
+# Example GitHub Actions workflow for BazBOM orchestrated scan
+# Place this file in .github/workflows/bazbom-scan.yml
+
+name: BazBOM Security Scan
+
+on:
+  pull_request:
+    paths-ignore: 
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches: 
+      - main
+      - master
+  schedule:
+    # Run weekly on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  bazbom-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Install Semgrep (optional)
+        if: github.event_name == 'push' || github.event_name == 'schedule'
+        run: |
+          pipx install semgrep
+
+      - name: Install CodeQL CLI (optional, for deep analysis)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+        run: |
+          CODEQL_VERSION=2.19.4
+          curl -sL https://github.com/github/codeql-cli-binaries/releases/download/v${CODEQL_VERSION}/codeql-linux64.zip -o codeql.zip
+          unzip -q codeql.zip -d $HOME
+          echo "$HOME/codeql" >> $GITHUB_PATH
+
+      - name: Install BazBOM
+        run: |
+          # Replace with actual installation command once published
+          # For now, assumes bazbom binary is in PATH or built locally
+          cargo build --release --package bazbom
+          echo "${{ github.workspace }}/target/release" >> $GITHUB_PATH
+
+      - name: Run BazBOM Scan (PR mode - fast)
+        if: github.event_name == 'pull_request'
+        run: |
+          bazbom scan . \
+            --cyclonedx \
+            --with-semgrep \
+            --out-dir ./bazbom-output
+
+      - name: Run BazBOM Scan (Main branch - comprehensive)
+        if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+        run: |
+          bazbom scan . \
+            --cyclonedx \
+            --with-semgrep \
+            --with-codeql security-extended \
+            --autofix dry-run \
+            --out-dir ./bazbom-output
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bazbom-output/findings/merged.sarif
+          category: bazbom
+
+      - name: Upload BazBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bazbom-results-${{ github.run_id }}
+          path: |
+            bazbom-output/sbom/**
+            bazbom-output/findings/**
+            bazbom-output/enrich/**
+            bazbom-output/fixes/**
+          retention-days: 90
+
+      - name: Comment PR with summary (optional)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            // Read merged SARIF to count findings
+            let summary = '## BazBOM Security Scan Results\n\n';
+            
+            try {
+              const sarifPath = 'bazbom-output/findings/merged.sarif';
+              if (fs.existsSync(sarifPath)) {
+                const sarif = JSON.parse(fs.readFileSync(sarifPath, 'utf8'));
+                
+                summary += '| Tool | Findings |\n|------|----------|\n';
+                for (const run of sarif.runs) {
+                  const tool = run.tool.driver.name;
+                  const count = run.results.length;
+                  summary += `| ${tool} | ${count} |\n`;
+                }
+                
+                summary += '\n📦 Full results available in workflow artifacts.';
+              } else {
+                summary += '✅ No issues found or SARIF not generated.';
+              }
+            } catch (error) {
+              summary += `⚠️ Failed to read results: ${error.message}`;
+            }
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
