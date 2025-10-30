@@ -1123,6 +1123,7 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 ### Operations
 - **[Validation](docs/VALIDATION.md)** - SBOM/SARIF schema validation
 - **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and fixes
+- **[Versioning](docs/VERSIONING.md)** - Release process and semantic versioning
 
 ### Full Documentation Index
 See [docs/README.md](docs/README.md) for the complete documentation map.
