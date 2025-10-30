@@ -11,6 +11,8 @@ pub struct ToolDescriptor {
     pub sha256: String,
     pub executable: bool,
     pub archive: bool,
+    /// Path to the executable within the archive (e.g., "codeql/codeql" or "syft")
+    pub executable_path: Option<String>,
 }
 
 pub struct ToolCache {
@@ -81,33 +83,72 @@ impl ToolCache {
 
         println!("[bazbom] SHA256 verified for {}", desc.name);
 
-        // Handle archives (zip)
+        // Handle archives
         let final_bin = if desc.archive {
-            // For now, assume zip archives contain a single binary with the tool name
-            // In production, this should be more sophisticated
-            let archive = fs::File::open(tmp_path).context("open archive")?;
-            let mut zip = zip::ZipArchive::new(archive).context("read zip archive")?;
-
-            // Extract the binary (look for file with tool name)
-            let mut found = false;
-            for i in 0..zip.len() {
-                let mut file = zip.by_index(i).context("read zip entry")?;
-                let file_name = file.name();
-                if file_name.ends_with(&desc.name)
-                    || file_name.ends_with(&format!("{}.exe", desc.name))
-                {
-                    let mut out = fs::File::create(&bin).context("create binary file")?;
-                    std::io::copy(&mut file, &mut out).context("extract binary")?;
-                    found = true;
-                    break;
+            let archive_path = tmp_path.to_path_buf();
+            
+            // Determine if it's a zip or tar.gz based on the URL
+            if desc.url.ends_with(".zip") {
+                // Extract ZIP archive
+                let archive = fs::File::open(&archive_path).context("open zip archive")?;
+                let mut zip = zip::ZipArchive::new(archive).context("read zip archive")?;
+                
+                // Extract all files to maintain directory structure
+                for i in 0..zip.len() {
+                    let mut file = zip.by_index(i).context("read zip entry")?;
+                    let outpath = dir.join(file.name());
+                    
+                    if file.is_dir() {
+                        fs::create_dir_all(&outpath).context("create directory")?;
+                    } else {
+                        if let Some(p) = outpath.parent() {
+                            fs::create_dir_all(p).context("create parent directory")?;
+                        }
+                        let mut outfile = fs::File::create(&outpath).context("create file")?;
+                        std::io::copy(&mut file, &mut outfile).context("extract file")?;
+                        
+                        // Set executable permissions on Unix for the extracted file
+                        #[cfg(unix)]
+                        {
+                            use std::os::unix::fs::PermissionsExt;
+                            let mut perms = fs::metadata(&outpath)
+                                .context("get file metadata")?
+                                .permissions();
+                            // If the file had executable bit in the zip, preserve it
+                            if let Some(mode) = file.unix_mode() {
+                                if mode & 0o111 != 0 {
+                                    perms.set_mode(mode);
+                                    fs::set_permissions(&outpath, perms).context("set permissions")?;
+                                }
+                            }
+                        }
+                    }
                 }
+            } else if desc.url.ends_with(".tar.gz") || desc.url.ends_with(".tgz") {
+                // Extract tar.gz archive
+                use std::process::Command;
+                let status = Command::new("tar")
+                    .args(&["-xzf", archive_path.to_str().unwrap(), "-C", dir.to_str().unwrap()])
+                    .status()
+                    .context("run tar extraction")?;
+                
+                if !status.success() {
+                    bail!("tar extraction failed");
+                }
+            } else {
+                bail!("unsupported archive format: {}", desc.url);
             }
-
-            if !found {
-                bail!("binary {} not found in archive", desc.name);
+            
+            // Find the executable based on executable_path or tool name
+            let exec_path = desc.executable_path.as_ref()
+                .map(|p| dir.join(p))
+                .unwrap_or_else(|| dir.join(self.binary_name(&desc.name)));
+                
+            if !exec_path.exists() {
+                bail!("executable not found at {:?} after extraction", exec_path);
             }
-
-            bin.clone()
+            
+            exec_path
         } else {
             // Move the downloaded file to the final location
             fs::rename(tmp_path, &bin).context("move downloaded file")?;
