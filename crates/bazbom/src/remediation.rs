@@ -229,13 +229,11 @@ fn generate_how_to_fix(
             )
         }
         None => {
-            format!(
-                "No fixed version available yet. Consider:\n\
-                 1. Check for updates from the package maintainer\n\
-                 2. Apply temporary workarounds if available\n\
-                 3. Consider alternative packages\n\
-                 4. Monitor security advisories for updates"
-            )
+            "No fixed version available yet. Consider:\n\
+             1. Check for updates from the package maintainer\n\
+             2. Apply temporary workarounds if available\n\
+             3. Consider alternative packages\n\
+             4. Monitor security advisories for updates".to_string()
         }
     }
 }

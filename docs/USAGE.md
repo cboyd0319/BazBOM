@@ -548,9 +548,9 @@ Copy one to your project root and customize as needed:
 cp examples/bazbom-strict.yml bazbom.yml
 ```
 
-### `bazbom fix` - Remediation Suggestions
+### `bazbom fix` - Remediation Suggestions and Auto-Fix
 
-Suggest or apply dependency fixes.
+Generate remediation suggestions for vulnerabilities or automatically apply fixes.
 
 **Synopsis:**
 ```bash
@@ -558,30 +558,79 @@ bazbom fix [OPTIONS]
 ```
 
 **Options:**
-- `--suggest` - Show fix suggestions without applying changes (recommend-only)
-- `--apply` - Apply fixes and open pull requests (when implemented)
+- `--suggest` - Show fix suggestions without applying changes (recommend-only mode)
+- `--apply` - Apply fixes automatically (experimental - placeholder implementation)
 
 **Examples:**
 
 ```bash
-# Get fix suggestions
+# Get fix suggestions with educational context
 bazbom fix --suggest
 
-# Apply fixes (future capability)
+# View suggestions with priorities and effort estimates
+bazbom fix --suggest
+
+# Apply fixes automatically (experimental)
 bazbom fix --apply
 ```
 
-**Suggest Mode (Default):**
-- Shows recommended dependency upgrades
-- Explains why each fix matters
-- Educational context about vulnerabilities
-- Safe, non-invasive
+**Suggest Mode Features:**
+- **Vulnerability Prioritization:** P0-P4 based on CVSS, KEV, and EPSS
+- **Severity Assessment:** Critical, High, Medium, Low classification
+- **Educational Context:** "Why fix this?" explanations including:
+  - CISA KEV presence (actively exploited)
+  - EPSS exploit probability scores
+  - CVSS severity scores
+  - Impact summaries
+- **Fix Guidance:** Build-system-specific upgrade instructions for Maven, Gradle, and Bazel
+- **Effort Estimation:** Low (<1 hour), Medium (1-4 hours), or High (>4 hours)
+- **JSON Output:** `remediation_suggestions.json` for automation
 
-**Apply Mode (Roadmap):**
-- Automatically updates dependency files
-- Runs tests to verify compatibility
-- Opens pull request with changes
-- Includes rollback capability
+**Example Output:**
+
+```
+[bazbom] Remediation Summary:
+  Total vulnerabilities: 12
+  Fixable: 8
+  Unfixable: 4
+  Estimated effort: Medium (1-4 hours)
+
+[bazbom] Remediation Suggestions:
+
+1. CVE-2024-1234 (log4j-core)
+   Current version: 2.17.0
+   Fixed version: 2.17.1
+   Severity: CRITICAL | Priority: P0
+
+   WHY FIX THIS:
+   CRITICAL severity - immediate action required. Listed in CISA KEV (Known 
+   Exploited Vulnerabilities) - actively exploited in the wild. Very high 
+   CVSS score: 9.8. Impact: Remote code execution vulnerability.
+
+   HOW TO FIX:
+   Upgrade to version 2.17.1.
+
+   Update pom.xml:
+   <dependency>
+     <groupId>org.apache.logging.log4j</groupId>
+     <artifactId>log4j-core</artifactId>
+     <version>2.17.1</version>
+   </dependency>
+   Then run: mvn clean install
+
+   REFERENCES:
+   - https://nvd.nist.gov/vuln/detail/CVE-2024-1234
+   - https://logging.apache.org/log4j/2.x/security.html
+```
+
+**Apply Mode (Experimental - Placeholder):**
+- Currently returns placeholder errors with guidance to use `--suggest`
+- Future implementation will:
+  - Automatically parse and update dependency files (pom.xml, build.gradle, WORKSPACE)
+  - Run tests to verify compatibility
+  - Open pull requests with changes
+  - Include rollback capability on test failures
+- Use `--suggest` mode for current remediation guidance
 
 ### Advanced: Reachability Analysis
 

@@ -1058,8 +1058,9 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 - [x] Large monorepo optimization
 
 **In Progress (Phase 4):**
-- [ ] Remediation automation (`bazbom fix --suggest` and `--apply`)
-- [ ] Educational "why fix this?" context in suggestions
+- [x] Remediation automation (`bazbom fix --suggest`) - **Implemented**
+- [x] Educational "why fix this?" context in suggestions - **Implemented**
+- [ ] Full `bazbom fix --apply` implementation for automatic file updates
 - [ ] PR generation for Maven/Gradle/Bazel
 
 **Planned (Phases 5-7):**
