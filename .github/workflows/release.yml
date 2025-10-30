@@ -81,10 +81,70 @@ jobs:
     needs: [sign]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+      
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          CURRENT_TAG=${GITHUB_REF#refs/tags/}
+          
+          {
+            echo "## What's Changed"
+            echo ""
+            
+            if [ -n "$PREV_TAG" ]; then
+              RANGE="$PREV_TAG..$CURRENT_TAG"
+              echo "Full Changelog: https://github.com/${{ github.repository }}/compare/$PREV_TAG...$CURRENT_TAG"
+            else
+              RANGE="$CURRENT_TAG"
+            fi
+            echo ""
+            
+            # Breaking changes
+            if git log $RANGE --pretty=format:"%s" | grep -i "breaking" > /dev/null 2>&1; then
+              echo "### Breaking Changes"
+              git log $RANGE --pretty=format:"- %s" | grep -i "breaking" || true
+              echo ""
+            fi
+            
+            # Features
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^feat|^feature" > /dev/null 2>&1; then
+              echo "### New Features"
+              git log $RANGE --pretty=format:"- %s" | grep -iE "^feat|^feature" || true
+              echo ""
+            fi
+            
+            # Bug fixes
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^fix" > /dev/null 2>&1; then
+              echo "### Bug Fixes"
+              git log $RANGE --pretty=format:"- %s" | grep -iE "^fix" || true
+              echo ""
+            fi
+            
+            # Security
+            if git log $RANGE --pretty=format:"%s" | grep -i "security" > /dev/null 2>&1; then
+              echo "### Security"
+              git log $RANGE --pretty=format:"- %s" | grep -i "security" || true
+              echo ""
+            fi
+          } > release-notes.md
+          
+          # Output for GitHub Actions
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          cat release-notes.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Download signed artifacts
+        uses: actions/download-artifact@v4
         with:
           name: signed-dist
           path: dist
+      
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
@@ -92,6 +152,10 @@ jobs:
             dist/**/bazbom-*.tar.gz
             dist/**/bazbom-*.tar.gz.sig
             dist/**/bazbom-*.tar.gz.sha256
+          body_path: release-notes.md
+          draft: false
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          generate_release_notes: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

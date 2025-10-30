@@ -1,0 +1,87 @@
+name: Version Bump Automation
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'New version (e.g., 0.2.1 or 0.3.0-beta)'
+        required: true
+        type: string
+      create_release:
+        description: 'Create GitHub release after tagging'
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump-version:
+    name: Bump version and create PR
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      
+      - name: Validate version format
+        run: |
+          VERSION="${{ inputs.version }}"
+          if [[ ! $VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Invalid version format: $VERSION"
+            exit 1
+          fi
+          echo "Version format valid: $VERSION"
+      
+      - name: Create version bump branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b version-bump-${{ inputs.version }}
+      
+      - name: Run version bump via script
+        run: |
+          # Make script executable and run it non-interactively
+          chmod +x tools/dev/bump-version.sh
+          echo "y" | tools/dev/bump-version.sh ${{ inputs.version }}
+      
+      - name: Commit changes
+        run: |
+          git add -A
+          git commit -m "chore: bump version to ${{ inputs.version }}" || echo "No changes to commit"
+          git push origin version-bump-${{ inputs.version }}
+      
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@c5a7806660adbe173f04e3e038b0ccdcd758773d # v6.1.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: bump version to ${{ inputs.version }}"
+          branch: version-bump-${{ inputs.version }}
+          title: "chore: bump version to ${{ inputs.version }}"
+          body: |
+            ## Version Bump: ${{ inputs.version }}
+            
+            This PR updates the version across all crates and CHANGELOG.md.
+            
+            ### Changes
+            - Updated all `Cargo.toml` files to version ${{ inputs.version }}
+            - Updated `CHANGELOG.md` with release date
+            - Regenerated `Cargo.lock`
+            
+            ### Post-merge steps
+            After merging this PR:
+            1. Create and push the git tag: `git tag -a v${{ inputs.version }} -m "Release v${{ inputs.version }}"`
+            2. Push the tag: `git push origin v${{ inputs.version }}`
+            3. The release workflow will automatically build and publish artifacts
+          labels: |
+            release
+            automated
+          draft: false

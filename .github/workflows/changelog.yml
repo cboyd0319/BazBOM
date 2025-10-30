@@ -1,0 +1,134 @@
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      from_tag:
+        description: 'Start tag (leave empty for previous tag)'
+        required: false
+        type: string
+      to_ref:
+        description: 'End ref (leave empty for HEAD)'
+        required: false
+        type: string
+        default: 'HEAD'
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  changelog:
+    name: Generate and Update Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Determine tag range
+        id: tags
+        run: |
+          if [ -n "${{ inputs.from_tag }}" ]; then
+            FROM_TAG="${{ inputs.from_tag }}"
+          else
+            # Get the previous tag
+            FROM_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          fi
+          
+          TO_REF="${{ inputs.to_ref }}"
+          if [ -z "$TO_REF" ]; then
+            TO_REF="HEAD"
+          fi
+          
+          echo "from_tag=$FROM_TAG" >> $GITHUB_OUTPUT
+          echo "to_ref=$TO_REF" >> $GITHUB_OUTPUT
+          
+          if [ -n "$FROM_TAG" ]; then
+            echo "Generating changelog from $FROM_TAG to $TO_REF"
+          else
+            echo "Generating changelog for all commits to $TO_REF"
+          fi
+      
+      - name: Generate changelog content
+        id: changelog
+        run: |
+          FROM_TAG="${{ steps.tags.outputs.from_tag }}"
+          TO_REF="${{ steps.tags.outputs.to_ref }}"
+          
+          # Generate git log with categorization
+          {
+            echo "### Changes"
+            echo ""
+            
+            if [ -n "$FROM_TAG" ]; then
+              RANGE="$FROM_TAG..$TO_REF"
+            else
+              RANGE="$TO_REF"
+            fi
+            
+            # Breaking changes
+            if git log $RANGE --pretty=format:"%s" | grep -i "breaking" > /dev/null 2>&1; then
+              echo "#### Breaking Changes"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "breaking" || true
+              echo ""
+            fi
+            
+            # Features
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^feat|^feature" > /dev/null 2>&1; then
+              echo "#### New Features"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^feat|^feature" || true
+              echo ""
+            fi
+            
+            # Bug fixes
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^fix" > /dev/null 2>&1; then
+              echo "#### Bug Fixes"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^fix" || true
+              echo ""
+            fi
+            
+            # Security
+            if git log $RANGE --pretty=format:"%s" | grep -i "security" > /dev/null 2>&1; then
+              echo "#### Security"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -i "security" || true
+              echo ""
+            fi
+            
+            # Documentation
+            if git log $RANGE --pretty=format:"%s" | grep -iE "^docs" > /dev/null 2>&1; then
+              echo "#### Documentation"
+              git log $RANGE --pretty=format:"- %s (%h)" | grep -iE "^docs" || true
+              echo ""
+            fi
+            
+            # Other changes
+            echo "#### Other Changes"
+            git log $RANGE --pretty=format:"- %s (%h)" | grep -viE "^feat|^feature|^fix|^docs|breaking|security" | head -20 || true
+            echo ""
+          } > changelog-fragment.md
+          
+          cat changelog-fragment.md
+      
+      - name: Create changelog artifact
+        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
+        with:
+          name: changelog-fragment
+          path: changelog-fragment.md
+          retention-days: 30
+      
+      - name: Add to GITHUB_STEP_SUMMARY
+        run: |
+          echo "## Generated Changelog" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat changelog-fragment.md >> $GITHUB_STEP_SUMMARY

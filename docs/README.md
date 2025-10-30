@@ -39,6 +39,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 - **[Validation](VALIDATION.md)** - SPDX and SARIF validation steps
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Versioning](VERSIONING.md)** - Release process and semantic versioning guidelines
 
 ## Testing & Coverage
 
