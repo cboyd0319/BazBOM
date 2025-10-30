@@ -171,8 +171,8 @@ bazel build //:dep_graph_all
 - Automatic detection of shading configurations during `bazbom scan`
 - Support for multiple relocation mappings
 - Include/exclude pattern filtering
-- Bytecode-level class fingerprinting for ambiguous cases (foundation in place)
-- Confidence scoring for shading matches (0.0-1.0, foundation in place)
+- Bytecode-level class fingerprinting (API ready, runtime analysis planned for future)
+- Confidence scoring for shading matches (API ready, runtime matching planned for future)
 - **shading_config.json** output file with relocation details
 - **Shading metadata** in sca_findings.json
 - **SARIF integration** with shading notes in security reports
