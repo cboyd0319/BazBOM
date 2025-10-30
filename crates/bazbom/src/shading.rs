@@ -50,6 +50,10 @@ pub struct ShadingMatch {
 
 impl RelocationMapping {
     /// Check if a class name matches this relocation pattern
+    /// 
+    /// Future use: Runtime JAR analysis to match classes against relocation patterns
+    /// for accurate vulnerability attribution in shaded dependencies.
+    #[allow(dead_code)]
     pub fn matches(&self, class_name: &str) -> bool {
         // Check if class is in the pattern namespace
         if !class_name.starts_with(&self.pattern) {
@@ -74,6 +78,10 @@ impl RelocationMapping {
     }
     
     /// Apply this relocation to a class name, returning the original name
+    /// 
+    /// Future use: Map shaded class names back to original artifacts for
+    /// accurate vulnerability reporting and dependency attribution.
+    #[allow(dead_code)]
     pub fn reverse_relocate(&self, shaded_class_name: &str) -> Option<String> {
         if !shaded_class_name.starts_with(&self.shadedPattern) {
             return None;
@@ -261,6 +269,11 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
 }
 
 /// Extract nested JARs from a fat JAR
+/// 
+/// Future use: Deep analysis of fat JARs (uber JARs) to extract and analyze
+/// embedded dependencies, useful for Spring Boot applications and other
+/// packaging formats that bundle dependencies within the main JAR.
+#[allow(dead_code)]
 pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<String>> {
     use zip::ZipArchive;
     
@@ -308,6 +321,11 @@ pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<Str
 }
 
 /// Generate a fingerprint for a class file
+/// 
+/// Future use: Create unique fingerprints of class files for matching shaded
+/// classes to their original artifacts when relocation patterns are ambiguous.
+/// Enables high-confidence attribution even for complex shading scenarios.
+#[allow(dead_code)]
 pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
     // Compute bytecode hash for matching
     let hash = blake3::hash(class_bytes).to_hex().to_string();
@@ -333,6 +351,11 @@ pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
 }
 
 /// Extract class name from bytecode (basic implementation)
+/// 
+/// Future use: Helper function for fingerprint_class to extract class names
+/// directly from bytecode for more accurate matching. Currently relies on
+/// bytecode hash; future implementation would parse constant pool.
+#[allow(dead_code)]
 fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
     // Basic validation - check for Java class file magic number
     if class_bytes.len() < 10 || &class_bytes[0..4] != b"\xCA\xFE\xBA\xBE" {
@@ -350,6 +373,11 @@ fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
 }
 
 /// Scan a JAR file and create fingerprints for all classes
+/// 
+/// Future use: Build a database of class fingerprints from known artifacts
+/// for matching against shaded JARs. Enables identification of dependencies
+/// in fat JARs even without relocation configuration.
+#[allow(dead_code)]
 pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerprint>> {
     use zip::ZipArchive;
     
@@ -383,6 +411,11 @@ pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerpri
 }
 
 /// Match a shaded class to its original artifact using fingerprints
+/// 
+/// Future use: Compare fingerprints of shaded classes against a database
+/// of known artifacts to identify dependencies and enable accurate
+/// vulnerability attribution with confidence scoring.
+#[allow(dead_code)]
 pub fn match_shaded_class(
     shaded_class: &ClassFingerprint,
     known_fingerprints: &HashMap<String, ClassFingerprint>,
@@ -405,6 +438,11 @@ pub fn match_shaded_class(
 }
 
 /// Detect shading in a JAR by comparing its classes against a relocation map
+/// 
+/// Future use: Runtime analysis of JAR files to detect shaded classes and
+/// map them to original artifacts. Complements build-time detection for
+/// cases where build configuration is unavailable or incomplete.
+#[allow(dead_code)]
 pub fn detect_shading_in_jar(
     jar_path: &Path,
     relocation: &RelocationMapping,

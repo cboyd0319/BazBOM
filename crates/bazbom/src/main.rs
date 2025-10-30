@@ -9,6 +9,7 @@ mod bazel;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
+mod shading;
 
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
@@ -222,30 +223,6 @@ fn main() -> Result<()> {
                 Vec::new()
             };
 
-            // Create findings file with vulnerability data
-            let findings_path = out.join("sca_findings.json");
-            let findings_data = serde_json::json!({
-                "vulnerabilities": vulnerabilities,
-                "summary": {
-                    "total": vulnerabilities.len(),
-                    "critical": vulnerabilities.iter().filter(|v| {
-                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Critical))
-                    }).count(),
-                    "high": vulnerabilities.iter().filter(|v| {
-                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::High))
-                    }).count(),
-                    "medium": vulnerabilities.iter().filter(|v| {
-                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Medium))
-                    }).count(),
-                    "low": vulnerabilities.iter().filter(|v| {
-                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Low))
-                    }).count(),
-                }
-            });
-            fs::write(&findings_path, serde_json::to_vec_pretty(&findings_data).unwrap())
-                .with_context(|| format!("failed writing {:?}", findings_path))?;
-            println!("[bazbom] wrote {:?} ({} vulnerabilities)", findings_path, vulnerabilities.len());
-
             // Run reachability analysis if requested
             let reachability_result = if reachability {
                 // Attempt to run reachability analysis if configured
@@ -333,9 +310,137 @@ fn main() -> Result<()> {
                 None
             };
 
+            // Detect shading/relocation configuration
+            let shading_config = match system {
+                bazbom_core::BuildSystem::Maven => {
+                    let pom_path = root.join("pom.xml");
+                    if pom_path.exists() {
+                        match shading::parse_maven_shade_config(&pom_path) {
+                            Ok(Some(config)) => {
+                                println!("[bazbom] detected Maven Shade plugin with {} relocations", 
+                                         config.relocations.len());
+                                Some(config)
+                            }
+                            Ok(None) => None,
+                            Err(e) => {
+                                eprintln!("[bazbom] warning: failed to parse Maven Shade config: {}", e);
+                                None
+                            }
+                        }
+                    } else {
+                        None
+                    }
+                }
+                bazbom_core::BuildSystem::Gradle => {
+                    let build_gradle = root.join("build.gradle");
+                    let build_gradle_kts = root.join("build.gradle.kts");
+                    let build_file = if build_gradle.exists() {
+                        build_gradle
+                    } else if build_gradle_kts.exists() {
+                        build_gradle_kts
+                    } else {
+                        PathBuf::new()
+                    };
+                    
+                    if build_file.exists() {
+                        match shading::parse_gradle_shadow_config(&build_file) {
+                            Ok(Some(config)) => {
+                                println!("[bazbom] detected Gradle Shadow plugin with {} relocations", 
+                                         config.relocations.len());
+                                Some(config)
+                            }
+                            Ok(None) => None,
+                            Err(e) => {
+                                eprintln!("[bazbom] warning: failed to parse Gradle Shadow config: {}", e);
+                                None
+                            }
+                        }
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            };
+
+            // Write shading configuration to file if detected
+            if let Some(ref config) = shading_config {
+                let shading_output = out.join("shading_config.json");
+                fs::write(&shading_output, serde_json::to_vec_pretty(&config).unwrap())
+                    .with_context(|| format!("failed writing {:?}", shading_output))?;
+                println!("[bazbom] wrote {:?}", shading_output);
+            }
+
+            // Create findings file with vulnerability data, including reachability and shading info
+            let findings_path = out.join("sca_findings.json");
+            let mut findings_data = serde_json::json!({
+                "vulnerabilities": vulnerabilities,
+                "summary": {
+                    "total": vulnerabilities.len(),
+                    "critical": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Critical))
+                    }).count(),
+                    "high": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::High))
+                    }).count(),
+                    "medium": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Medium))
+                    }).count(),
+                    "low": vulnerabilities.iter().filter(|v| {
+                        matches!(v.severity.as_ref().map(|s| s.level), Some(bazbom_advisories::SeverityLevel::Low))
+                    }).count(),
+                }
+            });
+            
+            // Add reachability info if available
+            if let Some(ref reach) = reachability_result {
+                findings_data["reachability"] = serde_json::json!({
+                    "enabled": true,
+                    "detected_entrypoints": reach.detected_entrypoints.len(),
+                    "reachable_methods": reach.reachable_methods.len(),
+                    "reachable_classes": reach.reachable_classes.len(),
+                    "reachable_packages": reach.reachable_packages.len(),
+                });
+            } else {
+                findings_data["reachability"] = serde_json::json!({
+                    "enabled": false,
+                });
+            }
+            
+            // Add shading info if available
+            if let Some(ref config) = shading_config {
+                findings_data["shading"] = serde_json::json!({
+                    "detected": true,
+                    "source": config.source,
+                    "relocations": config.relocations.len(),
+                });
+            } else {
+                findings_data["shading"] = serde_json::json!({
+                    "detected": false,
+                });
+            }
+            
+            fs::write(&findings_path, serde_json::to_vec_pretty(&findings_data).unwrap())
+                .with_context(|| format!("failed writing {:?}", findings_path))?;
+            println!("[bazbom] wrote {:?} ({} vulnerabilities)", findings_path, vulnerabilities.len());
+
             // Create SARIF report with vulnerability results
             let sarif_path = out.join("sca_findings.sarif");
             let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
+            
+            // Add informational note about shading if detected
+            if let Some(ref config) = shading_config {
+                let shading_note = format!(
+                    "Shading detected: {} relocations from {} (see shading_config.json for details)",
+                    config.relocations.len(),
+                    config.source
+                );
+                let info_result = bazbom_formats::sarif::Result::new(
+                    "shading/detected",
+                    "note",
+                    &shading_note
+                );
+                sarif.add_result(info_result);
+            }
             
             // Add vulnerability results to SARIF with reachability info if available
             for vuln in &vulnerabilities {
