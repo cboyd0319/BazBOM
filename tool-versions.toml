@@ -1,71 +1,64 @@
 # Tool versions and download URLs with SHA256 checksums
 # This file defines the pinned versions of external tools used by BazBOM
 
+# Note: Semgrep is distributed via PyPI and should be installed using:
+# pipx install semgrep==1.141.0
+# or: pip install semgrep==1.141.0
+# See: https://semgrep.dev/docs/getting-started/
 [semgrep]
-version = "1.78.0"
-
-[semgrep.linux_x86_64]
-url = "https://github.com/semgrep/semgrep/releases/download/v1.78.0/semgrep-v1.78.0-ubuntu-generic-x86_64.tar.gz"
-sha256 = "placeholder-linux-x86_64"
-archive = true
-
-[semgrep.linux_aarch64]
-url = "https://github.com/semgrep/semgrep/releases/download/v1.78.0/semgrep-v1.78.0-ubuntu-generic-aarch64.tar.gz"
-sha256 = "placeholder-linux-aarch64"
-archive = true
-
-[semgrep.macos_x86_64]
-url = "https://github.com/semgrep/semgrep/releases/download/v1.78.0/semgrep-v1.78.0-macos-x86_64.tar.gz"
-sha256 = "placeholder-macos-x86_64"
-archive = true
-
-[semgrep.macos_aarch64]
-url = "https://github.com/semgrep/semgrep/releases/download/v1.78.0/semgrep-v1.78.0-macos-aarch64.tar.gz"
-sha256 = "placeholder-macos-aarch64"
-archive = true
+version = "1.141.0"
+install_method = "pypi"  # Not downloaded by BazBOM - user must install via pip/pipx
 
 [codeql]
 version = "2.19.4"
 
 [codeql.linux_x86_64]
 url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-linux64.zip"
-sha256 = "placeholder-linux-x86_64"
+sha256 = "1bdc1f9c1d0938dc3c88b826b33e75a5fcd089127bc388b5a430947e2ee7daad"
 archive = true
+executable = "codeql/codeql"
 
 [codeql.macos_x86_64]
 url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-osx64.zip"
-sha256 = "placeholder-macos-x86_64"
+sha256 = "eb283e7f3bde288a7a35269570174c647b2ca997a67c4c50affa053b21f08a34"
 archive = true
+executable = "codeql/codeql"
 
 [codeql.macos_aarch64]
 url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-osx64.zip"
-sha256 = "placeholder-macos-aarch64"
+sha256 = "eb283e7f3bde288a7a35269570174c647b2ca997a67c4c50affa053b21f08a34"
 archive = true
+executable = "codeql/codeql"
 
 [codeql.windows_x86_64]
 url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-win64.zip"
-sha256 = "placeholder-windows-x86_64"
+sha256 = "95bca559e0ffac8134b0d26ee7ccf2ee3e078b9e592201e699dc1c0fc50b9164"
 archive = true
+executable = "codeql/codeql.exe"
 
 [syft]
 version = "1.16.0"
 
 [syft.linux_x86_64]
 url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_linux_amd64.tar.gz"
-sha256 = "placeholder-linux-x86_64"
+sha256 = "38bf84931e898d4d01c39fc806f89ae3eebac56313978dacd96156f1f9f85bc7"
 archive = true
+executable = "syft"
 
 [syft.linux_aarch64]
 url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_linux_arm64.tar.gz"
-sha256 = "placeholder-linux-aarch64"
+sha256 = "26f4cfd4cf712c24ed208566fb564ace629f5f069c068b8130f2e88e4b58912a"
 archive = true
+executable = "syft"
 
 [syft.macos_x86_64]
 url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_darwin_amd64.tar.gz"
-sha256 = "placeholder-macos-x86_64"
+sha256 = "f654b10a7ab4b18779586450d3b0f9e447017d9c74f1122495e281762d5799e9"
 archive = true
+executable = "syft"
 
 [syft.macos_aarch64]
 url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_darwin_arm64.tar.gz"
-sha256 = "placeholder-macos-aarch64"
+sha256 = "0b6afa3b2f9448e96b7855e8341445690d0d60b5f6189672f9beab2bbc4250f2"
 archive = true
+executable = "syft"

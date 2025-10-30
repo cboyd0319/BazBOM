@@ -12,6 +12,9 @@ struct ToolManifest {
 #[derive(Debug, Deserialize)]
 struct ToolConfig {
     version: String,
+    #[serde(default)]
+    #[allow(dead_code)]  // Used for documentation in manifest but not accessed in code
+    install_method: Option<String>,
     #[serde(flatten)]
     platforms: HashMap<String, PlatformConfig>,
 }
@@ -22,6 +25,8 @@ struct PlatformConfig {
     sha256: String,
     #[serde(default)]
     archive: bool,
+    #[serde(default)]
+    executable: Option<String>,
 }
 
 pub struct ToolManifestLoader {
@@ -57,6 +62,7 @@ impl ToolManifestLoader {
             sha256: platform.sha256.clone(),
             executable: true,
             archive: platform.archive,
+            executable_path: platform.executable.clone(),
         })
     }
 
@@ -100,7 +106,7 @@ mod tests {
     }
 
     #[test]
-    fn test_get_semgrep_descriptor() {
+    fn test_get_codeql_descriptor() {
         let loader = ToolManifestLoader::load();
         if loader.is_err() {
             return; // Skip if manifest cannot be loaded in test environment
@@ -109,11 +115,13 @@ mod tests {
         
         // This might fail if the current platform is not in the manifest
         // That's expected for unsupported platforms
-        let result = loader.get_descriptor("semgrep");
+        let result = loader.get_descriptor("codeql");
         if result.is_ok() {
             let desc = result.unwrap();
-            assert_eq!(desc.name, "semgrep");
-            assert_eq!(desc.version, "1.78.0");
+            assert_eq!(desc.name, "codeql");
+            assert_eq!(desc.version, "2.19.4");
+            assert!(desc.archive);
+            assert!(desc.executable_path.is_some());
         }
     }
 }
