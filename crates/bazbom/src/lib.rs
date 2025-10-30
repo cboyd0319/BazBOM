@@ -4,6 +4,7 @@ pub mod cli;
 pub mod config;
 pub mod context;
 pub mod enrich;
+pub mod fixes;
 pub mod pipeline;
 pub mod publish;
 pub mod reachability;
