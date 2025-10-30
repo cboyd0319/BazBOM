@@ -223,7 +223,7 @@ jobs:
       
       - name: Upload SARIF to GitHub Security
         if: steps.scan.outputs.scan_completed == 'true'
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: reports/sca_findings.sarif
           category: bazbom-incremental-scan
