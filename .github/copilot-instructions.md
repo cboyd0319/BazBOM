@@ -21,10 +21,11 @@ Target OS: macOS → Linux → Windows.
 ## Architecture Snapshot
 
 - Rust workspace: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`.
-- Reachability: OPAL‑based `bazbom-reachability.jar` invoked with `java -jar`; no network; JSON I/O.
+- Reachability: ASM‑based `bazbom-reachability.jar` invoked with `java -jar`; no network; JSON I/O; call graph generation.
+- Shading detection: Maven Shade and Gradle Shadow plugin parsing; class fingerprinting with Blake3 hashing.
 - Build integrations:
-  - Maven: `bazbom-maven-plugin` emits authoritative JSON (scopes, BOM, effective POM, shading/relocation).
-  - Gradle: `io.bazbom.gradle-plugin` with per‑configuration/variant graphs (incl. Android); Shadow support.
+  - Maven: `bazbom-maven-plugin` emits authoritative JSON (scopes, dependencies, PURLs).
+  - Gradle: `io.bazbom.gradle-plugin` with per‑configuration graphs; Shadow support.
   - Bazel: aspects for `java_*` (priority), then Kotlin, then broader JVM rules; bzlmod + rules_jvm_external.
 - Intelligence: OSV/NVD/GHSA + KEV + EPSS; canonical severity + P0–P4 priority.
 - Outputs: SPDX 2.3 (primary), CycloneDX 1.5 (optional), SARIF 2.1.0, CSAF VEX, CSV.

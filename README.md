@@ -47,7 +47,7 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 - [License](#license)
 - [Support & Community](#support--community)
 
-## 💡 What is BazBOM?
+## What is BazBOM?
 
 BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **any JVM project**—whether you use **Maven, Gradle, or Bazel**. It automatically discovers dependencies and produces accurate, standards-compliant security artifacts.
 
@@ -62,25 +62,25 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 - **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
 - **Organizations** with large monorepos (5000+ targets) or multi-repo setups
 
-### 🆕 What's New
+### What's New
 
-- **🦀 Rust-first CLI (stable)**: Memory-safe single binary with signed releases and Homebrew distribution
-- **🍺 Homebrew Support**: One-command installation via brew tap
-- **✍️ Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
-- **🔐 SLSA Provenance**: Level 3 provenance for verifiable build integrity
-- **🧠 Reachability (OPAL, opt-in)**: Bytecode call graphs for real-risk prioritization
-- **📜 Policy-as-Code**: YAML core with optional Rego/CUE; CI gating and VEX auto-application
-- **🔒 Zero Telemetry**: No background network calls; explicit offline DB sync
-- **⚙️ GitHub Action**: Automated security scanning in CI/CD pipelines
-- **🐳 Container SBOM**: Scan Docker/Podman images for dependencies and OS packages
-- **🔧 Interactive Fix**: Auto-generate and apply dependency upgrades
-- **🌍 Universal Build System Support**: Works with Maven, Gradle, and Bazel
-- **📊 CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
+- **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
+- **Homebrew Support**: One-command installation via brew tap
+- **Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
+- **SLSA Level 3 Provenance**: Verifiable build integrity
+- **Bytecode Reachability Analysis**: ASM-based call graphs to identify reachable vulnerabilities
+- **Shading Detection**: Automatic detection and attribution of shaded/relocated dependencies
+- **Policy-as-Code**: YAML configuration with CI gating and enforcement
+- **Zero Telemetry**: No background network calls; explicit offline DB sync
+- **GitHub Action**: Automated security scanning in CI/CD pipelines
+- **Vulnerability Intelligence**: OSV, NVD, GHSA integration with CISA KEV and EPSS enrichment
+- **Universal Build System Support**: Works with Maven, Gradle, and Bazel
+- **CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
 
 
 ---
 
-## ⚡ Quickstart
+## Quickstart
 
 ### Option 0: Homebrew (Recommended for macOS/Linux)
 
@@ -255,11 +255,11 @@ bazel build //:sca_scan
 
 That's it. No configuration files, no manual dependency lists.
 
-📖 **New to BazBOM?** Follow the [5-minute tutorial](docs/QUICKSTART.md)
+**New to BazBOM?** Follow the [5-minute tutorial](docs/QUICKSTART.md)
 
 ---
 
-## 🎬 See It In Action
+## See It In Action
 
 **One command. Three build systems. Zero configuration.**
 
@@ -370,7 +370,7 @@ $ bazbom scan . --bazel-affected-by-files src/java/lib/top_x.java
 
 ---
 
-## 🎯 Why Build-Time Analysis Matters
+## Why Build-Time Analysis Matters
 
 **Post-build scanners miss critical details. BazBOM gets it right.**
 
@@ -380,13 +380,13 @@ Most SBOM tools scan **after** your application is built, analyzing JAR files an
 
 | Issue | Post-Build Scanner | BazBOM (Build-Time) |
 |-------|-------------------|---------------------|
-| **Test Dependencies** | ❌ Often included in SBOM | ✅ Correctly excluded (not shipped) |
-| **Shaded/Relocated JARs** | ❌ Misidentified or duplicated | ✅ Accurate component tracking |
-| **Build-Time Dependencies** | ❌ Completely missed | ✅ Fully detected |
-| **Transitive Dependency Graph** | ⚠️ Incomplete or flattened | ✅ Complete tree with all relationships |
-| **Version Conflicts** | ❌ Not detected | ✅ Identified and reported |
-| **Scope Information** | ❌ Lost (compile/runtime/test) | ✅ Preserved accurately |
-| **Build Reproducibility** | ⚠️ No verification | ✅ Hermetic build guarantees |
+| **Test Dependencies** | Often included in SBOM | Correctly excluded (not shipped) |
+| **Shaded/Relocated JARs** | Misidentified or duplicated | Accurate component tracking |
+| **Build-Time Dependencies** | Completely missed | Fully detected |
+| **Transitive Dependency Graph** | Incomplete or flattened | Complete tree with all relationships |
+| **Version Conflicts** | Not detected | Identified and reported |
+| **Scope Information** | Lost (compile/runtime/test) | Preserved accurately |
+| **Build Reproducibility** | No verification | Hermetic build guarantees |
 
 ### Real-World Example
 
@@ -436,11 +436,11 @@ BazBOM is **the only SCA tool** that solves the Bazel monorepo challenge:
 - Full monorepo scans take 45+ minutes (impractical for CI)
 
 **BazBOM's Solution:**
-- ✅ **Single source of truth:** Uses `maven_install.json` (no duplicate files)
-- ✅ **Bazel query support:** Scan specific targets with `kind(java_binary, //...)`
-- ✅ **Incremental scanning:** Use `rdeps()` to scan only affected targets
-- ✅ **6x faster:** PR scans in 8 minutes vs 45 minutes for full workspace
-- ✅ **Scalable:** Proven on 5000+ target monorepos
+- **Single source of truth:** Uses `maven_install.json` (no duplicate files)
+- **Bazel query support:** Scan specific targets with `kind(java_binary, //...)`
+- **Incremental scanning:** Use `rdeps()` to scan only affected targets
+- **6x faster:** PR scans in 8 minutes vs 45 minutes for full workspace
+- **Scalable:** Proven on 5000+ target monorepos
 
 ```bash
 # Scan only affected targets (incremental)
@@ -456,143 +456,137 @@ bazbom scan . --bazel-targets //src/java:app //src/java:lib
 See [Bazel Monorepo Workflows](docs/examples/bazel-monorepo-workflows.md) for complete guide.
 
 **General Benefits:**
-- ✅ **100% Accuracy:** Matches exactly what ships to production
-- ✅ **Complete Metadata:** Licenses, hashes, PURLs, scopes
-- ✅ **Transitive Graph:** Full dependency tree with relationships
-- ✅ **Reproducible:** Hermetic builds guarantee consistency
+- **100% Accuracy:** Matches exactly what ships to production
+- **Complete Metadata:** Licenses, hashes, PURLs, scopes
+- **Transitive Graph:** Full dependency tree with relationships
+- **Reproducible:** Hermetic builds guarantee consistency
 
 **Use Cases Where This Matters:**
-- 🏦 **Financial Services:** PCI-DSS requires accurate dependency tracking
-- 🏥 **Healthcare:** HIPAA compliance needs complete audit trails
-- 🏛️ **Government:** NIST/FedRAMP mandate precise SBOM generation
-- 🏢 **Enterprise:** Supply chain attacks target transitive dependencies
-- 🏭 **Large Monorepos:** Scale to 5000+ targets with incremental analysis
+- **Financial Services:** PCI-DSS requires accurate dependency tracking
+- **Healthcare:** HIPAA compliance needs complete audit trails
+- **Government:** NIST/FedRAMP mandate precise SBOM generation
+- **Enterprise:** Supply chain attacks target transitive dependencies
+- **Large Monorepos:** Scale to 5000+ targets with incremental analysis
 
 **Bottom Line:** If your SBOM doesn't match what you ship, it's not an SBOM—it's fiction.
 
 ---
 
-## 📊 Comparison with Alternatives
+## Comparison with Alternatives
 
 | Feature | BazBOM | Syft | Trivy | OWASP DT | CycloneDX CLI | Grype |
 |---------|--------|------|-------|----------|---------------|-------|
-| **Maven Support** | ✅ Native | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **Gradle Support** | ✅ Native | ✅ | ✅ | ⚠️ Limited | ✅ | ✅ |
-| **Bazel Support** | ✅ **Native** | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Build-Time Accuracy** | ✅ | ⚠️ Post-build | ⚠️ Post-build | ✅ | ⚠️ Post-build | ⚠️ Post-build |
-| **Transitive Dependencies** | ✅ Complete | ⚠️ Partial | ⚠️ Partial | ✅ | ⚠️ Partial | ⚠️ Partial |
-| **SLSA Provenance** | ✅ **Level 3** | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **VEX Support** | ✅ Native | ❌ | ⚠️ Limited | ✅ | ❌ | ⚠️ Limited |
-| **CISA KEV Integration** | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| **EPSS Risk Scoring** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Sigstore Signing** | ✅ Keyless | ❌ | ❌ | ❌ | ❌ | ❌ |
-| **Offline/Air-Gapped Mode** | ✅ | ✅ | ✅ | ⚠️ Limited | ⚠️ Limited | ✅ |
-| **Monorepo Scale** | ✅ **5K+ targets** | ⚠️ Slow | ⚠️ Slow | ⚠️ Limited | ❌ | ⚠️ Slow |
-| **GitHub Action** | ✅ Native | ✅ | ✅ | ⚠️ Manual | ⚠️ Manual | ✅ |
-| **SARIF Output** | ✅ 2.1.0 | ❌ | ✅ | ⚠️ Limited | ❌ | ✅ |
-| **Cost** | **Free** | Free | Free | Free | Free | Free |
+| **Maven Support** | Yes (Native) | Yes | Yes | Yes | Yes | Yes |
+| **Gradle Support** | Yes (Native) | Yes | Yes | Limited | Yes | Yes |
+| **Bazel Support** | Yes (Native) | No | No | No | No | No |
+| **Build-Time Accuracy** | Yes | Post-build | Post-build | Yes | Post-build | Post-build |
+| **Transitive Dependencies** | Complete | Partial | Partial | Complete | Partial | Partial |
+| **SLSA Provenance** | Level 3 | No | No | No | No | No |
+| **VEX Support** | Native | No | Limited | Yes | No | Limited |
+| **CISA KEV Integration** | Yes | No | Yes | No | No | No |
+| **EPSS Risk Scoring** | Yes | No | No | No | No | No |
+| **Sigstore Signing** | Keyless | No | No | No | No | No |
+| **Offline/Air-Gapped Mode** | Yes | Yes | Yes | Limited | Limited | Yes |
+| **Monorepo Scale** | 5K+ targets | Slow | Slow | Limited | No | Slow |
+| **GitHub Action** | Native | Yes | Yes | Manual | Manual | Yes |
+| **SARIF Output** | 2.1.0 | No | Yes | Limited | No | Yes |
+| **Cost** | Free | Free | Free | Free | Free | Free |
 
 **Key Advantages:**
-- 🥇 **Only tool with native Bazel support** — Essential for modern monorepos
-- 🥇 **SLSA Level 3 certified** — Highest supply chain security standard
-- 🥇 **Build-time accuracy** — SBOM matches what actually ships
-- 🥇 **Universal build system** — One tool for Maven, Gradle, AND Bazel
-- 🥇 **Enterprise-grade scaling** — Proven on 5000+ target monorepos
+- **Only tool with native Bazel support** — Essential for modern monorepos
+- **SLSA Level 3 certified** — Highest supply chain security standard
+- **Build-time accuracy** — SBOM matches what actually ships
+- **Universal build system** — One tool for Maven, Gradle, AND Bazel
+- **Enterprise-grade scaling** — Proven on 5000+ target monorepos
 
 ---
 
-## ✨ Features
+## Features
 
 <table>
 <tr>
 <td width="50%">
 
-**Universal Build System Support** 🆕
-- ✅ **Maven** (pom.xml) - via `mvn dependency:list`
-- ✅ **Gradle** (build.gradle) - via `gradle dependencies`
-- ✅ **Bazel** (WORKSPACE) - via aspects
-- ✅ Auto-detection of build system
-- ✅ Unified CLI: `bazbom scan .`
-- ✅ Watch mode: `bazbom scan --watch` 🆕
+**Universal Build System Support**
+- **Maven** (pom.xml) - via bazbom-maven-plugin
+- **Gradle** (build.gradle) - via io.bazbom.gradle-plugin
+- **Bazel** (WORKSPACE/MODULE.bazel) - via aspects
+- Auto-detection of build system
+- Unified CLI: `bazbom scan .`
 
-**Installation & Setup** 🆕
-- ✅ One-line installer script
-- ✅ Zero-config auto-setup
-- ✅ GitHub Action for CI/CD
-- ✅ Works on Linux, macOS (amd64/arm64)
-- ✅ Docker/Podman container support
+**Installation & Setup**
+- One-line installer script
+- Zero-config auto-setup
+- GitHub Action for CI/CD
+- Works on Linux, macOS (x86_64/arm64)
+- Homebrew tap for easy installation
 
 **SBOM Generation**
-- ✅ SPDX 2.3 (JSON) primary format
-- ✅ CycloneDX 1.5 (optional)
-- ✅ CSV export for spreadsheets 🆕
-- ✅ Container image SBOMs 🆕
-- ✅ Per-target or workspace-wide
-- ✅ Automatic version/license extraction
+- SPDX 2.3 (JSON) primary format
+- CycloneDX 1.5 (optional)
+- CSV export for spreadsheets
+- Per-target or workspace-wide
+- Automatic version/license extraction
 
 **Vulnerability Scanning**
-- ✅ OSV (Open Source Vulnerabilities)
-- ✅ NVD (National Vulnerability Database)
-- ✅ **CISA KEV** (actively exploited CVEs)
-- ✅ **EPSS** (ML-based exploit probability)
-- ✅ GitHub Security Advisories (GHSA)
-- ✅ **Risk scoring & priority mapping (P0-P4)**
-- ✅ Offline mode (air-gapped environments)
+- OSV (Open Source Vulnerabilities)
+- NVD (National Vulnerability Database)
+- CISA KEV (actively exploited CVEs)
+- EPSS (ML-based exploit probability)
+- GitHub Security Advisories (GHSA)
+- Risk scoring & priority mapping (P0-P4)
+- Offline mode (air-gapped environments)
 
 **GitHub Integration**
-- ✅ SARIF 2.1.0 output
-- ✅ Code Scanning alerts
-- ✅ Security badges (shields.io) 🆕
-- ✅ GitHub Action for CI/CD 🆕
-- ✅ PR comments with findings 🆕
-- ✅ Policy enforcement (block on critical CVEs)
+- SARIF 2.1.0 output
+- Code Scanning alerts
+- GitHub Action for CI/CD
+- Policy enforcement (block on critical CVEs)
 
 </td>
 <td width="50%">
 
 **Supply Chain Security**
-- ✅ SLSA Level 3 provenance
-- ✅ Sigstore keyless signing
-- ✅ VEX (false positive suppression)
-- ✅ Interactive vulnerability fix 🆕
-- ✅ Auto-generate dependency overrides 🆕
-- ✅ License compliance checking
-- ✅ Typosquatting detection
-- ✅ Outdated dependency detection
- - ✅ Zero telemetry + offline-first operation 🆕
- - ✅ Memory-safe Rust CLI (preview) 🆕
+- SLSA Level 3 provenance
+- Sigstore keyless signing
+- VEX (false positive suppression)
+- License compliance checking
+- Zero telemetry + offline-first operation
+- Memory-safe Rust CLI
 
-**Configuration & Customization** 🆕
-- ✅ Project-level config (bazbom.yml)
-- ✅ Severity thresholds (CRITICAL/HIGH/MEDIUM/LOW)
-- ✅ Policy enforcement rules
-- ✅ Custom output paths
-- ✅ Multiple output formats
+**Reachability & Shading**
+- Bytecode reachability analysis (ASM-based)
+- Call graph generation from entrypoints
+- Reachable/unreachable vulnerability tagging
+- Maven Shade plugin detection
+- Gradle Shadow plugin detection
+- Shading/relocation mapping
+- Class fingerprinting for attribution
 
-**Data Export** 🆕
-- ✅ CSV export (SBOM, vulnerabilities, licenses)
-- ✅ JSON (machine-readable)
-- ✅ SARIF (GitHub Security)
-- ✅ GraphML (dependency graphs)
+**Configuration & Customization**
+- Project-level config (bazbom.yml)
+- Severity thresholds (CRITICAL/HIGH/MEDIUM/LOW)
+- Policy enforcement rules
+- Custom output paths
+- Multiple output formats
 
-**Container Support** 🆕
-- ✅ Docker image SBOM scanning
-- ✅ Podman image support
-- ✅ OS package detection (apt/yum/apk)
-- ✅ JAR file discovery in containers
-- ✅ Multi-layer analysis
+**Data Export**
+- CSV export (SBOM, vulnerabilities, licenses)
+- JSON (machine-readable)
+- SARIF (GitHub Security)
+- GraphML (dependency graphs)
 
 **Dependency Analysis**
-- ✅ Full transitive graph (JSON + GraphML)
-- ✅ Reverse dependency lookups
-- ✅ Conflict detection
-- ✅ Visualize with Gephi/yEd
+- Full transitive graph (JSON + GraphML)
+- Reverse dependency lookups
+- Conflict detection
+- Visualize with Gephi/yEd
 
 **Performance**
-- ✅ Incremental analysis (5-10x faster PRs)
-- ✅ Remote caching support
-- ✅ Parallel processing
-- ✅ Scales to 5000+ target monorepos
+- Incremental analysis (5-10x faster PRs)
+- Remote caching support
+- Parallel processing
+- Scales to 5000+ target monorepos
 
 </td>
 </tr>
@@ -600,7 +594,7 @@ See [Bazel Monorepo Workflows](docs/examples/bazel-monorepo-workflows.md) for co
 
 ---
 
-## 🎯 Core Workflows
+## Core Workflows
 
 ### Workflow 1: Daily Development
 
@@ -647,7 +641,7 @@ bazel build //:compliance_bundle
 
 ---
 
-## 📊 How It Works
+## How It Works
 
 ```mermaid
 graph LR
@@ -676,7 +670,7 @@ No external tools. No network access during build (hermetic). Fully reproducible
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -849,7 +843,7 @@ See [VEX Guide](docs/VEX.md) for creating VEX statements.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 BazBOM works **zero-config** for most projects. Advanced options:
 
@@ -954,7 +948,7 @@ See [Performance Guide](docs/PERFORMANCE.md) for tuning details.
 
 ---
 
-## 🔒 Security
+## Security
 
 ### Threat Model
 
@@ -988,7 +982,7 @@ Report security issues via [SECURITY.md](SECURITY.md). We respond within 48 hour
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -1045,31 +1039,36 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
-**In Progress:**
-- [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Foundation Complete**
+**Completed (Phases 0-3):**
+- [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Complete**
 - [x] Offline advisory DB sync - **Implemented**
-- [ ] OPAL-based reachability (opt-in)
-- [ ] Maven authoritative plugin (effective POM, shading/relocation)
-- [ ] Gradle plugin (variants + Android)
-- [ ] Policy-as-code + VEX auto-application
-- [ ] Container image SBOM (`rules_oci` integration)
-
-**Planned:**
-- [ ] Kotlin Multiplatform support
-- [ ] Dependency conflict auto-resolution
-- [ ] Visual dependency graph UI (web-based)
-- [ ] NPM/Node.js support
-
-**Completed:**
+- [x] Maven plugin (bazbom-maven-plugin) - **Phase 1 Complete**
+- [x] Gradle plugin (io.bazbom.gradle-plugin) - **Phase 1 Complete**
+- [x] Advisory merge engine (OSV/NVD/GHSA + KEV + EPSS) - **Phase 2 Complete**
+- [x] Policy-as-code (YAML) + CI enforcement - **Phase 2 Complete**
+- [x] ASM-based reachability analysis - **Phase 3 Complete**
+- [x] Shading/relocation detection (Maven Shade, Gradle Shadow) - **Phase 3 Complete**
 - [x] SPDX 2.3 SBOM generation
 - [x] CycloneDX 1.5 SBOM generation
 - [x] SARIF 2.1.0 findings output
-- [x] OSV vulnerability scanning (placeholders)
-- [x] SLSA Level 3 provenance
+- [x] SLSA Level 3 provenance infrastructure
 - [x] VEX statement support
 - [x] Large monorepo optimization
+
+**In Progress (Phase 4):**
+- [x] Remediation automation (`bazbom fix --suggest`) - **Implemented**
+- [x] Educational "why fix this?" context in suggestions - **Implemented**
+- [ ] Full `bazbom fix --apply` implementation for automatic file updates
+- [ ] PR generation for Maven/Gradle/Bazel
+
+**Planned (Phases 5-7):**
+- [ ] Windows support with signed binaries
+- [ ] Homebrew bottles for macOS
+- [ ] Container image SBOM (`rules_oci` integration)
+- [ ] Kotlin Multiplatform support
+- [ ] Visual dependency graph UI (web-based)
 
 **Implementation Status:** See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed progress tracking.
 
@@ -1077,7 +1076,7 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### Getting Started
 - **[Quickstart](docs/QUICKSTART.md)** - 5-minute setup
@@ -1112,7 +1111,7 @@ Documentation Standards
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! BazBOM is open-source and community-driven.
 
@@ -1131,7 +1130,7 @@ Contributions are welcome! BazBOM is open-source and community-driven.
 
 ---
 
-## 🏢 Industry Adoption & Use Cases
+## Industry Adoption & Use Cases
 
 **BazBOM is trusted by organizations requiring world-class supply chain security.**
 
@@ -1146,27 +1145,27 @@ BazBOM serves organizations that demand:
 
 ### Industry Use Cases
 
-**Financial Services** 🏦
+**Financial Services**
 - **Requirements:** PCI-DSS compliance, accurate dependency tracking, audit trails
 - **BazBOM Solution:** Build-time accuracy ensures SBOMs match production deployments
 - **Impact:** Complete compliance documentation, zero false positives in audits
 
-**Healthcare & Life Sciences** 🏥
+**Healthcare & Life Sciences**
 - **Requirements:** HIPAA compliance, FDA software validation, complete audit trails
 - **BazBOM Solution:** Hermetic builds + SLSA provenance + signed SBOMs
 - **Impact:** Regulatory compliance, reproducible builds for validation
 
-**Government & Defense** 🏛️
+**Government & Defense**
 - **Requirements:** NIST/FedRAMP standards, air-gapped deployment, SBOM mandates
 - **BazBOM Solution:** Offline mode, SPDX 2.3 compliance, VEX support
 - **Impact:** Meet Executive Order 14028 requirements, zero internet dependency
 
-**Enterprise Technology** 🏢
+**Enterprise Technology**
 - **Requirements:** Large monorepos, multiple build systems, CI/CD integration
 - **BazBOM Solution:** Incremental analysis (6x faster), universal build support
 - **Impact:** Scales to 5000+ targets, single tool for all JVM projects
 
-**Open Source Projects** 🌍
+**Open Source Projects**
 - **Requirements:** Transparency, reproducibility, community trust
 - **BazBOM Solution:** Free/MIT license, GitHub Action, SBOM generation
 - **Impact:** Security badge for README, automated vulnerability disclosure
@@ -1177,13 +1176,13 @@ BazBOM helps you meet these frameworks:
 
 | Standard | Coverage | BazBOM Features |
 |----------|----------|-----------------|
-| **SLSA Level 3** | ✅ Full | Provenance generation + Sigstore signing |
-| **PCI-DSS** | ✅ Full | Complete dependency tracking + audit trails |
-| **HIPAA** | ✅ Full | Reproducible builds + validation documentation |
-| **NIST SSDF** | ✅ Full | SBOM generation + vulnerability scanning |
-| **FedRAMP** | ✅ Full | Offline mode + compliance reporting |
-| **ISO 27001** | ⚠️ Partial | Supply chain risk management |
-| **SOC 2** | ⚠️ Partial | Dependency monitoring + change tracking |
+| **SLSA Level 3** | Full | Provenance generation + Sigstore signing |
+| **PCI-DSS** | Full | Complete dependency tracking + audit trails |
+| **HIPAA** | Full | Reproducible builds + validation documentation |
+| **NIST SSDF** | Full | SBOM generation + vulnerability scanning |
+| **FedRAMP** | Full | Offline mode + compliance reporting |
+| **ISO 27001** | Partial | Supply chain risk management |
+| **SOC 2** | Partial | Dependency monitoring + change tracking |
 
 ### Real-World Metrics
 
@@ -1221,24 +1220,24 @@ Audit Time: 40 hours → 4 hours (90% reduction)
 Using BazBOM in production? We'd love to feature your use case!
 
 **Benefits:**
-- 📢 Recognition in the security community
-- 🎖️ Showcase your security best practices
-- 🤝 Collaboration and support from maintainers
+- Recognition in the security community
+- Showcase your security best practices
+- Collaboration and support from maintainers
 
-[Submit your story →](https://github.com/cboyd0319/BazBOM/discussions/categories/show-and-tell)
+[Submit your story](https://github.com/cboyd0319/BazBOM/discussions/categories/show-and-tell)
 
 ---
 
-## 📄 License
+## License
 
 **MIT License** - See [LICENSE](LICENSE) for full text.
 
 ```
-✅ Commercial use allowed
-✅ Modification allowed
-✅ Distribution allowed
-✅ Private use allowed
-📋 License and copyright notice required
+Commercial use allowed
+Modification allowed
+Distribution allowed
+Private use allowed
+License and copyright notice required
 ```
 
 **TL;DR:** Use it however you want. Just include the license.
@@ -1247,13 +1246,13 @@ Learn more: https://choosealicense.com/licenses/mit/
 
 ---
 
-## 💬 Support & Community
+## Support & Community
 
 **Need help?**
-- 🐛 [File a bug report](https://github.com/cboyd0319/BazBOM/issues/new?template=bug_report.md)
-- 💡 [Request a feature](https://github.com/cboyd0319/BazBOM/discussions/new?category=feature-requests)
-- 💬 [Ask a question](https://github.com/cboyd0319/BazBOM/discussions/new?category=q-a)
-- 🔒 [Report a security issue](SECURITY.md) (private)
+- [File a bug report](https://github.com/cboyd0319/BazBOM/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/cboyd0319/BazBOM/discussions/new?category=feature-requests)
+- [Ask a question](https://github.com/cboyd0319/BazBOM/discussions/new?category=q-a)
+- [Report a security issue](SECURITY.md) (private)
 
 **Resources:**
 - [Maintainers](MAINTAINERS.md) - Who maintains BazBOM
@@ -1264,16 +1263,16 @@ Learn more: https://choosealicense.com/licenses/mit/
 
 <div align="center">
 
-## ⭐ Spread the Word
+## Spread the Word
 
-If BazBOM helps secure your supply chain, **give us a star** ⭐
+If BazBOM helps secure your supply chain, **give us a star**
 
 [![Star History](https://img.shields.io/github/stars/cboyd0319/BazBOM?style=social)](https://github.com/cboyd0319/BazBOM/stargazers)
 
 **Active Development** • **Production-Ready** • **Community-Driven**
 
-Made with ❤️ for the Bazel ecosystem
+Made for the JVM ecosystem
 
-[⬆ Back to top](#bazbom)
+[Back to top](#bazbom)
 
 </div>
