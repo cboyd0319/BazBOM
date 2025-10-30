@@ -76,7 +76,9 @@ Pre-release versions include a suffix:
 
 5. The release workflow will automatically build and publish artifacts
 
-## Version Bump Script
+## Version Management Scripts
+
+### Version Bump Script
 
 The `tools/dev/bump-version.sh` script automates version updates:
 
@@ -90,6 +92,25 @@ This script:
 - Updates `CHANGELOG.md` with the release date
 - Regenerates `Cargo.lock`
 - Provides next-step instructions
+
+### Release Verification Script
+
+The `tools/dev/verify-release.sh` script checks if a version is ready for release:
+
+```bash
+./tools/dev/verify-release.sh [version]
+```
+
+This script verifies:
+- Version consistency across all crates
+- Cargo.lock is up to date
+- CHANGELOG.md has an entry for the version
+- Working directory is clean (no uncommitted changes)
+- Git tag doesn't already exist
+- Project builds without errors
+- Documentation is properly linked
+
+Run this script before creating a release tag to ensure everything is in order.
 
 ## Release Workflow
 
