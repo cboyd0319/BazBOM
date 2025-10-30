@@ -12,6 +12,8 @@ mod reachability_cache;
 mod remediation;
 mod shading;
 
+use bazbom::scan_orchestrator::ScanOrchestrator;
+
 #[derive(Parser, Debug)]
 #[command(name = "bazbom", version, about = "JVM SBOM, SCA, and dependency graph tool", long_about = None)]
 struct Cli {
@@ -47,6 +49,21 @@ enum Commands {
         /// Bazel-specific: universe pattern for rdeps queries (default: //...)
         #[arg(long, value_name = "PATTERN", default_value = "//...")]
         bazel_universe: String,
+        /// Also emit CycloneDX SBOM (for interop)
+        #[arg(long)]
+        cyclonedx: bool,
+        /// Run Semgrep with BazBOM's curated JVM ruleset
+        #[arg(long)]
+        with_semgrep: bool,
+        /// Run CodeQL analysis (optional suite: default or security-extended)
+        #[arg(long, value_name = "SUITE")]
+        with_codeql: Option<String>,
+        /// Skip GitHub upload (local dev only)
+        #[arg(long)]
+        no_upload: bool,
+        /// Limit analysis to one module (for PR/changed-path speedups)
+        #[arg(long, value_name = "MODULE")]
+        target_module: Option<String>,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
@@ -92,6 +109,11 @@ fn main() -> Result<()> {
         bazel_targets: None,
         bazel_affected_by_files: None,
         bazel_universe: "//...".into(),
+        cyclonedx: false,
+        with_semgrep: false,
+        with_codeql: None,
+        no_upload: false,
+        target_module: None,
     }) {
         Commands::Scan {
             path,
@@ -102,7 +124,45 @@ fn main() -> Result<()> {
             bazel_targets,
             bazel_affected_by_files,
             bazel_universe,
+            cyclonedx,
+            with_semgrep,
+            with_codeql,
+            no_upload,
+            target_module,
         } => {
+            // Check if any orchestration flags are set
+            let use_orchestrator = cyclonedx || with_semgrep || with_codeql.is_some();
+            
+            if use_orchestrator {
+                // Use new orchestration path
+                println!("[bazbom] using orchestrated scan mode");
+                let workspace = PathBuf::from(&path);
+                let output_dir = PathBuf::from(&out_dir);
+                
+                // Parse CodeQL suite
+                let codeql_suite = with_codeql.as_ref().map(|s| {
+                    match s.to_lowercase().as_str() {
+                        "security-extended" => bazbom::cli::CodeqlSuite::SecurityExtended,
+                        _ => bazbom::cli::CodeqlSuite::Default,
+                    }
+                });
+                
+                let orchestrator = ScanOrchestrator::new(
+                    workspace,
+                    output_dir,
+                    cyclonedx,
+                    with_semgrep,
+                    codeql_suite,
+                    None, // autofix not yet implemented
+                    None, // containers not yet implemented
+                    no_upload,
+                    target_module,
+                )?;
+                
+                return orchestrator.run();
+            }
+            
+            // Original scan logic follows
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
             
