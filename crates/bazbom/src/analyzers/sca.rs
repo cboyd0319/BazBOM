@@ -142,7 +142,10 @@ impl ScaAnalyzer {
                             },
                         },
                     }]),
-                    properties: Some(serde_json::to_value(properties).ok().unwrap_or_default()),
+                    properties: match serde_json::to_value(properties) {
+                        Ok(val) => Some(val),
+                        Err(_) => Some(serde_json::json!({})),
+                    },
                 }
             })
             .collect()
@@ -150,7 +153,7 @@ impl ScaAnalyzer {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]  // Will be used when SBOM parsing is implemented
+#[allow(dead_code)]  // TODO: Implement SBOM parsing to populate these fields (Phase 3 completion)
 struct Component {
     name: String,
     version: String,
@@ -208,9 +211,9 @@ impl Analyzer for ScaAnalyzer {
         // Create SARIF report
         let mut report = SarifReport::new("BazBOM-SCA", env!("CARGO_PKG_VERSION"));
         
-        // Add rules for each unique vulnerability
-        let unique_vulns: std::collections::HashSet<_> = matches.iter()
-            .map(|m| m.vulnerability_id.clone())
+        // Add rules for each unique vulnerability (using references to avoid cloning)
+        let unique_vulns: std::collections::HashSet<&String> = matches.iter()
+            .map(|m| &m.vulnerability_id)
             .collect();
         
         let rules: Vec<Rule> = unique_vulns.into_iter().map(|id| {
