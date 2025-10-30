@@ -140,7 +140,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@5d5cd550d3e189c569da8f16ea8de2d821c9bf7a # v3.27.9
         if: always() && hashFiles('bazel-bin/sca_findings.sarif') != ''
         with:
           sarif_file: bazel-bin/sca_findings.sarif

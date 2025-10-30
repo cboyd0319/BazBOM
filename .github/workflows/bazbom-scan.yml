@@ -52,7 +52,7 @@ jobs:
           bazbom scan . --cyclonedx --with-semgrep --with-codeql=security-extended --autofix=dry-run --out-dir ./bazbom-output
 
       - name: Upload SARIF to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: bazbom-output/findings/merged.sarif
           category: bazbom
