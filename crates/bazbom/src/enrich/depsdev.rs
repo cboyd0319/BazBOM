@@ -24,6 +24,10 @@ pub struct VersionInfo {
     pub is_default: bool,
 }
 
+// Internal deserialization structures for deps.dev API responses
+// Some fields are marked with #[allow(dead_code)] because they're needed
+// for serde to properly deserialize the JSON, even if not directly accessed
+
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
 struct DepsDevResponse {

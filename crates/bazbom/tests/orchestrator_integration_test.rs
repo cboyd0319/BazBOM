@@ -76,11 +76,11 @@ github_code_scanning = false
 "#;
     fs::write(workspace.join("bazbom.toml"), config_content)?;
 
-    // Run orchestrator - should pick up config
+    // Run orchestrator - should pick up config from bazbom.toml
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, // cyclonedx override from CLI would take precedence
+        false, // cyclonedx (CLI flag not set, config has it as true)
         false, // with_semgrep
         None,  // with_codeql
         None,  // autofix
