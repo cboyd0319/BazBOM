@@ -3,6 +3,7 @@ use crate::cli::{AutofixMode, CodeqlSuite, ContainerStrategy};
 use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::{merge_sarif_reports, Analyzer};
+use crate::publish::GitHubPublisher;
 use anyhow::Result;
 use std::path::PathBuf;
 
@@ -133,13 +134,31 @@ impl ScanOrchestrator {
 
         // Handle upload
         if !self.no_upload {
-            println!("[bazbom] GitHub upload enabled (not yet implemented)");
+            let publisher = GitHubPublisher::new();
+            if publisher.is_configured() {
+                let merged_path = self.context.findings_dir.join("merged.sarif");
+                if merged_path.exists() {
+                    match publisher.upload_sarif(&merged_path) {
+                        Ok(_) => println!("[bazbom] GitHub Code Scanning upload configured"),
+                        Err(e) => eprintln!("[bazbom] GitHub upload failed: {}", e),
+                    }
+                } else {
+                    println!("[bazbom] no merged.sarif to upload");
+                }
+            } else {
+                println!("[bazbom] GitHub upload not configured (use github/codeql-action/upload-sarif@v3)");
+            }
         } else {
             println!("[bazbom] skipping GitHub upload (--no-upload)");
         }
 
         println!("[bazbom] orchestrated scan complete");
         println!("[bazbom] outputs in: {:?}", self.context.out_dir);
+        println!("[bazbom]");
+        println!("[bazbom] Next steps:");
+        println!("[bazbom]   - Review findings in: {:?}", self.context.findings_dir);
+        println!("[bazbom]   - Upload SARIF: github/codeql-action/upload-sarif@v3");
+        println!("[bazbom]   - Archive artifacts: actions/upload-artifact@v4");
 
         Ok(())
     }

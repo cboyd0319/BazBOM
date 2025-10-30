@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
-use crate::toolchain::{run_tool, ToolCache, ToolDescriptor};
+use crate::toolchain::{run_tool, ToolCache, ToolManifestLoader};
 use anyhow::{Context as _, Result};
 use bazbom_formats::sarif::SarifReport;
 
@@ -10,19 +10,6 @@ pub struct SemgrepAnalyzer;
 impl SemgrepAnalyzer {
     pub fn new() -> Self {
         Self
-    }
-
-    fn get_tool_descriptor(&self) -> ToolDescriptor {
-        // In a production implementation, these would come from a manifest file
-        // For now, provide placeholder values
-        ToolDescriptor {
-            name: "semgrep".to_string(),
-            version: "1.78.0".to_string(),
-            url: "https://github.com/semgrep/semgrep/releases/download/v1.78.0/semgrep".to_string(),
-            sha256: "placeholder".to_string(),
-            executable: true,
-            archive: false,
-        }
     }
 }
 
@@ -50,30 +37,63 @@ impl Analyzer for SemgrepAnalyzer {
             .arg("--version")
             .output();
 
-        if semgrep_result.is_err() {
-            println!("[bazbom] Semgrep not found in PATH");
-            println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
-            println!("[bazbom] Or use: pipx install semgrep");
+        let semgrep_bin = if semgrep_result.is_ok() {
+            // Use system-installed semgrep
+            println!("[bazbom] using system-installed Semgrep");
+            std::path::PathBuf::from("semgrep")
+        } else {
+            // Try to use managed installation from tool cache
+            println!("[bazbom] Semgrep not found in PATH, checking tool cache...");
             
-            // Return empty report rather than failing
-            return Ok(SarifReport::new("Semgrep", "not-installed"));
-        }
+            match ToolManifestLoader::load() {
+                Ok(loader) => match loader.get_descriptor("semgrep") {
+                    Ok(desc) => {
+                        let cache = ToolCache::new(ctx.tool_cache.clone());
+                        match cache.ensure(&desc) {
+                            Ok(path) => {
+                                println!("[bazbom] using managed Semgrep from cache");
+                                path
+                            }
+                            Err(e) => {
+                                println!("[bazbom] failed to download Semgrep: {}", e);
+                                println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
+                                println!("[bazbom] Or use: pipx install semgrep");
+                                return Ok(SarifReport::new("Semgrep", "not-installed"));
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("[bazbom] tool manifest error: {}", e);
+                        println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
+                        return Ok(SarifReport::new("Semgrep", "not-installed"));
+                    }
+                },
+                Err(e) => {
+                    println!("[bazbom] failed to load tool manifest: {}", e);
+                    return Ok(SarifReport::new("Semgrep", "not-installed"));
+                }
+            }
+        };
 
-        // Run semgrep with auto configuration (will use semgrep registry)
+        // Use curated JVM ruleset if available, otherwise use auto
+        let rules_path = ctx.workspace.join("rules/semgrep/semgrep-jvm.yml");
+        let config_value = if rules_path.exists() {
+            println!("[bazbom] using curated JVM ruleset");
+            rules_path.to_str().unwrap()
+        } else {
+            println!("[bazbom] using Semgrep auto configuration");
+            "auto"
+        };
+
         let args = vec![
-            "--config", "auto",
+            "--config", config_value,
             "--sarif",
             "--json",
             "--timeout", "120",
             ".",
         ];
 
-        let output = run_tool(
-            &std::path::PathBuf::from("semgrep"),
-            &args,
-            &ctx.workspace,
-            180,
-        )?;
+        let output = run_tool(&semgrep_bin, &args, &ctx.workspace, 180)?;
 
         if output.exit_code != 0 && !output.stderr.is_empty() {
             eprintln!("[bazbom] Semgrep stderr: {}", output.stderr);
@@ -99,7 +119,6 @@ impl Analyzer for SemgrepAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::tempdir;
 
     #[test]
     fn test_semgrep_analyzer_enabled() {

@@ -58,6 +58,11 @@ sca_findings.*
 policy_result.json
 policy_violations.json
 policy_violations.sarif
+bazbom-output/
+/sbom/
+/findings/
+/enrich/
+/fixes/
 
 # Homebrew generated files
 homebrew/bazbom.rb
