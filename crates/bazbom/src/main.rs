@@ -9,6 +9,7 @@ mod bazel;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
+mod remediation;
 mod shading;
 
 #[derive(Parser, Debug)]
@@ -583,6 +584,109 @@ fn main() -> Result<()> {
         },
         Commands::Fix { suggest, apply } => {
             println!("[bazbom] fix suggest={} apply={}", suggest, apply);
+            
+            // Detect build system
+            let root = PathBuf::from(".");
+            let system = detect_build_system(&root);
+            println!("[bazbom] detected build system: {:?}", system);
+            
+            // Load advisories from cache
+            let cache_dir = PathBuf::from(".bazbom/cache");
+            let vulnerabilities = if cache_dir.exists() {
+                match advisory::load_advisories(&cache_dir) {
+                    Ok(vulns) => {
+                        println!("[bazbom] loaded {} vulnerabilities from cache", vulns.len());
+                        vulns
+                    }
+                    Err(e) => {
+                        eprintln!("[bazbom] warning: failed to load advisories: {}", e);
+                        Vec::new()
+                    }
+                }
+            } else {
+                eprintln!("[bazbom] warning: advisory cache not found at {:?}, run 'bazbom db sync' first", cache_dir);
+                Vec::new()
+            };
+            
+            if vulnerabilities.is_empty() {
+                println!("[bazbom] no vulnerabilities found - nothing to fix");
+                return Ok(());
+            }
+            
+            // Generate remediation suggestions
+            let report = remediation::generate_suggestions(&vulnerabilities, system);
+            
+            // Display summary
+            println!("\n[bazbom] Remediation Summary:");
+            println!("  Total vulnerabilities: {}", report.summary.total_vulnerabilities);
+            println!("  Fixable: {}", report.summary.fixable);
+            println!("  Unfixable: {}", report.summary.unfixable);
+            println!("  Estimated effort: {}", report.summary.estimated_effort);
+            
+            if suggest {
+                // Suggest mode: display suggestions
+                println!("\n[bazbom] Remediation Suggestions:\n");
+                
+                for (i, suggestion) in report.suggestions.iter().enumerate() {
+                    println!("{}. {} ({})", i + 1, suggestion.vulnerability_id, suggestion.affected_package);
+                    println!("   Current version: {}", suggestion.current_version);
+                    if let Some(fixed) = &suggestion.fixed_version {
+                        println!("   Fixed version: {}", fixed);
+                    } else {
+                        println!("   Fixed version: NOT AVAILABLE");
+                    }
+                    println!("   Severity: {} | Priority: {}", suggestion.severity, suggestion.priority);
+                    println!("\n   WHY FIX THIS:");
+                    println!("   {}", suggestion.why_fix);
+                    println!("\n   HOW TO FIX:");
+                    for line in suggestion.how_to_fix.lines() {
+                        println!("   {}", line);
+                    }
+                    if !suggestion.references.is_empty() {
+                        println!("\n   REFERENCES:");
+                        for ref_url in &suggestion.references {
+                            println!("   - {}", ref_url);
+                        }
+                    }
+                    println!();
+                }
+                
+                // Write suggestions to file
+                let suggestions_path = PathBuf::from("remediation_suggestions.json");
+                fs::write(&suggestions_path, serde_json::to_vec_pretty(&report).unwrap())
+                    .with_context(|| format!("failed writing {:?}", suggestions_path))?;
+                println!("[bazbom] wrote {:?}", suggestions_path);
+            }
+            
+            if apply {
+                // Apply mode: attempt to apply fixes
+                println!("\n[bazbom] Applying fixes...");
+                
+                match remediation::apply_fixes(&report.suggestions, system, &root) {
+                    Ok(result) => {
+                        println!("\n[bazbom] Apply Results:");
+                        println!("  Applied: {}", result.applied);
+                        println!("  Failed: {}", result.failed);
+                        println!("  Skipped: {}", result.skipped);
+                        
+                        if result.applied > 0 {
+                            println!("\n[bazbom] Please review changes and run tests before committing");
+                        }
+                        if result.failed > 0 || result.skipped > 0 {
+                            println!("[bazbom] Some fixes require manual intervention - see suggestions above");
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("[bazbom] failed to apply fixes: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
+            
+            if !suggest && !apply {
+                println!("\n[bazbom] Use --suggest to see remediation suggestions");
+                println!("[bazbom] Use --apply to automatically apply fixes (experimental)");
+            }
         }
         Commands::Db { action } => match action {
             DbCmd::Sync {} => {
