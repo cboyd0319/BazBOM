@@ -174,3 +174,76 @@ sbom_aspect = aspect(
           --output_groups=sbom_info
     """,
 )
+
+ClasspathInfo = provider(
+    doc = "Runtime classpath information for reachability analysis",
+    fields = {
+        "jars": "Depset of JAR file paths",
+        "target_label": "Label of the target",
+    },
+)
+
+def _classpath_aspect_impl(target, ctx):
+    """Aspect implementation to collect runtime classpath JARs.
+    
+    This aspect collects all JAR files from the runtime classpath of a Java target,
+    which can be used for bytecode reachability analysis.
+    
+    Args:
+        target: The target being analyzed
+        ctx: The aspect context
+        
+    Returns:
+        ClasspathInfo provider with JAR file paths
+    """
+    direct_jars = []
+    
+    # Extract JAR files from JavaInfo provider
+    if JavaInfo in target:
+        java_info = target[JavaInfo]
+        
+        # Get runtime classpath JARs
+        if hasattr(java_info, "transitive_runtime_jars"):
+            for jar in java_info.transitive_runtime_jars.to_list():
+                direct_jars.append(jar.path)
+        
+        # Also get compile-time JARs if runtime not available
+        if not direct_jars and hasattr(java_info, "transitive_compile_time_jars"):
+            for jar in java_info.transitive_compile_time_jars.to_list():
+                direct_jars.append(jar.path)
+    
+    # Collect transitive JAR paths from dependencies
+    transitive_jars = []
+    for attr in ["deps", "runtime_deps", "exports"]:
+        for dep in getattr(ctx.rule.attr, attr, []):
+            if ClasspathInfo in dep:
+                transitive_jars.append(dep[ClasspathInfo].jars)
+    
+    # Combine into depset
+    all_jars = depset(
+        direct = direct_jars,
+        transitive = transitive_jars,
+    )
+    
+    return [ClasspathInfo(
+        jars = all_jars,
+        target_label = str(ctx.label),
+    )]
+
+classpath_aspect = aspect(
+    implementation = _classpath_aspect_impl,
+    attr_aspects = ["deps", "runtime_deps", "exports"],
+    required_providers = [],
+    provides = [ClasspathInfo],
+    doc = """Aspect to collect runtime classpath JARs for reachability analysis.
+    
+    This aspect traverses the dependency graph and collects all JAR files from
+    the runtime classpath. These JARs are used by the reachability analyzer to
+    perform bytecode analysis.
+    
+    Usage:
+        bazel build //path/to:target \\
+          --aspects=//tools/supplychain:aspects.bzl%classpath_aspect \\
+          --output_groups=classpath_info
+    """,
+)

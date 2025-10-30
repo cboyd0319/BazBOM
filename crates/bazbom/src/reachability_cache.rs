@@ -96,6 +96,7 @@ pub fn save_cached_result(
 }
 
 /// Clear old cache entries (older than specified days)
+#[allow(dead_code)]
 pub fn clear_old_cache_entries(cache_dir: &Path, days: u64) -> Result<usize> {
     if !cache_dir.exists() {
         return Ok(0);
