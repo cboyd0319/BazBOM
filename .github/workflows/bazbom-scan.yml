@@ -1,0 +1,70 @@
+name: BazBOM Scan
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches:
+      - main
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install Semgrep (optional - BazBOM can manage this)
+        run: |
+          pipx install semgrep
+
+      - name: Install CodeQL CLI (optional - for deep analysis)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          CODEQL_VERSION=2.19.4
+          curl -sL https://github.com/github/codeql-cli-binaries/releases/download/v${CODEQL_VERSION}/codeql-linux64.zip -o codeql.zip
+          unzip -q codeql.zip -d $HOME
+          echo "$HOME/codeql" >> $GITHUB_PATH
+
+      - name: BazBOM scan (fast defaults for PRs)
+        if: github.event_name == 'pull_request'
+        run: |
+          # Fast scan for PRs: SBOM + SCA + Semgrep (no CodeQL)
+          bazbom scan . --cyclonedx --with-semgrep --out-dir ./bazbom-output
+
+      - name: BazBOM scan (deep analysis for main)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Deep scan for main: SBOM + SCA + Semgrep + CodeQL + autofix suggestions
+          bazbom scan . --cyclonedx --with-semgrep --with-codeql security-extended --autofix dry-run --out-dir ./bazbom-output
+
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bazbom-output/findings/merged.sarif
+          category: bazbom
+
+      - name: Upload BazBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bazbom-results-${{ github.run_id }}
+          path: |
+            bazbom-output/sbom/**
+            bazbom-output/findings/**
+            bazbom-output/enrich/**
+            bazbom-output/fixes/**
+          retention-days: 30

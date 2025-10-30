@@ -1,0 +1,43 @@
+# BazBOM Configuration File
+# This is a sample configuration showing all available options with sensible defaults
+
+[analysis]
+# Generate CycloneDX SBOM in addition to SPDX (default: false)
+cyclonedx = false
+
+[analysis.semgrep]
+# Enable Semgrep static analysis (can also be enabled via --with-semgrep flag)
+enabled = false
+# Ruleset to use (defaults to curated-jvm if available, else "auto")
+# ruleset = "curated-jvm@sha256:..."
+
+[analysis.codeql]
+# Enable CodeQL analysis (can also be enabled via --with-codeql flag)
+enabled = false
+# Suite to use: "default" or "security-extended"
+suite = "default"
+
+[enrich]
+# Query deps.dev for license, popularity, and version intelligence
+depsdev = true
+
+[autofix]
+# Autofix mode: "off", "dry-run", or "pr"
+# - "off": no changes, still propose recipes
+# - "dry-run": generate patches to fixes/openrewrite/ directory
+# - "pr": open branch + PR with recipes applied
+mode = "dry-run"
+
+# Allowlist of packages for which autofix is allowed
+recipe_allowlist = ["commons-io", "jackson", "log4j", "spring-core"]
+
+[containers]
+# Container SBOM strategy: "auto", "syft", or "bazbom"
+# "auto" tries BazBOM first, falls back to Syft
+strategy = "auto"
+
+[publish]
+# Upload merged SARIF to GitHub Code Scanning
+github_code_scanning = true
+# Upload all outputs (sbom/, findings/, enrich/, fixes/) as artifacts
+artifact = true
