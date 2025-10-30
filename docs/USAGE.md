@@ -52,8 +52,9 @@ cargo build --release
 
 **Outputs:**
 - `sbom.spdx.json` or `sbom.cyclonedx.json` - SBOM in chosen format
-- `sca_findings.json` - Machine-readable vulnerability findings
+- `sca_findings.json` - Machine-readable vulnerability findings with reachability and shading metadata
 - `sca_findings.sarif` - GitHub Security format for Code Scanning
+- `shading_config.json` - Shading/relocation configuration (when detected)
 
 ## Command Reference
 
@@ -801,16 +802,20 @@ Findings are mapped to original artifacts:
 
 ✅ **Implemented:**
 - Maven Shade plugin XML parsing (using quick-xml parser)
+- Gradle Shadow plugin DSL parsing (pattern matching for relocate statements)
 - Nested JAR extraction from fat JARs (using zip library)
 - Class fingerprinting with Blake3 bytecode hashing
 - Relocation pattern matching and reverse mapping
 - Include/exclude pattern support
 - Multiple relocation mapping support
+- **Integration with scan command**: Automatic detection and output generation
+- **SARIF integration**: Shading info included in security reports
+- **Findings integration**: Shading metadata in sca_findings.json
 
-🔄 **In Progress:**
-- Gradle Shadow plugin DSL parsing (basic pattern matching works)
-- Detailed method/field signature extraction (currently uses bytecode hash only)
-- Integration with scan command output (coming soon)
+🔄 **Future Enhancements:**
+- Detailed method/field signature extraction (currently uses bytecode hash for matching)
+- JAR fingerprinting for runtime attribution
+- Advanced Gradle DSL parsing for complex configurations
 
 **Requirements:**
 - Build files must be present (pom.xml or build.gradle[.kts])
