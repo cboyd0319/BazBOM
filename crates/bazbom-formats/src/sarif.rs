@@ -16,6 +16,8 @@ pub struct SarifReport {
 pub struct Run {
     pub tool: Tool,
     pub results: Vec<Result>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub automation_details: Option<AutomationDetails>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -65,6 +67,8 @@ pub struct Result {
     pub message: Message,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<Location>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub properties: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,6 +93,12 @@ pub struct ArtifactLocation {
     pub uri: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AutomationDetails {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+}
+
 impl SarifReport {
     pub fn new(tool_name: impl Into<String>, tool_version: impl Into<String>) -> Self {
         Self {
@@ -104,6 +114,7 @@ impl SarifReport {
                     },
                 },
                 results: Vec::new(),
+                automation_details: None,
             }],
         }
     }
@@ -126,6 +137,28 @@ impl SarifReport {
     }
 }
 
+impl SarifReport {
+    /// Merge multiple SARIF reports into a single report
+    pub fn merge(reports: Vec<SarifReport>) -> Self {
+        let mut merged = SarifReport {
+            version: SARIF_VERSION.to_string(),
+            schema: SCHEMA_URI.to_string(),
+            runs: Vec::new(),
+        };
+
+        for report in reports {
+            merged.runs.extend(report.runs);
+        }
+
+        merged
+    }
+
+    /// Add a complete run to this report
+    pub fn add_run(&mut self, run: Run) {
+        self.runs.push(run);
+    }
+}
+
 impl Result {
     pub fn new(
         rule_id: impl Into<String>,
@@ -139,6 +172,7 @@ impl Result {
                 text: message.into(),
             },
             locations: None,
+            properties: None,
         }
     }
 
@@ -149,6 +183,11 @@ impl Result {
             },
         };
         self.locations = Some(vec![location]);
+        self
+    }
+
+    pub fn with_properties(mut self, properties: serde_json::Value) -> Self {
+        self.properties = Some(properties);
         self
     }
 }
@@ -199,5 +238,28 @@ mod tests {
         let json = serde_json::to_string(&report).unwrap();
         assert!(json.contains("2.1.0"));
         assert!(json.contains("bazbom"));
+    }
+
+    #[test]
+    fn test_merge_reports() {
+        let mut report1 = SarifReport::new("bazbom", "0.0.1");
+        let result1 = Result::new("CVE-2024-1234", "error", "Critical vulnerability");
+        report1.add_result(result1);
+
+        let mut report2 = SarifReport::new("semgrep", "1.78.0");
+        let result2 = Result::new("semgrep.rule", "warning", "Pattern matched");
+        report2.add_result(result2);
+
+        let merged = SarifReport::merge(vec![report1, report2]);
+        assert_eq!(merged.runs.len(), 2);
+        assert_eq!(merged.runs[0].tool.driver.name, "bazbom");
+        assert_eq!(merged.runs[1].tool.driver.name, "semgrep");
+    }
+
+    #[test]
+    fn test_result_with_properties() {
+        let result = Result::new("CVE-2024-1234", "error", "Test")
+            .with_properties(serde_json::json!({"fix": "upgrade to 1.2.3"}));
+        assert!(result.properties.is_some());
     }
 }

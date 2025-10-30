@@ -64,6 +64,7 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### What's New
 
+- **Orchestrated Static Analysis**: Optional integration with Semgrep and CodeQL, merged into single SARIF report
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
 - **Homebrew Support**: One-command installation via brew tap
 - **Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
@@ -502,6 +503,28 @@ See [Bazel Monorepo Workflows](docs/examples/bazel-monorepo-workflows.md) for co
 ---
 
 ## Features
+
+### Orchestrated Static Analysis
+
+Optionally integrate Semgrep and CodeQL for comprehensive security analysis:
+
+```bash
+# Fast PR scanning with Semgrep
+bazbom scan . --with-semgrep --no-upload
+
+# Deep analysis on main branch
+bazbom scan . --with-semgrep --with-codeql=security-extended
+```
+
+Features:
+- **Single SARIF output**: All findings (SCA + Semgrep + CodeQL) merged for GitHub Code Scanning
+- **Optional & fast**: Tools disabled by default; enable per-project or per-run
+- **Config-driven**: Set defaults in `bazbom.toml`, override via CLI
+- **Backward compatible**: Original scan behavior unchanged without flags
+
+See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCANNING.md) for details.
+
+---
 
 <table>
 <tr>

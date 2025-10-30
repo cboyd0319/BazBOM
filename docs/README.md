@@ -27,12 +27,13 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Advanced Features
 
+- **[Orchestrated Scanning](ORCHESTRATED_SCANNING.md)** - Integrate Semgrep and CodeQL with merged SARIF output
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
 - **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
 - **[VEX Statements](VEX.md)** - Managing false positives and accepted risks
 - **[Dependency Graph Analysis](GRAPH_ANALYSIS.md)** - Querying and visualizing dependencies
- - **[Capabilities Reference](reference/capabilities-reference.md)** - Complete feature catalog
+- **[Capabilities Reference](reference/capabilities-reference.md)** - Complete feature catalog
 
 ## Operations
 
