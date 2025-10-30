@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
-use bazbom_advisories::{db_sync, load_epss_scores, load_kev_catalog, Priority, Vulnerability};
+use bazbom_advisories::{db_sync, load_epss_scores, load_kev_catalog, Priority};
 use bazbom_formats::sarif::{
     ArtifactLocation, Location, Message, PhysicalLocation, Result as SarifResult, Rule,
     SarifReport, MessageString, Configuration,

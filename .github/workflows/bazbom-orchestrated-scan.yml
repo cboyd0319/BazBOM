@@ -1,0 +1,125 @@
+# BazBOM Orchestrated Scan Example
+# This workflow demonstrates the complete BazBOM integration plan with:
+# - SBOM generation (SPDX + optional CycloneDX)
+# - SCA findings (OSV/NVD/GHSA)
+# - Optional Semgrep analysis
+# - Optional CodeQL analysis
+# - Merged SARIF upload
+# - Artifact archiving
+
+name: BazBOM Orchestrated Scan (Example)
+
+on:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches:
+      - main
+  schedule:
+    # Nightly deep scan
+    - cron: '0 2 * * *'
+
+jobs:
+  bazbom-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # Install Semgrep (optional)
+      # BazBOM can use system-installed semgrep or manage its own via tool cache
+      - name: Install Semgrep
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        run: |
+          pipx install semgrep
+
+      # Install CodeQL CLI for deep analysis
+      # Only on main branch and nightly runs
+      - name: Install CodeQL CLI
+        if: github.ref == 'refs/heads/main' || github.event_name == 'schedule'
+        run: |
+          CODEQL_VERSION=2.19.4
+          curl -sL https://github.com/github/codeql-cli-binaries/releases/download/v${CODEQL_VERSION}/codeql-linux64.zip -o codeql.zip
+          unzip -q codeql.zip -d $HOME
+          echo "$HOME/codeql" >> $GITHUB_PATH
+
+      # Fast scan for PRs: SBOM + SCA + Semgrep
+      - name: BazBOM scan (PR - fast)
+        if: github.event_name == 'pull_request'
+        run: |
+          bazbom scan . \
+            --cyclonedx \
+            --with-semgrep \
+            --out-dir ./bazbom-output
+
+      # Deep scan for main: Add CodeQL with default suite
+      - name: BazBOM scan (main - deep)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          bazbom scan . \
+            --cyclonedx \
+            --with-semgrep \
+            --with-codeql=default \
+            --autofix=dry-run \
+            --out-dir ./bazbom-output
+
+      # Nightly scan: Full security suite with CodeQL security-extended
+      - name: BazBOM scan (nightly - security extended)
+        if: github.event_name == 'schedule'
+        run: |
+          bazbom scan . \
+            --cyclonedx \
+            --with-semgrep \
+            --with-codeql=security-extended \
+            --autofix=dry-run \
+            --out-dir ./bazbom-output
+
+      # Upload merged SARIF to GitHub Code Scanning
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: bazbom-output/findings/merged.sarif
+          category: bazbom-${{ github.workflow }}
+
+      # Upload all BazBOM outputs as artifacts
+      - name: Upload BazBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bazbom-results-${{ github.run_id }}
+          path: |
+            bazbom-output/sbom/**
+            bazbom-output/findings/**
+            bazbom-output/enrich/**
+            bazbom-output/fixes/**
+          retention-days: 30
+
+      # Optional: Fail on critical vulnerabilities
+      # Uncomment to gate deployments on security findings
+      # - name: Check for critical vulnerabilities
+      #   run: |
+      #     # Parse merged.sarif and fail if critical findings exist
+      #     python3 -c "
+      #     import json, sys
+      #     with open('bazbom-output/findings/merged.sarif') as f:
+      #         sarif = json.load(f)
+      #     critical = sum(1 for run in sarif.get('runs', []) 
+      #                    for result in run.get('results', [])
+      #                    if result.get('level') == 'error')
+      #     print(f'Found {critical} critical findings')
+      #     sys.exit(1 if critical > 0 else 0)
+      #     "
