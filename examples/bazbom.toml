@@ -1,0 +1,74 @@
+# BazBOM Configuration Example
+# This file demonstrates all available configuration options for the integrated analysis pipeline.
+# Save as bazbom.toml in your project root.
+
+[analysis]
+# Enable CycloneDX SBOM generation (in addition to SPDX 2.3)
+cyclonedx = true
+
+[analysis.semgrep]
+# Enable Semgrep analysis with curated JVM ruleset
+enabled = true
+# Optional: specify custom ruleset (default uses rules/semgrep/semgrep-jvm.yml)
+# ruleset = "curated-jvm@sha256:abc123..."
+
+[analysis.codeql]
+# Enable CodeQL analysis (deep dataflow/taint analysis)
+# Note: CodeQL can be slow - consider enabling only on main branch/nightly
+enabled = false
+# Suite options: "default" (faster) or "security-extended" (thorough)
+suite = "default"
+
+[enrich]
+# Enable deps.dev enrichment for license and version intelligence
+depsdev = true
+
+[autofix]
+# Autofix mode: "off", "dry-run", or "pr"
+# - off: No fix generation
+# - dry-run: Generate recipes and patches, don't apply
+# - pr: Apply fixes and open PR (requires GitHub token)
+mode = "dry-run"
+
+# Allowlist of packages eligible for autofix
+# Supports prefix matching (e.g., "commons-" matches all commons-* libraries)
+recipe_allowlist = [
+    "commons-io",
+    "commons-lang3",
+    "commons-",        # Prefix match for all Apache Commons libraries
+    "jackson",
+    "log4j",
+    "spring-core",
+    "spring-boot",
+    "guava",
+]
+
+[containers]
+# Container SBOM strategy: "auto", "syft", or "bazbom"
+# - auto: Use fastest available strategy
+# - syft: Explicitly use Syft (Anchore)
+# - bazbom: Use BazBOM's native implementation (when ready)
+strategy = "auto"
+
+[publish]
+# Upload merged SARIF to GitHub Code Scanning
+# Typically handled by GitHub Action, but can be done programmatically
+github_code_scanning = true
+
+# Archive all outputs as artifacts
+# Recommended for CI/CD pipelines
+artifact = true
+
+# Example usage in different scenarios:
+
+# PR Builds (fast feedback)
+# bazbom scan . --with-semgrep
+
+# Main branch (balanced analysis)
+# bazbom scan . --cyclonedx --with-semgrep --with-codeql=default --autofix=dry-run
+
+# Nightly/Security scans (comprehensive)
+# bazbom scan . --cyclonedx --with-semgrep --with-codeql=security-extended --autofix=dry-run
+
+# Incremental analysis (large mono-repos)
+# bazbom scan . --target my-changed-module --with-semgrep

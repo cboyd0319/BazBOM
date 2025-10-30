@@ -506,23 +506,28 @@ See [Bazel Monorepo Workflows](docs/examples/bazel-monorepo-workflows.md) for co
 
 ### Orchestrated Static Analysis
 
-Optionally integrate Semgrep and CodeQL for comprehensive security analysis:
+Optionally integrate Semgrep and CodeQL for comprehensive security analysis, plus automated fix generation:
 
 ```bash
 # Fast PR scanning with Semgrep
 bazbom scan . --with-semgrep --no-upload
 
-# Deep analysis on main branch
-bazbom scan . --with-semgrep --with-codeql=security-extended
+# Deep analysis on main branch with autofix recipes
+bazbom scan . --with-semgrep --with-codeql=security-extended --autofix=dry-run
+
+# Full security scan with all features
+bazbom scan . --cyclonedx --with-semgrep --with-codeql=default --autofix=dry-run
 ```
 
 Features:
 - **Single SARIF output**: All findings (SCA + Semgrep + CodeQL) merged for GitHub Code Scanning
+- **OpenRewrite autofix**: Generate safe, tested upgrade recipes for vulnerable dependencies
 - **Optional & fast**: Tools disabled by default; enable per-project or per-run
 - **Config-driven**: Set defaults in `bazbom.toml`, override via CLI
+- **Curated rulesets**: 10 high-impact JVM security rules (no noise)
 - **Backward compatible**: Original scan behavior unchanged without flags
 
-See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCANNING.md) for details.
+See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCANNING.md) for details and [examples/bazbom.toml](examples/bazbom.toml) for configuration.
 
 ---
 
