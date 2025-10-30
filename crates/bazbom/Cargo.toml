@@ -22,6 +22,8 @@ serde_json = "1"
 serde_yaml = "0.9"
 blake3 = "1"
 chrono = "0.4"
+quick-xml = "0.31"
+zip = "0.6"
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
 bazbom-advisories = { path = "../bazbom-advisories" }

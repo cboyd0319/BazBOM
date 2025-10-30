@@ -127,15 +127,160 @@ bazbom scan . --out-dir ./reports
 
 #### 2. Enable Reachability Analysis
 
-```bash
-# Perform bytecode reachability analysis (requires Java 11+)
-bazbom scan . --reachability
+Reachability analysis uses bytecode analysis to determine which vulnerable methods in your dependencies are actually called by your code. This dramatically reduces false positives by focusing only on vulnerabilities in code paths that are reachable from your application.
 
-# Note: Requires BAZBOM_REACHABILITY_JAR environment variable
-# when reachability engine is available
+**Basic Reachability Scan:**
+
+```bash
+# Build the reachability analyzer first
+cd tools/bazbom-reachability
+mvn clean package
+cd ../..
+
+# Set the environment variable to point to the JAR
+export BAZBOM_REACHABILITY_JAR=tools/bazbom-reachability/target/bazbom-reachability.jar
+
+# Perform reachability-aware scan
+bazbom scan . --reachability
 ```
 
-#### 3. Advisory Database Sync
+**Output Enhancements with Reachability:**
+
+When reachability is enabled:
+- SARIF findings are tagged with `[REACHABLE]` or `[NOT REACHABLE]`
+- Policy checks can filter based on reachability status
+- Findings are prioritized based on actual risk exposure
+- Reachability results are cached for faster subsequent scans
+
+**Maven Project Example:**
+
+```bash
+# Maven project with reachability
+cd /path/to/maven/project
+export BAZBOM_REACHABILITY_JAR=/path/to/bazbom-reachability.jar
+bazbom scan . --reachability --format spdx --out-dir ./reports
+
+# Output includes:
+# - reports/sbom.spdx.json (SBOM)
+# - reports/sca_findings.json (vulnerabilities with reachability info)
+# - reports/sca_findings.sarif (SARIF with [REACHABLE]/[NOT REACHABLE] tags)
+# - reports/reachability.json (detailed reachability analysis)
+```
+
+**Gradle Project Example:**
+
+```bash
+# Gradle project with reachability
+cd /path/to/gradle/project
+export BAZBOM_REACHABILITY_JAR=/path/to/bazbom-reachability.jar
+bazbom scan . --reachability --format spdx --out-dir ./build/bazbom
+
+# Reachability analysis includes all configurations
+```
+
+**Bazel Project Example:**
+
+```bash
+# Bazel project with reachability
+cd /path/to/bazel/project
+export BAZBOM_REACHABILITY_JAR=/path/to/bazbom-reachability.jar
+
+# Scan all targets
+bazbom scan . --reachability
+
+# Scan specific targets
+bazbom scan . --reachability --bazel-targets //src/main/java/...:all
+
+# Incremental scan (only affected targets)
+bazbom scan . --reachability --bazel-affected-by-files src/main/java/com/example/Foo.java
+```
+
+**Understanding Reachability Output:**
+
+The `reachability.json` file contains:
+```json
+{
+  "reachableClasses": ["com.example.MyApp", "org.apache.commons.Lang"],
+  "reachableMethods": [
+    {"className": "org.apache.commons.Lang", "methodName": "isEmpty", "descriptor": "(Ljava/lang/String;)Z"}
+  ],
+  "reachablePackages": ["com.example", "org.apache.commons"],
+  "entryPoints": ["com.example.MyApp.main"]
+}
+```
+
+**Reachability Cache:**
+
+Results are cached in `.bazbom/reachability-cache/` for faster subsequent runs:
+```bash
+# First run (slow - analyzes bytecode)
+bazbom scan . --reachability  # ~30s
+
+# Subsequent runs with same classpath (fast - uses cache)
+bazbom scan . --reachability  # ~2s
+```
+
+#### 3. Shaded JAR Detection
+
+BazBOM automatically detects and analyzes shaded (relocated) dependencies in fat JARs, providing accurate attribution even when packages have been relocated.
+
+**Maven Shade Plugin Detection:**
+
+BazBOM automatically detects Maven Shade plugin configuration in `pom.xml`:
+
+```xml
+<!-- pom.xml -->
+<plugin>
+    <artifactId>maven-shade-plugin</artifactId>
+    <configuration>
+        <relocations>
+            <relocation>
+                <pattern>com.google.guava</pattern>
+                <shadedPattern>myapp.shaded.guava</shadedPattern>
+            </relocation>
+        </relocations>
+    </configuration>
+</plugin>
+```
+
+**Gradle Shadow Plugin Detection:**
+
+Similarly detects Gradle Shadow plugin configuration:
+
+```kotlin
+// build.gradle.kts
+plugins {
+    id("com.github.johnrengelman.shadow") version "8.1.1"
+}
+
+shadowJar {
+    relocate("org.apache.commons", "myapp.shaded.commons")
+}
+```
+
+**Shading Analysis:**
+
+When scanning projects with shaded JARs, BazBOM:
+1. Detects relocation mappings from build configuration
+2. Extracts nested JARs from fat JARs
+3. Fingerprints classes using bytecode hashing
+4. Maps shaded classes back to original artifacts
+5. Reports accurate vulnerability attribution
+
+**Example Output:**
+
+```bash
+# Scan a project with shaded dependencies
+bazbom scan . --format spdx
+
+# Output includes relocation information:
+# - Original package: com.google.guava.collect.ImmutableList
+# - Shaded location: myapp.shaded.guava.collect.ImmutableList
+# - Original artifact: com.google.guava:guava:31.1-jre
+# - Confidence: 1.0 (exact bytecode match)
+```
+
+#### 4. Advisory Database Sync
 
 ```bash
 # Download/update advisory databases for offline use
@@ -148,7 +293,7 @@ bazbom db sync
 BAZBOM_OFFLINE=1 bazbom db sync
 ```
 
-#### 4. Policy Checks
+#### 5. Policy Checks
 
 ```bash
 # Run policy checks against findings
@@ -158,7 +303,7 @@ bazbom policy check
 # Outputs: SARIF with policy verdicts
 ```
 
-#### 5. Remediation
+#### 6. Remediation
 
 ```bash
 # Suggest fixes (recommend-only mode)
