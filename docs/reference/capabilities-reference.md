@@ -165,24 +165,33 @@ bazel build //:dep_graph_all
 - Class fingerprinting with Blake3 bytecode hashing
 - Relocation pattern matching and reverse mapping
 - Accurate vulnerability attribution for shaded dependencies
+- **✅ Integrated into scan command** - Automatic detection and output generation
 
 **Features:**
-- Automatic detection of shading configurations in build files
+- Automatic detection of shading configurations during `bazbom scan`
 - Support for multiple relocation mappings
 - Include/exclude pattern filtering
-- Bytecode-level class fingerprinting for ambiguous cases
-- Confidence scoring for shading matches (0.0-1.0)
+- Bytecode-level class fingerprinting for ambiguous cases (foundation in place)
+- Confidence scoring for shading matches (0.0-1.0, foundation in place)
+- **shading_config.json** output file with relocation details
+- **Shading metadata** in sca_findings.json
+- **SARIF integration** with shading notes in security reports
 
 Examples:
 ```bash
 # Automatically detects shading in Maven projects
 bazbom scan my-maven-project/  # Reads pom.xml for maven-shade-plugin
+# Outputs: sbom.spdx.json, sca_findings.json, sca_findings.sarif, shading_config.json
 
 # Automatically detects shading in Gradle projects  
 bazbom scan my-gradle-project/  # Reads build.gradle[.kts] for shadow plugin
+# Outputs: sbom.spdx.json, sca_findings.json, sca_findings.sarif, shading_config.json
 
-# Analyzes fat JARs with relocation mappings
-# Outputs include original artifact attribution
+# View detected shading configuration
+cat shading_config.json
+
+# Check shading metadata in findings
+jq '.shading' sca_findings.json
 ```
 
 **Supported Configurations:**
@@ -192,11 +201,19 @@ Maven Shade Plugin:
 - `<includes>` and `<excludes>` patterns
 - `<finalName>` configuration
 - Nested plugin configurations
+- Full XML parsing with quick-xml
 
 Gradle Shadow Plugin:
 - `relocate()` DSL statements
 - Multiple relocations per task
-- Pattern-based matching
+- Pattern-based matching for both Groovy and Kotlin DSL
+
+**Output Files:**
+
+When shading is detected, the following outputs are generated:
+- `shading_config.json` - Complete relocation configuration
+- `sca_findings.json` - Includes shading metadata section
+- `sca_findings.sarif` - Includes informational note about detected shading
 
 ## 7. Configuration
 

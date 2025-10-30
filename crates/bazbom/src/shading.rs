@@ -50,6 +50,7 @@ pub struct ShadingMatch {
 
 impl RelocationMapping {
     /// Check if a class name matches this relocation pattern
+    #[allow(dead_code)]
     pub fn matches(&self, class_name: &str) -> bool {
         // Check if class is in the pattern namespace
         if !class_name.starts_with(&self.pattern) {
@@ -74,6 +75,7 @@ impl RelocationMapping {
     }
     
     /// Apply this relocation to a class name, returning the original name
+    #[allow(dead_code)]
     pub fn reverse_relocate(&self, shaded_class_name: &str) -> Option<String> {
         if !shaded_class_name.starts_with(&self.shadedPattern) {
             return None;
@@ -261,6 +263,7 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
 }
 
 /// Extract nested JARs from a fat JAR
+#[allow(dead_code)]
 pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<String>> {
     use zip::ZipArchive;
     
@@ -308,6 +311,7 @@ pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<Str
 }
 
 /// Generate a fingerprint for a class file
+#[allow(dead_code)]
 pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
     // Compute bytecode hash for matching
     let hash = blake3::hash(class_bytes).to_hex().to_string();
@@ -333,6 +337,7 @@ pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
 }
 
 /// Extract class name from bytecode (basic implementation)
+#[allow(dead_code)]
 fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
     // Basic validation - check for Java class file magic number
     if class_bytes.len() < 10 || &class_bytes[0..4] != b"\xCA\xFE\xBA\xBE" {
@@ -350,6 +355,7 @@ fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
 }
 
 /// Scan a JAR file and create fingerprints for all classes
+#[allow(dead_code)]
 pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerprint>> {
     use zip::ZipArchive;
     
@@ -383,6 +389,7 @@ pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerpri
 }
 
 /// Match a shaded class to its original artifact using fingerprints
+#[allow(dead_code)]
 pub fn match_shaded_class(
     shaded_class: &ClassFingerprint,
     known_fingerprints: &HashMap<String, ClassFingerprint>,
@@ -405,6 +412,7 @@ pub fn match_shaded_class(
 }
 
 /// Detect shading in a JAR by comparing its classes against a relocation map
+#[allow(dead_code)]
 pub fn detect_shading_in_jar(
     jar_path: &Path,
     relocation: &RelocationMapping,
