@@ -17,6 +17,9 @@ pub enum Commands {
         /// Enable reachability analysis (OPAL)
         #[arg(long)]
         reachability: bool,
+        /// Fast mode: skip reachability analysis for speed (<10s scans)
+        #[arg(long)]
+        fast: bool,
         /// Output format (spdx|cyclonedx)
         #[arg(long, default_value = "spdx")]
         format: String,
@@ -75,6 +78,15 @@ pub enum Commands {
     Db {
         #[command(subcommand)]
         action: DbCmd,
+    },
+    /// Install git pre-commit hooks for vulnerability scanning
+    InstallHooks {
+        /// Policy file to use (defaults to bazbom.yml)
+        #[arg(long, value_name = "FILE", default_value = "bazbom.yml")]
+        policy: String,
+        /// Fast scan mode (skip reachability for speed)
+        #[arg(long)]
+        fast: bool,
     },
 }
 

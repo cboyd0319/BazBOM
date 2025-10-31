@@ -13,6 +13,7 @@ mod remediation;
 mod shading;
 
 use bazbom::cli::{Cli, Commands, PolicyCmd, DbCmd};
+use bazbom::hooks::{HooksConfig, install_hooks};
 use bazbom::scan_orchestrator::ScanOrchestrator;
 
 fn main() -> Result<()> {
@@ -20,6 +21,7 @@ fn main() -> Result<()> {
     match cli.command.unwrap_or(Commands::Scan {
         path: ".".into(),
         reachability: false,
+        fast: false,
         format: "spdx".into(),
         out_dir: ".".into(),
         bazel_targets_query: None,
@@ -37,6 +39,7 @@ fn main() -> Result<()> {
         Commands::Scan {
             path,
             reachability,
+            fast,
             format,
             out_dir,
             bazel_targets_query,
@@ -118,9 +121,13 @@ fn main() -> Result<()> {
                 }
             }
             
+            if fast {
+                println!("[bazbom] fast mode enabled (skipping reachability analysis)");
+            }
+            
             println!(
                 "[bazbom] scan path={} reachability={} format={} system={:?}",
-                path, reachability, format, system
+                path, reachability && !fast, format, system
             );
             let out = PathBuf::from(&out_dir);
             
@@ -198,8 +205,8 @@ fn main() -> Result<()> {
                 Vec::new()
             };
 
-            // Run reachability analysis if requested
-            let reachability_result = if reachability {
+            // Run reachability analysis if requested (unless fast mode is enabled)
+            let reachability_result = if reachability && !fast {
                 // Attempt to run reachability analysis if configured
                 if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
                     let jar_path = PathBuf::from(&jar);
@@ -676,6 +683,14 @@ fn main() -> Result<()> {
                 );
             }
         },
+        Commands::InstallHooks { policy, fast } => {
+            println!("[bazbom] installing pre-commit hooks");
+            let config = HooksConfig {
+                policy_file: policy,
+                fast_mode: fast,
+            };
+            install_hooks(&config)?;
+        }
     }
     Ok(())
 }
