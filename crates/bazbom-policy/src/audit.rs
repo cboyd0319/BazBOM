@@ -4,7 +4,7 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use crate::{PolicyViolation, PolicyResult};
+use crate::PolicyResult;
 
 /// Represents a single audit log entry for a policy decision
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -289,6 +289,7 @@ impl AuditLogger {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::PolicyViolation;
     use std::io::Read;
     use tempfile::TempDir;
 
