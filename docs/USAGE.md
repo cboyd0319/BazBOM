@@ -552,6 +552,320 @@ Copy one to your project root and customize as needed:
 cp examples/bazbom-strict.yml bazbom.yml
 ```
 
+### `bazbom policy init` - Initialize Policy Templates
+
+Initialize a project with pre-built policy templates for common regulatory frameworks.
+
+**Synopsis:**
+```bash
+bazbom policy init [OPTIONS]
+```
+
+**Options:**
+- `--list` - List all available policy templates
+- `--template <TEMPLATE>` - Template ID to initialize (e.g., pci-dss, hipaa, fedramp-moderate, soc2, corporate-permissive)
+- `--output <PATH>` - Output directory (defaults to current directory)
+
+**Available Templates:**
+
+**Regulatory Compliance:**
+- `pci-dss` - PCI-DSS v4.0 Compliance
+  - Payment Card Industry Data Security Standard
+  - Blocks CRITICAL vulnerabilities, CISA KEV, and high EPSS scores
+  - Restricts copyleft licenses (GPL, AGPL)
+  
+- `hipaa` - HIPAA Security Rule
+  - Health Insurance Portability and Accountability Act
+  - HIGH+ severity threshold with KEV and EPSS controls
+  - Requires license information for all dependencies
+  
+- `fedramp-moderate` - FedRAMP Moderate Impact Level
+  - Federal Risk and Authorization Management Program
+  - CISA BOD 22-01 compliance (KEV remediation)
+  - NIST SP 800-53 controls (RA-5, SI-2)
+  
+- `soc2` - SOC 2 Type II Compliance
+  - Service Organization Control 2 (Security, Availability)
+  - Continuous monitoring requirements (CC7.1, CC7.2)
+  - 12-month audit trail support
+
+**Development:**
+- `corporate-permissive` - Corporate Standard (Development)
+  - Permissive policy for development environments
+  - CRITICAL-only warnings (no blocking)
+  - All licenses allowed with copyleft awareness
+
+**Examples:**
+
+```bash
+# List available templates
+bazbom policy init --list
+
+# Initialize PCI-DSS policy template
+bazbom policy init --template pci-dss
+
+# Initialize to a specific directory
+bazbom policy init --template hipaa --output /path/to/project
+
+# View initialized policy
+cat bazbom.yml
+```
+
+**Template Customization:**
+
+After initializing a template, customize it for your needs:
+
+```yaml
+# bazbom.yml (after initialization)
+name: "PCI-DSS v4.0 Compliance"
+version: "1.0"
+
+# Customize thresholds
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+
+# Add project-specific exceptions
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+  # Add your approved licenses
+```
+
+### `bazbom policy validate` - Validate Policy Configuration
+
+Validate a policy configuration file for syntax and correctness.
+
+**Synopsis:**
+```bash
+bazbom policy validate [POLICY_FILE]
+```
+
+**Arguments:**
+- `[POLICY_FILE]` - Path to policy file (defaults to `bazbom.yml`)
+
+**Examples:**
+
+```bash
+# Validate default policy file
+bazbom policy validate
+
+# Validate specific policy file
+bazbom policy validate examples/bazbom-strict.yml
+
+# Validate custom policy
+bazbom policy validate .bazbom/policies/org-policy.yml
+```
+
+**Output:**
+
+```
+✓ Policy file is valid
+
+Policy Configuration:
+  Severity threshold: Some(High)
+  KEV gate: true
+  EPSS threshold: Some(0.5)
+  Reachability required: false
+  VEX auto-apply: true
+  License allowlist: 5 licenses
+  License denylist: 6 licenses
+```
+
+### `bazbom license obligations` - License Obligations Report
+
+Generate a report of legal obligations for all licenses in your project.
+
+**Synopsis:**
+```bash
+bazbom license obligations [SBOM_FILE]
+```
+
+**Arguments:**
+- `[SBOM_FILE]` - SBOM file to analyze (SPDX or CycloneDX format, defaults to `sbom.spdx.json`)
+
+**Examples:**
+
+```bash
+# Generate report from default SBOM
+bazbom scan .
+bazbom license obligations
+
+# Analyze specific SBOM file
+bazbom license obligations sbom.spdx.json
+
+# Analyze CycloneDX SBOM
+bazbom license obligations sbom.cyclonedx.json
+```
+
+**Example Output:**
+
+```
+# License Obligations Report
+
+## log4j-core:2.21.1 (Apache-2.0)
+
+- **Attribution**: Must include NOTICE file if present in original distribution (Severity: Medium)
+- **PatentGrant**: Grants express patent license to users (Severity: Low)
+- **NoticeFile**: Must retain all copyright, patent, trademark, and attribution notices (Severity: Medium)
+- **NoWarranty**: Software provided "as is" without warranty (Severity: Low)
+
+## commons-lang3:3.12.0 (Apache-2.0)
+
+- **Attribution**: Must include NOTICE file if present in original distribution (Severity: Medium)
+- **PatentGrant**: Grants express patent license to users (Severity: Low)
+- **NoticeFile**: Must retain all copyright, patent, trademark, and attribution notices (Severity: Medium)
+- **NoWarranty**: Software provided "as is" without warranty (Severity: Low)
+```
+
+**Obligation Types:**
+
+- **Attribution** - Must include copyright and license notices
+- **Disclosure** - Must provide source code to recipients
+- **Copyleft** - Derivative works must use same license
+- **PatentGrant** - Grants patent rights to users
+- **NoWarranty** - Software provided without warranty
+- **SourceCodeDistribution** - Must make source available for period
+- **NoticeFile** - Must include NOTICE files if present
+- **Trademark** - Restrictions on using names/trademarks
+- **NetworkUse** - Source code disclosure for network use (AGPL)
+
+**Use Cases:**
+
+- **Legal Review**: Understand obligations before release
+- **Compliance Documentation**: Generate reports for legal teams
+- **License Audit**: Verify obligations are being met
+- **Risk Assessment**: Identify high-severity obligations
+
+### `bazbom license compatibility` - License Compatibility Check
+
+Check license compatibility between your project license and dependency licenses.
+
+**Synopsis:**
+```bash
+bazbom license compatibility --project-license <LICENSE> [SBOM_FILE]
+```
+
+**Options:**
+- `--project-license <LICENSE>` - Your project's license (e.g., MIT, Apache-2.0, GPL-3.0-only)
+
+**Arguments:**
+- `[SBOM_FILE]` - SBOM file to analyze (defaults to `sbom.spdx.json`)
+
+**Examples:**
+
+```bash
+# Check compatibility for MIT licensed project
+bazbom license compatibility --project-license MIT
+
+# Check compatibility for Apache-2.0 project with specific SBOM
+bazbom license compatibility --project-license Apache-2.0 sbom.spdx.json
+
+# Check GPL project compatibility
+bazbom license compatibility --project-license GPL-3.0-only
+```
+
+**Example Output:**
+
+```
+# License Compatibility Report
+
+✓ jackson-databind (Apache-2.0) - Risk: Safe
+✓ slf4j-api (MIT) - Risk: Safe
+⚠ commons-io (Apache-2.0) - Risk: Safe
+✗ mysql-connector-j (GPL-2.0-only) - Risk: Critical
+✗✗ jooq-codegen (AGPL-3.0-only) - Risk: Critical
+```
+
+**Risk Levels:**
+
+- **Safe** (✓) - Licenses are compatible, no issues
+- **Low** (⚠) - Minor compatibility concerns, review recommended
+- **Medium** (⚠) - Moderate risk, legal review suggested
+- **High** (✗) - Significant incompatibility, likely violation
+- **Critical** (✗✗) - Severe incompatibility, must resolve before release
+
+**Compatibility Rules:**
+
+**MIT Projects:**
+- ✓ Can use: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+- ✗ Cannot use: GPL-2.0, GPL-3.0, AGPL-3.0 (copyleft incompatible)
+
+**Apache-2.0 Projects:**
+- ✓ Can use: MIT, Apache-2.0, BSD licenses, permissive licenses
+- ⚠ Caution: GPL-2.0 (patent clause incompatible)
+- ✗ High risk: AGPL-3.0 (strong copyleft)
+
+**GPL-3.0 Projects:**
+- ✓ Can use: Any license (GPL is "one-way compatible")
+- ⚠ Note: Entire project becomes GPL-3.0 (copyleft contamination)
+
+### `bazbom license contamination` - Copyleft Contamination Detection
+
+Detect copyleft licenses that may impose obligations on your entire project.
+
+**Synopsis:**
+```bash
+bazbom license contamination [SBOM_FILE]
+```
+
+**Arguments:**
+- `[SBOM_FILE]` - SBOM file to analyze (defaults to `sbom.spdx.json`)
+
+**Examples:**
+
+```bash
+# Check for copyleft contamination
+bazbom scan .
+bazbom license contamination
+
+# Analyze specific SBOM
+bazbom license contamination sbom.cyclonedx.json
+```
+
+**Example Output:**
+
+```
+# Copyleft Contamination Report
+
+⚠ HIGH RISK: Found 2 copyleft dependencies
+Found 2 copyleft dependencies. Your entire project may be subject to copyleft terms.
+Affected licenses: GPL-3.0-only, MPL-2.0
+
+✗ CRITICAL RISK: Found 1 strong copyleft (AGPL) dependencies
+Found 1 strong copyleft (AGPL) dependencies. Network use may trigger source disclosure.
+Affected licenses: AGPL-3.0-only
+
+⚠ Found 1 dependencies with unknown licenses
+Legal risk unclear.
+Affected licenses: Unknown
+```
+
+**Copyleft Categories:**
+
+- **Weak Copyleft** (MPL-2.0, EPL-2.0, LGPL)
+  - File-level copyleft
+  - Modified files must remain under same license
+  - Can link with proprietary code
+
+- **Strong Copyleft** (GPL-2.0, GPL-3.0)
+  - Work-level copyleft
+  - Derivative works must be GPL
+  - Binary distribution requires source disclosure
+
+- **Network Copyleft** (AGPL-3.0)
+  - Network-triggered copyleft
+  - Network use triggers source disclosure
+  - Most restrictive copyleft
+
+**Risk Mitigation:**
+
+1. **Replace Dependencies**: Find permissively licensed alternatives
+2. **Isolate via Services**: Use GPL dependencies in separate services
+3. **Obtain Commercial License**: Some projects offer dual licensing
+4. **Legal Review**: Consult legal team for risk assessment
+
 ### `bazbom fix` - Remediation Suggestions and Auto-Fix
 
 Generate remediation suggestions for vulnerabilities or automatically apply fixes.

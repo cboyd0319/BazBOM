@@ -215,23 +215,142 @@ When shading is detected, the following outputs are generated:
 - `sca_findings.json` - Includes shading metadata section
 - `sca_findings.sarif` - Includes informational note about detected shading
 
-## 7. Configuration
+## 7. Configuration & Policy Management
 
-- Project-level `bazbom.yml`
-- Severity thresholds and policy rules
-- Output formats and paths
+### Policy Configuration
+
+- Project-level `bazbom.yml` for policy rules
+- Pre-built templates for regulatory compliance
+- Multi-level policy inheritance (org → team → project)
+- Rego/OPA support for advanced rules
+- License compliance policies
+
+**Policy Templates:**
+- PCI-DSS v4.0 - Payment Card Industry compliance
+- HIPAA Security Rule - Healthcare data protection
+- FedRAMP Moderate - Federal cloud services
+- SOC 2 Type II - B2B SaaS compliance
+- Corporate Permissive - Development environments
 
 Example:
 ```yaml
 # bazbom.yml
-build_system: auto
-include_test_deps: false
-output_formats: [spdx, cyclonedx]
-severity_threshold: MEDIUM
-policy:
-  block_critical: true
-  max_critical: 0
-  max_high: 10
+name: "PCI-DSS v4.0 Compliance"
+version: "1.0"
+
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: false
+vex_auto_apply: true
+
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-3-Clause
+license_denylist:
+  - GPL-3.0-only
+  - AGPL-3.0-only
+```
+
+**Policy Commands:**
+```bash
+# List available policy templates
+bazbom policy init --list
+
+# Initialize PCI-DSS policy template
+bazbom policy init --template pci-dss
+
+# Validate policy configuration
+bazbom policy validate bazbom.yml
+
+# Run policy checks
+bazbom policy check
+```
+
+### License Compliance
+
+**License Detection:**
+- 200+ SPDX licenses supported
+- Automatic license categorization (Permissive, Copyleft, Strong Copyleft)
+- POM license name mapping for Maven projects
+
+**License Analysis Commands:**
+```bash
+# Generate license obligations report
+bazbom license obligations sbom.spdx.json
+
+# Check license compatibility
+bazbom license compatibility --project-license MIT
+
+# Detect copyleft contamination
+bazbom license contamination
+```
+
+**License Obligations Tracking:**
+- Attribution requirements
+- Source code disclosure obligations
+- Copyleft restrictions
+- Patent grants
+- Network use triggers (AGPL)
+
+**License Compatibility Matrix:**
+- MIT project compatibility checks
+- Apache-2.0 compatibility rules
+- GPL/AGPL incompatibility detection
+- Unknown license risk assessment
+
+**Risk Levels:**
+- Safe - No compatibility issues
+- Low - Minor concerns
+- Medium - Review recommended
+- High - Significant incompatibility
+- Critical - Must resolve before release
+
+### Advanced Policy with Rego/OPA
+
+For complex policy rules beyond YAML capabilities:
+
+```rego
+# advanced-policy.rego
+package bazbom
+
+# Block if CRITICAL and reachable
+deny[msg] {
+    vuln := input.vulnerabilities[_]
+    vuln.severity == "CRITICAL"
+    vuln.reachable == true
+    msg := sprintf("CRITICAL vulnerability %s is reachable", [vuln.id])
+}
+
+# Block CISA KEV regardless of severity
+deny[msg] {
+    vuln := input.vulnerabilities[_]
+    vuln.cisa_kev == true
+    msg := sprintf("CISA KEV vulnerability %s must be fixed", [vuln.id])
+}
+
+# Warn about copyleft in commercial products
+warn[msg] {
+    dep := input.dependencies[_]
+    dep.license in ["GPL-3.0", "AGPL-3.0"]
+    input.metadata.commercial == true
+    msg := sprintf("Copyleft license %s in %s", [dep.license, dep.name])
+}
+```
+
+### Policy Inheritance
+
+Merge policies across organizational levels:
+
+```yaml
+# .bazbom/config.yml
+policy_inheritance:
+  - .bazbom/policies/organization.yml  # Baseline (strictest)
+  - .bazbom/policies/team-backend.yml  # Team overrides
+  - bazbom.yml                          # Project-specific
+
+merge_strategy: "strict"  # Options: strict, permissive, override
 ```
 
 ## 8. Performance

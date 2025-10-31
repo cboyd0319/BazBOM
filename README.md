@@ -74,7 +74,9 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 - **SLSA Level 3 Provenance**: Verifiable build integrity
 - **Bytecode Reachability Analysis**: ASM-based call graphs to identify reachable vulnerabilities
 - **Shading Detection**: Automatic detection and attribution of shaded/relocated dependencies
-- **Policy-as-Code**: YAML configuration with CI gating and enforcement
+- **Enterprise Policy Templates**: Pre-built policies for PCI-DSS, HIPAA, FedRAMP, SOC 2 compliance
+- **Policy-as-Code**: YAML + Rego/OPA support with multi-level inheritance and CI gating
+- **License Compliance**: 200+ SPDX licenses, compatibility matrix, obligations tracking, copyleft detection
 - **Zero Telemetry**: No background network calls; explicit offline DB sync
 - **GitHub Action**: Automated security scanning in CI/CD pipelines
 - **Vulnerability Intelligence**: OSV, NVD, GHSA integration with CISA KEV and EPSS enrichment
@@ -1082,7 +1084,7 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ## Roadmap
 
-**Completed (Phases 0-3):**
+**Completed (Phases 0-5):**
 - [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Complete**
 - [x] Offline advisory DB sync - **Implemented**
 - [x] Maven plugin (bazbom-maven-plugin) - **Phase 1 Complete**
@@ -1091,6 +1093,14 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 - [x] Policy-as-code (YAML) + CI enforcement - **Phase 2 Complete**
 - [x] ASM-based reachability analysis - **Phase 3 Complete**
 - [x] Shading/relocation detection (Maven Shade, Gradle Shadow) - **Phase 3 Complete**
+- [x] Remediation automation (`bazbom fix --suggest`) - **Phase 4 Complete**
+- [x] Educational "why fix this?" context in suggestions - **Phase 4 Complete**
+- [x] Enterprise policy templates (PCI-DSS, HIPAA, FedRAMP, SOC 2) - **Phase 5 Complete**
+- [x] Rego/OPA policy support for advanced rules - **Phase 5 Complete**
+- [x] Policy inheritance (org → team → project) - **Phase 5 Complete**
+- [x] License compliance (200+ SPDX licenses, compatibility matrix) - **Phase 5 Complete**
+- [x] License obligations tracking and reporting - **Phase 5 Complete**
+- [x] Copyleft contamination detection - **Phase 5 Complete**
 - [x] SPDX 2.3 SBOM generation
 - [x] CycloneDX 1.5 SBOM generation
 - [x] SARIF 2.1.0 findings output
@@ -1098,13 +1108,13 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 - [x] VEX statement support
 - [x] Large monorepo optimization
 
-**In Progress (Phase 4):**
-- [x] Remediation automation (`bazbom fix --suggest`) - **Implemented**
-- [x] Educational "why fix this?" context in suggestions - **Implemented**
+**In Progress (Phase 4 - Remaining Items):**
 - [ ] Full `bazbom fix --apply` implementation for automatic file updates
 - [ ] PR generation for Maven/Gradle/Bazel
+- [ ] Pre-commit hook installation and policy enforcement
+- [ ] LSP server for real-time IDE feedback
 
-**Planned (Phases 5-7):**
+**Planned (Phases 6-7):**
 - [ ] Windows support with signed binaries
 - [ ] Homebrew bottles for macOS
 - [ ] Container image SBOM (`rules_oci` integration)
