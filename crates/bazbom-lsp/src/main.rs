@@ -28,6 +28,7 @@ struct Vulnerability {
 
 struct BazBomLanguageServer {
     client: Client,
+    #[allow(dead_code)]
     scan_cache: Arc<Mutex<HashMap<String, ScanResult>>>,
 }
 
