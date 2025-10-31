@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
-use bazbom_advisories::{db_sync, load_epss_scores, load_kev_catalog, Priority};
+use bazbom_advisories::{db_sync, load_epss_scores, load_kev_catalog, is_version_affected, Priority, VersionRange, VersionEvent};
 use bazbom_formats::sarif::{
     ArtifactLocation, Location, Message, PhysicalLocation, Result as SarifResult, Rule,
     SarifReport, MessageString, Configuration,
@@ -182,33 +182,56 @@ impl ScaAnalyzer {
                                     if let Some(pkg) = aff["package"]["name"].as_str() {
                                         // Check if we have this component
                                         if let Some(component) = component_map.get(pkg) {
-                                            // TODO: Implement proper version range matching
-                                            // For now, we check if ranges exist - this is a conservative approach
-                                            // that may produce false positives but won't miss vulnerabilities
-                                            if let Some(ranges) = aff["ranges"].as_array() {
-                                                // Full implementation would:
-                                                // 1. Parse semver ranges (e.g., ">=1.0.0,<2.0.0")
-                                                // 2. Check if component.version falls within range
-                                                // 3. Handle different range types (SEMVER, ECOSYSTEM, GIT)
-                                                let has_affected_version = !ranges.is_empty();
+                                            // Parse version ranges and check if component version is affected
+                                            if let Some(ranges_json) = aff["ranges"].as_array() {
+                                                let ranges: Vec<VersionRange> = ranges_json.iter()
+                                                    .filter_map(|r| self.parse_version_range(r))
+                                                    .collect();
                                                 
-                                                if has_affected_version {
-                                                    let epss = epss_scores.get(&vuln_id).map(|e| e.score);
-                                                    let in_kev = kev_entries.contains_key(&vuln_id);
-                                                    
-                                                    // Calculate priority based on severity, EPSS, and KEV
-                                                    let priority = self.calculate_priority(&vuln, epss, in_kev);
-                                                    
-                                                    matches.push(VulnerabilityMatch {
-                                                        vulnerability_id: vuln_id.clone(),
-                                                        component_name: component.name.clone(),
-                                                        component_version: component.version.clone(),
-                                                        summary: summary.clone(),
-                                                        epss_score: epss,
-                                                        in_kev,
-                                                        priority,
-                                                        location: component.location.clone(),
-                                                    });
+                                                if !ranges.is_empty() {
+                                                    match is_version_affected(&component.version, &ranges) {
+                                                        Ok(true) => {
+                                                            let epss = epss_scores.get(&vuln_id).map(|e| e.score);
+                                                            let in_kev = kev_entries.contains_key(&vuln_id);
+                                                            
+                                                            // Calculate priority based on severity, EPSS, and KEV
+                                                            let priority = self.calculate_priority(&vuln, epss, in_kev);
+                                                            
+                                                            matches.push(VulnerabilityMatch {
+                                                                vulnerability_id: vuln_id.clone(),
+                                                                component_name: component.name.clone(),
+                                                                component_version: component.version.clone(),
+                                                                summary: summary.clone(),
+                                                                epss_score: epss,
+                                                                in_kev,
+                                                                priority,
+                                                                location: component.location.clone(),
+                                                            });
+                                                        }
+                                                        Ok(false) => {
+                                                            // Version not affected, skip
+                                                        }
+                                                        Err(e) => {
+                                                            // Error parsing version, be conservative and include it
+                                                            eprintln!("[bazbom]   warning: version check failed for {} {}: {}", 
+                                                                component.name, component.version, e);
+                                                            
+                                                            let epss = epss_scores.get(&vuln_id).map(|e| e.score);
+                                                            let in_kev = kev_entries.contains_key(&vuln_id);
+                                                            let priority = self.calculate_priority(&vuln, epss, in_kev);
+                                                            
+                                                            matches.push(VulnerabilityMatch {
+                                                                vulnerability_id: vuln_id.clone(),
+                                                                component_name: component.name.clone(),
+                                                                component_version: component.version.clone(),
+                                                                summary: summary.clone(),
+                                                                epss_score: epss,
+                                                                in_kev,
+                                                                priority,
+                                                                location: component.location.clone(),
+                                                            });
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -222,6 +245,37 @@ impl ScaAnalyzer {
         }
 
         Ok(matches)
+    }
+
+    fn parse_version_range(&self, range_json: &serde_json::Value) -> Option<VersionRange> {
+        let range_type = range_json["type"].as_str()?.to_string();
+        let events_json = range_json["events"].as_array()?;
+        
+        let mut events = Vec::new();
+        for event in events_json {
+            if let Some(introduced) = event["introduced"].as_str() {
+                events.push(VersionEvent::Introduced {
+                    introduced: introduced.to_string(),
+                });
+            } else if let Some(fixed) = event["fixed"].as_str() {
+                events.push(VersionEvent::Fixed {
+                    fixed: fixed.to_string(),
+                });
+            } else if let Some(last_affected) = event["last_affected"].as_str() {
+                events.push(VersionEvent::LastAffected {
+                    last_affected: last_affected.to_string(),
+                });
+            }
+        }
+        
+        if events.is_empty() {
+            return None;
+        }
+        
+        Some(VersionRange {
+            range_type,
+            events,
+        })
     }
 
     fn calculate_priority(
