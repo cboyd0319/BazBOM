@@ -64,6 +64,9 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### What's New
 
+- **IDE Integration** ⭐: IntelliJ IDEA and VS Code plugins with real-time warnings, one-click fixes, and automatic testing
+- **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
+- **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
 - **Orchestrated Static Analysis**: Optional integration with Semgrep and CodeQL, merged into single SARIF report
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
 - **Homebrew Support**: One-command installation via brew tap
@@ -551,6 +554,13 @@ See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCANNING.md) for details and
 - GitHub Action for CI/CD
 - Works on Linux, macOS (x86_64/arm64)
 - Homebrew tap for easy installation
+
+**IDE Integration** ⭐ NEW
+- IntelliJ IDEA plugin (real-time warnings)
+- VS Code extension (LSP-based)
+- One-click vulnerability fixes
+- Automatic testing and rollback
+- Pre-commit hooks for policy enforcement
 
 **SBOM Generation**
 - SPDX 2.3 (JSON) primary format
