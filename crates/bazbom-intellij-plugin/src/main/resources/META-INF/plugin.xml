@@ -45,6 +45,12 @@
     
     <!-- Annotators for real-time vulnerability highlighting -->
     <annotator language="XML" implementationClass="io.bazbom.intellij.annotator.MavenDependencyAnnotator"/>
+    <annotator language="Groovy" implementationClass="io.bazbom.intellij.annotator.GradleDependencyAnnotator"/>
+    <annotator language="kotlin" implementationClass="io.bazbom.intellij.annotator.GradleDependencyAnnotator"/>
+    <annotator language="Starlark" implementationClass="io.bazbom.intellij.annotator.BazelDependencyAnnotator"/>
+    
+    <!-- Notification group -->
+    <notificationGroup id="BazBOM.Notifications" displayType="BALLOON"/>
   </extensions>
 
   <actions>
