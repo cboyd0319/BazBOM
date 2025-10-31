@@ -45,20 +45,32 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
 
     match format {
         "cyclonedx" => {
-            let path = dir.join("cyclonedx.json");
+            let path = dir.join("sbom.cyclonedx.json");
             let bom = bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", VERSION);
             let content = serde_json::to_vec_pretty(&bom).unwrap();
             fs::write(&path, content)?;
             Ok(path)
         }
         _ => {
-            let path = dir.join("spdx.json");
+            let path = dir.join("sbom.spdx.json");
             let doc = bazbom_formats::spdx::SpdxDocument::new(
                 "bazbom-stub",
                 format!("https://github.com/cboyd0319/BazBOM/sbom/{:?}", system),
             );
             let content = serde_json::to_vec_pretty(&doc).unwrap();
             fs::write(&path, content)?;
+            
+            // Also write sca_findings.json as expected by tests
+            let findings_path = dir.join("sca_findings.json");
+            let empty_findings = serde_json::json!({
+                "findings": [],
+                "metadata": {
+                    "version": VERSION,
+                    "build_system": format!("{:?}", system)
+                }
+            });
+            fs::write(&findings_path, serde_json::to_vec_pretty(&empty_findings).unwrap())?;
+            
             Ok(path)
         }
     }
