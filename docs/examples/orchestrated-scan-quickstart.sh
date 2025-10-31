@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # BazBOM Orchestrated Scan Quickstart Demo
 # This script demonstrates the complete orchestrated scanning workflow
 # as defined in docs/copilot/BAZBOM_INTEGRATION_PLAN.md
@@ -24,7 +24,7 @@ echo "  - Merged SARIF 2.1.0 output for GitHub Code Scanning"
 echo ""
 
 # Check if bazbom is available
-if ! command -v bazbom &> /dev/null; then
+if ! command -v bazbom >/dev/null 2>&1; then
     echo "❌ Error: bazbom not found in PATH"
     echo ""
     echo "Install options:"
@@ -62,14 +62,14 @@ echo ""
 SEMGREP_AVAILABLE=false
 CODEQL_AVAILABLE=false
 
-if command -v semgrep &> /dev/null; then
+if command -v semgrep >/dev/null 2>&1; then
     SEMGREP_AVAILABLE=true
     echo "✓ Semgrep available: $(semgrep --version | head -1)"
 else
     echo "⚠️ Semgrep not found (install: pipx install semgrep)"
 fi
 
-if command -v codeql &> /dev/null; then
+if command -v codeql >/dev/null 2>&1; then
     CODEQL_AVAILABLE=true
     echo "✓ CodeQL available: $(codeql version --format=terse 2>/dev/null || echo 'unknown')"
 else
