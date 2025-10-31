@@ -1,7 +1,7 @@
 # Phase 4: Developer Experience - Implementation Progress
 
 **Last Updated:** 2025-10-31
-**Status:** In Progress (85% Complete)
+**Status:** In Progress (95% Complete)
 **Timeline:** Months 1-3 (12 weeks)
 
 ---
@@ -15,13 +15,13 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 4. Pre-commit hooks for policy enforcement
 
 **Current Progress:**
-- **IDE Integration (4.1):** 90% ✅ - All core features implemented, builds successfully
+- **IDE Integration (4.1):** 95% ✅ - All core features implemented, builds successfully, settings complete
 - **Automated Remediation (4.2):** 100% ✅ - Complete with PR generation via GitHub API
 - **Pre-Commit Hooks (4.3):** 100% ✅ - Fully implemented and tested
 
 ---
 
-## 4.1 IDE Integration (90% Complete)
+## 4.1 IDE Integration (95% Complete)
 
 ### Completed ✅
 
@@ -113,12 +113,29 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
   - Warning notifications for test failures
   - Error notifications for upgrade failures
 - ✅ Icon assets (bazbom-16.svg)
-- ✅ Actions for scan and database sync
+- ✅ Actions for scan and database sync with notifications
 - ✅ CLI runner utility with error handling
 - ✅ Project service for result caching
-- ✅ Settings panel (stub)
+- ✅ **Complete settings panel** (UPDATED 2025-10-31)
+  - `settings/BazBomSettings.kt` - Persistent settings with XML storage (NEW)
+  - `settings/BazBomConfigurable.kt` - Full UI with all options (ENHANCED)
+  - Enable real-time scanning, inline warnings, auto-scan on save/open
+  - Severity thresholds (CRITICAL, HIGH, MEDIUM, LOW)
+  - Policy file path and CLI path selectors
+  - Application-level service registered in plugin.xml
+- ✅ **Auto-scan on project open** (NEW 2025-10-31)
+  - `listeners/BazBomProjectListener.kt` - Enhanced with auto-scan logic
+  - Checks settings to determine if auto-scan is enabled
+  - Runs fast scan in background on project open
+  - Updates tool window with results
+  - Proper cleanup on project close
+- ✅ **Tool window integration** (ENHANCED 2025-10-31)
+  - Scan action updates tool window with results
+  - Loads last scan results on demand
+  - Notifications for scan success/failure/error
+  - Integration with BazBomProjectService
 
-**Remaining Work (10%):**
+**Remaining Work (5%):**
 - [ ] Manual testing with sample Maven/Gradle/Bazel projects
 - [ ] Performance profiling and optimization
 - [ ] Polish UI and error handling edge cases

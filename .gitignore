@@ -76,3 +76,4 @@ crates/bazbom-vscode-extension/*.vsix
 crates/bazbom-intellij-plugin/.gradle/
 crates/bazbom-intellij-plugin/build/
 crates/bazbom-intellij-plugin/.idea/
+crates/bazbom-intellij-plugin/gradle-local/
