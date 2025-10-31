@@ -1,12 +1,15 @@
 // Remediation automation for BazBOM
 // Provides "suggest" and "apply" modes for fixing vulnerabilities
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use bazbom_advisories::Vulnerability;
 use bazbom_core::BuildSystem;
+use chrono;
 use serde::{Deserialize, Serialize};
+use serde_json::json;
 use std::fs;
 use std::path::Path;
+use std::process::Command;
 
 use crate::backup::{BackupHandle, choose_backup_strategy};
 use crate::test_runner::{run_tests, has_tests};
@@ -537,4 +540,317 @@ pub struct ApplyResultWithTests {
     pub tests_passed: bool,
     pub tests_run: bool,
     pub test_output: Option<String>,
+}
+
+/// Configuration for PR generation
+#[derive(Debug)]
+pub struct PrConfig {
+    pub github_token: String,
+    pub repo_owner: String,
+    pub repo_name: String,
+    pub base_branch: String,
+}
+
+impl PrConfig {
+    /// Load PR configuration from environment variables
+    pub fn from_env() -> Result<Self> {
+        let github_token = std::env::var("GITHUB_TOKEN")
+            .or_else(|_| std::env::var("GH_TOKEN"))
+            .context("GITHUB_TOKEN or GH_TOKEN environment variable not set")?;
+        
+        let repository = std::env::var("GITHUB_REPOSITORY")
+            .context("GITHUB_REPOSITORY environment variable not set (format: owner/repo)")?;
+        
+        let parts: Vec<&str> = repository.split('/').collect();
+        if parts.len() != 2 {
+            anyhow::bail!("GITHUB_REPOSITORY must be in format: owner/repo");
+        }
+        
+        let base_branch = std::env::var("GITHUB_BASE_REF")
+            .or_else(|_| std::env::var("GITHUB_REF_NAME"))
+            .unwrap_or_else(|_| "main".to_string());
+        
+        Ok(Self {
+            github_token,
+            repo_owner: parts[0].to_string(),
+            repo_name: parts[1].to_string(),
+            base_branch,
+        })
+    }
+}
+
+/// Generate a PR with fixes applied
+/// 
+/// This function:
+/// 1. Creates a new branch
+/// 2. Applies fixes with testing
+/// 3. Commits changes
+/// 4. Pushes to remote
+/// 5. Opens a PR via GitHub API
+pub fn generate_pr(
+    suggestions: &[RemediationSuggestion],
+    build_system: BuildSystem,
+    project_root: &Path,
+) -> Result<String> {
+    println!("\n[bazbom] Generating PR for vulnerability fixes...");
+    
+    // Load configuration
+    let config = PrConfig::from_env()?;
+    
+    // Generate branch name with timestamp
+    let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
+    let branch_name = format!("bazbom/fix-vulnerabilities-{}", timestamp);
+    
+    println!("[bazbom] Creating branch: {}", branch_name);
+    
+    // Create new branch
+    let status = Command::new("git")
+        .args(&["checkout", "-b", &branch_name])
+        .current_dir(project_root)
+        .status()
+        .context("Failed to create git branch")?;
+    
+    if !status.success() {
+        anyhow::bail!("Failed to create branch {}", branch_name);
+    }
+    
+    // Apply fixes with testing
+    println!("\n[bazbom] Applying fixes...");
+    let apply_result = apply_fixes_with_testing(suggestions, build_system, project_root, false)?;
+    
+    if apply_result.apply_result.applied == 0 {
+        println!("[bazbom] No fixes were applied, skipping PR creation");
+        // Checkout back to original branch
+        let _ = Command::new("git")
+            .args(&["checkout", "-"])
+            .current_dir(project_root)
+            .status();
+        return Ok("No fixes applied, PR not created".to_string());
+    }
+    
+    // Stage all changes
+    println!("\n[bazbom] Staging changes...");
+    let status = Command::new("git")
+        .args(&["add", "-A"])
+        .current_dir(project_root)
+        .status()
+        .context("Failed to stage changes")?;
+    
+    if !status.success() {
+        anyhow::bail!("Failed to stage changes");
+    }
+    
+    // Generate commit message
+    let commit_message = generate_commit_message(suggestions, &apply_result);
+    
+    println!("[bazbom] Committing changes...");
+    let status = Command::new("git")
+        .args(&["commit", "-m", &commit_message])
+        .current_dir(project_root)
+        .status()
+        .context("Failed to commit changes")?;
+    
+    if !status.success() {
+        anyhow::bail!("Failed to commit changes");
+    }
+    
+    // Push branch
+    println!("[bazbom] Pushing branch to remote...");
+    let status = Command::new("git")
+        .args(&["push", "-u", "origin", &branch_name])
+        .current_dir(project_root)
+        .status()
+        .context("Failed to push branch")?;
+    
+    if !status.success() {
+        anyhow::bail!("Failed to push branch {}", branch_name);
+    }
+    
+    // Generate PR body
+    let pr_body = generate_pr_body(suggestions, &apply_result);
+    let pr_title = generate_pr_title(suggestions, &apply_result.apply_result);
+    
+    // Create PR via GitHub API
+    println!("\n[bazbom] Creating pull request...");
+    let pr_url = create_github_pr(
+        &config,
+        &pr_title,
+        &pr_body,
+        &branch_name,
+    )?;
+    
+    println!("\n✅ Pull request created successfully!");
+    println!("   URL: {}", pr_url);
+    
+    Ok(pr_url)
+}
+
+/// Generate commit message
+fn generate_commit_message(
+    suggestions: &[RemediationSuggestion],
+    apply_result: &ApplyResultWithTests,
+) -> String {
+    let cve_count = apply_result.apply_result.applied;
+    
+    // Collect unique CVE IDs from applied suggestions
+    let cves: Vec<String> = suggestions
+        .iter()
+        .filter(|s| s.fixed_version.is_some())
+        .take(apply_result.apply_result.applied)
+        .map(|s| s.vulnerability_id.clone())
+        .collect();
+    
+    let cve_list = if cves.len() <= 3 {
+        cves.join(", ")
+    } else {
+        format!("{} and {} more", 
+                cves[..3].join(", "), 
+                cves.len() - 3)
+    };
+    
+    // Test status message
+    let test_status = if apply_result.tests_run {
+        if apply_result.tests_passed {
+            "All tests passed after applying fixes."
+        } else {
+            "Tests failed (changes were rolled back)."
+        }
+    } else {
+        "Tests were not run or not found."
+    };
+    
+    format!(
+        "fix: upgrade {} dependencies to fix vulnerabilities\n\n\
+         Fixes: {}\n\n\
+         Applied {} dependency upgrades to address security vulnerabilities.\n\
+         {}\n\n\
+         🤖 Generated by BazBOM\n\
+         Co-Authored-By: BazBOM <noreply@bazbom.io>",
+        cve_count,
+        cve_list,
+        apply_result.apply_result.applied,
+        test_status
+    )
+}
+
+/// Generate PR title
+fn generate_pr_title(
+    _suggestions: &[RemediationSuggestion],
+    apply_result: &ApplyResult,
+) -> String {
+    let count = apply_result.applied;
+    if count == 1 {
+        "🔒 Fix 1 security vulnerability".to_string()
+    } else {
+        format!("🔒 Fix {} security vulnerabilities", count)
+    }
+}
+
+/// Generate PR body with detailed information
+fn generate_pr_body(
+    suggestions: &[RemediationSuggestion],
+    apply_result: &ApplyResultWithTests,
+) -> String {
+    let mut body = String::from("## 🔒 Security Fixes\n\n");
+    body.push_str("This PR automatically upgrades vulnerable dependencies identified by BazBOM.\n\n");
+    
+    // Summary section
+    body.push_str("### Summary\n\n");
+    body.push_str(&format!("- ✅ **{}** vulnerabilities fixed\n", apply_result.apply_result.applied));
+    if apply_result.apply_result.failed > 0 {
+        body.push_str(&format!("- ❌ **{}** fixes failed\n", apply_result.apply_result.failed));
+    }
+    if apply_result.apply_result.skipped > 0 {
+        body.push_str(&format!("- ⏭️  **{}** vulnerabilities skipped (no fix available)\n", apply_result.apply_result.skipped));
+    }
+    body.push_str("\n");
+    
+    // Details section
+    body.push_str("### Vulnerabilities Fixed\n\n");
+    body.push_str("| Package | Current | Fixed | Severity | CVE |\n");
+    body.push_str("|---------|---------|-------|----------|-----|\n");
+    
+    for suggestion in suggestions {
+        if let Some(fixed) = &suggestion.fixed_version {
+            body.push_str(&format!(
+                "| {} | {} | {} | {} | {} |\n",
+                suggestion.affected_package,
+                suggestion.current_version,
+                fixed,
+                suggestion.severity,
+                suggestion.vulnerability_id
+            ));
+        }
+    }
+    body.push_str("\n");
+    
+    // Test results
+    body.push_str("### Test Results\n\n");
+    if apply_result.tests_run {
+        if apply_result.tests_passed {
+            body.push_str("✅ All tests passed after applying fixes.\n\n");
+        } else {
+            body.push_str("❌ Tests failed (changes were rolled back).\n\n");
+        }
+    } else {
+        body.push_str("⏭️  Tests were skipped or not found.\n\n");
+    }
+    
+    // Review instructions
+    body.push_str("### How to Review\n\n");
+    body.push_str("1. Review the diff to ensure only dependency versions were changed\n");
+    body.push_str("2. Check the CVE details in the table above\n");
+    body.push_str("3. Verify that tests pass in CI\n");
+    body.push_str("4. Merge if changes look correct\n\n");
+    
+    // Footer
+    body.push_str("---\n");
+    body.push_str("🤖 Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)\n");
+    
+    body
+}
+
+/// Create a pull request via GitHub API
+fn create_github_pr(
+    config: &PrConfig,
+    title: &str,
+    body: &str,
+    head_branch: &str,
+) -> Result<String> {
+    
+    let api_url = format!(
+        "https://api.github.com/repos/{}/{}/pulls",
+        config.repo_owner, config.repo_name
+    );
+    
+    let pr_data = json!({
+        "title": title,
+        "body": body,
+        "head": head_branch,
+        "base": config.base_branch,
+    });
+    
+    let response = ureq::post(&api_url)
+        .set("Authorization", &format!("token {}", config.github_token))
+        .set("Accept", "application/vnd.github.v3+json")
+        .set("User-Agent", "BazBOM/0.2.1")
+        .send_json(pr_data)
+        .context("Failed to create pull request via GitHub API")?;
+    
+    let status = response.status();
+    if status != 201 {
+        let error_body = response.into_string()
+            .unwrap_or_else(|_| "Unknown error".to_string());
+        anyhow::bail!("GitHub API returned status {}: {}", status, error_body);
+    }
+    
+    let pr_response: serde_json::Value = response.into_json()
+        .context("Failed to parse GitHub API response")?;
+    
+    let pr_url = pr_response["html_url"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("No html_url in GitHub API response"))?
+        .to_string();
+    
+    Ok(pr_url)
 }

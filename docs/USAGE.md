@@ -563,7 +563,8 @@ bazbom fix [OPTIONS]
 
 **Options:**
 - `--suggest` - Show fix suggestions without applying changes (recommend-only mode)
-- `--apply` - Apply fixes automatically (experimental - placeholder implementation)
+- `--apply` - Apply fixes automatically with testing and rollback
+- `--pr` - Create a pull request with fixes applied (requires GitHub authentication)
 
 **Examples:**
 
@@ -574,8 +575,13 @@ bazbom fix --suggest
 # View suggestions with priorities and effort estimates
 bazbom fix --suggest
 
-# Apply fixes automatically (experimental)
+# Apply fixes automatically with testing
 bazbom fix --apply
+
+# Create a pull request with fixes (requires GitHub setup)
+export GITHUB_TOKEN="ghp_..."
+export GITHUB_REPOSITORY="owner/repo"
+bazbom fix --pr
 ```
 
 **Suggest Mode Features:**
@@ -647,10 +653,83 @@ bazbom fix --apply
   Skipped: 0
 ```
 
+**PR Generation Mode:**
+
+The `--pr` flag creates a pull request with vulnerability fixes, handling the entire workflow automatically:
+
+```bash
+# Set up GitHub authentication
+export GITHUB_TOKEN="ghp_your_token_here"
+export GITHUB_REPOSITORY="owner/repo"
+
+# Create PR with fixes
+bazbom fix --pr
+```
+
+**PR Mode Workflow:**
+1. **Branch Creation:** Creates a timestamped branch (e.g., `bazbom/fix-vulnerabilities-20251031-142030`)
+2. **Apply Fixes:** Upgrades vulnerable dependencies in build files
+3. **Test Execution:** Automatically runs project tests to verify fixes
+4. **Rollback Protection:** Reverts changes if tests fail
+5. **Commit:** Creates commit with detailed CVE references
+6. **Push:** Pushes branch to remote repository
+7. **PR Creation:** Opens GitHub pull request via API
+
+**PR Content:**
+- **Title:** "🔒 Fix N security vulnerabilities"
+- **Body:** Markdown table with vulnerability details
+  - Package name and version changes
+  - Severity and CVE IDs
+  - Test results summary
+  - Review instructions
+- **Labels:** Can be configured via GitHub branch protection rules
+
+**Example PR Output:**
+```
+[bazbom] Creating pull request with fixes...
+[bazbom] Creating branch: bazbom/fix-vulnerabilities-20251031-142030
+[bazbom] Creating backup before applying fixes...
+[bazbom] Applying fixes...
+  ✓ Updated log4j-core: 2.17.0 → 2.21.1
+  ✓ Updated spring-web: 5.3.20 → 5.3.31
+
+[bazbom] Running tests to verify fixes...
+✅ Tests passed! Fixes applied successfully.
+   Duration: 45.23s
+
+[bazbom] Staging changes...
+[bazbom] Committing changes...
+[bazbom] Pushing branch to remote...
+[bazbom] Creating pull request...
+
+✅ Pull request created successfully!
+   URL: https://github.com/owner/repo/pull/123
+```
+
+**GitHub Authentication:**
+
+Option 1: Personal Access Token (PAT)
+```bash
+# Create token at https://github.com/settings/tokens
+# Required scopes: repo, workflow
+export GITHUB_TOKEN="ghp_..."
+```
+
+Option 2: GitHub Actions (automatic)
+```yaml
+# In GitHub Actions, token is automatically available
+- name: Create PR with BazBOM fixes
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  run: bazbom fix --pr
+```
+
 **Important Notes:**
-- Always commit your work before running `--apply`
-- Review changes and run tests after applying fixes
+- Always commit your work before running `--apply` or `--pr`
+- Review PR changes before merging
+- Tests must pass for PR creation to succeed
 - Some fixes may require manual adjustment (e.g., breaking changes)
+- GitLab and Bitbucket support planned for future releases
 
 ### `bazbom install-hooks` - Pre-Commit Vulnerability Scanning
 

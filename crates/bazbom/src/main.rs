@@ -563,8 +563,8 @@ fn main() -> Result<()> {
                 }
             }
         },
-        Commands::Fix { suggest, apply } => {
-            println!("[bazbom] fix suggest={} apply={}", suggest, apply);
+        Commands::Fix { suggest, apply, pr } => {
+            println!("[bazbom] fix suggest={} apply={} pr={}", suggest, apply, pr);
             
             // Detect build system
             let root = PathBuf::from(".");
@@ -664,9 +664,31 @@ fn main() -> Result<()> {
                 }
             }
             
-            if !suggest && !apply {
+            if pr {
+                // PR mode: apply fixes with testing and create a pull request
+                println!("\n[bazbom] Creating pull request with fixes...");
+                
+                match remediation::generate_pr(&report.suggestions, system, &root) {
+                    Ok(pr_url) => {
+                        println!("\n✅ Pull request created successfully!");
+                        println!("   URL: {}", pr_url);
+                    }
+                    Err(e) => {
+                        eprintln!("\n❌ Failed to create pull request: {}", e);
+                        eprintln!("\nTroubleshooting:");
+                        eprintln!("  - Ensure GITHUB_TOKEN environment variable is set");
+                        eprintln!("  - Ensure GITHUB_REPOSITORY is set (format: owner/repo)");
+                        eprintln!("  - Ensure you have write access to the repository");
+                        eprintln!("  - Ensure git is configured and you're in a git repository");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            
+            if !suggest && !apply && !pr {
                 println!("\n[bazbom] Use --suggest to see remediation suggestions");
-                println!("[bazbom] Use --apply to automatically apply fixes (experimental)");
+                println!("[bazbom] Use --apply to automatically apply fixes");
+                println!("[bazbom] Use --pr to create a pull request with fixes");
             }
         }
         Commands::Db { action } => match action {

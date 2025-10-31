@@ -70,9 +70,12 @@ pub enum Commands {
         /// Suggest fixes without applying changes
         #[arg(long)]
         suggest: bool,
-        /// Apply fixes and open PRs
+        /// Apply fixes automatically
         #[arg(long)]
         apply: bool,
+        /// Create a pull request with fixes (requires GitHub authentication)
+        #[arg(long)]
+        pr: bool,
     },
     /// Advisory database operations (offline sync)
     Db {
