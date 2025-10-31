@@ -182,10 +182,14 @@ impl ScaAnalyzer {
                                     if let Some(pkg) = aff["package"]["name"].as_str() {
                                         // Check if we have this component
                                         if let Some(component) = component_map.get(pkg) {
-                                            // Simple version check - in production, use proper version range matching
+                                            // TODO: Implement proper version range matching
+                                            // For now, we check if ranges exist - this is a conservative approach
+                                            // that may produce false positives but won't miss vulnerabilities
                                             if let Some(ranges) = aff["ranges"].as_array() {
-                                                // For now, assume affected if ranges exist
-                                                // Full implementation would parse version ranges
+                                                // Full implementation would:
+                                                // 1. Parse semver ranges (e.g., ">=1.0.0,<2.0.0")
+                                                // 2. Check if component.version falls within range
+                                                // 3. Handle different range types (SEMVER, ECOSYSTEM, GIT)
                                                 let has_affected_version = !ranges.is_empty();
                                                 
                                                 if has_affected_version {

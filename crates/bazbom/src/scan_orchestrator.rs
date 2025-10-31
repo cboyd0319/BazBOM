@@ -345,24 +345,8 @@ impl ScanOrchestrator {
         let system = bazbom_core::detect_build_system(&self.context.workspace);
         println!("[bazbom] detected build system: {:?}", system);
         
-        // Generate SPDX SBOM
-        let spdx_path = match system {
-            bazbom_core::BuildSystem::Maven => {
-                // For Maven, use stub for now - full implementation would parse pom.xml
-                bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?
-            }
-            bazbom_core::BuildSystem::Gradle => {
-                // For Gradle, use stub for now - full implementation would parse build.gradle
-                bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?
-            }
-            bazbom_core::BuildSystem::Bazel => {
-                // For Bazel, use existing extraction logic
-                bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?
-            }
-            _ => {
-                bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?
-            }
-        };
+        // Generate SPDX SBOM (using stub for now - full implementations would parse build files)
+        let spdx_path = bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
         
         println!("[bazbom] wrote SPDX SBOM to {:?}", spdx_path);
         
