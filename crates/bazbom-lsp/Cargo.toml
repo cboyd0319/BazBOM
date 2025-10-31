@@ -1,0 +1,25 @@
+[package]
+name = "bazbom-lsp"
+version = "0.2.1"
+edition = "2021"
+authors = ["BazBOM Maintainers"]
+description = "Language Server Protocol implementation for BazBOM vulnerability scanning"
+license = "MIT"
+
+[[bin]]
+name = "bazbom-lsp"
+path = "src/main.rs"
+
+[dependencies]
+tower-lsp = "0.20"
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+tempfile = "3"
+bazbom-advisories = { path = "../bazbom-advisories" }
+bazbom-core = { path = "../bazbom-core" }
+
+[dev-dependencies]
