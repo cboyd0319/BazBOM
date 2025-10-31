@@ -42,6 +42,9 @@
     
     <!-- Project service for caching -->
     <projectService serviceImplementation="io.bazbom.intellij.services.BazBomProjectService"/>
+    
+    <!-- Annotators for real-time vulnerability highlighting -->
+    <annotator language="XML" implementationClass="io.bazbom.intellij.annotator.MavenDependencyAnnotator"/>
   </extensions>
 
   <actions>
