@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+pub mod templates;
+pub mod inheritance;
+
+pub use templates::{PolicyTemplate, PolicyTemplateLibrary};
+pub use inheritance::{MergeStrategy, merge_policies};
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyConfig {
     pub severity_threshold: Option<SeverityLevel>,

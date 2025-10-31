@@ -1,0 +1,55 @@
+# BazBOM Policy Template: PCI-DSS v4.0 Compliance
+# Payment Card Industry Data Security Standard
+# Version: 1.0
+# 
+# This policy template enforces PCI-DSS requirements for applications
+# that store, process, or transmit cardholder data.
+#
+# Key Requirements:
+# - Requirement 6.2.4: Public-facing web applications protected from known attacks
+# - Requirement 6.3.2: Software development security training
+# - Requirement 6.6: Technical or procedural security measures
+
+name: "PCI-DSS v4.0 Compliance"
+description: "Payment Card Industry Data Security Standard"
+version: "1.0"
+
+# Vulnerability Rules
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+
+# PCI-DSS 6.2.4: Block CRITICAL vulnerabilities
+# Public-facing applications must be protected from known attacks
+# CRITICAL vulnerabilities must be fixed before deployment
+reachability_required: false
+
+# License Policy
+# Copyleft licenses may be incompatible with some PCI deployments
+# due to source disclosure requirements that could expose security controls
+license_denylist:
+  - GPL-2.0-only
+  - GPL-3.0-only
+  - AGPL-3.0-only
+  - GPL-2.0-or-later
+  - GPL-3.0-or-later
+  - AGPL-3.0-or-later
+
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+
+# VEX auto-apply for documentation
+vex_auto_apply: true
+
+# Notes for compliance officers:
+# - This template implements baseline PCI-DSS requirements
+# - Additional compensating controls may be required (e.g., WAF, IDS/IPS)
+# - PCI-DSS 6.6 requires either code review or web application firewall
+# - Vulnerability remediation timeframes: Critical/High = 30 days or less
+# - This policy should be combined with regular vulnerability scanning
+# - For full compliance, integrate with your QSA's assessment requirements

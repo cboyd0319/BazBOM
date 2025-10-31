@@ -146,6 +146,24 @@ impl ContainerStrategy {
 pub enum PolicyCmd {
     /// Run policy checks
     Check {},
+    /// Initialize a policy template
+    Init {
+        /// List available policy templates
+        #[arg(long)]
+        list: bool,
+        /// Template ID to initialize (e.g., pci-dss, hipaa, fedramp-moderate, soc2, corporate-permissive)
+        #[arg(long, value_name = "TEMPLATE")]
+        template: Option<String>,
+        /// Output path (defaults to current directory)
+        #[arg(long, value_name = "PATH", default_value = ".")]
+        output: String,
+    },
+    /// Validate a policy file
+    Validate {
+        /// Path to policy file to validate
+        #[arg(default_value = "bazbom.yml")]
+        policy_file: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]

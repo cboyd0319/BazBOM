@@ -1,0 +1,46 @@
+# BazBOM Policy Template: Corporate Standard (Development)
+# Permissive policy for development and testing environments
+# Version: 1.0
+#
+# This policy template provides a permissive baseline suitable for
+# development environments where flexibility is prioritized over
+# strict enforcement. It focuses on awareness and early warning
+# rather than blocking deployments.
+#
+# Use Cases:
+# - Local development environments
+# - Feature branch CI/CD
+# - Early-stage projects
+# - Internal tools and prototypes
+
+name: "Corporate Standard (Development)"
+description: "Permissive policy for development environments"
+version: "1.0"
+
+# WARN on CRITICAL vulnerabilities (don't block development)
+# This allows developers to continue working while planning remediation
+severity_threshold: CRITICAL
+kev_gate: false
+epss_threshold: 0.8
+reachability_required: false
+
+# License Policy
+# All licenses allowed in development
+# Warn about copyleft to raise awareness before production
+license_denylist: []
+
+# No allowlist in development (accept all licenses)
+# license_allowlist: []
+
+# Enable VEX for documentation even in development
+vex_auto_apply: true
+
+# Notes for development teams:
+# - This policy is intentionally permissive for development velocity
+# - CRITICAL vulnerabilities generate warnings, not failures
+# - Review and address vulnerabilities before promoting to staging/production
+# - Copyleft licenses (GPL, AGPL) may require legal review for production use
+# - Use stricter policies (PCI-DSS, SOC 2, etc.) in production environments
+# - Consider enabling KEV gate for internet-facing development services
+# - Recommended workflow: Development (permissive) → Staging (moderate) → Production (strict)
+# - Document any accepted risks in your security review process

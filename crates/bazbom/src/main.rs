@@ -562,6 +562,68 @@ fn main() -> Result<()> {
                     std::process::exit(1);
                 }
             }
+            PolicyCmd::Init { list, template, output } => {
+                if list {
+                    println!("[bazbom] Available policy templates:\n");
+                    let templates = bazbom_policy::PolicyTemplateLibrary::list_templates();
+                    
+                    let mut by_category: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
+                    for template in templates {
+                        by_category.entry(template.category.clone()).or_insert_with(Vec::new).push(template);
+                    }
+                    
+                    for (category, templates) in by_category {
+                        println!("{}:", category);
+                        for template in templates {
+                            println!("  {} - {}", template.id, template.name);
+                            println!("    {}", template.description);
+                        }
+                        println!();
+                    }
+                    
+                    println!("Usage: bazbom policy init --template <template-id>");
+                } else if let Some(template_id) = template {
+                    let output_path = PathBuf::from(&output);
+                    match bazbom_policy::PolicyTemplateLibrary::initialize_template(&template_id, &output_path) {
+                        Ok(msg) => println!("{}", msg),
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                } else {
+                    eprintln!("Error: Either --list or --template <template-id> must be specified");
+                    eprintln!("Run 'bazbom policy init --list' to see available templates");
+                    std::process::exit(1);
+                }
+            }
+            PolicyCmd::Validate { policy_file } => {
+                println!("[bazbom] validating policy file: {}", policy_file);
+                
+                let policy_path = PathBuf::from(&policy_file);
+                match policy_integration::load_policy_config(&policy_path) {
+                    Ok(policy) => {
+                        println!("✓ Policy file is valid");
+                        println!("\nPolicy Configuration:");
+                        println!("  Severity threshold: {:?}", policy.severity_threshold);
+                        println!("  KEV gate: {}", policy.kev_gate);
+                        println!("  EPSS threshold: {:?}", policy.epss_threshold);
+                        println!("  Reachability required: {}", policy.reachability_required);
+                        println!("  VEX auto-apply: {}", policy.vex_auto_apply);
+                        
+                        if let Some(allowlist) = &policy.license_allowlist {
+                            println!("  License allowlist: {} licenses", allowlist.len());
+                        }
+                        if let Some(denylist) = &policy.license_denylist {
+                            println!("  License denylist: {} licenses", denylist.len());
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("✗ Policy file validation failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
         },
         Commands::Fix { suggest, apply, pr } => {
             println!("[bazbom] fix suggest={} apply={} pr={}", suggest, apply, pr);

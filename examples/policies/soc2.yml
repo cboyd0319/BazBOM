@@ -1,0 +1,58 @@
+# BazBOM Policy Template: SOC 2 Type II Compliance
+# Service Organization Control 2 (Trust Services Criteria)
+# Version: 1.0
+#
+# This policy template enforces SOC 2 Type II requirements focusing on
+# Security and Availability trust services criteria.
+#
+# Key Requirements:
+# - CC7.1: Detect security threats and anomalies
+# - CC7.2: Respond to identified security incidents
+# - CC7.3: Evaluate security events to determine impact
+# - CC9.1: Identify and maintain system components
+# - A1.2: Restore systems after incidents
+
+name: "SOC 2 Type II Compliance"
+description: "Service Organization Control 2 (Security, Availability)"
+version: "1.0"
+
+# CC7.1: Detect Security Threats
+# Continuous vulnerability monitoring required
+# High exploitability (EPSS) requires immediate response
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: false
+
+# License Policy
+# SOC 2 requires change management and system documentation
+# Copyleft licenses may create unexpected obligations
+license_denylist:
+  - Unknown
+  - NOASSERTION
+
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - MPL-2.0
+  - EPL-2.0
+
+# CC9.1: System component inventory
+# VEX documentation supports evidence collection
+vex_auto_apply: true
+
+# Notes for compliance officers:
+# - SOC 2 Type II requires 6-12 month audit period
+# - This policy supports CC7 (Monitoring) and CC9 (Risk Mitigation)
+# - Document all vulnerability scans and remediation actions
+# - Daily scans recommended for CC7.1 compliance
+# - Maintain 12-month audit trail (365 days retention minimum)
+# - SBOM serves as system component inventory (CC9.1)
+# - VEX statements document vulnerability assessments (CC7.3)
+# - Integrate with SIEM for security event correlation
+# - Ensure change management process covers dependency updates
+# - Your auditor may require additional controls based on TSC

@@ -1,0 +1,62 @@
+# BazBOM Policy Template: FedRAMP Moderate Impact Level
+# Federal Risk and Authorization Management Program
+# Version: 1.0
+#
+# This policy template enforces FedRAMP Moderate security requirements
+# based on NIST SP 800-53 Rev 5 controls for cloud service providers
+# serving federal agencies.
+#
+# Key Requirements:
+# - NIST SP 800-53 RA-5: Vulnerability Scanning
+# - NIST SP 800-53 SI-2: Flaw Remediation
+# - CISA BOD 22-01: Known Exploited Vulnerabilities (KEV) remediation
+# - Continuous monitoring and reporting
+
+name: "FedRAMP Moderate Impact Level"
+description: "Federal Risk and Authorization Management Program"
+version: "1.0"
+
+# NIST SP 800-53 RA-5: Vulnerability Scanning
+# Continuous monitoring required for authorization
+# CISA KEV vulnerabilities must be remediated per BOD 22-01
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: false
+
+# NIST SP 800-53 SI-2: Flaw Remediation
+# Critical/High vulnerabilities must be fixed within 30 days
+# This policy blocks aged vulnerabilities (enforcement via CI/CD)
+# Note: Age-based filtering to be implemented in future version
+
+# License Policy
+# Some federal agencies restrict strong copyleft licenses
+# due to source code disclosure requirements
+license_denylist:
+  - GPL-3.0-only
+  - GPL-3.0-or-later
+  - AGPL-3.0-only
+  - AGPL-3.0-or-later
+
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+
+# FedRAMP emerging requirements
+# VEX statements support continuous monitoring documentation
+vex_auto_apply: true
+
+# Notes for compliance officers:
+# - FedRAMP authorization requires 3PAO assessment
+# - Continuous monitoring reports due monthly to FedRAMP PMO
+# - CISA BOD 22-01 requires KEV remediation per directive timelines
+# - SI-2 remediation timeframes: Critical/High within 30 days
+# - This policy aligns with NIST 800-53 Rev 5 security controls
+# - SBOM and VEX documentation support RA-5 and SI-2 evidence
+# - Maintain POA&M (Plan of Action & Milestones) for all findings
+# - Integrate with your ConMon (Continuous Monitoring) strategy
+# - Keep provenance and attestation data for supply chain validation
