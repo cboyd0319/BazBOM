@@ -66,6 +66,7 @@ Target OS: macOS → Linux → Windows.
    - `docs/reference/capabilities-reference.md`
    - `docs/USAGE.md` for CLI changes; examples for Maven/Gradle/Bazel
    - `docs/PROVENANCE.md`, `docs/VEX.md`, `docs/PERFORMANCE.md` as needed
+   - `docs/copilot/PHASE_4_PROGRESS.md` for Phase 4 IDE/remediation features
 2) Update root `README.md` where applicable (Features bullets, Quickstart snippets, performance table).
 3) If outputs/schemas change: bump schema versions; update JSON Schemas and golden tests.
 4) If GitHub Action changes: update `action.yml`, README snippets, and docs examples.
@@ -74,6 +75,9 @@ Target OS: macOS → Linux → Windows.
    pre-commit run --all-files
    pytest -q  # until fully ported to Rust
    cargo test --all --locked
+   # For IDE plugins:
+   cd crates/bazbom-vscode-extension && npm test
+   cd crates/bazbom-intellij-plugin && ./gradlew test
    ```
 
 ## Build Systems & Examples Checklist
@@ -106,6 +110,62 @@ Target OS: macOS → Linux → Windows.
 - [ ] Docs only under `docs/` (except allowed stubs and this file); links valid
 - [ ] Action examples tested; pre‑commit, tests, and build pipelines green
 
+## Phase 4: Developer Experience (IDE Integration)
+
+**Status:** In Progress (30% Complete) - See `docs/copilot/PHASE_4_PROGRESS.md`
+
+### IDE Plugin Development Rules
+
+**IntelliJ IDEA Plugin (`crates/bazbom-intellij-plugin/`):**
+- Built with Gradle and Kotlin
+- Uses IntelliJ Platform SDK 2023.3+
+- Target: IntelliJ IDEA Community & Ultimate
+- Key features: dependency tree view, real-time annotations, quick fixes
+- Build: `./gradlew build`, Run: `./gradlew runIde`
+- Publish to JetBrains Marketplace after testing
+
+**VS Code Extension (`crates/bazbom-vscode-extension/`):**
+- Built with TypeScript and npm
+- Uses Language Server Protocol (LSP) via `bazbom-lsp` crate
+- Target: VS Code 1.85+
+- Key features: diagnostics, code actions, commands
+- Build: `npm run compile`, Package: `npx vsce package`
+- Publish to VS Code Marketplace after testing
+
+**LSP Server (`crates/bazbom-lsp/`):**
+- Rust implementation using `tower-lsp` crate
+- Reusable across editors (VS Code, Vim, Emacs, Sublime)
+- Provides: diagnostics, code actions, hover info
+- Fast mode scanning (<10 seconds)
+- Must be cross-platform compatible
+
+### Automated Remediation Rules
+
+**`bazbom fix` Commands:**
+- `--suggest`: Safe, read-only mode (default)
+- `--apply`: Writes to files, requires testing
+- `--pr`: Opens GitHub PR (requires token)
+- Always explain "why fix this" (CVSS, KEV, EPSS context)
+- Always run tests after applying fixes
+- Always rollback on test failure
+- Support all three build systems: Maven, Gradle, Bazel
+
+**Safety Requirements:**
+- Never apply fixes without user consent (unless `--apply` flag)
+- Always create backups before modifying files
+- Always run project tests after applying fixes
+- Always rollback changes if tests fail
+- Never lose user data or break working code
+
+### Pre-Commit Hooks Rules
+
+**`bazbom install-hooks` Command:**
+- Installs Git pre-commit hook at `.git/hooks/pre-commit`
+- Fast mode (--fast) for speed (<10 seconds)
+- Policy enforcement blocks commits with violations
+- Must be bypassable with `git commit --no-verify`
+- Works on macOS, Linux, Windows (Git Bash)
+
 ## Additional Sources
 
 - Documentation standards: `docs/copilot/DOCUMENTATION_STANDARDS.md`
@@ -113,5 +173,7 @@ Target OS: macOS → Linux → Windows.
 - OPAL reachability plan: `docs/copilot/REACHABILITY_OPAL.md`
 - Python→Rust porting plan: `docs/copilot/EPICS_PORTING.md`
 - Repo reorg checklist: `docs/copilot/REPO_REORG_RECOMMENDATIONS.md`
+- **Phase 4 specification:** `docs/copilot/PHASE_4_DEVELOPER_EXPERIENCE.md`
+- **Phase 4 progress:** `docs/copilot/PHASE_4_PROGRESS.md`
 
 Questions? Open a docs issue and tag `@cboyd0319`.

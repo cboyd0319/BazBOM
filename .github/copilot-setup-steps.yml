@@ -28,8 +28,10 @@ steps:
   - name: macOS — Install Node.js tools
     if: runner.os == 'macOS'
     run: |
-      npm install -g markdownlint-cli
+      npm install -g markdownlint-cli typescript @vscode/vsce
       markdownlint --version
+      tsc --version
+      vsce --version || echo "vsce installed but may need login"
 
   - name: macOS — Install Python tools
     if: runner.os == 'macOS'
@@ -79,8 +81,10 @@ steps:
     if: runner.os == 'Linux'
     run: |
       sudo apt-get install -y npm
-      npm install -g markdownlint-cli
+      npm install -g markdownlint-cli typescript @vscode/vsce
       markdownlint --version
+      tsc --version
+      vsce --version || echo "vsce installed but may need login"
 
   - name: Linux — Install Vale (optional)
     if: runner.os == 'Linux'
@@ -106,6 +110,32 @@ steps:
       rustup component add rustfmt clippy llvm-tools-preview
       cargo install cargo-llvm-cov --locked || echo "cargo-llvm-cov already installed or failed"
 
+  - name: Phase 4 — Install VS Code extension dependencies
+    run: |
+      if [ -d "crates/bazbom-vscode-extension" ]; then
+        echo "Installing VS Code extension dependencies..."
+        cd crates/bazbom-vscode-extension
+        npm install || echo "npm install failed or no package.json yet"
+        cd ../..
+      else
+        echo "VS Code extension directory not found, skipping"
+      fi
+
+  - name: Phase 4 — Setup IntelliJ plugin environment
+    run: |
+      if [ -d "crates/bazbom-intellij-plugin" ]; then
+        echo "Setting up IntelliJ plugin build environment..."
+        cd crates/bazbom-intellij-plugin
+        if [ -f "gradlew" ]; then
+          ./gradlew --version || echo "Gradle wrapper check failed"
+        else
+          gradle wrapper --gradle-version=8.5 || echo "Gradle wrapper init failed or gradle not available"
+        fi
+        cd ../..
+      else
+        echo "IntelliJ plugin directory not found, skipping"
+      fi
+
   - name: Confirm repo tools
     run: |
       echo "=== Core Build Tools ==="
@@ -119,6 +149,7 @@ steps:
       echo "=== Language & Package Tools ==="
       echo "Node: $(node --version 2>/dev/null || echo missing)"
       echo "npm: $(npm --version 2>/dev/null || echo missing)"
+      echo "TypeScript: $(tsc --version 2>/dev/null || echo missing)"
       echo "Python: $(python3 --version 2>/dev/null || echo missing)"
       echo ""
       echo "=== Documentation & Linting Tools ==="
@@ -126,3 +157,7 @@ steps:
       echo "Vale: $(vale --version 2>/dev/null || echo missing)"
       echo "rustfmt: $(rustfmt --version 2>/dev/null || echo missing)"
       echo "clippy: $(cargo clippy --version 2>/dev/null || echo missing)"
+      echo ""
+      echo "=== IDE Development Tools (Phase 4) ==="
+      echo "vsce (VS Code): $(vsce --version 2>/dev/null || echo missing)"
+      echo "Kotlin: $(kotlinc -version 2>/dev/null || echo missing)"
