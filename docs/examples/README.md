@@ -2,6 +2,24 @@
 
 This directory contains examples demonstrating BazBOM usage with real-world scenarios.
 
+## Orchestrated Scan Quickstart ⭐ NEW
+
+The **`orchestrated-scan-quickstart.sh`** script demonstrates BazBOM's comprehensive security scanning capabilities:
+
+```bash
+cd docs/examples
+./orchestrated-scan-quickstart.sh
+```
+
+This interactive demo showcases:
+1. **Fast Scan** - SBOM + SCA (2 min) - Perfect for PR checks
+2. **Comprehensive Scan** - + Semgrep pattern analysis (5 min) - Main branch
+3. **Deep Security Scan** - + CodeQL dataflow analysis (15-20 min) - Security audits
+
+All scans produce unified SARIF 2.1.0 output for GitHub Code Scanning.
+
+See [Orchestrated Scanning Guide](../ORCHESTRATED_SCAN.md) and [Integration Plan Status](../INTEGRATION_PLAN_STATUS.md) for details.
+
 ## Quick Demo
 
 The `demo_workflow.sh` script demonstrates the complete BazBOM workflow:

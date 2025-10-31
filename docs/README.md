@@ -28,6 +28,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 ## Advanced Features
 
 - **[Orchestrated Scanning](ORCHESTRATED_SCANNING.md)** - Integrate Semgrep and CodeQL with merged SARIF output
+- **[Integration Plan Status](INTEGRATION_PLAN_STATUS.md)** - Implementation status of the orchestrated scan architecture
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
 - **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
