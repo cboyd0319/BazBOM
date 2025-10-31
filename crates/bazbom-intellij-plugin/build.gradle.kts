@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.9.20"
-    id("org.jetbrains.intellij") version "1.16.0"
+    id("org.jetbrains.intellij") version "1.17.4"
 }
 
 group = "io.bazbom"
@@ -13,7 +13,7 @@ repositories {
 intellij {
     version.set("2023.3")
     type.set("IC")  // IntelliJ IDEA Community
-    plugins.set(listOf("maven", "gradle", "Kotlin"))
+    plugins.set(listOf("maven", "gradle", "Kotlin", "java"))
 }
 
 dependencies {
