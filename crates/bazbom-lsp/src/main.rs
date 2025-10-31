@@ -217,6 +217,7 @@ impl LanguageServer for BazBomLanguageServer {
                 text_document_sync: Some(TextDocumentSyncCapability::Kind(
                     TextDocumentSyncKind::FULL,
                 )),
+                code_action_provider: Some(CodeActionProviderCapability::Simple(true)),
                 workspace: Some(WorkspaceServerCapabilities {
                     workspace_folders: Some(WorkspaceFoldersServerCapabilities {
                         supported: Some(true),
@@ -255,6 +256,73 @@ impl LanguageServer for BazBomLanguageServer {
         tracing::info!("File opened: {}", params.text_document.uri);
         self.scan_and_publish_diagnostics(&params.text_document.uri)
             .await;
+    }
+
+    async fn code_action(&self, params: CodeActionParams) -> jsonrpc::Result<Option<CodeActionResponse>> {
+        tracing::info!("Code action requested for: {}", params.text_document.uri);
+        
+        let mut actions = Vec::new();
+        
+        // Check if there are diagnostics in the range
+        for diagnostic in &params.context.diagnostics {
+            // Only create actions for BazBOM diagnostics
+            if diagnostic.source.as_deref() != Some("BazBOM") {
+                continue;
+            }
+            
+            // Try to extract vulnerability info from diagnostic
+            if let Some(NumberOrString::String(ref cve_id)) = diagnostic.code {
+                // Extract fixed version from message if available
+                let fixed_version = Self::extract_fixed_version(&diagnostic.message);
+                
+                if let Some(fixed) = fixed_version {
+                    // Create a code action to upgrade dependency
+                    let title = format!("Upgrade to safe version {}", fixed);
+                    
+                    let action = CodeActionOrCommand::CodeAction(CodeAction {
+                        title,
+                        kind: Some(CodeActionKind::QUICKFIX),
+                        diagnostics: Some(vec![diagnostic.clone()]),
+                        edit: None, // We'll handle this via command
+                        command: Some(Command {
+                            title: "Upgrade Dependency".to_string(),
+                            command: "bazbom.upgrade".to_string(),
+                            arguments: Some(vec![
+                                serde_json::to_value(&params.text_document.uri).unwrap(),
+                                serde_json::to_value(cve_id).unwrap(),
+                                serde_json::to_value(fixed).unwrap(),
+                            ]),
+                        }),
+                        is_preferred: Some(true),
+                        disabled: None,
+                        data: None,
+                    });
+                    
+                    actions.push(action);
+                }
+            }
+        }
+        
+        if actions.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(actions))
+        }
+    }
+}
+
+impl BazBomLanguageServer {
+    fn extract_fixed_version(message: &str) -> Option<String> {
+        // Try to extract "Fixed in version X.Y.Z" from message
+        if let Some(idx) = message.find("Fixed in version ") {
+            let version_start = idx + "Fixed in version ".len();
+            let version_part = &message[version_start..];
+            // Take until first space or end of string
+            let version = version_part.split_whitespace().next()?;
+            Some(version.to_string())
+        } else {
+            None
+        }
     }
 }
 
