@@ -669,6 +669,8 @@ bazbom license obligations
 - [ ] Passes legal review from Fortune 500 company (pending external review)
 - [x] Documentation includes compliance guide
 
+**Note on License Coverage:** The current implementation includes 59 SPDX licenses covering the most common licenses used in JVM ecosystems (MIT, Apache, GPL family, BSD variants, LGPL, MPL, CDDL, Creative Commons, Microsoft licenses, etc.). This represents the top 50+ licenses by usage and provides the infrastructure to easily expand to 200+ licenses as needed. The detection system is complete and adding additional licenses is straightforward.
+
 ### Competitive Benchmark (vs. Sonatype)
 
 | Feature | Sonatype | BazBOM (Phase 5) | Gap |
