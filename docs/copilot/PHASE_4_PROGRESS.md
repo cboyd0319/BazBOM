@@ -15,13 +15,13 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 4. Pre-commit hooks for policy enforcement
 
 **Current Progress:**
-- **IDE Integration (4.1):** 20% - Scaffolding complete, awaiting feature implementation
-- **Automated Remediation (4.2):** 70% - Core CLI commands complete, PR generation pending
+- **IDE Integration (4.1):** 50% - Core features implemented (dependency tree, annotations, quick fixes)
+- **Automated Remediation (4.2):** 90% - Core CLI with testing/rollback complete, PR generation pending
 - **Pre-Commit Hooks (4.3):** 100% ✅ - Fully implemented and tested
 
 ---
 
-## 4.1 IDE Integration (20% Complete)
+## 4.1 IDE Integration (50% Complete)
 
 ### Completed ✅
 
@@ -34,6 +34,9 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 - ✅ Fast mode scanning (<10 seconds)
 - ✅ Diagnostic publishing to editors
 - ✅ Async scanning to avoid blocking
+- ✅ **Code actions for quick fixes** (NEW)
+- ✅ Extracts fixed versions from vulnerability data
+- ✅ Provides "Upgrade to safe version X" actions
 - ✅ 2 unit tests passing
 
 **Architecture:**
@@ -46,9 +49,9 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 
 **Remaining Work:**
 - Improve range detection for diagnostics (currently line 0)
-- Add code actions for quick fixes
 - Implement caching to avoid repeated scans
 - Performance optimization for large projects
+- Handle code action execution (workspace edits)
 
 #### VS Code Extension Scaffolding
 **Location:** `crates/bazbom-vscode-extension/`
@@ -73,40 +76,42 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 4. Package: `npx vsce package`
 5. Publish to marketplace (requires account)
 
-#### IntelliJ IDEA Plugin Scaffolding
+#### IntelliJ IDEA Plugin Implementation
 **Location:** `crates/bazbom-intellij-plugin/`
 
-**Files Created:**
-- ✅ `build.gradle.kts` - Gradle build configuration
-- ✅ `settings.gradle.kts` - Gradle settings
-- ✅ `gradle.properties` - Gradle properties
-- ✅ `src/main/resources/META-INF/plugin.xml` - Plugin descriptor
-- ✅ `src/main/kotlin/io/bazbom/intellij/` - Kotlin source (8 files)
-  - `BazBomPlugin.kt` - Main entry point
-  - `actions/ScanProjectAction.kt` - Manual scan action
-  - `actions/SyncDatabaseAction.kt` - Database sync action
-  - `util/BazBomCliRunner.kt` - CLI execution utility
-  - `toolwindow/BazBomToolWindowFactory.kt` - Tool window UI
-  - `settings/BazBomConfigurable.kt` - Settings panel
-  - `services/BazBomProjectService.kt` - Caching service
-  - `listeners/BazBomProjectListener.kt` - Lifecycle listener
-
-**Features:**
-- ✅ Tool window for dependency tree (stub)
+**Completed Features:**
+- ✅ `build.gradle.kts` - Gradle build with IntelliJ plugin 1.17.4
+- ✅ Gradle wrapper initialized (version 8.5)
+- ✅ Plugin builds successfully
+- ✅ **Full dependency tree visualization** (NEW)
+  - `model/SbomData.kt` - Data models for SBOM/vulnerabilities
+  - `util/SbomParser.kt` - Parses BazBOM JSON output
+  - `toolwindow/BazBomToolWindowPanel.kt` - Interactive tree view
+  - `toolwindow/DependencyTreeCellRenderer.kt` - Color-coded by severity
+  - Shows dependencies grouped by scope with vulnerability counts
+  - Scan and refresh buttons with progress indicators
+- ✅ **Real-time vulnerability highlighting** (NEW)
+  - `annotator/MavenDependencyAnnotator.kt` - Highlights pom.xml dependencies
+  - Shows CVE ID, severity, CISA KEV warnings, reachability
+  - Error-level for CRITICAL, warning for HIGH, info for MEDIUM/LOW
+  - Registered in plugin.xml
+- ✅ **Quick fix actions** (NEW)
+  - `quickfix/UpgradeDependencyQuickFix.kt` - Alt+Enter upgrade action
+  - Upgrades dependencies to safe versions
+  - IntentionAction with high priority
+- ✅ Icon assets (bazbom-16.svg)
 - ✅ Actions for scan and database sync
 - ✅ CLI runner utility with error handling
 - ✅ Project service for result caching
 - ✅ Settings panel (stub)
 
 **Next Steps:**
-1. Initialize Gradle wrapper: `gradle wrapper`
-2. Build plugin: `./gradlew build`
+1. Complete quick fix with Maven reload and test execution
+2. Add Gradle and Bazel annotators
 3. Run in test IDE: `./gradlew runIde`
-4. Implement dependency tree view
-5. Add Maven/Gradle/Bazel annotators for real-time warnings
-6. Implement quick fix actions (Alt+Enter)
-7. Test with sample projects
-8. Publish to JetBrains Marketplace
+4. Test with sample projects
+5. Polish UI and error handling
+6. Publish to JetBrains Marketplace
 
 ### In Progress 🔄
 
@@ -190,7 +195,7 @@ class UpgradeDependencyQuickFix : IntentionAction {
 
 ---
 
-## 4.2 Automated Remediation (70% Complete)
+## 4.2 Automated Remediation (90% Complete)
 
 ### Completed ✅
 
@@ -280,87 +285,49 @@ class UpgradeDependencyQuickFix : IntentionAction {
 - Doesn't update parent POM versions
 - No conflict resolution or dependency management
 
-### In Progress 🔄
-
 #### Test Execution Framework
-**Status:** Not Started
-**Priority:** Critical
+**Location:** `crates/bazbom/src/test_runner.rs`
+**Status:** ✅ Complete
 
-**Requirements:**
-- Run project tests after applying fixes
-- Detect build system (Maven/Gradle/Bazel)
-- Execute appropriate test command
-- Capture test output
-- Parse test results (pass/fail)
-- Report results to user
+**Features:**
+- ✅ TestResult structure with success, output, duration, exit_code
+- ✅ run_tests() function for Maven/Gradle/Bazel
+- ✅ Maven: `mvn test -DskipTests=false --batch-mode`
+- ✅ Gradle: `./gradlew test --no-daemon --console=plain` (or `gradle`)
+- ✅ Bazel: `bazel test //... --test_output=errors`
+- ✅ has_tests() to check if tests exist
+- ✅ 2 unit tests
 
-**Implementation Plan:**
-```rust
-pub struct TestRunner {
-    build_system: BuildSystem,
-    project_root: PathBuf,
-}
+#### Backup and Rollback System
+**Location:** `crates/bazbom/src/backup.rs`
+**Status:** ✅ Complete
 
-impl TestRunner {
-    pub fn run_tests(&self) -> Result<TestResult> {
-        match self.build_system {
-            BuildSystem::Maven => {
-                Command::new("mvn")
-                    .args(&["test", "-DskipTests=false"])
-                    .output()
-            }
-            BuildSystem::Gradle => {
-                Command::new("gradle")
-                    .args(&["test", "--no-daemon"])
-                    .output()
-            }
-            BuildSystem::Bazel => {
-                Command::new("bazel")
-                    .args(&["test", "//..."])
-                    .output()
-            }
-        }
-    }
-}
-```
+**Features:**
+- ✅ BackupHandle with three strategies:
+  - GitStash: Uses `git stash` for dirty repos
+  - GitBranch: Creates temporary branch for clean repos
+  - FileCopy: Copies files to `.bazbom/backup` for non-git projects
+- ✅ choose_backup_strategy() intelligently selects best method
+- ✅ create() - Creates backup before changes
+- ✅ restore() - Restores from backup on failure
+- ✅ cleanup() - Removes backup on success
+- ✅ Handles errors gracefully with detailed logging
 
-#### Automatic Rollback
-**Status:** Not Started
-**Priority:** Critical
+#### Integrated Remediation with Testing
+**Location:** `crates/bazbom/src/remediation.rs`
+**Status:** ✅ Complete
 
-**Requirements:**
-- Create backup before applying fixes
-- Git integration (create branch or stash)
-- Restore on test failure
-- Clean up on success
+**Features:**
+- ✅ apply_fixes_with_testing() function
+- ✅ Automatic backup before applying fixes
+- ✅ Runs tests after applying fixes
+- ✅ Automatic rollback if tests fail
+- ✅ Clean up backups on success
+- ✅ ApplyResultWithTests structure with test details
+- ✅ Skip tests option for when tests don't exist
+- ✅ Detailed console output with progress indicators
 
-**Implementation Plan:**
-```rust
-pub fn apply_fixes_with_rollback(
-    suggestions: &[RemediationSuggestion],
-    build_system: BuildSystem,
-    project_root: &Path,
-) -> Result<ApplyResult> {
-    // 1. Create backup (git stash or file copy)
-    create_backup(project_root)?;
-    
-    // 2. Apply fixes
-    let result = apply_fixes(suggestions, build_system, project_root)?;
-    
-    // 3. Run tests
-    let test_result = run_tests(build_system, project_root)?;
-    
-    if test_result.success {
-        // 4. Commit or delete backup
-        commit_fixes(project_root)?;
-        Ok(result)
-    } else {
-        // 5. Rollback changes
-        rollback_backup(project_root)?;
-        Err(anyhow!("Tests failed, rolled back changes"))
-    }
-}
-```
+### In Progress 🔄
 
 ### Not Started ⏸️
 
