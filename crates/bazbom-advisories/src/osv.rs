@@ -121,7 +121,9 @@ pub fn query_batch_vulnerabilities(
     for (i, (name, ecosystem)) in packages.iter().enumerate() {
         if i > 0 && i % 10 == 0 {
             println!("[bazbom]   progress: {}/{}", i, packages.len());
-            // Rate limiting: small delay every 10 requests
+            // Simple rate limiting: small delay every 10 requests
+            // Note: This is intentionally simple. For production use with many packages,
+            // consider implementing proper async with a token bucket rate limiter.
             std::thread::sleep(std::time::Duration::from_millis(500));
         }
 
@@ -216,13 +218,37 @@ fn convert_osv_to_vulnerability(osv: OsvVulnerability) -> Vulnerability {
     }
 }
 
+/// Encode key for safe filesystem use
+fn encode_cache_key(key: &str) -> String {
+    // Base64 encode to avoid any filesystem issues
+    use std::collections::HashMap;
+    let mut encoded = String::new();
+    for ch in key.chars() {
+        match ch {
+            '/' => encoded.push_str("_SLASH_"),
+            ':' => encoded.push_str("_COLON_"),
+            '_' => encoded.push_str("_UNDER_"),
+            c => encoded.push(c),
+        }
+    }
+    encoded
+}
+
+/// Decode key from filesystem-safe format
+fn decode_cache_key(encoded: &str) -> String {
+    encoded
+        .replace("_SLASH_", "/")
+        .replace("_COLON_", ":")
+        .replace("_UNDER_", "_")
+}
+
 /// Cache vulnerabilities to disk
 fn cache_vulnerabilities(cache_dir: &Path, key: &str, vulns: &[Vulnerability]) -> Result<()> {
     let osv_cache = cache_dir.join("osv");
     fs::create_dir_all(&osv_cache)?;
     
-    // Sanitize key for filesystem
-    let safe_key = key.replace('/', "_").replace(':', "_");
+    // Encode key for filesystem safety
+    let safe_key = encode_cache_key(key);
     let cache_file = osv_cache.join(format!("{}.json", safe_key));
     
     let json = serde_json::to_string_pretty(vulns)?;
@@ -247,9 +273,9 @@ fn load_cached_vulnerabilities(cache_dir: &Path) -> Result<HashMap<String, Vec<V
         if path.extension().and_then(|s| s.to_str()) == Some("json") {
             if let Ok(content) = fs::read_to_string(&path) {
                 if let Ok(vulns) = serde_json::from_str::<Vec<Vulnerability>>(&content) {
-                    // Extract key from filename
+                    // Decode key from filename
                     if let Some(filename) = path.file_stem().and_then(|s| s.to_str()) {
-                        let key = filename.replace('_', ":");
+                        let key = decode_cache_key(filename);
                         results.insert(key, vulns);
                     }
                 }

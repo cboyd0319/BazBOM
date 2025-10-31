@@ -27,7 +27,8 @@ pub fn is_version_affected(version: &str, ranges: &[VersionRange]) -> Result<boo
                 }
             }
             _ => {
-                // Unknown range type, be conservative and assume affected
+                // Unknown range type - log and be conservative
+                eprintln!("[bazbom] warning: unknown version range type '{}', assuming affected", range.range_type);
                 return Ok(true);
             }
         }
@@ -79,6 +80,10 @@ fn is_version_affected_semver(version_str: &str, range: &VersionRange) -> Result
 }
 
 /// Simple string-based version comparison for non-semver ecosystems
+/// Note: This uses lexicographic comparison which is unreliable for numeric versions
+/// (e.g., "10.0.0" < "2.0.0" lexicographically). This is a known limitation for
+/// ecosystems that don't follow semver. In practice, this means we may produce
+/// false positives for GIT ranges or non-standard version schemes.
 fn is_version_affected_string(version: &str, range: &VersionRange) -> bool {
     let mut introduced: Option<&str> = None;
     let mut fixed: Option<&str> = None;
@@ -98,8 +103,8 @@ fn is_version_affected_string(version: &str, range: &VersionRange) -> bool {
         }
     }
 
-    // Very conservative string matching
-    // If we have specific version bounds, check them
+    // Very conservative string matching with lexicographic comparison
+    // This is inherently unreliable for numeric versions but works for GIT hashes
     if let Some(intro) = introduced {
         if intro != "0" && version < intro {
             return false;
