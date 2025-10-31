@@ -5,6 +5,7 @@ use anyhow::Result;
 use bazbom_advisories::Vulnerability;
 use bazbom_core::BuildSystem;
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -288,32 +289,166 @@ pub struct ApplyResult {
     pub skipped: usize,
 }
 
-fn apply_maven_fix(_suggestion: &RemediationSuggestion, _project_root: &Path) -> Result<()> {
-    // This is a placeholder - in a full implementation, we would:
-    // 1. Parse pom.xml
-    // 2. Update the version
-    // 3. Write back pom.xml
-    // 4. Run mvn clean install
-    // For now, just return an error indicating this needs manual implementation
-    anyhow::bail!("Maven auto-fix not yet fully implemented - use --suggest for guidance")
+fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> Result<()> {
+    let pom_path = project_root.join("pom.xml");
+    if !pom_path.exists() {
+        anyhow::bail!("pom.xml not found in project root");
+    }
+
+    let fixed_version = suggestion.fixed_version.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
+
+    // Read the pom.xml
+    let content = fs::read_to_string(&pom_path)?;
+    
+    // Extract artifact name
+    let artifact = suggestion.affected_package
+        .rsplit(':')
+        .next()
+        .unwrap_or(&suggestion.affected_package);
+    
+    // Simple approach: find <version> tags that follow <artifactId> tags containing our artifact
+    // and replace the version if it matches the current version
+    let mut updated = content.clone();
+    let mut match_found = false;
+    
+    let lines: Vec<&str> = content.lines().collect();
+    for i in 0..lines.len() {
+        let line = lines[i];
+        
+        // If this line has the artifactId we're looking for
+        if line.contains("<artifactId>") && line.contains(artifact) && line.contains("</artifactId>") {
+            // Look ahead for a <version> tag
+            for j in (i+1).min(lines.len())..((i+5).min(lines.len())) {
+                let version_line = lines[j];
+                if version_line.contains("<version>") && version_line.contains(&suggestion.current_version) {
+                    // Found it! Replace this line
+                    let new_line = version_line.replace(&suggestion.current_version, fixed_version);
+                    updated = updated.replace(version_line, &new_line);
+                    match_found = true;
+                    println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+                    break;
+                }
+            }
+            if match_found {
+                break;
+            }
+        }
+    }
+
+    if !match_found {
+        anyhow::bail!("Dependency {} with version {} not found in pom.xml", 
+                      artifact, suggestion.current_version);
+    }
+
+    // Write updated content back to file
+    fs::write(&pom_path, updated)?;
+    Ok(())
 }
 
-fn apply_gradle_fix(_suggestion: &RemediationSuggestion, _project_root: &Path) -> Result<()> {
-    // This is a placeholder - in a full implementation, we would:
-    // 1. Parse build.gradle / build.gradle.kts
-    // 2. Update the version
-    // 3. Write back build.gradle
-    // 4. Run gradle build
-    // For now, just return an error indicating this needs manual implementation
-    anyhow::bail!("Gradle auto-fix not yet fully implemented - use --suggest for guidance")
+fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> Result<()> {
+    let fixed_version = suggestion.fixed_version.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
+
+    // Try both build.gradle and build.gradle.kts
+    let build_gradle = project_root.join("build.gradle");
+    let build_gradle_kts = project_root.join("build.gradle.kts");
+    
+    let gradle_file = if build_gradle.exists() {
+        build_gradle
+    } else if build_gradle_kts.exists() {
+        build_gradle_kts
+    } else {
+        anyhow::bail!("No build.gradle or build.gradle.kts found in project root");
+    };
+
+    let content = fs::read_to_string(&gradle_file)?;
+    
+    // Extract artifact name (last part after ':')
+    let artifact = suggestion.affected_package
+        .rsplit(':')
+        .next()
+        .unwrap_or(&suggestion.affected_package);
+    
+    // Simple string-based replacement
+    // Look for patterns like: 'group:artifact:version' or "group:artifact:version"
+    let mut updated = content.clone();
+    let mut match_found = false;
+
+    // Try to find the artifact in the file
+    for line in content.lines() {
+        if line.contains(artifact) && line.contains(&suggestion.current_version) {
+            // Simple replacement: replace old version with new version on lines containing the artifact
+            let new_line = line.replace(&suggestion.current_version, fixed_version);
+            updated = updated.replace(line, &new_line);
+            match_found = true;
+            println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+            break;
+        }
+    }
+
+    if !match_found {
+        anyhow::bail!("Dependency {} with version {} not found in {}", 
+                      artifact, suggestion.current_version, gradle_file.display());
+    }
+
+    // Write updated content back
+    fs::write(&gradle_file, updated)?;
+    Ok(())
 }
 
-fn apply_bazel_fix(_suggestion: &RemediationSuggestion, _project_root: &Path) -> Result<()> {
-    // This is a placeholder - in a full implementation, we would:
-    // 1. Parse WORKSPACE or MODULE.bazel
-    // 2. Update maven_install artifacts
-    // 3. Write back files
-    // 4. Run bazel run @maven//:pin
-    // For now, just return an error indicating this needs manual implementation
-    anyhow::bail!("Bazel auto-fix not yet fully implemented - use --suggest for guidance")
+fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> Result<()> {
+    let fixed_version = suggestion.fixed_version.as_ref()
+        .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
+
+    // Try MODULE.bazel first, then WORKSPACE
+    let module_bazel = project_root.join("MODULE.bazel");
+    let workspace = project_root.join("WORKSPACE");
+    
+    let bazel_file = if module_bazel.exists() {
+        module_bazel
+    } else if workspace.exists() {
+        workspace
+    } else {
+        anyhow::bail!("No MODULE.bazel or WORKSPACE found in project root");
+    };
+
+    let content = fs::read_to_string(&bazel_file)?;
+    
+    // Extract artifact coordinates
+    let artifact = suggestion.affected_package
+        .rsplit(':')
+        .next()
+        .unwrap_or(&suggestion.affected_package);
+    
+    // Simple string-based replacement
+    let mut updated = content.clone();
+    let mut match_found = false;
+
+    // Look for the artifact with current version in maven coordinates
+    for line in content.lines() {
+        if line.contains(artifact) && line.contains(&suggestion.current_version) {
+            let new_line = line.replace(&suggestion.current_version, fixed_version);
+            updated = updated.replace(line, &new_line);
+            match_found = true;
+            println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+            break;
+        }
+    }
+
+    if !match_found {
+        anyhow::bail!("Dependency {} with version {} not found in {}", 
+                      artifact, suggestion.current_version, bazel_file.display());
+    }
+
+    // Write updated content back
+    fs::write(&bazel_file, updated)?;
+    
+    // Note: In a production system, we would also:
+    // 1. Update maven_install.json if it exists
+    // 2. Run `bazel run @maven//:pin` to regenerate lock files
+    // For now, just update the BUILD/WORKSPACE file
+    println!("  ⚠️  Remember to run: bazel run @maven//:pin");
+
+    Ok(())
 }
