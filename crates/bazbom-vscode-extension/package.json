@@ -1,0 +1,90 @@
+{
+  "name": "bazbom",
+  "displayName": "BazBOM Security Scanner",
+  "description": "Real-time vulnerability scanning for Java projects using Maven, Gradle, or Bazel",
+  "version": "1.0.0",
+  "publisher": "bazbom",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cboyd0319/BazBOM"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Linters",
+    "Security"
+  ],
+  "keywords": [
+    "security",
+    "vulnerability",
+    "sbom",
+    "maven",
+    "gradle",
+    "bazel",
+    "java"
+  ],
+  "activationEvents": [
+    "onLanguage:xml",
+    "onLanguage:groovy",
+    "onLanguage:kotlin"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "bazbom.scan",
+        "title": "BazBOM: Scan Project"
+      },
+      {
+        "command": "bazbom.syncAdvisories",
+        "title": "BazBOM: Sync Advisory Database"
+      }
+    ],
+    "configuration": {
+      "title": "BazBOM",
+      "properties": {
+        "bazbom.lspPath": {
+          "type": "string",
+          "default": "bazbom-lsp",
+          "description": "Path to bazbom-lsp binary. If not specified, will look for bazbom-lsp in PATH."
+        },
+        "bazbom.enableRealTimeScanning": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable real-time vulnerability scanning on file save"
+        },
+        "bazbom.scanOnOpen": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan when opening a project"
+        },
+        "bazbom.severityThreshold": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "critical"],
+          "default": "medium",
+          "description": "Minimum severity level to display diagnostics"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.18",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.2.2"
+  }
+}
