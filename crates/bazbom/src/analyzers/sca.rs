@@ -397,6 +397,7 @@ impl ScaAnalyzer {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct Component {
     name: String,
     version: String,

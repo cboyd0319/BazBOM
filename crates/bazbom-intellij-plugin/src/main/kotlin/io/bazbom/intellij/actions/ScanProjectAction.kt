@@ -31,12 +31,44 @@ class ScanProjectAction : AnAction() {
                     
                     if (result.success) {
                         log.info("BazBOM scan completed successfully")
-                        // TODO: Update tool window with results
+                        
+                        val service = project.getService(io.bazbom.intellij.services.BazBomProjectService::class.java)
+                        service.loadLastResults()
+                        
+                        com.intellij.notification.Notifications.Bus.notify(
+                            com.intellij.notification.Notification(
+                                "BazBOM",
+                                "Scan Complete",
+                                "BazBOM scan completed successfully",
+                                com.intellij.notification.NotificationType.INFORMATION
+                            ),
+                            project
+                        )
                     } else {
                         log.error("BazBOM scan failed: ${result.errorMessage}")
+                        
+                        com.intellij.notification.Notifications.Bus.notify(
+                            com.intellij.notification.Notification(
+                                "BazBOM",
+                                "Scan Failed",
+                                "BazBOM scan failed: ${result.errorMessage}",
+                                com.intellij.notification.NotificationType.ERROR
+                            ),
+                            project
+                        )
                     }
                 } catch (e: Exception) {
                     log.error("Exception during BazBOM scan", e)
+                    
+                    com.intellij.notification.Notifications.Bus.notify(
+                        com.intellij.notification.Notification(
+                            "BazBOM",
+                            "Scan Error",
+                            "Exception during scan: ${e.message}",
+                            com.intellij.notification.NotificationType.ERROR
+                        ),
+                        project
+                    )
                 }
             }
         })
