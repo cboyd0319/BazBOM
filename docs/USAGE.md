@@ -2898,3 +2898,409 @@ bazel run //tools/supplychain:upgrade_recommender -- \
 - Breaking changes identified
 - Migration guide with steps
 - Security fixes (when available)
+
+## IDE Integration
+
+BazBOM provides native IDE integration for IntelliJ IDEA and VS Code, enabling real-time vulnerability detection and one-click fixes directly in your development environment.
+
+### IntelliJ IDEA Plugin
+
+Get instant vulnerability warnings and fixes without leaving IntelliJ IDEA.
+
+#### Installation
+
+**From JetBrains Marketplace:**
+1. Open IntelliJ IDEA
+2. Go to **Settings/Preferences** → **Plugins**
+3. Search for "BazBOM Security Scanner"
+4. Click **Install**
+5. Restart IDE
+
+**Manual Installation:**
+1. Build the plugin:
+   ```bash
+   cd crates/bazbom-intellij-plugin
+   ./gradlew buildPlugin
+   ```
+2. In IntelliJ IDEA: **Settings** → **Plugins** → **⚙️** → **Install Plugin from Disk**
+3. Select `build/distributions/bazbom-intellij-plugin-*.zip`
+4. Restart IDE
+
+#### Features
+
+**1. Dependency Tree Visualization**
+
+View your project's dependency tree with security status indicators:
+
+- **Tool Window**: Access via **View** → **Tool Windows** → **BazBOM**
+- **Color-coded dependencies**:
+  - 🔴 Red = CRITICAL vulnerabilities
+  - 🟡 Yellow = HIGH/MEDIUM vulnerabilities
+  - 🟢 Green = No known vulnerabilities
+- **Grouped by scope**: Compile, Runtime, Test
+- **Quick actions**: Right-click for details, fixes, or VEX exceptions
+
+**2. Real-Time Vulnerability Highlighting**
+
+Get inline warnings as you edit build files:
+
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>org.apache.logging.log4j</groupId>
+    <artifactId>log4j-core</artifactId>
+    <version>2.17.0</version>  ⚠️ CVE-2021-44832 (MEDIUM): RCE via JDBC Appender
+</dependency>                      💡 Quick Fix: Upgrade to 2.21.1
+```
+
+Supported files:
+- `pom.xml` (Maven)
+- `build.gradle` and `build.gradle.kts` (Gradle)
+- `BUILD.bazel`, `WORKSPACE`, `MODULE.bazel` (Bazel)
+
+**3. One-Click Quick Fixes**
+
+Fix vulnerabilities instantly:
+
+1. Hover over vulnerable dependency
+2. Press `Alt+Enter` (or `⌥⏎` on macOS)
+3. Select **"Upgrade to safe version X.Y.Z"**
+4. Plugin automatically:
+   - Updates version in build file
+   - Reloads build system (Maven/Gradle/Bazel)
+   - Runs tests in background
+   - Shows notification when complete
+
+**4. Project Scanning**
+
+Trigger scans manually:
+
+- **Menu**: **Tools** → **BazBOM** → **Scan Project**
+- **Keyboard**: Configure shortcut in **Keymap** settings
+- **Tool Window**: Click **Scan** button
+- **Auto-scan**: Enable in settings to scan on project open
+
+**5. Settings Panel**
+
+Configure plugin behavior:
+
+1. Open **Settings/Preferences** → **Tools** → **BazBOM**
+2. Available options:
+   - ☑ Enable real-time scanning
+   - ☑ Show inline warnings
+   - ☑ Auto-scan on file save
+   - ☑ Auto-scan on project open
+   - Severity thresholds (CRITICAL, HIGH, MEDIUM, LOW)
+   - Policy file path
+   - BazBOM CLI path
+
+#### Configuration
+
+**Set CLI Path:**
+
+If BazBOM is not in your PATH:
+
+1. Go to **Settings** → **Tools** → **BazBOM**
+2. Set **BazBOM CLI Path** to full path (e.g., `/usr/local/bin/bazbom`)
+3. Click **Test Connection** to verify
+
+**Custom Policy File:**
+
+To use a custom policy file:
+
+1. Go to **Settings** → **Tools** → **BazBOM**
+2. Set **Policy File** path
+3. Plugin will use this for scanning and quick fixes
+
+#### Build System Support
+
+**Maven:**
+- Automatic detection via `pom.xml`
+- Reload support after upgrades
+- Multi-module project support
+
+**Gradle:**
+- Supports both Groovy and Kotlin DSL
+- Detects `build.gradle` and `build.gradle.kts`
+- Reload support after upgrades
+- Android project support
+
+**Bazel:**
+- Supports `BUILD.bazel`, `WORKSPACE`, `MODULE.bazel`
+- Parses `maven_install.json` for dependencies
+- Reminds to run `bazel run @maven//:pin` after changes
+
+#### Troubleshooting
+
+**Plugin doesn't find vulnerabilities:**
+- Ensure BazBOM CLI is installed and in PATH
+- Check CLI path in Settings
+- Verify advisory database is synced: `bazbom db sync`
+
+**Quick fixes fail:**
+- Check that build system is properly configured
+- Ensure project builds successfully
+- Check IDE logs: **Help** → **Show Log in Finder/Explorer**
+
+**Performance issues:**
+- Disable auto-scan on file save
+- Use fast scan mode in settings
+- Increase IDE memory: **Help** → **Edit Custom VM Options**
+
+### VS Code Extension
+
+Get vulnerability warnings and fixes in VS Code through the BazBOM Language Server Protocol (LSP) server.
+
+#### Installation
+
+**From VS Code Marketplace:**
+1. Open VS Code
+2. Go to **Extensions** (Ctrl+Shift+X)
+3. Search for "BazBOM Security Scanner"
+4. Click **Install**
+
+**Manual Installation:**
+1. Build the extension:
+   ```bash
+   cd crates/bazbom-vscode-extension
+   npm install
+   npm run compile
+   npx vsce package
+   ```
+2. In VS Code: **Extensions** → **⋯** → **Install from VSIX**
+3. Select `bazbom-*.vsix`
+
+**LSP Server Setup:**
+
+The extension requires the BazBOM LSP server:
+
+```bash
+# Build LSP server
+cd crates/bazbom-lsp
+cargo build --release
+
+# Binary location: ../../target/release/bazbom-lsp
+```
+
+Configure LSP path in VS Code settings:
+```json
+{
+  "bazbom.lspPath": "/path/to/bazbom-lsp"
+}
+```
+
+#### Features
+
+**1. Real-Time Diagnostics**
+
+Vulnerabilities appear in:
+- **Problems Panel**: View all issues at once
+- **Inline Squiggles**: Red/yellow underlines in build files
+- **Hover Tooltips**: Detailed CVE information
+
+**2. Code Actions**
+
+Fix vulnerabilities with Quick Fix:
+1. Click on warning squiggle
+2. Click **Quick Fix** (💡 icon) or press `Ctrl+.`
+3. Select **"Upgrade to safe version X.Y.Z"**
+
+**3. Commands**
+
+Access via Command Palette (`Ctrl+Shift+P`):
+- **BazBOM: Scan Project** - Run full scan
+- **BazBOM: Sync Advisory Database** - Update vulnerability database
+
+**4. Configuration**
+
+Settings available in VS Code settings:
+
+```json
+{
+  // Path to bazbom-lsp binary
+  "bazbom.lspPath": "bazbom-lsp",
+  
+  // Enable real-time scanning
+  "bazbom.enableRealTimeScanning": true,
+  
+  // Minimum severity to show (critical, high, medium, low)
+  "bazbom.minimumSeverity": "medium",
+  
+  // Policy file path
+  "bazbom.policyFile": "bazbom.yml"
+}
+```
+
+#### Supported Files
+
+The extension activates for:
+- `**/pom.xml` (Maven)
+- `**/build.gradle` (Gradle Groovy)
+- `**/build.gradle.kts` (Gradle Kotlin DSL)
+- `**/BUILD.bazel`, `**/WORKSPACE`, `**/MODULE.bazel` (Bazel)
+
+#### Troubleshooting
+
+**Extension not working:**
+- Check LSP server is built and path is correct
+- Verify BazBOM CLI is installed: `bazbom --version`
+- Check Output panel: **View** → **Output** → Select "BazBOM"
+
+**No diagnostics shown:**
+- Ensure file type is supported (see above)
+- Run manual scan: Command Palette → **BazBOM: Scan Project**
+- Check advisory database: `bazbom db sync`
+
+**LSP server crashes:**
+- Check LSP server logs in Output panel
+- Rebuild LSP server: `cd crates/bazbom-lsp && cargo build --release`
+- Report issue on GitHub with logs
+
+### LSP Architecture
+
+The BazBOM LSP (Language Server Protocol) server provides a reusable foundation for editor integration:
+
+**Supported by:**
+- VS Code (native)
+- Vim/Neovim (via nvim-lspconfig)
+- Emacs (via lsp-mode)
+- Sublime Text (via LSP package)
+- Any editor with LSP client support
+
+**Implementation:**
+```rust
+// Built with tower-lsp
+// Source: crates/bazbom-lsp/src/main.rs
+
+// Capabilities:
+- textDocument/diagnostic
+- textDocument/codeAction
+- textDocument/didSave
+```
+
+**Performance:**
+- Fast mode: <10 seconds for initial scan
+- Cached results: <1 second for subsequent lookups
+- Async scanning: doesn't block editor
+
+**Configuration (Vim/Neovim):**
+
+```lua
+-- Add to ~/.config/nvim/init.lua
+local lspconfig = require('lspconfig')
+local configs = require('lspconfig.configs')
+
+if not configs.bazbom then
+  configs.bazbom = {
+    default_config = {
+      cmd = {'/path/to/bazbom-lsp'},
+      filetypes = {'xml', 'groovy', 'kotlin', 'bzl'},
+      root_dir = lspconfig.util.root_pattern('pom.xml', 'build.gradle', 'BUILD.bazel'),
+    },
+  }
+end
+
+lspconfig.bazbom.setup{}
+```
+
+### Developer Workflow Examples
+
+#### Example 1: Maven Project
+
+```bash
+# 1. Open Maven project in IntelliJ IDEA
+# 2. Plugin auto-scans on project open
+# 3. Tool window shows dependency tree with 5 vulnerabilities
+
+# 4. Open pom.xml
+# 5. See inline warnings:
+#    <version>2.17.0</version> ⚠️ CVE-2021-44832 (MEDIUM)
+
+# 6. Press Alt+Enter on warning
+# 7. Select "Upgrade to safe version 2.21.1"
+# 8. Plugin updates version, reloads Maven, runs tests
+# 9. Notification: "✅ Tests passed. Dependency upgraded."
+
+# 10. Commit changes
+# 11. Pre-commit hook validates no policy violations
+# 12. Push to GitHub
+```
+
+#### Example 2: Gradle Project in VS Code
+
+```bash
+# 1. Open Gradle project in VS Code
+# 2. LSP server starts automatically
+
+# 3. Open build.gradle
+# 4. See Problems panel:
+#    ⚠️ spring-web:5.3.20 has CVE-2024-xxxx (CRITICAL)
+
+# 5. Click on problem in file
+# 6. Click Quick Fix (💡)
+# 7. Select "Upgrade to safe version 5.3.31"
+
+# 8. Run tests: ./gradlew test
+# 9. If tests pass, commit changes
+```
+
+#### Example 3: Bazel Monorepo
+
+```bash
+# 1. Large monorepo with 1000+ targets
+# 2. IntelliJ IDEA plugin scans using bazbom CLI
+
+# 3. Use selective scanning for performance:
+bazbom scan . --bazel-targets-query 'kind(java_binary, //src/...)'
+
+# 4. Tool window shows only scanned targets
+# 5. Click vulnerable dependency
+# 6. Quick fix updates MODULE.bazel
+# 7. Plugin reminds: "Run `bazel run @maven//:pin` to update lockfile"
+
+# 8. Run command:
+bazel run @maven//:pin
+
+# 9. Commit both MODULE.bazel and maven_install.json
+```
+
+### Best Practices
+
+**For Team Adoption:**
+
+1. **Install IDE plugins** on all developer machines
+2. **Configure auto-scan** on project open
+3. **Set up pre-commit hooks** to block vulnerable commits
+4. **Use policy file** to enforce team standards
+5. **Review dashboard** regularly in tool window
+
+**For CI/CD Integration:**
+
+1. **IDE for developers** (IntelliJ/VS Code)
+2. **CLI for CI** (`bazbom scan --format sarif`)
+3. **Pre-commit hooks** for local validation
+4. **GitHub Actions** for PR validation
+
+**Performance Optimization:**
+
+1. **Use fast mode** for pre-commit hooks
+2. **Enable caching** in IDE settings
+3. **Selective scanning** for Bazel monorepos
+4. **Incremental scans** for large projects
+
+### Migration from Other Tools
+
+**From Snyk:**
+- Similar IDE experience with one-click fixes
+- Advantage: Works offline, privacy-preserving
+- Advantage: Better Bazel support
+
+**From Dependabot:**
+- IDE plugins provide instant feedback (vs. PR delay)
+- Advantage: Test execution before committing
+- Works alongside Dependabot for automation
+
+**From OWASP Dependency-Check:**
+- Much faster (seconds vs. minutes)
+- IDE integration (Dependency-Check is CLI-only)
+- Better reachability analysis
