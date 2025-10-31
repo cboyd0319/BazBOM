@@ -213,7 +213,7 @@ impl ScaAnalyzer {
                                                         }
                                                         Err(e) => {
                                                             // Error parsing version, be conservative and include it
-                                                            println!("[bazbom]   warning: version check failed for {} {}: {}", 
+                                                            eprintln!("[bazbom]   warning: version check failed for {} {}: {}", 
                                                                 component.name, component.version, e);
                                                             
                                                             let epss = epss_scores.get(&vuln_id).map(|e| e.score);

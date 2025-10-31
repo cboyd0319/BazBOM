@@ -13,11 +13,22 @@ pub fn is_version_affected(version: &str, ranges: &[VersionRange]) -> Result<boo
             }
             "ECOSYSTEM" => {
                 // For ECOSYSTEM type, we need to know the ecosystem to properly parse versions
-                // For now, try semver first, fall back to string comparison
-                if is_version_affected_semver(version, range).unwrap_or(false) {
-                    return Ok(true);
-                } else if is_version_affected_string(version, range) {
-                    return Ok(true);
+                // Try semver first, log if it fails, then fall back to string comparison
+                match is_version_affected_semver(version, range) {
+                    Ok(true) => return Ok(true),
+                    Ok(false) => {
+                        // Semver says not affected, but check string comparison as fallback
+                        if is_version_affected_string(version, range) {
+                            return Ok(true);
+                        }
+                    }
+                    Err(e) => {
+                        // Semver parsing failed, log and use string comparison
+                        eprintln!("[bazbom] semver parse failed for '{}': {}, using string comparison", version, e);
+                        if is_version_affected_string(version, range) {
+                            return Ok(true);
+                        }
+                    }
                 }
             }
             "GIT" => {

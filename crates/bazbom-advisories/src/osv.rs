@@ -220,8 +220,6 @@ fn convert_osv_to_vulnerability(osv: OsvVulnerability) -> Vulnerability {
 
 /// Encode key for safe filesystem use
 fn encode_cache_key(key: &str) -> String {
-    // Base64 encode to avoid any filesystem issues
-    use std::collections::HashMap;
     let mut encoded = String::new();
     for ch in key.chars() {
         match ch {
