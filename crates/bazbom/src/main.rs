@@ -9,11 +9,11 @@ mod bazel;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
-mod remediation;
 mod shading;
 
 use bazbom::cli::{Cli, Commands, PolicyCmd, DbCmd};
 use bazbom::hooks::{HooksConfig, install_hooks};
+use bazbom::remediation;
 use bazbom::scan_orchestrator::ScanOrchestrator;
 
 fn main() -> Result<()> {

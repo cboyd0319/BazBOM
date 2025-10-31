@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
+use crate::backup::{BackupHandle, choose_backup_strategy};
+use crate::test_runner::{run_tests, has_tests};
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RemediationSuggestion {
     pub vulnerability_id: String,
@@ -451,4 +454,87 @@ fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
     println!("  ⚠️  Remember to run: bazel run @maven//:pin");
 
     Ok(())
+}
+
+/// Apply fixes with testing and automatic rollback on failure
+/// This is the safe way to apply fixes - wraps apply_fixes with test execution
+pub fn apply_fixes_with_testing(
+    suggestions: &[RemediationSuggestion],
+    build_system: BuildSystem,
+    project_root: &Path,
+    skip_tests: bool,
+) -> Result<ApplyResultWithTests> {
+    // Step 1: Create backup
+    println!("\n[bazbom] Creating backup before applying fixes...");
+    let strategy = choose_backup_strategy(project_root);
+    let backup = BackupHandle::create(project_root, strategy)?;
+    
+    // Step 2: Apply fixes
+    println!("\n[bazbom] Applying fixes...");
+    let apply_result = apply_fixes(suggestions, build_system, project_root)?;
+    
+    if apply_result.applied == 0 {
+        println!("\n[bazbom] No fixes were applied");
+        backup.cleanup()?;
+        return Ok(ApplyResultWithTests {
+            apply_result,
+            tests_passed: true,
+            tests_run: false,
+            test_output: None,
+        });
+    }
+    
+    // Step 3: Run tests if not skipped and tests exist
+    let should_run_tests = !skip_tests && has_tests(build_system, project_root);
+    
+    if !should_run_tests {
+        println!("\n[bazbom] Skipping tests");
+        backup.cleanup()?;
+        return Ok(ApplyResultWithTests {
+            apply_result,
+            tests_passed: true,
+            tests_run: false,
+            test_output: None,
+        });
+    }
+    
+    println!("\n[bazbom] Running tests to verify fixes...");
+    let test_result = run_tests(build_system, project_root)?;
+    
+    if test_result.success {
+        println!("\n✅ Tests passed! Fixes applied successfully.");
+        println!("   Duration: {:.2}s", test_result.duration.as_secs_f64());
+        
+        // Clean up backup
+        backup.cleanup()?;
+        
+        Ok(ApplyResultWithTests {
+            apply_result,
+            tests_passed: true,
+            tests_run: true,
+            test_output: Some(test_result.output),
+        })
+    } else {
+        println!("\n❌ Tests failed! Rolling back changes...");
+        println!("   Exit code: {}", test_result.exit_code);
+        
+        // Restore from backup
+        backup.restore()?;
+        
+        println!("\n[bazbom] Changes rolled back successfully.");
+        println!("\nTest output:\n{}", test_result.output);
+        
+        anyhow::bail!(
+            "Fixes were rolled back because tests failed. \
+             Review the test output above to understand the issue."
+        )
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct ApplyResultWithTests {
+    pub apply_result: ApplyResult,
+    pub tests_passed: bool,
+    pub tests_run: bool,
+    pub test_output: Option<String>,
 }
