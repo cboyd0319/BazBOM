@@ -4,6 +4,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Getting Started
 
+- **[90-Second Quickstart](90-SECOND-QUICKSTART.md)** ⚡ Zero to first scan in 90 seconds
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap

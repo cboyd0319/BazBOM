@@ -256,7 +256,10 @@ bazel build //:sca_scan
 
 That's it. No configuration files, no manual dependency lists.
 
-**New to BazBOM?** Follow the [5-minute tutorial](docs/QUICKSTART.md)
+**New to BazBOM?**
+- ⚡ **[90-Second Quickstart](docs/90-SECOND-QUICKSTART.md)** - Fastest path from zero to first scan
+- 📖 **[5-Minute Tutorial](docs/QUICKSTART.md)** - Comprehensive getting started guide
+- 🎯 **[Interactive Demo](docs/examples/orchestrated-scan-quickstart.sh)** - Try all scan modes
 
 ---
 
