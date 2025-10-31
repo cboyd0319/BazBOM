@@ -7,7 +7,7 @@
 **Dependencies:** Phase 2 (Policy engine basics complete)
 
 > **Implementation Note:** Phase 5 is complete with all core features implemented, tested, and documented. 
-> See `PHASE_5_IMPLEMENTATION_COMPLETE.md` for full implementation details.
+> See [`PHASE_5_IMPLEMENTATION_COMPLETE.md`](../../PHASE_5_IMPLEMENTATION_COMPLETE.md) for full implementation details.
 
 ---
 
