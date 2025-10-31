@@ -66,3 +66,13 @@ bazbom-output/
 
 # Homebrew generated files
 homebrew/bazbom.rb
+
+# VS Code extension
+crates/bazbom-vscode-extension/node_modules/
+crates/bazbom-vscode-extension/out/
+crates/bazbom-vscode-extension/*.vsix
+
+# IntelliJ plugin
+crates/bazbom-intellij-plugin/.gradle/
+crates/bazbom-intellij-plugin/build/
+crates/bazbom-intellij-plugin/.idea/
