@@ -35,10 +35,13 @@
                 icon="/icons/bazbom-16.svg"/>
 
     <!-- Settings panel -->
-    <projectConfigurable parentId="tools"
-                         instance="io.bazbom.intellij.settings.BazBomConfigurable"
-                         id="io.bazbom.settings"
-                         displayName="BazBOM"/>
+    <applicationConfigurable parentId="tools"
+                             instance="io.bazbom.intellij.settings.BazBomConfigurable"
+                             id="io.bazbom.settings"
+                             displayName="BazBOM"/>
+    
+    <!-- Application-level settings service -->
+    <applicationService serviceImplementation="io.bazbom.intellij.settings.BazBomSettings"/>
     
     <!-- Project service for caching -->
     <projectService serviceImplementation="io.bazbom.intellij.services.BazBomProjectService"/>
