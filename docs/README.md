@@ -4,6 +4,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Getting Started
 
+- **[90-Second Quickstart](90-SECOND-QUICKSTART.md)** ⚡ Zero to first scan in 90 seconds
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
@@ -28,6 +29,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 ## Advanced Features
 
 - **[Orchestrated Scanning](ORCHESTRATED_SCANNING.md)** - Integrate Semgrep and CodeQL with merged SARIF output
+- **[Integration Plan Status](INTEGRATION_PLAN_STATUS.md)** - Implementation status of the orchestrated scan architecture
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
 - **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
