@@ -7,7 +7,7 @@ fn test_sarif_report_creation() {
     assert_eq!(report.version, "2.1.0");
     assert_eq!(
         report.schema,
-        "https://json.schemastore.org/sarif-2.1.0.json"
+        Some("https://json.schemastore.org/sarif-2.1.0.json".to_string())
     );
     assert_eq!(report.runs.len(), 1);
     assert_eq!(report.runs[0].tool.driver.name, "bazbom");
