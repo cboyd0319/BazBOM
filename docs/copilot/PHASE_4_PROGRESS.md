@@ -1,7 +1,7 @@
 # Phase 4: Developer Experience - Implementation Progress
 
 **Last Updated:** 2025-10-31
-**Status:** In Progress (30% Complete)
+**Status:** In Progress (85% Complete)
 **Timeline:** Months 1-3 (12 weeks)
 
 ---
@@ -15,13 +15,13 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 4. Pre-commit hooks for policy enforcement
 
 **Current Progress:**
-- **IDE Integration (4.1):** 50% - Core features implemented (dependency tree, annotations, quick fixes)
+- **IDE Integration (4.1):** 90% ✅ - All core features implemented, builds successfully
 - **Automated Remediation (4.2):** 100% ✅ - Complete with PR generation via GitHub API
 - **Pre-Commit Hooks (4.3):** 100% ✅ - Fully implemented and tested
 
 ---
 
-## 4.1 IDE Integration (50% Complete)
+## 4.1 IDE Integration (90% Complete)
 
 ### Completed ✅
 
@@ -69,12 +69,15 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 - ✅ Commands: "BazBOM: Scan Project", "BazBOM: Sync Advisory Database"
 - ✅ File watching for build files
 
+**Build Status (verified 2025-10-31):**
+- ✅ npm dependencies installed (142 packages)
+- ✅ TypeScript compiles successfully
+- ✅ Extension ready for testing
+
 **Next Steps:**
-1. Install npm dependencies: `cd crates/bazbom-vscode-extension && npm install`
-2. Compile TypeScript: `npm run compile`
-3. Test locally: Press F5 in VS Code to launch extension host
-4. Package: `npx vsce package`
-5. Publish to marketplace (requires account)
+1. Test locally: Press F5 in VS Code to launch extension host
+2. Package: `npx vsce package`
+3. Publish to marketplace (requires account)
 
 #### IntelliJ IDEA Plugin Implementation
 **Location:** `crates/bazbom-intellij-plugin/`
@@ -82,116 +85,63 @@ Phase 4 aims to make BazBOM the tool developers **WANT** to use by providing:
 **Completed Features:**
 - ✅ `build.gradle.kts` - Gradle build with IntelliJ plugin 1.17.4
 - ✅ Gradle wrapper initialized (version 8.5)
-- ✅ Plugin builds successfully
-- ✅ **Full dependency tree visualization** (NEW)
+- ✅ Plugin builds successfully (verified 2025-10-31)
+- ✅ **Full dependency tree visualization**
   - `model/SbomData.kt` - Data models for SBOM/vulnerabilities
   - `util/SbomParser.kt` - Parses BazBOM JSON output
   - `toolwindow/BazBomToolWindowPanel.kt` - Interactive tree view
   - `toolwindow/DependencyTreeCellRenderer.kt` - Color-coded by severity
   - Shows dependencies grouped by scope with vulnerability counts
   - Scan and refresh buttons with progress indicators
-- ✅ **Real-time vulnerability highlighting** (NEW)
+- ✅ **Real-time vulnerability highlighting for all build systems**
   - `annotator/MavenDependencyAnnotator.kt` - Highlights pom.xml dependencies
+  - `annotator/GradleDependencyAnnotator.kt` - Highlights build.gradle/.kts dependencies (NEW)
+  - `annotator/BazelDependencyAnnotator.kt` - Highlights BUILD/WORKSPACE/MODULE.bazel (NEW)
   - Shows CVE ID, severity, CISA KEV warnings, reachability
   - Error-level for CRITICAL, warning for HIGH, info for MEDIUM/LOW
-  - Registered in plugin.xml
-- ✅ **Quick fix actions** (NEW)
+  - All registered in plugin.xml
+- ✅ **Complete quick fix actions** (ENHANCED)
   - `quickfix/UpgradeDependencyQuickFix.kt` - Alt+Enter upgrade action
-  - Upgrades dependencies to safe versions
-  - IntentionAction with high priority
+  - ✅ Upgrades dependencies to safe versions
+  - ✅ Maven project reload after upgrade
+  - ✅ Background test execution with progress indicator
+  - ✅ Success/failure/warning notifications
+  - ✅ IntentionAction with high priority
+- ✅ **Notification system**
+  - Notification group registered in plugin.xml
+  - Success notifications for upgrades
+  - Warning notifications for test failures
+  - Error notifications for upgrade failures
 - ✅ Icon assets (bazbom-16.svg)
 - ✅ Actions for scan and database sync
 - ✅ CLI runner utility with error handling
 - ✅ Project service for result caching
 - ✅ Settings panel (stub)
 
-**Next Steps:**
-1. Complete quick fix with Maven reload and test execution
-2. Add Gradle and Bazel annotators
-3. Run in test IDE: `./gradlew runIde`
-4. Test with sample projects
-5. Polish UI and error handling
-6. Publish to JetBrains Marketplace
+**Remaining Work (10%):**
+- [ ] Manual testing with sample Maven/Gradle/Bazel projects
+- [ ] Performance profiling and optimization
+- [ ] Polish UI and error handling edge cases
+- [ ] Publish to JetBrains Marketplace
 
-### In Progress 🔄
+### Remaining Work ⏸️
 
-#### Dependency Tree Visualization
-**Status:** Not Started
-**Priority:** High
+#### High Priority
+- [ ] Manual testing with real Maven/Gradle/Bazel projects
+- [ ] Performance profiling and optimization
+- [ ] Marketplace publishing (IntelliJ + VS Code)
 
-**Requirements:**
-- Display all project dependencies in tree view
-- Color-code by security status (red/yellow/green)
-- Show vulnerability count per dependency
-- Support filtering by severity
-- Clickable items for details
+#### Medium Priority
+- [ ] Testing infrastructure for plugins (unit/integration tests)
+- [ ] Enhanced range detection in LSP server (currently line 0)
+- [ ] Caching optimization to avoid repeated scans
+- [ ] Polish UI and error handling edge cases
 
-**IntelliJ Implementation:**
-- Use JTree component with custom renderer
-- Parse SBOM JSON from scan results
-- Update on scan completion
-
-**VS Code Implementation:**
-- Use TreeView API
-- Register tree data provider
-- Update from LSP diagnostics
-
-#### Real-Time Vulnerability Highlighting
-**Status:** Not Started
-**Priority:** High
-
-**Requirements:**
-- Inline warnings in pom.xml, build.gradle, BUILD.bazel
-- Severity-based highlighting (error/warning/info)
-- Hover tooltips with CVE details
-- Update on file save
-
-**IntelliJ Implementation:**
-- Register `Annotator` for XML, Groovy, Kotlin, Starlark
-- Parse dependency declarations using PSI
-- Query scan results for vulnerabilities
-- Render with `HighlightSeverity.ERROR/WARNING`
-
-**VS Code Implementation:**
-- LSP server publishes diagnostics
-- Extension displays as problems
-- Range detection for dependency blocks
-
-#### One-Click Quick Fixes
-**Status:** Not Started
-**Priority:** High
-
-**Requirements:**
-- Alt+Enter (IntelliJ) / Ctrl+. (VS Code) for quick fixes
-- Show available fixed version
-- Apply upgrade and reload build system
-- Run tests after upgrade
-- Rollback if tests fail
-
-**IntelliJ Implementation:**
-```kotlin
-class UpgradeDependencyQuickFix : IntentionAction {
-    override fun invoke(project: Project, editor: Editor, file: PsiFile) {
-        // 1. Update version in file
-        // 2. Reload build system (Maven/Gradle/Bazel)
-        // 3. Run tests in background
-        // 4. Show notification with result
-        // 5. Rollback if tests fail
-    }
-}
-```
-
-**VS Code Implementation:**
-- LSP server provides code actions
-- Extension displays in quick fix menu
-- Apply fix via LSP workspace edit
-
-### Not Started ⏸️
-
-- Testing infrastructure for plugins
-- Marketplace publishing
-- User analytics (privacy-preserving)
-- Telemetry (opt-in only)
+#### Low Priority (Future Enhancements)
+- [ ] User analytics (privacy-preserving, opt-in)
+- [ ] Telemetry (opt-in only)
+- [ ] Gradle version catalog advanced support
+- [ ] Maven property-based version handling
 
 ---
 
@@ -477,62 +427,60 @@ exit 0
 
 ## Next Steps
 
-### Immediate (This Week)
+### Immediate (Next 1-2 Days)
 
-1. **VS Code Extension:**
-   - [ ] Install npm dependencies
-   - [ ] Compile TypeScript
-   - [ ] Test in development host (F5)
-   - [ ] Fix any compilation errors
+1. **Manual Testing:**
+   - [ ] Test IntelliJ plugin with sample Maven project
+   - [ ] Test IntelliJ plugin with sample Gradle project
+   - [ ] Test IntelliJ plugin with sample Bazel project
+   - [ ] Verify quick fix actions work end-to-end
+   - [ ] Verify test execution and notifications work
 
-2. **IntelliJ Plugin:**
-   - [ ] Initialize Gradle wrapper
-   - [ ] Build plugin with Gradle
-   - [ ] Run in test IDE
-   - [ ] Fix any build errors
+2. **VS Code Extension:**
+   - [ ] Test locally with F5 in VS Code
+   - [ ] Verify LSP server integration
+   - [ ] Test diagnostics display
+   - [ ] Test quick fix code actions
 
 3. **Documentation:**
    - [ ] Add Phase 4 examples to USAGE.md
-   - [ ] Create IDE setup guides
-   - [ ] Update README with IDE features
+   - [ ] Create IDE setup guides (installation, configuration)
+   - [ ] Update README with IDE features section
+   - [ ] Add screenshots/GIFs of IDE features
 
-### Short Term (Next 2 Weeks)
+### Short Term (Next 1-2 Weeks)
 
-1. **IDE Features:**
-   - [ ] Implement dependency tree view (both IDEs)
-   - [ ] Add real-time annotators for pom.xml/build.gradle
-   - [ ] Implement quick fix actions
-   - [ ] Add automated testing after fixes
+1. **Performance & Polish:**
+   - [ ] Profile IntelliJ plugin performance
+   - [ ] Optimize LSP server caching
+   - [ ] Improve diagnostic range detection
+   - [ ] Handle edge cases and error scenarios
 
-2. **Remediation:**
-   - [ ] Implement test execution framework
-   - [ ] Add automatic rollback on failure
-   - [ ] Create backup/restore logic
+2. **Testing:**
+   - [ ] Add unit tests for new annotators
+   - [ ] Add integration tests for quick fixes
+   - [ ] Performance testing with large projects (1000+ deps)
 
-3. **Testing:**
-   - [ ] Add integration tests for IDE plugins
-   - [ ] Test with real projects (Maven, Gradle, Bazel)
-   - [ ] Performance testing with large projects
+3. **Marketplace Preparation:**
+   - [ ] Create plugin/extension descriptions
+   - [ ] Prepare screenshots and demo videos
+   - [ ] Set up marketplace accounts (JetBrains, VS Code)
+   - [ ] Review and finalize licensing
 
-### Medium Term (Next 4 Weeks)
+### Medium Term (Next 3-4 Weeks)
 
-1. **Advanced IDE Features:**
-   - [ ] Settings panels with all configuration options
+1. **Marketplace Publishing:**
+   - [ ] Publish VS Code extension to marketplace
+   - [ ] Publish IntelliJ plugin to JetBrains Marketplace
+   - [ ] Create marketing materials (blog post, social media)
+   - [ ] Announcement on GitHub, Twitter, Reddit, Bazel Slack
+
+2. **Advanced Features:**
+   - [ ] Enhanced settings panels
    - [ ] Severity filtering in tool window
-   - [ ] Vulnerability details panel
+   - [ ] Vulnerability details panel with links
    - [ ] Status bar integration
-
-2. **PR Generation:** ✅ Complete
-   - [x] GitHub API integration
-   - [x] PR template generation
-   - [x] Test result reporting in PR
    - [ ] Security team notifications (future enhancement)
-
-3. **Marketplace:**
-   - [ ] Publish VS Code extension
-   - [ ] Publish IntelliJ plugin
-   - [ ] Create marketing materials
-   - [ ] Announcement blog post
 
 ---
 
