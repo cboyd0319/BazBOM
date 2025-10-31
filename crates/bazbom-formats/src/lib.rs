@@ -1,6 +1,7 @@
 pub mod cyclonedx;
 pub mod sarif;
 pub mod spdx;
+pub mod licenses;
 
 use std::str::FromStr;
 

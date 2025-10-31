@@ -82,6 +82,11 @@ pub enum Commands {
         #[command(subcommand)]
         action: DbCmd,
     },
+    /// License compliance operations
+    License {
+        #[command(subcommand)]
+        action: LicenseCmd,
+    },
     /// Install git pre-commit hooks for vulnerability scanning
     InstallHooks {
         /// Policy file to use (defaults to bazbom.yml)
@@ -170,4 +175,29 @@ pub enum PolicyCmd {
 pub enum DbCmd {
     /// Sync local advisory mirrors for offline use
     Sync {},
+}
+
+#[derive(Subcommand, Debug)]
+pub enum LicenseCmd {
+    /// Generate license obligations report
+    Obligations {
+        /// SBOM file to analyze (SPDX or CycloneDX)
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
+    /// Check license compatibility
+    Compatibility {
+        /// Project license (e.g., MIT, Apache-2.0)
+        #[arg(long, value_name = "LICENSE")]
+        project_license: String,
+        /// SBOM file to analyze
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
+    /// Detect copyleft contamination
+    Contamination {
+        /// SBOM file to analyze
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
 }
