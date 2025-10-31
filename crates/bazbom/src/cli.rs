@@ -82,6 +82,11 @@ pub enum Commands {
         #[command(subcommand)]
         action: DbCmd,
     },
+    /// License compliance operations
+    License {
+        #[command(subcommand)]
+        action: LicenseCmd,
+    },
     /// Install git pre-commit hooks for vulnerability scanning
     InstallHooks {
         /// Policy file to use (defaults to bazbom.yml)
@@ -146,10 +151,53 @@ impl ContainerStrategy {
 pub enum PolicyCmd {
     /// Run policy checks
     Check {},
+    /// Initialize a policy template
+    Init {
+        /// List available policy templates
+        #[arg(long)]
+        list: bool,
+        /// Template ID to initialize (e.g., pci-dss, hipaa, fedramp-moderate, soc2, corporate-permissive)
+        #[arg(long, value_name = "TEMPLATE")]
+        template: Option<String>,
+        /// Output path (defaults to current directory)
+        #[arg(long, value_name = "PATH", default_value = ".")]
+        output: String,
+    },
+    /// Validate a policy file
+    Validate {
+        /// Path to policy file to validate
+        #[arg(default_value = "bazbom.yml")]
+        policy_file: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
 pub enum DbCmd {
     /// Sync local advisory mirrors for offline use
     Sync {},
+}
+
+#[derive(Subcommand, Debug)]
+pub enum LicenseCmd {
+    /// Generate license obligations report
+    Obligations {
+        /// SBOM file to analyze (SPDX or CycloneDX)
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
+    /// Check license compatibility
+    Compatibility {
+        /// Project license (e.g., MIT, Apache-2.0)
+        #[arg(long, value_name = "LICENSE")]
+        project_license: String,
+        /// SBOM file to analyze
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
+    /// Detect copyleft contamination
+    Contamination {
+        /// SBOM file to analyze
+        #[arg(value_name = "FILE")]
+        sbom_file: Option<String>,
+    },
 }

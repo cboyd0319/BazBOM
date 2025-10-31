@@ -1,0 +1,58 @@
+# BazBOM Policy Template: HIPAA Security Rule Compliance
+# Health Insurance Portability and Accountability Act
+# Version: 1.0
+#
+# This policy template enforces HIPAA Security Rule requirements for
+# applications that store, process, or transmit electronic Protected
+# Health Information (ePHI).
+#
+# Key Requirements:
+# - §164.308(a)(1)(ii)(A): Security risk analysis
+# - §164.308(a)(5)(ii)(B): Protection from malicious software
+# - §164.312(e)(1): Transmission security
+# - §164.308(a)(8): Evaluation - periodic technical assessments
+
+name: "HIPAA Security Rule Compliance"
+description: "Health Insurance Portability and Accountability Act"
+version: "1.0"
+
+# §164.308(a)(1)(ii)(A): Risk Analysis and Management
+# CRITICAL vulnerabilities pose direct risk to ePHI
+# Reachable vulnerabilities are prioritized but all HIGH+ must be addressed
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: false
+
+# License Policy
+# HIPAA requires comprehensive software inventory
+# Unknown or unspecified licenses create compliance gaps
+license_denylist:
+  - Unknown
+  - NOASSERTION
+  - NONE
+
+# Require license information for all dependencies
+# This supports HIPAA's technical safeguards evaluation requirements
+license_allowlist:
+  - MIT
+  - Apache-2.0
+  - BSD-2-Clause
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - EPL-2.0
+  - MPL-2.0
+
+# VEX documentation required for audit trail
+vex_auto_apply: true
+
+# Notes for compliance officers:
+# - HIPAA requires risk analysis to be "accurate and thorough"
+# - This policy enforces technical safeguards (§164.312)
+# - Additional requirements: encryption, access controls, audit controls
+# - Vulnerability remediation should be risk-based and documented
+# - Keep audit logs of all policy decisions for 6+ years
+# - This template focuses on software vulnerability management
+# - Complement with administrative and physical safeguards
+# - Ensure BAA (Business Associate Agreement) covers all vendors

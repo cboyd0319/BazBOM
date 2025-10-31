@@ -11,7 +11,7 @@ mod reachability;
 mod reachability_cache;
 mod shading;
 
-use bazbom::cli::{Cli, Commands, PolicyCmd, DbCmd};
+use bazbom::cli::{Cli, Commands, PolicyCmd, DbCmd, LicenseCmd};
 use bazbom::hooks::{HooksConfig, install_hooks};
 use bazbom::remediation;
 use bazbom::scan_orchestrator::ScanOrchestrator;
@@ -562,6 +562,68 @@ fn main() -> Result<()> {
                     std::process::exit(1);
                 }
             }
+            PolicyCmd::Init { list, template, output } => {
+                if list {
+                    println!("[bazbom] Available policy templates:\n");
+                    let templates = bazbom_policy::PolicyTemplateLibrary::list_templates();
+                    
+                    let mut by_category: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
+                    for template in templates {
+                        by_category.entry(template.category.clone()).or_insert_with(Vec::new).push(template);
+                    }
+                    
+                    for (category, templates) in by_category {
+                        println!("{}:", category);
+                        for template in templates {
+                            println!("  {} - {}", template.id, template.name);
+                            println!("    {}", template.description);
+                        }
+                        println!();
+                    }
+                    
+                    println!("Usage: bazbom policy init --template <template-id>");
+                } else if let Some(template_id) = template {
+                    let output_path = PathBuf::from(&output);
+                    match bazbom_policy::PolicyTemplateLibrary::initialize_template(&template_id, &output_path) {
+                        Ok(msg) => println!("{}", msg),
+                        Err(e) => {
+                            eprintln!("Error: {}", e);
+                            std::process::exit(1);
+                        }
+                    }
+                } else {
+                    eprintln!("Error: Either --list or --template <template-id> must be specified");
+                    eprintln!("Run 'bazbom policy init --list' to see available templates");
+                    std::process::exit(1);
+                }
+            }
+            PolicyCmd::Validate { policy_file } => {
+                println!("[bazbom] validating policy file: {}", policy_file);
+                
+                let policy_path = PathBuf::from(&policy_file);
+                match policy_integration::load_policy_config(&policy_path) {
+                    Ok(policy) => {
+                        println!("✓ Policy file is valid");
+                        println!("\nPolicy Configuration:");
+                        println!("  Severity threshold: {:?}", policy.severity_threshold);
+                        println!("  KEV gate: {}", policy.kev_gate);
+                        println!("  EPSS threshold: {:?}", policy.epss_threshold);
+                        println!("  Reachability required: {}", policy.reachability_required);
+                        println!("  VEX auto-apply: {}", policy.vex_auto_apply);
+                        
+                        if let Some(allowlist) = &policy.license_allowlist {
+                            println!("  License allowlist: {} licenses", allowlist.len());
+                        }
+                        if let Some(denylist) = &policy.license_denylist {
+                            println!("  License denylist: {} licenses", denylist.len());
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("✗ Policy file validation failed: {}", e);
+                        std::process::exit(1);
+                    }
+                }
+            }
         },
         Commands::Fix { suggest, apply, pr } => {
             println!("[bazbom] fix suggest={} apply={} pr={}", suggest, apply, pr);
@@ -691,6 +753,129 @@ fn main() -> Result<()> {
                 println!("[bazbom] Use --pr to create a pull request with fixes");
             }
         }
+        Commands::License { action } => match action {
+            LicenseCmd::Obligations { sbom_file } => {
+                println!("[bazbom] generating license obligations report");
+                
+                let sbom_path = sbom_file.as_deref().unwrap_or("sbom.spdx.json");
+                
+                if sbom_file.is_some() {
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
+                }
+                
+                let obligations_db = bazbom_formats::licenses::LicenseObligations::new();
+                
+                println!("\n# License Obligations Report\n");
+                println!("Example output for: {}\n", sbom_path);
+                
+                let example_licenses = vec![
+                    ("MIT", "example-mit-lib:1.0.0"),
+                    ("Apache-2.0", "example-apache-lib:2.0.0"),
+                    ("GPL-3.0-only", "example-gpl-lib:3.0.0"),
+                ];
+                
+                for (license, component) in example_licenses {
+                    if let Some(obligations) = obligations_db.get(license) {
+                        println!("## {} ({})\n", component, license);
+                        for obligation in obligations {
+                            println!(
+                                "- **{:?}**: {} (Severity: {:?})",
+                                obligation.obligation_type,
+                                obligation.description,
+                                obligation.severity
+                            );
+                        }
+                        println!();
+                    }
+                }
+                
+                println!("Note: This is a demonstration. Full SBOM parsing integration coming soon.");
+            }
+            LicenseCmd::Compatibility { project_license, sbom_file } => {
+                println!("[bazbom] checking license compatibility");
+                println!("Project license: {}", project_license);
+                
+                if let Some(sbom) = &sbom_file {
+                    println!("SBOM file: {}", sbom);
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
+                }
+                
+                let test_dependencies = vec![
+                    ("MIT", "example-mit-lib"),
+                    ("Apache-2.0", "example-apache-lib"),
+                    ("GPL-3.0-only", "example-gpl-lib"),
+                    ("AGPL-3.0-only", "example-agpl-lib"),
+                ];
+                
+                println!("\n# License Compatibility Report\n");
+                
+                for (dep_license, dep_name) in test_dependencies {
+                    let risk = bazbom_formats::licenses::LicenseCompatibility::is_compatible(
+                        &project_license,
+                        dep_license,
+                    );
+                    
+                    let risk_str = format!("{:?}", risk);
+                    let indicator = match risk {
+                        bazbom_formats::licenses::LicenseRisk::Safe => "✓",
+                        bazbom_formats::licenses::LicenseRisk::Low => "⚠",
+                        bazbom_formats::licenses::LicenseRisk::Medium => "⚠",
+                        bazbom_formats::licenses::LicenseRisk::High => "✗",
+                        bazbom_formats::licenses::LicenseRisk::Critical => "✗✗",
+                    };
+                    
+                    println!("{} {} ({}) - Risk: {}", indicator, dep_name, dep_license, risk_str);
+                }
+                
+                println!("\nNote: This is a demonstration. Full SBOM parsing integration coming soon.");
+            }
+            LicenseCmd::Contamination { sbom_file } => {
+                println!("[bazbom] detecting copyleft contamination");
+                
+                if let Some(sbom) = &sbom_file {
+                    println!("SBOM file: {}", sbom);
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
+                }
+                
+                let test_dependencies = vec![
+                    bazbom_formats::licenses::Dependency {
+                        name: "example-mit-lib:1.0.0".to_string(),
+                        license: "MIT".to_string(),
+                    },
+                    bazbom_formats::licenses::Dependency {
+                        name: "example-gpl-lib:2.0.0".to_string(),
+                        license: "GPL-3.0-only".to_string(),
+                    },
+                    bazbom_formats::licenses::Dependency {
+                        name: "example-agpl-lib:3.0.0".to_string(),
+                        license: "AGPL-3.0-only".to_string(),
+                    },
+                ];
+                
+                let warnings = bazbom_formats::licenses::LicenseCompatibility::check_contamination(&test_dependencies);
+                
+                println!("\n# Copyleft Contamination Report\n");
+                
+                if warnings.is_empty() {
+                    println!("✓ No copyleft contamination detected");
+                } else {
+                    for warning in warnings {
+                        let risk_indicator = match warning.risk {
+                            bazbom_formats::licenses::LicenseRisk::Critical => "✗✗ CRITICAL",
+                            bazbom_formats::licenses::LicenseRisk::High => "✗ HIGH",
+                            bazbom_formats::licenses::LicenseRisk::Medium => "⚠ MEDIUM",
+                            _ => "ⓘ INFO",
+                        };
+                        
+                        println!("{}: {}", risk_indicator, warning.message);
+                        println!("Affected licenses: {}", warning.affected_licenses.join(", "));
+                        println!();
+                    }
+                }
+                
+                println!("Note: This is a demonstration. Full SBOM parsing integration coming soon.");
+            }
+        },
         Commands::Db { action } => match action {
             DbCmd::Sync {} => {
                 println!("[bazbom] db sync");
