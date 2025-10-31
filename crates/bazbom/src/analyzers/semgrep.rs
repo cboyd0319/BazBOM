@@ -88,7 +88,6 @@ impl Analyzer for SemgrepAnalyzer {
         let args = vec![
             "--config", config_value,
             "--sarif",
-            "--json",
             "--timeout", "120",
             ".",
         ];
@@ -99,9 +98,32 @@ impl Analyzer for SemgrepAnalyzer {
             eprintln!("[bazbom] Semgrep stderr: {}", output.stderr);
         }
 
+        if output.stdout.is_empty() {
+            println!("[bazbom] Warning: Semgrep produced no output");
+            if !output.stderr.is_empty() {
+                println!("[bazbom] Semgrep stderr: {}", output.stderr);
+            }
+            return Ok(SarifReport::new("Semgrep", "no-output"));
+        }
+
+        // Debug: Save stdout to file for inspection (opt-in via env var)
+        if let Ok(debug_path) = std::env::var("BAZBOM_DEBUG_SARIF") {
+            if let Err(e) = std::fs::write(&debug_path, &output.stdout) {
+                eprintln!("[bazbom] Warning: failed to write debug output: {}", e);
+            }
+        }
+
         // Parse SARIF output from stdout
         let sarif: SarifReport = serde_json::from_str(&output.stdout)
-            .context("failed to parse Semgrep SARIF output")?;
+            .with_context(|| {
+                let preview = output.stdout.chars().take(200).collect::<String>();
+                let preview = preview.replace('\n', " ");
+                format!(
+                    "failed to parse Semgrep SARIF output as valid JSON. First 200 chars: {}{}",
+                    preview,
+                    if output.stdout.len() > 200 { "..." } else { "" }
+                )
+            })?;
 
         println!("[bazbom] Semgrep found {} runs", sarif.runs.len());
         

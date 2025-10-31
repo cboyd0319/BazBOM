@@ -6,8 +6,8 @@ pub const SCHEMA_URI: &str = "https://json.schemastore.org/sarif-2.1.0.json";
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SarifReport {
     pub version: String,
-    #[serde(rename = "$schema")]
-    pub schema: String,
+    #[serde(rename = "$schema", skip_serializing_if = "Option::is_none")]
+    pub schema: Option<String>,
     pub runs: Vec<Run>,
 }
 
@@ -15,9 +15,12 @@ pub struct SarifReport {
 #[serde(rename_all = "camelCase")]
 pub struct Run {
     pub tool: Tool,
+    #[serde(default)]
     pub results: Vec<Result>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub automation_details: Option<AutomationDetails>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub invocations: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -29,7 +32,10 @@ pub struct Tool {
 #[serde(rename_all = "camelCase")]
 pub struct Driver {
     pub name: String,
-    pub version: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub semantic_version: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub information_uri: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,12 +69,19 @@ pub struct Configuration {
 #[serde(rename_all = "camelCase")]
 pub struct Result {
     pub rule_id: String,
+    #[serde(default = "default_level")]
     pub level: String,
     pub message: Message,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub locations: Option<Vec<Location>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fingerprints: Option<serde_json::Value>,
+}
+
+fn default_level() -> String {
+    "warning".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,11 +99,16 @@ pub struct Location {
 #[serde(rename_all = "camelCase")]
 pub struct PhysicalLocation {
     pub artifact_location: ArtifactLocation,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub region: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ArtifactLocation {
     pub uri: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri_base_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,18 +121,20 @@ impl SarifReport {
     pub fn new(tool_name: impl Into<String>, tool_version: impl Into<String>) -> Self {
         Self {
             version: SARIF_VERSION.to_string(),
-            schema: SCHEMA_URI.to_string(),
+            schema: Some(SCHEMA_URI.to_string()),
             runs: vec![Run {
                 tool: Tool {
                     driver: Driver {
                         name: tool_name.into(),
-                        version: tool_version.into(),
+                        version: Some(tool_version.into()),
+                        semantic_version: None,
                         information_uri: None,
                         rules: None,
                     },
                 },
                 results: Vec::new(),
                 automation_details: None,
+                invocations: None,
             }],
         }
     }
@@ -142,7 +162,7 @@ impl SarifReport {
     pub fn merge(reports: Vec<SarifReport>) -> Self {
         let mut merged = SarifReport {
             version: SARIF_VERSION.to_string(),
-            schema: SCHEMA_URI.to_string(),
+            schema: Some(SCHEMA_URI.to_string()),
             runs: Vec::new(),
         };
 
@@ -173,13 +193,18 @@ impl Result {
             },
             locations: None,
             properties: None,
+            fingerprints: None,
         }
     }
 
     pub fn with_location(mut self, uri: impl Into<String>) -> Self {
         let location = Location {
             physical_location: PhysicalLocation {
-                artifact_location: ArtifactLocation { uri: uri.into() },
+                artifact_location: ArtifactLocation {
+                    uri: uri.into(),
+                    uri_base_id: None,
+                },
+                region: None,
             },
         };
         self.locations = Some(vec![location]);

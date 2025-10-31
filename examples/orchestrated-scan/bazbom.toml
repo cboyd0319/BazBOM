@@ -1,0 +1,34 @@
+# BazBOM Configuration for Orchestrated Scan Example
+
+[analysis]
+# Generate both SPDX and CycloneDX SBOMs
+cyclonedx = true
+
+[analysis.semgrep]
+# Enable Semgrep static analysis
+enabled = true
+
+[analysis.codeql]
+# CodeQL is optional and disabled by default
+# Enable with --with-codeql flag or set enabled = true
+enabled = false
+suite = "default"
+
+[enrich]
+# Query deps.dev for package intelligence
+depsdev = true
+
+[autofix]
+# Generate OpenRewrite recipes in dry-run mode
+mode = "dry-run"
+recipe_allowlist = ["guava", "jackson", "log4j", "spring-core"]
+
+[containers]
+# Container SBOM strategy
+strategy = "auto"
+
+[publish]
+# Upload to GitHub Code Scanning
+github_code_scanning = true
+# Archive as CI artifacts
+artifact = true

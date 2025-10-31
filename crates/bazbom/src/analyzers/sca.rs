@@ -380,13 +380,16 @@ impl ScaAnalyzer {
                         physical_location: PhysicalLocation {
                             artifact_location: ArtifactLocation {
                                 uri: m.location.clone(),
+                                uri_base_id: None,
                             },
+                            region: None,
                         },
                     }]),
                     properties: match serde_json::to_value(properties) {
                         Ok(val) => Some(val),
                         Err(_) => Some(serde_json::json!({})),
                     },
+                    fingerprints: None,
                 }
             })
             .collect()
