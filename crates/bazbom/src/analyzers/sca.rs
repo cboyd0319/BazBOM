@@ -52,34 +52,221 @@ impl ScaAnalyzer {
             return Ok(Vec::new());
         }
 
-        // For now, return empty vector as we need to parse SPDX
-        // In a full implementation, this would parse the SPDX file
-        println!("[bazbom] SBOM parsing not yet implemented, returning empty component list");
-        Ok(Vec::new())
+        println!("[bazbom] parsing SBOM from {:?}", spdx_path);
+        let content = std::fs::read_to_string(&spdx_path)
+            .context("failed to read SPDX file")?;
+        
+        let doc: serde_json::Value = serde_json::from_str(&content)
+            .context("failed to parse SPDX JSON")?;
+
+        let mut components = Vec::new();
+
+        if let Some(packages) = doc["packages"].as_array() {
+            for pkg in packages {
+                let name = pkg["name"].as_str().unwrap_or("unknown").to_string();
+                let version = pkg["versionInfo"].as_str().unwrap_or("").to_string();
+                
+                // Try to extract PURL from externalRefs
+                let mut ecosystem = "maven".to_string(); // Default to maven
+                let mut purl = String::new();
+                
+                if let Some(refs) = pkg["externalRefs"].as_array() {
+                    for ext_ref in refs {
+                        if ext_ref["referenceType"].as_str() == Some("purl") {
+                            purl = ext_ref["referenceLocator"].as_str().unwrap_or("").to_string();
+                            // Extract ecosystem from PURL (format: pkg:ecosystem/...)
+                            if let Some(colon_pos) = purl.find(':') {
+                                if let Some(slash_pos) = purl[colon_pos..].find('/') {
+                                    ecosystem = purl[colon_pos + 1..colon_pos + slash_pos].to_string();
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // Generate default PURL if not found
+                if purl.is_empty() && !name.is_empty() && !version.is_empty() {
+                    purl = format!("pkg:maven/{}@{}", name.replace('.', "/"), version);
+                }
+
+                components.push(Component {
+                    name: name.clone(),
+                    version: version.clone(),
+                    ecosystem,
+                    location: format!("{}@{}", name, version),
+                    purl,
+                });
+            }
+        }
+
+        println!("[bazbom] extracted {} components from SBOM", components.len());
+        Ok(components)
     }
 
     fn match_vulnerabilities(
         &self,
-        _components: &[Component],
+        components: &[Component],
         advisory_dir: &PathBuf,
     ) -> Result<Vec<VulnerabilityMatch>> {
         // Load EPSS scores
-        let _epss_scores = load_epss_scores(advisory_dir)
-            .unwrap_or_else(|_| HashMap::new());
+        let epss_scores = load_epss_scores(advisory_dir)
+            .unwrap_or_else(|e| {
+                println!("[bazbom] warning: failed to load EPSS scores: {}", e);
+                HashMap::new()
+            });
 
         // Load KEV catalog
-        let _kev_entries = load_kev_catalog(advisory_dir)
-            .unwrap_or_else(|_| HashMap::new());
+        let kev_entries = load_kev_catalog(advisory_dir)
+            .unwrap_or_else(|e| {
+                println!("[bazbom] warning: failed to load KEV catalog: {}", e);
+                HashMap::new()
+            });
 
-        // For now, return empty matches as we need OSV/NVD/GHSA parsers
-        // In a full implementation, this would:
-        // 1. Parse OSV/NVD/GHSA advisories
-        // 2. Match components against vulnerabilities
-        // 3. Enrich with EPSS and KEV data
-        // 4. Calculate priorities
+        println!("[bazbom] loaded {} EPSS scores and {} KEV entries", epss_scores.len(), kev_entries.len());
+
+        let mut matches = Vec::new();
+
+        // Load OSV database entries
+        let osv_dir = advisory_dir.join("osv");
+        if osv_dir.exists() {
+            println!("[bazbom] scanning OSV database for vulnerabilities...");
+            match self.scan_osv_database(&osv_dir, components, &epss_scores, &kev_entries) {
+                Ok(mut osv_matches) => {
+                    println!("[bazbom] found {} OSV matches", osv_matches.len());
+                    matches.append(&mut osv_matches);
+                }
+                Err(e) => {
+                    println!("[bazbom] warning: OSV scan failed: {}", e);
+                }
+            }
+        } else {
+            println!("[bazbom] OSV database not found at {:?}", osv_dir);
+        }
+
+        println!("[bazbom] total vulnerability matches: {}", matches.len());
+        Ok(matches)
+    }
+
+    fn scan_osv_database(
+        &self,
+        osv_dir: &PathBuf,
+        components: &[Component],
+        epss_scores: &HashMap<String, bazbom_advisories::EpssScore>,
+        kev_entries: &HashMap<String, bazbom_advisories::KevEntry>,
+    ) -> Result<Vec<VulnerabilityMatch>> {
+        use std::fs;
+
+        let mut matches = Vec::new();
         
-        println!("[bazbom] vulnerability matching not yet fully implemented");
-        Ok(Vec::new())
+        // Create a lookup map of components by name for faster matching
+        let mut component_map: HashMap<String, &Component> = HashMap::new();
+        for comp in components {
+            component_map.insert(comp.name.clone(), comp);
+        }
+
+        // Scan all JSON files in OSV directory
+        if let Ok(entries) = fs::read_dir(osv_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|s| s.to_str()) == Some("json") {
+                    if let Ok(content) = fs::read_to_string(&path) {
+                        if let Ok(vuln) = serde_json::from_str::<serde_json::Value>(&content) {
+                            // Extract vulnerability info
+                            let vuln_id = vuln["id"].as_str().unwrap_or("").to_string();
+                            let summary = vuln["summary"].as_str().map(|s| s.to_string());
+                            
+                            // Check if this vulnerability affects any of our components
+                            if let Some(affected) = vuln["affected"].as_array() {
+                                for aff in affected {
+                                    if let Some(pkg) = aff["package"]["name"].as_str() {
+                                        // Check if we have this component
+                                        if let Some(component) = component_map.get(pkg) {
+                                            // TODO: Implement proper version range matching
+                                            // For now, we check if ranges exist - this is a conservative approach
+                                            // that may produce false positives but won't miss vulnerabilities
+                                            if let Some(ranges) = aff["ranges"].as_array() {
+                                                // Full implementation would:
+                                                // 1. Parse semver ranges (e.g., ">=1.0.0,<2.0.0")
+                                                // 2. Check if component.version falls within range
+                                                // 3. Handle different range types (SEMVER, ECOSYSTEM, GIT)
+                                                let has_affected_version = !ranges.is_empty();
+                                                
+                                                if has_affected_version {
+                                                    let epss = epss_scores.get(&vuln_id).map(|e| e.score);
+                                                    let in_kev = kev_entries.contains_key(&vuln_id);
+                                                    
+                                                    // Calculate priority based on severity, EPSS, and KEV
+                                                    let priority = self.calculate_priority(&vuln, epss, in_kev);
+                                                    
+                                                    matches.push(VulnerabilityMatch {
+                                                        vulnerability_id: vuln_id.clone(),
+                                                        component_name: component.name.clone(),
+                                                        component_version: component.version.clone(),
+                                                        summary: summary.clone(),
+                                                        epss_score: epss,
+                                                        in_kev,
+                                                        priority,
+                                                        location: component.location.clone(),
+                                                    });
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        Ok(matches)
+    }
+
+    fn calculate_priority(
+        &self,
+        vuln: &serde_json::Value,
+        epss: Option<f64>,
+        in_kev: bool,
+    ) -> Option<Priority> {
+        // P0: KEV entries or high EPSS + Critical/High severity
+        if in_kev {
+            return Some(Priority::P0);
+        }
+
+        // Try to extract CVSS score
+        let mut cvss_score: Option<f64> = None;
+        if let Some(severity) = vuln["database_specific"]["severity"].as_str() {
+            cvss_score = severity.split(':').nth(1).and_then(|s| s.parse::<f64>().ok());
+        }
+
+        if let Some(epss_val) = epss {
+            if let Some(cvss) = cvss_score {
+                if epss_val > 0.7 && cvss >= 9.0 {
+                    return Some(Priority::P0);
+                }
+                if epss_val > 0.5 && cvss >= 7.0 {
+                    return Some(Priority::P1);
+                }
+            }
+        }
+
+        // Fallback based on severity
+        if let Some(cvss) = cvss_score {
+            if cvss >= 9.0 {
+                return Some(Priority::P1);
+            } else if cvss >= 7.0 {
+                return Some(Priority::P2);
+            } else if cvss >= 4.0 {
+                return Some(Priority::P3);
+            } else {
+                return Some(Priority::P4);
+            }
+        }
+
+        // Default priority if we can't determine
+        Some(Priority::P3)
     }
 
     fn create_sarif_results(&self, matches: Vec<VulnerabilityMatch>) -> Vec<SarifResult> {
@@ -153,12 +340,12 @@ impl ScaAnalyzer {
 }
 
 #[derive(Debug)]
-#[allow(dead_code)]  // TODO: Implement SBOM parsing to populate these fields (Phase 3 completion)
 struct Component {
     name: String,
     version: String,
     ecosystem: String,
     location: String,
+    purl: String,
 }
 
 #[derive(Debug)]

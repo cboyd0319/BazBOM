@@ -6,7 +6,7 @@ use crate::enrich::DepsDevClient;
 use crate::fixes::{OpenRewriteRunner, VulnerabilityFinding};
 use crate::pipeline::{merge_sarif_reports, Analyzer};
 use crate::publish::GitHubPublisher;
-use anyhow::Result;
+use anyhow::{Context as _, Result};
 use std::path::PathBuf;
 
 pub struct ScanOrchestrator {
@@ -66,6 +66,9 @@ impl ScanOrchestrator {
         if let Some(ref target) = self.target {
             println!("[bazbom] targeting specific module: {}", target);
         }
+
+        // Step 0: Generate SBOM
+        self.generate_sbom()?;
 
         // Run analyzers
         let mut reports = Vec::new();
@@ -170,24 +173,102 @@ impl ScanOrchestrator {
     fn run_enrichment(&self) -> Result<()> {
         println!("[bazbom] running deps.dev enrichment...");
         
-        let _client = DepsDevClient::new(false);
+        let offline = std::env::var("BAZBOM_OFFLINE").is_ok();
+        let client = DepsDevClient::new(offline);
         
-        // In a full implementation, this would:
-        // 1. Read SBOM from sbom_dir
-        // 2. Extract PURLs for all components
-        // 3. Query deps.dev for each PURL
-        // 4. Write enrichment data to enrich_dir
+        // Read SBOM from sbom_dir
+        let spdx_path = self.context.sbom_dir.join("spdx.json");
+        if !spdx_path.exists() {
+            println!("[bazbom] no SBOM found at {:?}, skipping enrichment", spdx_path);
+            // Still create the enrichment file to indicate enrichment was attempted
+            let enrich_file = self.context.enrich_dir.join("depsdev.json");
+            let enrichment_data = serde_json::json!({
+                "enriched_at": chrono::Utc::now().to_rfc3339(),
+                "offline_mode": offline,
+                "note": "No SBOM found, enrichment skipped",
+                "total_components": 0,
+                "successful": 0,
+                "failed": 0,
+                "packages": []
+            });
+            std::fs::write(&enrich_file, serde_json::to_string_pretty(&enrichment_data)?)?;
+            return Ok(());
+        }
+
+        let content = std::fs::read_to_string(&spdx_path)
+            .context("failed to read SPDX file")?;
         
-        // For now, write a placeholder
+        let doc: serde_json::Value = serde_json::from_str(&content)
+            .context("failed to parse SPDX JSON")?;
+
+        // Extract PURLs from SBOM
+        let mut purls = Vec::new();
+        if let Some(packages) = doc["packages"].as_array() {
+            for pkg in packages {
+                if let Some(refs) = pkg["externalRefs"].as_array() {
+                    for ext_ref in refs {
+                        if ext_ref["referenceType"].as_str() == Some("purl") {
+                            if let Some(purl) = ext_ref["referenceLocator"].as_str() {
+                                purls.push(purl.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        println!("[bazbom] found {} components with PURLs", purls.len());
+
+        // Query deps.dev for each PURL
+        let mut enriched_packages = Vec::new();
+        let mut successful = 0;
+        let mut failed = 0;
+
+        for purl in &purls {
+            match client.get_package_info(purl) {
+                Ok(info) => {
+                    println!("[bazbom]   enriched: {} (latest: {})", 
+                        info.name,
+                        info.latest_version.as_deref().unwrap_or("unknown")
+                    );
+                    enriched_packages.push(info);
+                    successful += 1;
+                }
+                Err(e) => {
+                    if offline {
+                        // In offline mode, this is expected
+                        failed += 1;
+                    } else {
+                        println!("[bazbom]   warning: failed to enrich {}: {}", purl, e);
+                        failed += 1;
+                    }
+                }
+            }
+            
+            // Rate limiting: small delay between requests
+            if !offline && successful < purls.len() {
+                std::thread::sleep(std::time::Duration::from_millis(200));
+            }
+        }
+
+        // Write enrichment data
         let enrich_file = self.context.enrich_dir.join("depsdev.json");
-        let placeholder = serde_json::json!({
-            "note": "deps.dev enrichment placeholder",
-            "client_configured": true,
-            "components_enriched": 0
+        let enrichment_data = serde_json::json!({
+            "enriched_at": chrono::Utc::now().to_rfc3339(),
+            "offline_mode": offline,
+            "total_components": purls.len(),
+            "successful": successful,
+            "failed": failed,
+            "packages": enriched_packages
         });
-        std::fs::write(&enrich_file, serde_json::to_string_pretty(&placeholder)?)?;
+        std::fs::write(&enrich_file, serde_json::to_string_pretty(&enrichment_data)?)?;
         
         println!("[bazbom] wrote enrichment data to {:?}", enrich_file);
+        println!("[bazbom] enriched {}/{} components", successful, purls.len());
+        
+        if offline {
+            println!("[bazbom] (offline mode: enrichment skipped)");
+        }
         
         Ok(())
     }
@@ -252,6 +333,31 @@ impl ScanOrchestrator {
             if cli_mode == crate::fixes::openrewrite::AutofixMode::Pr {
                 runner.open_pr(&self.context, &recipes)?;
             }
+        }
+        
+        Ok(())
+    }
+
+    fn generate_sbom(&self) -> Result<()> {
+        println!("[bazbom] generating SBOM...");
+        
+        // Detect build system
+        let system = bazbom_core::detect_build_system(&self.context.workspace);
+        println!("[bazbom] detected build system: {:?}", system);
+        
+        // Generate SPDX SBOM (using stub for now - full implementations would parse build files)
+        let spdx_path = bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
+        
+        println!("[bazbom] wrote SPDX SBOM to {:?}", spdx_path);
+        
+        // Optionally generate CycloneDX
+        if self.cyclonedx {
+            let cyclonedx_path = self.context.sbom_dir.join("cyclonedx.json");
+            // For now, write a minimal CycloneDX document
+            let cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", env!("CARGO_PKG_VERSION"));
+            let json = serde_json::to_string_pretty(&cdx_doc)?;
+            std::fs::write(&cyclonedx_path, json)?;
+            println!("[bazbom] wrote CycloneDX SBOM to {:?}", cyclonedx_path);
         }
         
         Ok(())
