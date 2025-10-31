@@ -74,6 +74,7 @@ bazbom scan [OPTIONS] [PATH]
 - `--format <FORMAT>` - Output format: `spdx` (default), `cyclonedx`, or `sarif`
 - `--out-dir <DIR>` - Output directory (defaults to current directory `.`)
 - `--reachability` - Enable bytecode reachability analysis (requires Java 11+)
+- `--fast` - Fast mode: skip reachability analysis for speed (completes in <10 seconds)
 
 **Examples:**
 
@@ -92,6 +93,9 @@ bazbom scan . --out-dir ./reports
 
 # Perform reachability analysis
 bazbom scan . --reachability --out-dir ./reports
+
+# Fast scan (for CI or pre-commit hooks)
+bazbom scan . --fast
 
 # Scan Maven project
 cd my-maven-project
@@ -623,14 +627,113 @@ bazbom fix --apply
    - https://logging.apache.org/log4j/2.x/security.html
 ```
 
-**Apply Mode (Experimental - Placeholder):**
-- Currently returns placeholder errors with guidance to use `--suggest`
-- Future implementation will:
-  - Automatically parse and update dependency files (pom.xml, build.gradle, WORKSPACE)
-  - Run tests to verify compatibility
-  - Open pull requests with changes
-  - Include rollback capability on test failures
-- Use `--suggest` mode for current remediation guidance
+**Apply Mode:**
+- Automatically updates dependency versions in build files
+- Supports Maven (pom.xml), Gradle (build.gradle/kts), and Bazel (WORKSPACE/MODULE.bazel)
+- Validates dependencies exist before making changes
+- Preserves file formatting
+- Reports successful updates and failures
+
+**Apply Mode Examples:**
+```bash
+# Apply all available fixes
+bazbom fix --apply
+  ✓ Updated log4j-core: 2.17.0 → 2.21.1
+  ✓ Updated spring-web: 5.3.20 → 5.3.31
+  
+[bazbom] Apply Results:
+  Applied: 2
+  Failed: 0
+  Skipped: 0
+```
+
+**Important Notes:**
+- Always commit your work before running `--apply`
+- Review changes and run tests after applying fixes
+- Some fixes may require manual adjustment (e.g., breaking changes)
+
+### `bazbom install-hooks` - Pre-Commit Vulnerability Scanning
+
+Install git pre-commit hooks to automatically scan for vulnerabilities before allowing commits.
+
+**Synopsis:**
+```bash
+bazbom install-hooks [OPTIONS]
+```
+
+**Options:**
+- `--policy FILE` - Policy file to use (defaults to bazbom.yml)
+- `--fast` - Enable fast scan mode (skips reachability analysis for speed)
+
+**Examples:**
+
+```bash
+# Install with default settings
+bazbom install-hooks
+✅ Installed pre-commit hook: .git/hooks/pre-commit
+✅ Configured full scan mode
+✅ Using policy file: bazbom.yml
+
+# Install with fast mode (recommended for most projects)
+bazbom install-hooks --fast
+✅ Installed pre-commit hook: .git/hooks/pre-commit
+✅ Configured fast scan mode
+
+# Install with custom policy
+bazbom install-hooks --policy custom-policy.yml
+```
+
+**How It Works:**
+
+1. **Pre-Commit Trigger** - Hook runs automatically before `git commit`
+2. **Fast Scan** - Runs `bazbom scan --fast` (typically <10 seconds)
+3. **Policy Check** - Validates against policy file if present
+4. **Block or Allow** - Blocks commit if policy violations found
+
+**Example Workflow:**
+
+```bash
+# Developer makes a commit
+$ git commit -m "Add new feature"
+
+🔍 Scanning dependencies with BazBOM...
+📋 Checking policy: bazbom.yml...
+
+# If violations found:
+❌ Commit blocked by BazBOM policy violations
+
+Run 'bazbom scan' to see details
+Run 'bazbom fix --suggest' for remediation guidance
+Or bypass with: git commit --no-verify
+
+# If no violations:
+✅ No policy violations. Proceeding with commit.
+[main abc1234] Add new feature
+```
+
+**Bypass Mechanism:**
+
+If you need to commit despite policy violations (e.g., fixing the issue):
+
+```bash
+git commit --no-verify -m "Fix vulnerability"
+```
+
+**Fast Mode Benefits:**
+- Completes in <10 seconds for typical projects
+- Skips time-consuming reachability analysis
+- Still performs full SBOM generation and vulnerability scanning
+- Perfect for pre-commit gates
+
+**Policy Integration:**
+
+The hook respects your `bazbom.yml` policy file:
+- Severity thresholds
+- KEV gates
+- Allow/deny lists
+- VEX exceptions
+
+See `bazbom policy check` for policy configuration details.
 
 ### Advanced: Reachability Analysis
 
@@ -869,6 +972,86 @@ Findings are mapped to original artifacts:
 **Requirements:**
 - Build files must be present (pom.xml or build.gradle[.kts])
 - For detailed analysis, JAR files should be built first
+
+### IDE Integration - Language Server Protocol (LSP)
+
+BazBOM provides real-time vulnerability scanning in your editor via Language Server Protocol.
+
+**Features:**
+- Real-time scanning on file save/open
+- Inline diagnostics with severity levels
+- Fast mode (<10 second scans)
+- Cross-editor support (VS Code, Vim, Emacs, Sublime Text, etc.)
+
+**Installation:**
+
+```bash
+# Build the LSP server
+cargo build --release --package bazbom-lsp
+
+# Binary available at: target/release/bazbom-lsp
+```
+
+**Supported Files:**
+- Maven: `pom.xml`
+- Gradle: `build.gradle`, `build.gradle.kts`
+- Bazel: `BUILD`, `BUILD.bazel`
+
+**Editor Configuration:**
+
+**VS Code:**
+```json
+{
+  "bazbom.lspPath": "/path/to/bazbom-lsp",
+  "bazbom.enableRealTimeScanning": true
+}
+```
+
+**Vim/Neovim (coc.nvim):**
+```json
+{
+  "languageserver": {
+    "bazbom": {
+      "command": "/path/to/bazbom-lsp",
+      "filetypes": ["xml", "groovy", "kotlin", "bzl"],
+      "rootPatterns": ["pom.xml", "build.gradle", "WORKSPACE"]
+    }
+  }
+}
+```
+
+**Emacs (lsp-mode):**
+```elisp
+(lsp-register-client
+ (make-lsp-client
+  :new-connection (lsp-stdio-connection "/path/to/bazbom-lsp")
+  :major-modes '(xml-mode groovy-mode kotlin-mode)
+  :server-id 'bazbom))
+```
+
+**How It Works:**
+
+1. **File Watch** - LSP monitors build files
+2. **On Save/Open** - Triggers `bazbom scan --fast`
+3. **Parse Results** - Reads findings from scan output
+4. **Publish Diagnostics** - Shows as inline warnings/errors
+
+**Diagnostic Format:**
+
+```
+CVE-2021-44228 (Critical): Remote code execution via JNDI in org.apache.logging.log4j:log4j-core - Fixed in version 2.21.1
+```
+
+**Performance:**
+- Uses fast scan mode by default
+- Completes in <10 seconds for typical projects
+- Async/non-blocking operations
+
+**Requirements:**
+- `bazbom` CLI must be in PATH
+- Advisory cache synced: `bazbom db sync`
+
+See `crates/bazbom-lsp/README.md` for detailed configuration and troubleshooting.
 
 ### Environment Variables
 
