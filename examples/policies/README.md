@@ -200,7 +200,7 @@ For complex rules beyond YAML capabilities, use Rego policies:
 bazbom policy check --rego advanced.rego
 ```
 
-See `docs/reference/capabilities-reference.md` for Rego examples.
+See the Phase 5 documentation and `examples/policies/advanced.rego` for Rego policy examples.
 
 ### Policy Validation
 

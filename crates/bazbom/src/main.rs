@@ -759,10 +759,14 @@ fn main() -> Result<()> {
                 
                 let sbom_path = sbom_file.as_deref().unwrap_or("sbom.spdx.json");
                 
+                if sbom_file.is_some() {
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
+                }
+                
                 let obligations_db = bazbom_formats::licenses::LicenseObligations::new();
                 
                 println!("\n# License Obligations Report\n");
-                println!("Based on SBOM: {}\n", sbom_path);
+                println!("Example output for: {}\n", sbom_path);
                 
                 let example_licenses = vec![
                     ("MIT", "example-mit-lib:1.0.0"),
@@ -791,8 +795,9 @@ fn main() -> Result<()> {
                 println!("[bazbom] checking license compatibility");
                 println!("Project license: {}", project_license);
                 
-                if let Some(sbom) = sbom_file {
+                if let Some(sbom) = &sbom_file {
                     println!("SBOM file: {}", sbom);
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
                 }
                 
                 let test_dependencies = vec![
@@ -827,8 +832,9 @@ fn main() -> Result<()> {
             LicenseCmd::Contamination { sbom_file } => {
                 println!("[bazbom] detecting copyleft contamination");
                 
-                if let Some(sbom) = sbom_file {
+                if let Some(sbom) = &sbom_file {
                     println!("SBOM file: {}", sbom);
+                    println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
                 }
                 
                 let test_dependencies = vec![
