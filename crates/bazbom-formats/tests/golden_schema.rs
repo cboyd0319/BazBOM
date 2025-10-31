@@ -66,7 +66,7 @@ fn test_sarif_minimal_golden() {
     assert_eq!(golden.version, "2.1.0");
     assert_eq!(
         golden.schema,
-        "https://json.schemastore.org/sarif-2.1.0.json"
+        Some("https://json.schemastore.org/sarif-2.1.0.json".to_string())
     );
     assert_eq!(golden.runs.len(), 1);
     assert_eq!(golden.runs[0].tool.driver.name, "bazbom");
