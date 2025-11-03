@@ -405,19 +405,169 @@ merge_strategy: "strict"  # Options: strict, permissive, override
 
 ## 9. Developer Experience
 
-- Zero-config installer script
-- Watch mode (`bazbom scan --watch`)
-- Interactive fix workflow (dependency overrides)
-- Security badges (shields.io)
+**Status Overview:**
+- ✅ Interactive setup wizard (`bazbom init`)
+- ✅ Terminal UI dependency explorer (`bazbom explore`)
+- ✅ Smart batch fixing with conflict detection
+- ✅ 19 policy templates (regulatory, industry, framework, stage)
+- ✅ Pre-commit hooks with fast mode
+- 🚧 IDE plugins (VS Code, IntelliJ - 95% complete, needs publishing)
+- ⚠️ Watch mode (documented but needs verification)
+- ⚠️ Security badges (documented but needs implementation)
+
+### 9.1 Interactive Setup (`bazbom init`)
+
+Guided setup wizard that:
+- Auto-detects build system (Maven/Gradle/Bazel)
+- Presents 19 policy template options across categories
+- Creates `bazbom.yml` configuration
+- Runs first scan automatically
+- Displays summary with next steps
 
 Examples:
 ```bash
-# Watch for changes
-bazbom scan --watch
+# Start interactive setup
+bazbom init
 
-# Interactive fix for vulnerabilities
-bazel run //tools/supplychain:interactive_fix -- --findings sca_findings.json
+# Output:
+# ✨ Welcome to BazBOM! ✨
+# 🔍 Found: Maven project
+# 📋 Choose a policy template:
+#   1. PCI-DSS v4.0 Compliance
+#   2. HIPAA Security Rule
+#   3. Spring Boot Microservices
+#   ...
 ```
+
+### 9.2 Policy Template Library
+
+**19 Policy Templates Across 4 Categories:**
+
+**Regulatory (7):**
+- PCI-DSS v4.0, HIPAA, FedRAMP Moderate, SOC 2 Type II
+- GDPR, ISO 27001, NIST Cybersecurity Framework
+
+**Industry (5):**
+- Financial Services, Healthcare Provider, Government/Defense
+- SaaS/Cloud Provider, E-commerce/Retail
+
+**Framework (4):**
+- Spring Boot Microservices, Android Applications
+- Microservices Architecture, Kubernetes Deployments
+
+**Development Stages (3):**
+- Development (Permissive), Staging (Moderate), Production (Strict)
+
+Examples:
+```bash
+# List available templates
+bazbom policy init --list
+
+# Initialize with specific template
+bazbom policy init --template spring-boot
+```
+
+### 9.3 Terminal UI Explorer (`bazbom explore`)
+
+Interactive dependency graph explorer with:
+- Real-time vulnerability filtering
+- Keyboard navigation (j/k/arrows)
+- Severity filtering (CRITICAL/HIGH/MEDIUM/LOW)
+- Color-coded by risk level
+- Loads SPDX, CycloneDX, or findings JSON
+
+Examples:
+```bash
+# Launch TUI with current scan results
+bazbom explore
+
+# Load specific SBOM file
+bazbom explore --sbom sbom.spdx.json
+
+# Load findings JSON
+bazbom explore --findings sca_findings.json
+
+# Keyboard shortcuts:
+# j/k or arrows - Navigate
+# c/h/m/l/a - Filter by severity
+# ? - Help
+# q - Quit
+```
+
+### 9.4 Smart Batch Fixing
+
+Intelligent vulnerability remediation with:
+- Automatic grouping by risk level
+- Breaking change detection (major version bumps)
+- Dependency conflict identification
+- Batch processing with test verification
+- Automatic rollback on failure
+
+**Risk Levels:**
+- **Low-Risk Batch**: Independent updates, safe to apply together
+- **Moderate-Risk Batch**: Breaking changes, requires review
+- **High-Risk Batch**: Dependency conflicts detected
+
+Examples:
+```bash
+# Suggest fixes (read-only)
+bazbom fix --suggest
+
+# Apply fixes automatically
+bazbom fix --apply
+
+# Create pull request with fixes
+bazbom fix --pr
+
+# Interactive batch mode (coming soon)
+bazbom fix --interactive
+```
+
+### 9.5 Pre-Commit Hooks
+
+Git pre-commit hooks for automated scanning:
+- Fast mode (<10 seconds)
+- Policy enforcement
+- Blocks commits with violations
+- Bypassable with `--no-verify`
+
+Examples:
+```bash
+# Install pre-commit hook
+bazbom install-hooks
+
+# Install with fast mode
+bazbom install-hooks --fast
+
+# Install with custom policy
+bazbom install-hooks --policy custom-policy.yml
+
+# Bypass hook if needed
+git commit --no-verify
+```
+
+### 9.6 IDE Integration (95% Complete)
+
+**VS Code Extension:**
+- Real-time vulnerability warnings
+- Inline diagnostics
+- Quick fix actions
+- Status: Code complete, needs marketplace publishing
+
+**IntelliJ IDEA Plugin:**
+- Dependency tree visualization
+- Real-time annotations
+- One-click remediation
+- Settings panel
+- Status: Code complete, needs marketplace publishing
+
+### 9.7 Zero-Config Features
+
+- Single-line installer script
+- Automatic build system detection
+- Policy template library
+- Smart defaults
+- Offline/air-gapped mode
 
 ## 10. Data Export
 
