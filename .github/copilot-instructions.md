@@ -175,5 +175,7 @@ Target OS: macOS → Linux → Windows.
 - Repo reorg checklist: `docs/copilot/REPO_REORG_RECOMMENDATIONS.md`
 - **Phase 4 specification:** `docs/copilot/PHASE_4_DEVELOPER_EXPERIENCE.md`
 - **Phase 4 progress:** `docs/copilot/PHASE_4_PROGRESS.md`
+- **Implementation roadmap:** `docs/copilot/IMPLEMENTATION_ROADMAP.md` - 8-week plan for ultimate UX
+- **Strategic roadmap:** `docs/copilot/STRATEGIC_ROADMAP.md` - 12-18 month vision
 
 Questions? Open a docs issue and tag `@cboyd0319`.

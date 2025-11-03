@@ -4,6 +4,15 @@
 **Status:** In Progress (95% Complete - Code Ready, Testing Needed)
 **Timeline:** Months 1-3 (12 weeks)
 
+> **🚀 Next Steps: Implementation Roadmap**
+> 
+> See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) for the next phase of features including:
+> - Interactive `bazbom init` with guided setup
+> - Terminal-based dependency graph explorer (TUI)
+> - Enhanced batch fixing with smart grouping
+> - Web dashboard with D3.js visualizations
+> - Git-based team coordination features
+
 ---
 
 ## Executive Summary

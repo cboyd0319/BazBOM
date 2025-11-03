@@ -4,6 +4,10 @@
 **Audit Performed By:** Deep code and runtime analysis
 **Purpose:** Document actual implementation status vs. documented capabilities
 
+> **🚀 NEW: Implementation Roadmap**
+> 
+> See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) for the 8-week execution plan to make BazBOM the ultimate easy-to-use SBOM, SCA, and dependency graph solution. This includes interactive init, TUI dependency explorer, web dashboard, and team coordination features.
+
 ---
 
 ## Executive Summary

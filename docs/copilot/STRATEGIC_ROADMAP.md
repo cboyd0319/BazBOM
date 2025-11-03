@@ -128,6 +128,10 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 
 ## 90-Day Execution Plan
 
+> **🚀 NEW: Implementation Roadmap**
+> 
+> See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) for detailed execution plan on making BazBOM the ultimate easy-to-use solution. This 8-week focused roadmap complements the strategic phases below with immediate actionable features.
+
 ### Sprint 1-3: Developer Experience Blitz (Weeks 1-6)
 
 **Objective:** Make BazBOM the tool developers WANT to use
@@ -552,6 +556,7 @@ This strategic roadmap references the following detailed documents:
 - [PHASE_11_DISTRIBUTION.md](PHASE_11_DISTRIBUTION.md) - Windows, Kubernetes, air-gapped
 
 **Supporting Documentation:**
+- [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) - **NEW:** 8-week execution plan for ultimate UX
 - [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) - Deep dive on EndorLabs, Snyk, Sonatype
 - [OPEN_SOURCE_SUSTAINABILITY.md](OPEN_SOURCE_SUSTAINABILITY.md) - Financial model, funding strategy
 - [PHASE_4_PROGRESS.md](PHASE_4_PROGRESS.md) - Current progress (Phases 0-3)
