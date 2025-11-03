@@ -1155,6 +1155,26 @@ fn main() -> Result<()> {
 
             bazbom_tui::run(dependencies)?;
         }
+        Commands::Dashboard { port, open, export } => {
+            if let Some(export_path) = export {
+                println!("[bazbom] Exporting static HTML dashboard to: {}", export_path);
+                println!("[bazbom] Static export not yet implemented");
+                println!("[bazbom] Use --port to start interactive server instead");
+                return Ok(());
+            }
+
+            println!("[bazbom] Starting web dashboard on port {}", port);
+            
+            // Note: Dashboard requires async runtime, so we'd need to refactor main to be async
+            // For now, provide a helpful message
+            println!("[bazbom] Dashboard feature is under development");
+            println!("[bazbom] To track progress, see: docs/copilot/IMPLEMENTATION_ROADMAP.md");
+            println!("[bazbom] Expected in Phase 2 (Weeks 3-4)");
+            
+            if open {
+                println!("[bazbom] Would open browser at http://localhost:{}", port);
+            }
+        }
     }
     Ok(())
 }
