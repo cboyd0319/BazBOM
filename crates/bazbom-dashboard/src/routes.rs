@@ -1,10 +1,12 @@
 //! API route handlers
 
+use anyhow::Context;
 use axum::{
     extract::State,
     http::StatusCode,
     response::Json,
 };
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use crate::{
@@ -37,25 +39,34 @@ pub async fn get_dashboard_summary(
     }
 }
 
+/// Find findings file in cache or project root
+fn find_findings_file(state: &AppState) -> anyhow::Result<PathBuf> {
+    let findings_path = state.cache_dir.join("sca_findings.json");
+    if findings_path.exists() {
+        return Ok(findings_path);
+    }
+    
+    // Try alternate location
+    let alt_path = state.project_root.join("sca_findings.json");
+    if alt_path.exists() {
+        return Ok(alt_path);
+    }
+    
+    anyhow::bail!(
+        "No findings file found in {:?} or {:?}",
+        findings_path,
+        alt_path
+    )
+}
+
 /// Load dashboard summary from findings file
 async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSummary> {
     use std::fs;
     use serde_json::Value;
     
-    // Try to find findings file
-    let findings_path = state.cache_dir.join("sca_findings.json");
-    let path_to_use = if findings_path.exists() {
-        findings_path
-    } else {
-        // Try alternate location
-        let alt_path = state.project_root.join("sca_findings.json");
-        if !alt_path.exists() {
-            anyhow::bail!("No findings file found");
-        }
-        alt_path
-    };
-    
-    let content = fs::read_to_string(&path_to_use)?;
+    let path_to_use = find_findings_file(state)?;
+    let content = fs::read_to_string(&path_to_use)
+        .with_context(|| format!("Failed to read findings file: {:?}", path_to_use))?;
     let findings: Value = serde_json::from_str(&content)?;
     
     // Count vulnerabilities by severity
@@ -174,19 +185,9 @@ async fn load_vulnerabilities(state: &AppState) -> anyhow::Result<Vulnerabilitie
     use std::fs;
     use serde_json::Value;
     
-    let findings_path = state.cache_dir.join("sca_findings.json");
-    let path_to_use = if findings_path.exists() {
-        findings_path
-    } else {
-        // Try alternate location
-        let alt_path = state.project_root.join("sca_findings.json");
-        if !alt_path.exists() {
-            anyhow::bail!("No findings file found");
-        }
-        alt_path
-    };
-    
-    let content = fs::read_to_string(&path_to_use)?;
+    let path_to_use = find_findings_file(state)?;
+    let content = fs::read_to_string(&path_to_use)
+        .with_context(|| format!("Failed to read findings file: {:?}", path_to_use))?;
     let findings: Value = serde_json::from_str(&content)?;
     
     let mut vulnerabilities = Vec::new();
