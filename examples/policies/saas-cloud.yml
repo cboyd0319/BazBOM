@@ -1,0 +1,45 @@
+# BazBOM Policy Template: SaaS/Cloud Provider
+# Multi-tenant cloud security policy
+# Version: 1.0
+#
+# This policy template addresses security concerns for
+# SaaS providers and cloud-native applications with
+# multiple customers.
+#
+# Use Cases:
+# - B2B SaaS applications
+# - Multi-tenant platforms
+# - Cloud service providers
+# - Platform-as-a-Service (PaaS)
+
+name: "SaaS/Cloud Provider"
+description: "Multi-tenant cloud security policy"
+version: "1.0"
+
+# Strict for customer data protection
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - AGPL-3.0
+  - SSPL
+
+# SaaS/Cloud recommendations
+# - Tenant isolation and data segregation
+# - API security and rate limiting
+# - DDoS protection and WAF
+# - SOC 2 Type II compliance
+# - Customer data encryption
+# - Backup and disaster recovery
+# - SLA monitoring and uptime guarantees
+# - Penetration testing and bug bounty
+# - Zero-trust architecture
+
+vex_auto_apply: true

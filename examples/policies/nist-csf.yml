@@ -1,0 +1,40 @@
+# BazBOM Policy Template: NIST Cybersecurity Framework
+# National Institute of Standards and Technology CSF
+# Version: 1.0
+#
+# This policy template aligns with NIST Cybersecurity Framework
+# functions: Identify, Protect, Detect, Respond, Recover.
+#
+# Use Cases:
+# - Federal agencies
+# - Critical infrastructure
+# - NIST CSF adopters
+# - Risk-based security programs
+
+name: "NIST Cybersecurity Framework"
+description: "NIST CSF for risk-based security management"
+version: "1.0"
+
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+
+# NIST CSF recommendations
+# - Asset management (Identify)
+# - Access control (Protect)
+# - Continuous monitoring (Detect)
+# - Incident response (Respond)
+# - Business continuity (Recover)
+# - Supply chain risk management
+
+vex_auto_apply: true

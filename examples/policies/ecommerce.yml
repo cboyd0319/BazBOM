@@ -1,0 +1,44 @@
+# BazBOM Policy Template: E-commerce/Retail
+# Security policy for online retail and payment systems
+# Version: 1.0
+#
+# This policy template combines PCI-DSS requirements with
+# e-commerce specific security controls.
+#
+# Use Cases:
+# - E-commerce platforms
+# - Online marketplaces
+# - Retail point-of-sale systems
+# - Payment gateways
+
+name: "E-commerce/Retail"
+description: "Security policy for online retail and payment systems"
+version: "1.0"
+
+# Strict for payment data
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+
+# E-commerce recommendations
+# - PCI-DSS compliance for payment data
+# - Never store full credit card numbers
+# - Use payment tokenization
+# - Implement fraud detection
+# - Secure shopping cart and checkout
+# - Customer data encryption
+# - DDoS protection for high traffic
+# - Regular penetration testing
+# - Compliance with consumer protection laws
+
+vex_auto_apply: true

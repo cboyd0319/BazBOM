@@ -1,0 +1,46 @@
+# BazBOM Policy Template: Kubernetes Deployments
+# Security policy for Kubernetes workloads
+# Version: 1.0
+#
+# This policy template addresses Kubernetes-specific security concerns
+# including container vulnerabilities, admission control, and cluster security.
+#
+# Use Cases:
+# - Kubernetes deployments
+# - Container orchestration
+# - Cloud-native platforms
+# - Multi-tenant clusters
+
+name: "Kubernetes Deployments"
+description: "Security policy for Kubernetes workloads"
+version: "1.0"
+
+# Strict for Kubernetes environments
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+# License Policy
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+
+# Kubernetes recommendations
+# - Scan container images before deployment
+# - Use Pod Security Standards (PSS)
+# - Enable RBAC and least privilege
+# - Use network policies for traffic control
+# - Implement admission controllers
+# - Enable audit logging
+# - Use secrets management (not ConfigMaps)
+# - Scan IaC manifests with policy engines
+# - Implement resource quotas and limits
+# - Use signed container images
+
+vex_auto_apply: true

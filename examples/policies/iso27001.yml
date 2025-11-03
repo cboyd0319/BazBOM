@@ -1,0 +1,42 @@
+# BazBOM Policy Template: ISO 27001
+# Information Security Management System standard
+# Version: 1.0
+#
+# This policy template aligns with ISO/IEC 27001 requirements
+# for information security management.
+#
+# Use Cases:
+# - ISO 27001 certified organizations
+# - Information security management
+# - Third-party audits
+# - International compliance
+
+name: "ISO 27001"
+description: "Information Security Management System standard"
+version: "1.0"
+
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+  - Unknown
+
+# ISO 27001 recommendations
+# - Implement security controls from Annex A
+# - Maintain asset inventory
+# - Risk assessment and treatment
+# - Security awareness training
+# - Incident management procedures
+# - Regular internal audits
+# - Continuous improvement process
+
+vex_auto_apply: false
