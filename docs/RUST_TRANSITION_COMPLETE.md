@@ -75,9 +75,9 @@ BazBOM has successfully completed the transition to 100% Rust for all user-facin
 ### Comprehensive Test Suite
 
 ```
-Total Tests:    261 tests
-Passing:        256 tests (98.1%)
-Ignored:        5 tests (integration tests requiring external setup)
+Total Tests:    361 tests
+Passing:        354 tests (98.1%)
+Ignored:        7 tests (integration tests requiring external setup)
 Failed:         0 tests (ZERO failures)
 ```
 
@@ -88,9 +88,9 @@ Failed:         0 tests (ZERO failures)
 - **bazbom-formats:** 9 tests, 100% pass
 - **bazbom-graph:** 3 tests, 100% pass
 - **bazbom-policy:** 42 tests, 100% pass
-- **bazbom (main):** 73 tests, 100% pass
+- **bazbom (main):** 76 tests, 100% pass (includes 11 breaking change tests)
 - **bazbom-lsp:** 2 tests, 100% pass
-- **Integration tests:** 79 tests, 97% pass (3 ignored due to env requirements)
+- **Integration tests:** 173 tests, 96% pass (7 ignored due to env requirements)
 
 ### New Tests Added This Week
 
@@ -315,7 +315,7 @@ docker run ghcr.io/cboyd0319/bazbom:latest scan /workspace
 | **Python LOC in binary** | 0% | ✅ |
 | **Python for CI/CD** | ~5% | ✅ Acceptable |
 | **User-facing Python requirement** | ZERO | ✅ |
-| **Tests passing** | 256/261 (98.1%) | ✅ |
+| **Tests passing** | 354/361 (98.1%) | ✅ |
 | **Test failures** | 0 | ✅ |
 | **Binary size** | 7.2 MB | ✅ |
 | **Startup time** | <10ms | ✅ |

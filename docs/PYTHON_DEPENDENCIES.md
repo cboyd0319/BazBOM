@@ -173,4 +173,4 @@ This represents a complete and successful Rust transition.
 - **Python LOC in shipped binary:** 0%
 - **Python used in CI/CD:** ~5% (tools/supplychain/*.py)
 - **User-facing Python requirement:** ZERO
-- **Tests passing:** 73/73 (100%)
+- **Tests passing:** 354/361 (98.1%)
