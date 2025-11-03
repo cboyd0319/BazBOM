@@ -86,3 +86,13 @@ Validation (CI):
 - `vale` for style and tone
 - Link validation
 - Examples verified where applicable
+
+## Historical Documentation
+
+Completed transitions and legacy documentation:
+
+- **[Historical Documentation Archive](historical/)** - Archived docs from completed transitions
+  - [Rust Transition Complete](historical/RUST_TRANSITION_COMPLETE.md) - 100% Rust implementation achieved
+  - [Python Dependencies Removal](historical/PYTHON_DEPENDENCIES.md) - Zero Python runtime dependencies
+
+See [Documentation Consolidation Plan](DOCUMENTATION_CONSOLIDATION_PLAN.md) for archival strategy.
