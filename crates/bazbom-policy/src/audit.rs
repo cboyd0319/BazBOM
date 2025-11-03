@@ -99,7 +99,7 @@ impl AuditLogger {
     }
 
     /// Create a default audit logger (disabled by default)
-    pub fn default() -> Self {
+    pub fn new_default() -> Self {
         Self::new(AuditConfig::default())
     }
 
@@ -219,36 +219,38 @@ impl AuditLogger {
 
         use std::io::BufRead;
         for line in reader.lines() {
-            if let Ok(line) = line {
-                if let Ok(entry) = serde_json::from_str::<AuditLogEntry>(&line) {
-                    // Apply filters
-                    if let Some(since_ts) = since {
-                        if entry.timestamp_unix < since_ts {
-                            continue;
-                        }
+            let line = match line {
+                Ok(l) => l,
+                Err(_) => continue,
+            };
+            if let Ok(entry) = serde_json::from_str::<AuditLogEntry>(&line) {
+                // Apply filters
+                if let Some(since_ts) = since {
+                    if entry.timestamp_unix < since_ts {
+                        continue;
                     }
-                    if let Some(until_ts) = until {
-                        if entry.timestamp_unix > until_ts {
-                            continue;
-                        }
-                    }
-                    if let Some(action_filter) = action {
-                        if entry.action != action_filter {
-                            continue;
-                        }
-                    }
-                    if let Some(ref result_filter) = result {
-                        if !matches!(
-                            (&entry.result, result_filter),
-                            (AuditResult::Pass, AuditResult::Pass)
-                                | (AuditResult::Fail, AuditResult::Fail)
-                                | (AuditResult::Warn, AuditResult::Warn)
-                        ) {
-                            continue;
-                        }
-                    }
-                    entries.push(entry);
                 }
+                if let Some(until_ts) = until {
+                    if entry.timestamp_unix > until_ts {
+                        continue;
+                    }
+                }
+                if let Some(action_filter) = action {
+                    if entry.action != action_filter {
+                        continue;
+                    }
+                }
+                if let Some(ref result_filter) = result {
+                    if !matches!(
+                        (&entry.result, result_filter),
+                        (AuditResult::Pass, AuditResult::Pass)
+                            | (AuditResult::Fail, AuditResult::Fail)
+                            | (AuditResult::Warn, AuditResult::Warn)
+                    ) {
+                        continue;
+                    }
+                }
+                entries.push(entry);
             }
         }
 

@@ -1,18 +1,13 @@
 use crate::{PolicyConfig, SeverityLevel};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "lowercase")]
 pub enum MergeStrategy {
+    #[default]
     Strict,
     Permissive,
     Override,
-}
-
-impl Default for MergeStrategy {
-    fn default() -> Self {
-        MergeStrategy::Strict
-    }
 }
 
 pub fn merge_policies(policies: Vec<PolicyConfig>, strategy: MergeStrategy) -> PolicyConfig {
