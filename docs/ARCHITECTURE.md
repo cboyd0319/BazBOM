@@ -68,7 +68,8 @@ The primary user interface and orchestration layer:
 
 ### 2. Build System Integration Layer
 
-**Location**: 
+**Location**:
+
 - Maven: `crates/bazbom-maven/` (planned)
 - Gradle: `crates/bazbom-gradle/` (planned)
 - Bazel: `tools/supplychain/aspects.bzl` (existing)
@@ -220,13 +221,11 @@ User: bazbom scan .
 - **Local-Only Data**: All caches and artifacts remain on user's machine
 
 ## Build System-Specific Details
-    {"spdxElementId": "root", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "guava"},
-    {"spdxElementId": "guava", "relationshipType": "DEPENDS_ON", "relatedSpdxElement": "failureaccess"}
-  ]
-}
-```
 
-**Enhanced Features**:
+### SBOM Format
+
+BazBOM generates SPDX 2.3 JSON format with enhanced features:
+
 - SHA256 checksums for all packages
 - Package URLs (PURLs) for ecosystem identification
 - Proper transitive relationships (not just root dependencies)

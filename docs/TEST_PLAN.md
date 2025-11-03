@@ -1,6 +1,12 @@
 # BazBOM Comprehensive Test Plan
 
-## Executive Summary
+> **⚠️ HISTORICAL DOCUMENT**: This test plan is historical and references the old Python implementation. BazBOM is now 100% Rust. For current testing information, see [testing/TESTING_GUIDE.md](testing/TESTING_GUIDE.md).
+>
+> **Rust Testing Status**: 97 tests passing (98.1% pass rate), with coverage enforced at 90%+ via CI. See `.github/workflows/rust.yml` for current test execution.
+
+---
+
+## Executive Summary (Historical - Python Implementation)
 
 This document outlines the comprehensive test strategy for achieving 90%+ code coverage across all Python modules in the BazBOM project. As of the current state, we have achieved **55.37% overall coverage** (up from 51%), with 906 passing tests.
 
