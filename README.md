@@ -1195,8 +1195,8 @@ BazBOM is transitioning from Python to Rust. See [Implementation Status](docs/co
 If something doesn't work as documented:
 1. Check [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)
 2. Review [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
-3. Open an issue with "documentation" label if docs are incorrect
-4. Open an issue with "bug" label if functionality is broken
+3. Open an issue with `documentation` label if docs are incorrect
+4. Open an issue with `bug` label if functionality is broken
 
 ---
 
