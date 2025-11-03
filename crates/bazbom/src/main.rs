@@ -1177,7 +1177,10 @@ fn main() -> Result<()> {
             if open {
                 let url = format!("http://localhost:{}", port);
                 println!("[bazbom] Opening browser at {}", url);
-                let _ = webbrowser::open(&url);
+                if let Err(e) = webbrowser::open(&url) {
+                    eprintln!("[bazbom] warning: failed to open browser automatically: {}", e);
+                    eprintln!("[bazbom] Please open {} manually in your browser", url);
+                }
             }
 
             // Start dashboard with tokio runtime

@@ -279,6 +279,13 @@
             }
         }
         
+        // HTML escape function to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
         // Fetch and display vulnerabilities
         async function loadVulnerabilities() {
             try {
@@ -293,24 +300,70 @@
                     return;
                 }
                 
-                vulnList.innerHTML = data.vulnerabilities.slice(0, 10).map(vuln => `
-                    <li class="vuln-item ${vuln.severity.toLowerCase()}">
-                        <div class="vuln-header">
-                            <span class="vuln-cve">${vuln.cve}</span>
-                            <span class="vuln-severity ${vuln.severity.toLowerCase()}">${vuln.severity}</span>
-                        </div>
-                        <div class="vuln-details">
-                            <strong>${vuln.package}:${vuln.version}</strong>
-                            ${vuln.fixed_version ? ` → Fix: upgrade to <strong>${vuln.fixed_version}</strong>` : ''}
-                            <br>
-                            CVSS: ${vuln.cvss}
-                            ${vuln.kev ? ' | <strong style="color: #e53e3e;">CISA KEV</strong>' : ''}
-                            ${vuln.reachable ? ' | <strong style="color: #ed8936;">Reachable</strong>' : ''}
-                        </div>
-                    </li>
-                `).join('');
+                // Clear list
+                vulnList.innerHTML = '';
+                
+                // Create vulnerability items safely
+                data.vulnerabilities.slice(0, 10).forEach(vuln => {
+                    const li = document.createElement('li');
+                    li.className = `vuln-item ${vuln.severity.toLowerCase()}`;
+                    
+                    // Create header
+                    const header = document.createElement('div');
+                    header.className = 'vuln-header';
+                    
+                    const cveSpan = document.createElement('span');
+                    cveSpan.className = 'vuln-cve';
+                    cveSpan.textContent = vuln.cve;
+                    
+                    const severitySpan = document.createElement('span');
+                    severitySpan.className = `vuln-severity ${vuln.severity.toLowerCase()}`;
+                    severitySpan.textContent = vuln.severity;
+                    
+                    header.appendChild(cveSpan);
+                    header.appendChild(severitySpan);
+                    
+                    // Create details
+                    const details = document.createElement('div');
+                    details.className = 'vuln-details';
+                    
+                    const packageStrong = document.createElement('strong');
+                    packageStrong.textContent = `${vuln.package}:${vuln.version}`;
+                    details.appendChild(packageStrong);
+                    
+                    if (vuln.fixed_version) {
+                        details.appendChild(document.createTextNode(' → Fix: upgrade to '));
+                        const fixStrong = document.createElement('strong');
+                        fixStrong.textContent = vuln.fixed_version;
+                        details.appendChild(fixStrong);
+                    }
+                    
+                    details.appendChild(document.createElement('br'));
+                    details.appendChild(document.createTextNode(`CVSS: ${vuln.cvss}`));
+                    
+                    if (vuln.kev) {
+                        details.appendChild(document.createTextNode(' | '));
+                        const kevStrong = document.createElement('strong');
+                        kevStrong.style.color = '#e53e3e';
+                        kevStrong.textContent = 'CISA KEV';
+                        details.appendChild(kevStrong);
+                    }
+                    
+                    if (vuln.reachable) {
+                        details.appendChild(document.createTextNode(' | '));
+                        const reachableStrong = document.createElement('strong');
+                        reachableStrong.style.color = '#ed8936';
+                        reachableStrong.textContent = 'Reachable';
+                        details.appendChild(reachableStrong);
+                    }
+                    
+                    li.appendChild(header);
+                    li.appendChild(details);
+                    vulnList.appendChild(li);
+                });
             } catch (error) {
                 console.error('Failed to load vulnerabilities:', error);
+                const vulnList = document.getElementById('vuln-list');
                 vulnList.innerHTML = '<li style="text-align: center; padding: 20px;">Failed to load vulnerabilities</li>';
             }
         }
