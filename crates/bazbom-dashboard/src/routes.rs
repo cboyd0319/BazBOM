@@ -52,11 +52,7 @@ fn find_findings_file(state: &AppState) -> anyhow::Result<PathBuf> {
         return Ok(alt_path);
     }
     
-    anyhow::bail!(
-        "No findings file found in {:?} or {:?}",
-        findings_path,
-        alt_path
-    )
+    anyhow::bail!("No findings file found. Please run 'bazbom scan' first.")
 }
 
 /// Load dashboard summary from findings file

@@ -303,10 +303,19 @@
                 // Clear list
                 vulnList.innerHTML = '';
                 
+                // Sanitize severity to prevent XSS in class names
+                function sanitizeSeverity(severity) {
+                    const validSeverities = ['critical', 'high', 'medium', 'low'];
+                    const normalized = (severity || '').toLowerCase();
+                    return validSeverities.includes(normalized) ? normalized : 'low';
+                }
+                
                 // Create vulnerability items safely
                 data.vulnerabilities.slice(0, 10).forEach(vuln => {
+                    const safeSeverity = sanitizeSeverity(vuln.severity);
+                    
                     const li = document.createElement('li');
-                    li.className = `vuln-item ${vuln.severity.toLowerCase()}`;
+                    li.className = `vuln-item ${safeSeverity}`;
                     
                     // Create header
                     const header = document.createElement('div');
@@ -317,7 +326,7 @@
                     cveSpan.textContent = vuln.cve;
                     
                     const severitySpan = document.createElement('span');
-                    severitySpan.className = `vuln-severity ${vuln.severity.toLowerCase()}`;
+                    severitySpan.className = `vuln-severity ${safeSeverity}`;
                     severitySpan.textContent = vuln.severity;
                     
                     header.appendChild(cveSpan);
