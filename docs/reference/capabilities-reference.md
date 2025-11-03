@@ -519,7 +519,7 @@ bazbom fix --apply
 # Create pull request with fixes
 bazbom fix --pr
 
-# Interactive batch mode (coming soon)
+# Interactive batch mode with smart grouping
 bazbom fix --interactive
 ```
 

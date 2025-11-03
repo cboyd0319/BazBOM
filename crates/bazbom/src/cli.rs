@@ -76,6 +76,9 @@ pub enum Commands {
         /// Create a pull request with fixes (requires GitHub authentication)
         #[arg(long)]
         pr: bool,
+        /// Interactive mode with smart batch processing
+        #[arg(long)]
+        interactive: bool,
     },
     /// Advisory database operations (offline sync)
     Db {
