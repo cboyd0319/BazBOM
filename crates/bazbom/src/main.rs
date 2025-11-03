@@ -1020,6 +1020,9 @@ fn main() -> Result<()> {
             };
             install_hooks(&config)?;
         }
+        Commands::Init { path } => {
+            bazbom::init::run_init(&path)?;
+        }
     }
     Ok(())
 }

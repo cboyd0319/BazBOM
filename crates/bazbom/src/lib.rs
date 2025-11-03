@@ -7,6 +7,7 @@ pub mod context;
 pub mod enrich;
 pub mod fixes;
 pub mod hooks;
+pub mod init;
 pub mod pipeline;
 pub mod publish;
 pub mod reachability;

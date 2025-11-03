@@ -96,6 +96,12 @@ pub enum Commands {
         #[arg(long)]
         fast: bool,
     },
+    /// Interactive setup wizard for new projects
+    Init {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
