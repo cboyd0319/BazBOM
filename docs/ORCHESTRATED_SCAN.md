@@ -216,8 +216,54 @@ Queries [deps.dev](https://deps.dev) API for:
 - Popularity metrics
 - Version history
 - Repository links
+- **Breaking changes information** (NEW)
+  - Semantic version analysis
+  - Changelog URLs
+  - Migration guide links
+  - Advisory details
+
+The deps.dev enrichment now provides breaking changes information when remediation
+suggestions are generated. This helps developers understand:
+- Whether an upgrade involves major version changes
+- What breaking changes to expect
+- Where to find migration guides and changelogs
+- Specific compatibility concerns
 
 Output: `enrich/depsdev.json`
+
+#### Breaking Changes Integration
+
+When generating remediation suggestions, BazBOM now:
+
+1. **Queries deps.dev** for the target version
+2. **Analyzes semantic versions** to detect major version changes
+3. **Extracts advisories** that mention breaking changes
+4. **Finds changelog URLs** from package links
+5. **Includes migration guides** when available
+
+Example breaking changes warning:
+
+```
+⚠️ Major version upgrade (2.11.0 → 3.0.0)
+
+This is a major version upgrade which may include breaking changes:
+- API changes: Methods may be removed, renamed, or have different signatures
+- Deprecated features: Previously deprecated APIs may be removed
+- Behavioral changes: Existing functionality may behave differently
+
+Breaking changes details:
+  - Removed deprecated method XYZ
+  - Changed return type of ABC
+
+Changelog: https://github.com/example/project/releases/tag/v3.0.0
+Migration guide: https://github.com/example/project/wiki/v3-migration
+
+Recommended actions before upgrading:
+1. Review the library's changelog and migration guide
+2. Run all unit and integration tests
+3. Test in a staging environment first
+4. Have a rollback plan ready
+```
 
 ### 5. Autofix (OpenRewrite)
 

@@ -12,6 +12,7 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::backup::{choose_backup_strategy, BackupHandle};
+use crate::enrich::depsdev::{BreakingChanges, DepsDevClient};
 use crate::test_runner::{has_tests, run_tests};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -124,6 +125,104 @@ pub fn generate_suggestions(
             estimated_effort,
         },
         suggestions,
+    }
+}
+
+/// Enrich remediation suggestions with deps.dev breaking changes information
+pub fn enrich_with_depsdev(
+    mut report: RemediationReport,
+    depsdev_client: &DepsDevClient,
+) -> RemediationReport {
+    for suggestion in &mut report.suggestions {
+        // Only enrich if we have a fixed version
+        if let Some(ref fixed_version) = suggestion.fixed_version {
+            // Try to construct a PURL for the package
+            // This is a simplified approach - in production, you'd want to extract
+            // the actual PURL from the SBOM or vulnerability data
+            if let Some(purl) = construct_purl(&suggestion.affected_package, fixed_version) {
+                if let Ok(package_info) = depsdev_client.get_package_info(&purl) {
+                    if let Some(breaking_changes) = package_info.breaking_changes {
+                        suggestion.breaking_changes =
+                            Some(format_breaking_changes(&breaking_changes));
+                        
+                        // Add changelog URL to references if available
+                        if let Some(url) = breaking_changes.changelog_url {
+                            if !suggestion.references.contains(&url) {
+                                suggestion.references.push(url);
+                            }
+                        }
+                        
+                        // Add migration guide URL to references if available
+                        if let Some(url) = breaking_changes.migration_guide_url {
+                            if !suggestion.references.contains(&url) {
+                                suggestion.references.push(url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    report
+}
+
+/// Format breaking changes for display in remediation suggestions
+fn format_breaking_changes(breaking_changes: &BreakingChanges) -> String {
+    let mut output = String::new();
+
+    if let Some(ref summary) = breaking_changes.summary {
+        output.push_str(summary);
+        output.push_str("\n\n");
+    }
+
+    if !breaking_changes.details.is_empty() {
+        output.push_str("Breaking changes details:\n");
+        for detail in &breaking_changes.details {
+            output.push_str("  - ");
+            output.push_str(detail);
+            output.push('\n');
+        }
+        output.push('\n');
+    }
+
+    if let Some(ref url) = breaking_changes.changelog_url {
+        output.push_str(&format!("Changelog: {}\n", url));
+    }
+
+    if let Some(ref url) = breaking_changes.migration_guide_url {
+        output.push_str(&format!("Migration guide: {}\n", url));
+    }
+
+    output
+}
+
+/// Construct a PURL from package name and version
+/// This is a heuristic approach - ideally PURLs would come from the SBOM
+fn construct_purl(package_name: &str, version: &str) -> Option<String> {
+    // Try to detect package ecosystem from name patterns
+    if package_name.contains('/') || package_name.contains('.') {
+        // Likely Maven: groupId/artifactId or groupId.artifactId
+        let maven_name = if package_name.contains('/') {
+            package_name.to_string()
+        } else {
+            // Convert groupId.artifactId to groupId/artifactId
+            let parts: Vec<&str> = package_name.rsplitn(2, '.').collect();
+            if parts.len() == 2 {
+                format!("{}/{}", parts[1], parts[0])
+            } else {
+                package_name.to_string()
+            }
+        };
+        Some(format!("pkg:maven/{}@{}", maven_name, version))
+    } else if package_name.starts_with('@') {
+        // Likely scoped npm package
+        Some(format!("pkg:npm/{}@{}", package_name, version))
+    } else if package_name.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c == '_') {
+        // Likely npm or PyPI package
+        // Default to npm for now
+        Some(format!("pkg:npm/{}@{}", package_name, version))
+    } else {
+        None
     }
 }
 
