@@ -1,9 +1,16 @@
 # BazBOM Strategic Roadmap: Path to World's Best Open Source Java SCA
 
 **Document Version:** 1.0
-**Last Updated:** 2025-10-30
+**Last Updated:** 2025-11-03
 **Status:** Active Development Roadmap
 **Horizon:** 12-18 Months
+
+> **📋 Related Planning Documents:**
+> - **[Master Roadmap (../ROADMAP.md)](../ROADMAP.md)** - Complete feature tracking checklist for all phases
+> - **[Implementation Roadmap (IMPLEMENTATION_ROADMAP.md)](IMPLEMENTATION_ROADMAP.md)** - 8-week UX improvement sprint
+> - **[Implementation Status (IMPLEMENTATION_STATUS.md)](IMPLEMENTATION_STATUS.md)** - Current vs. documented capabilities
+>
+> This document provides the long-term strategic vision and competitive analysis.
 
 ---
 

@@ -56,14 +56,15 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[Testing Guide](testing/TESTING_GUIDE.md)** - Comprehensive testing documentation (Rust)
 - **[Test Fixtures](testing/TEST_FIXTURES_README.md)** - Sample data for testing
 
-## Internal & Planning Documentation
+## Planning & Roadmap Documentation
 
-For maintainers and contributors:
+Essential resources for tracking BazBOM development:
 
-- **[Implementation Roadmap](copilot/IMPLEMENTATION_ROADMAP.md)** 🚀 - **8-week plan for ultimate UX: Interactive init, TUI explorer, web dashboard, team features**
+- **[Master Roadmap (ROADMAP.md)](ROADMAP.md)** 📋 - **Complete feature tracking checklist with all phases and distribution channels**
+- **[Implementation Roadmap](copilot/IMPLEMENTATION_ROADMAP.md)** 🚀 - **8-week UX sprint: Interactive init, TUI explorer, web dashboard, team features**
 - **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)** ⭐ - **Comprehensive audit of actual vs. documented capabilities**
-- **[Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md)** - 12-18 month vision and phase plans
-- **[Copilot Directory](copilot/)** - Planning documents, roadmaps, and implementation specifications
+- **[Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md)** 🎯 - **12-18 month vision and market leadership plan**
+- **[Copilot Directory](copilot/)** - All phase specifications and planning documents
 - **[Developer Guides](developer/)** - Internal development documentation
 
 ## Diagrams
@@ -85,3 +86,13 @@ Validation (CI):
 - `vale` for style and tone
 - Link validation
 - Examples verified where applicable
+
+## Historical Documentation
+
+Completed transitions and legacy documentation:
+
+- **[Historical Documentation Archive](historical/)** - Archived docs from completed transitions
+  - [Rust Transition Complete](historical/RUST_TRANSITION_COMPLETE.md) - 100% Rust implementation achieved
+  - [Python Dependencies Removal](historical/PYTHON_DEPENDENCIES.md) - Zero Python runtime dependencies
+
+See [Documentation Consolidation Plan](DOCUMENTATION_CONSOLIDATION_PLAN.md) for archival strategy.

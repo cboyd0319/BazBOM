@@ -6,6 +6,13 @@
 **Status:** Active Development Plan  
 **Horizon:** 8 Weeks  
 
+> **📋 Related Planning Documents:**
+> - **[Master Roadmap (../ROADMAP.md)](../ROADMAP.md)** - Complete feature tracking checklist for all phases
+> - **[Strategic Roadmap (STRATEGIC_ROADMAP.md)](STRATEGIC_ROADMAP.md)** - 12-18 month market leadership vision
+> - **[Phase 4 Progress (PHASE_4_PROGRESS.md)](PHASE_4_PROGRESS.md)** - Current IDE integration status
+>
+> This document provides detailed specifications for the 8-week UX improvement sprint.
+
 ---
 
 ## Executive Summary

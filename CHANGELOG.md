@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2025-11-03
+
+### Added
+
+- **Master Roadmap (docs/ROADMAP.md)** - Comprehensive feature tracking checklist consolidating all phases
+- Complete phase-by-phase tracking for Phases 0-11
+- Distribution & marketplace readiness tracking (Homebrew, GitHub Marketplace, IDE plugins, Windows)
+- Detailed status indicators for all features and capabilities
+- Timeline overview and priority guidance for development
+- Success metrics and KPIs for each development phase
+
+### Changed
+
+- **Version bump to 0.5.1** - Updated all Rust crates from 0.2.1 to 0.5.1
+- **README roadmap section** - Consolidated and linked to master roadmap
+- **Documentation index (docs/README.md)** - Enhanced roadmap navigation and organization
+- Improved distribution channel visibility and planning
+- Better tracking of marketplace publishing readiness
+
+### Documentation
+
+- Reorganized roadmap documentation for better discoverability
+- Added emphasis on GitHub Marketplace, Homebrew, and IDE plugin distribution
+- Consolidated multiple roadmap documents into single source of truth
+- Enhanced cross-references between planning documents
+
 ## [0.2.1] - 2025-10-30
 
 ### Added

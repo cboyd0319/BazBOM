@@ -1,6 +1,6 @@
 [package]
 name = "bazbom-lsp"
-version = "0.2.1"
+version = "0.5.1"
 edition = "2021"
 authors = ["BazBOM Maintainers"]
 description = "Language Server Protocol implementation for BazBOM vulnerability scanning"
