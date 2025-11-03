@@ -102,6 +102,15 @@ pub enum Commands {
         #[arg(default_value = ".")]
         path: String,
     },
+    /// Interactive dependency graph explorer (TUI)
+    Explore {
+        /// Path to SBOM file or findings JSON
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Path to findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]

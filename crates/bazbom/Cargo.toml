@@ -30,6 +30,7 @@ bazbom-formats = { path = "../bazbom-formats" }
 bazbom-advisories = { path = "../bazbom-advisories" }
 bazbom-policy = { path = "../bazbom-policy" }
 bazbom-graph = { path = "../bazbom-graph" }
+bazbom-tui = { path = "../bazbom-tui" }
 tempfile = "3"
 sha2 = "0.10"
 ureq = "2"
