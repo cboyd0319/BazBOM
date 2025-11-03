@@ -60,6 +60,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 For maintainers and contributors:
 
+- **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)** ⭐ - **Comprehensive audit of actual vs. documented capabilities**
 - **[Copilot Directory](copilot/)** - Planning documents, roadmaps, and implementation specifications
 - **[Developer Guides](developer/)** - Internal development documentation
 
