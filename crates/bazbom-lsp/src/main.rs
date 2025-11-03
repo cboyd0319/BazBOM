@@ -3,12 +3,12 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use tower_lsp::jsonrpc;
-use tower_lsp::lsp_types::*;
-use tower_lsp::{Client, LanguageServer, LspService, Server};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tower_lsp::jsonrpc;
+use tower_lsp::lsp_types::*;
+use tower_lsp::{Client, LanguageServer, LspService, Server};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ScanResult {
@@ -42,7 +42,7 @@ impl BazBomLanguageServer {
 
     async fn scan_and_publish_diagnostics(&self, uri: &Url) {
         let path = uri.path();
-        
+
         // Only scan build files
         if !Self::is_build_file(path) {
             return;
@@ -86,7 +86,7 @@ impl BazBomLanguageServer {
         let output = tokio::process::Command::new("bazbom")
             .args([
                 "scan",
-                "--fast",  // Use fast mode for quick feedback
+                "--fast", // Use fast mode for quick feedback
                 "--out-dir",
                 out_dir.to_str().unwrap(),
                 project_dir,
@@ -116,24 +116,24 @@ impl BazBomLanguageServer {
             for vuln in vulns {
                 if let (Some(id), Some(severity)) = (
                     vuln["id"].as_str(),
-                    vuln["severity"].as_object().and_then(|s| s["level"].as_str()),
+                    vuln["severity"]
+                        .as_object()
+                        .and_then(|s| s["level"].as_str()),
                 ) {
                     // Extract package info from affected packages
                     if let Some(affected) = vuln["affected"].as_array() {
                         for pkg in affected {
                             if let Some(package_name) = pkg["package"].as_str() {
                                 let current_version = "unknown".to_string();
-                                let fixed_version = pkg["ranges"]
-                                    .as_array()
-                                    .and_then(|ranges| {
-                                        ranges.iter().find_map(|r| {
-                                            r["events"].as_array().and_then(|events| {
-                                                events.iter().find_map(|e| {
-                                                    e["fixed"].as_str().map(|s| s.to_string())
-                                                })
+                                let fixed_version = pkg["ranges"].as_array().and_then(|ranges| {
+                                    ranges.iter().find_map(|r| {
+                                        r["events"].as_array().and_then(|events| {
+                                            events.iter().find_map(|e| {
+                                                e["fixed"].as_str().map(|s| s.to_string())
                                             })
                                         })
-                                    });
+                                    })
+                                });
 
                                 let summary = vuln["summary"]
                                     .as_str()
@@ -158,7 +158,11 @@ impl BazBomLanguageServer {
         Ok(vulnerabilities)
     }
 
-    fn convert_to_diagnostics(&self, vulnerabilities: &[Vulnerability], _uri: &Url) -> Vec<Diagnostic> {
+    fn convert_to_diagnostics(
+        &self,
+        vulnerabilities: &[Vulnerability],
+        _uri: &Url,
+    ) -> Vec<Diagnostic> {
         vulnerabilities
             .iter()
             .map(|vuln| {
@@ -258,27 +262,30 @@ impl LanguageServer for BazBomLanguageServer {
             .await;
     }
 
-    async fn code_action(&self, params: CodeActionParams) -> jsonrpc::Result<Option<CodeActionResponse>> {
+    async fn code_action(
+        &self,
+        params: CodeActionParams,
+    ) -> jsonrpc::Result<Option<CodeActionResponse>> {
         tracing::info!("Code action requested for: {}", params.text_document.uri);
-        
+
         let mut actions = Vec::new();
-        
+
         // Check if there are diagnostics in the range
         for diagnostic in &params.context.diagnostics {
             // Only create actions for BazBOM diagnostics
             if diagnostic.source.as_deref() != Some("BazBOM") {
                 continue;
             }
-            
+
             // Try to extract vulnerability info from diagnostic
             if let Some(NumberOrString::String(ref cve_id)) = diagnostic.code {
                 // Extract fixed version from message if available
                 let fixed_version = Self::extract_fixed_version(&diagnostic.message);
-                
+
                 if let Some(fixed) = fixed_version {
                     // Create a code action to upgrade dependency
                     let title = format!("Upgrade to safe version {}", fixed);
-                    
+
                     let action = CodeActionOrCommand::CodeAction(CodeAction {
                         title,
                         kind: Some(CodeActionKind::QUICKFIX),
@@ -297,12 +304,12 @@ impl LanguageServer for BazBomLanguageServer {
                         disabled: None,
                         data: None,
                     });
-                    
+
                     actions.push(action);
                 }
             }
         }
-        
+
         if actions.is_empty() {
             Ok(None)
         } else {
@@ -354,7 +361,9 @@ mod tests {
     fn test_is_build_file() {
         assert!(BazBomLanguageServer::is_build_file("/path/to/pom.xml"));
         assert!(BazBomLanguageServer::is_build_file("/path/to/build.gradle"));
-        assert!(BazBomLanguageServer::is_build_file("/path/to/build.gradle.kts"));
+        assert!(BazBomLanguageServer::is_build_file(
+            "/path/to/build.gradle.kts"
+        ));
         assert!(BazBomLanguageServer::is_build_file("/path/to/BUILD"));
         assert!(BazBomLanguageServer::is_build_file("/path/to/BUILD.bazel"));
         assert!(!BazBomLanguageServer::is_build_file("/path/to/Main.java"));

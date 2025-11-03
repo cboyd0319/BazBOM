@@ -40,14 +40,13 @@ pub struct KevVulnerability {
 
 /// Load KEV catalog from a JSON file and return a map of CVE ID to KEV entry
 pub fn load_kev_catalog<P: AsRef<Path>>(path: P) -> Result<HashMap<String, KevEntry>> {
-    let contents = fs::read_to_string(path.as_ref())
-        .context("Failed to read KEV catalog file")?;
-    
-    let catalog: KevCatalog = serde_json::from_str(&contents)
-        .context("Failed to parse KEV catalog JSON")?;
-    
+    let contents = fs::read_to_string(path.as_ref()).context("Failed to read KEV catalog file")?;
+
+    let catalog: KevCatalog =
+        serde_json::from_str(&contents).context("Failed to parse KEV catalog JSON")?;
+
     let mut kev_map = HashMap::new();
-    
+
     for vuln in catalog.vulnerabilities {
         let entry = KevEntry {
             cve_id: vuln.cve_id.clone(),
@@ -60,7 +59,7 @@ pub fn load_kev_catalog<P: AsRef<Path>>(path: P) -> Result<HashMap<String, KevEn
         };
         kev_map.insert(vuln.cve_id, entry);
     }
-    
+
     Ok(kev_map)
 }
 
@@ -74,14 +73,14 @@ pub fn find_kev_entry(
     if let Some(entry) = kev_map.get(vuln_id) {
         return Some(entry.clone());
     }
-    
+
     // Check all aliases
     for alias in aliases {
         if let Some(entry) = kev_map.get(alias) {
             return Some(entry.clone());
         }
     }
-    
+
     None
 }
 
@@ -187,7 +186,10 @@ mod tests {
             },
         );
 
-        let aliases = vec!["CVE-2024-1234".to_string(), "GHSA-xxxx-yyyy-zzzz".to_string()];
+        let aliases = vec![
+            "CVE-2024-1234".to_string(),
+            "GHSA-xxxx-yyyy-zzzz".to_string(),
+        ];
         let entry = find_kev_entry("GHSA-xxxx-yyyy-zzzz", &aliases, &kev_map);
         assert!(entry.is_some());
         assert_eq!(entry.unwrap().cve_id, "CVE-2024-1234");

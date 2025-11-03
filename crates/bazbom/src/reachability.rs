@@ -31,7 +31,9 @@ impl ReachabilityResult {
 
     #[allow(dead_code)]
     pub fn is_method_reachable(&self, method_signature: &str) -> bool {
-        self.reachable_methods.iter().any(|m| m.contains(method_signature))
+        self.reachable_methods
+            .iter()
+            .any(|m| m.contains(method_signature))
     }
 }
 
@@ -44,7 +46,10 @@ pub fn analyze_reachability(
 ) -> Result<ReachabilityResult> {
     println!("[bazbom] running reachability analysis");
     println!("[bazbom] jar: {:?}", jar_path);
-    println!("[bazbom] classpath entries: {}", classpath.split(':').count());
+    println!(
+        "[bazbom] classpath entries: {}",
+        classpath.split(':').count()
+    );
 
     let status = Command::new("java")
         .arg("-jar")
@@ -63,21 +68,27 @@ pub fn analyze_reachability(
     }
 
     // Read the output JSON
-    let json_content = std::fs::read_to_string(output_path)
-        .context("failed to read reachability output")?;
+    let json_content =
+        std::fs::read_to_string(output_path).context("failed to read reachability output")?;
 
-    let result: ReachabilityResult = serde_json::from_str(&json_content)
-        .context("failed to parse reachability output")?;
+    let result: ReachabilityResult =
+        serde_json::from_str(&json_content).context("failed to parse reachability output")?;
 
     if let Some(error) = &result.error {
         eprintln!("[bazbom] reachability analysis error: {}", error);
     }
 
     println!("[bazbom] reachability complete:");
-    println!("  - detected entrypoints: {}", result.detected_entrypoints.len());
+    println!(
+        "  - detected entrypoints: {}",
+        result.detected_entrypoints.len()
+    );
     println!("  - reachable methods: {}", result.reachable_methods.len());
     println!("  - reachable classes: {}", result.reachable_classes.len());
-    println!("  - reachable packages: {}", result.reachable_packages.len());
+    println!(
+        "  - reachable packages: {}",
+        result.reachable_packages.len()
+    );
 
     Ok(result)
 }
@@ -112,7 +123,7 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
     // Check if BazBOM Gradle plugin is applied
     // If so, run the bazbomClasspath task
     let classpath_file = project_path.join("build").join("bazbom-classpath.txt");
-    
+
     // Try to run the bazbomClasspath task
     println!("[bazbom] Running Gradle bazbomClasspath task...");
     let output = Command::new("gradle")
@@ -133,8 +144,10 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
     if classpath_file.exists() {
         let classpath = std::fs::read_to_string(&classpath_file)
             .context("failed to read gradle classpath file")?;
-        println!("[bazbom] Extracted classpath with {} entries", 
-                 classpath.split(':').count());
+        println!(
+            "[bazbom] Extracted classpath with {} entries",
+            classpath.split(':').count()
+        );
         Ok(classpath.trim().to_string())
     } else {
         println!("[bazbom] Warning: classpath file not created by Gradle task");
@@ -146,9 +159,9 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
 pub fn extract_bazel_classpath(project_path: &Path, target: &str) -> Result<String> {
     // Use the extract_classpath rule from tools/supplychain to get the classpath
     // First, we need to create a temporary BUILD rule or use the aspect directly
-    
+
     println!("[bazbom] Extracting Bazel classpath for target: {}", target);
-    
+
     // Use the classpath aspect to extract JAR paths
     let output = Command::new("bazel")
         .arg("build")
@@ -161,7 +174,10 @@ pub fn extract_bazel_classpath(project_path: &Path, target: &str) -> Result<Stri
 
     if !output.status.success() {
         let error = String::from_utf8_lossy(&output.stderr);
-        println!("[bazbom] Warning: bazel build with aspect failed: {}", error);
+        println!(
+            "[bazbom] Warning: bazel build with aspect failed: {}",
+            error
+        );
         println!("[bazbom] Make sure the target exists and is a Java target");
         return Ok(String::new());
     }
@@ -189,20 +205,19 @@ pub fn extract_bazel_classpath(project_path: &Path, target: &str) -> Result<Stri
         return Ok(String::new());
     }
 
-    let output_str = String::from_utf8(output.stdout)
-        .context("invalid UTF-8 in Bazel output")?;
-    
+    let output_str = String::from_utf8(output.stdout).context("invalid UTF-8 in Bazel output")?;
+
     // Filter for JAR files only
     let jars: Vec<&str> = output_str
         .lines()
         .filter(|line| line.ends_with(".jar"))
         .collect();
-    
+
     if jars.is_empty() {
         println!("[bazbom] Warning: No JARs found for target {}", target);
         return Ok(String::new());
     }
-    
+
     println!("[bazbom] Extracted classpath with {} JARs", jars.len());
     Ok(jars.join(":"))
 }
@@ -243,10 +258,7 @@ mod tests {
             detected_entrypoints: vec![],
             reachable_methods: vec![],
             reachable_classes: vec![],
-            reachable_packages: vec![
-                "com.example".to_string(),
-                "org.apache.commons".to_string(),
-            ],
+            reachable_packages: vec!["com.example".to_string(), "org.apache.commons".to_string()],
             error: None,
         };
 

@@ -27,9 +27,9 @@ pub struct LicenseDetector {
 impl LicenseDetector {
     pub fn new() -> Self {
         let mut licenses = HashMap::new();
-        
+
         Self::populate_common_licenses(&mut licenses);
-        
+
         Self { licenses }
     }
 
@@ -459,12 +459,12 @@ impl LicenseDetector {
             "ASL 2.0" => Some("Apache-2.0".to_string()),
             "Apache Software License - Version 2.0" => Some("Apache-2.0".to_string()),
             "Apache v2" => Some("Apache-2.0".to_string()),
-            
+
             // MIT variants
             "MIT License" => Some("MIT".to_string()),
             "The MIT License" => Some("MIT".to_string()),
             "MIT" => Some("MIT".to_string()),
-            
+
             // BSD variants
             "BSD 3-Clause License" => Some("BSD-3-Clause".to_string()),
             "BSD 2-Clause License" => Some("BSD-2-Clause".to_string()),
@@ -472,7 +472,7 @@ impl LicenseDetector {
             "Revised BSD License" => Some("BSD-3-Clause".to_string()),
             "Simplified BSD License" => Some("BSD-2-Clause".to_string()),
             "The BSD License" => Some("BSD-3-Clause".to_string()),
-            
+
             // GPL variants
             "GNU General Public License, version 2" => Some("GPL-2.0-only".to_string()),
             "GNU General Public License, version 3" => Some("GPL-3.0-only".to_string()),
@@ -480,36 +480,36 @@ impl LicenseDetector {
             "GPL v3" => Some("GPL-3.0-only".to_string()),
             "GPLv2" => Some("GPL-2.0-only".to_string()),
             "GPLv3" => Some("GPL-3.0-only".to_string()),
-            
+
             // LGPL variants
             "GNU Lesser General Public License" => Some("LGPL-2.1-only".to_string()),
             "LGPL v2.1" => Some("LGPL-2.1-only".to_string()),
             "LGPL v3.0" => Some("LGPL-3.0-only".to_string()),
-            
+
             // Eclipse variants
             "Eclipse Public License 2.0" => Some("EPL-2.0".to_string()),
             "Eclipse Public License - v 2.0" => Some("EPL-2.0".to_string()),
             "Eclipse Public License 1.0" => Some("EPL-1.0".to_string()),
             "Eclipse Public License - v 1.0" => Some("EPL-1.0".to_string()),
             "Eclipse Distribution License 1.0" => Some("EDL-1.0".to_string()),
-            
+
             // Mozilla variants
             "Mozilla Public License 2.0" => Some("MPL-2.0".to_string()),
             "Mozilla Public License Version 2.0" => Some("MPL-2.0".to_string()),
             "MPL 2.0" => Some("MPL-2.0".to_string()),
-            
+
             // CDDL variants
             "Common Development and Distribution License" => Some("CDDL-1.0".to_string()),
             "CDDL 1.0" => Some("CDDL-1.0".to_string()),
             "CDDL 1.1" => Some("CDDL-1.1".to_string()),
-            
+
             // ISC
             "ISC License" => Some("ISC".to_string()),
-            
+
             // Creative Commons
             "CC0 1.0 Universal" => Some("CC0-1.0".to_string()),
             "CC0" => Some("CC0-1.0".to_string()),
-            
+
             _ => None,
         }
     }

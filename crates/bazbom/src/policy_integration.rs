@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use bazbom_advisories::Vulnerability as AdvisoryVuln;
-use bazbom_policy::{PolicyConfig, PolicyResult, Vulnerability as PolicyVuln, SeverityLevel, Priority};
+use bazbom_policy::{
+    PolicyConfig, PolicyResult, Priority, SeverityLevel, Vulnerability as PolicyVuln,
+};
 use std::fs;
 use std::path::Path;
 
@@ -40,7 +42,9 @@ pub fn convert_to_policy_vuln_with_reachability(
         .unwrap_or_else(|| format!("Vulnerability {}", advisory_vuln.id));
 
     // Try to find a fixed version from affected packages
-    let fixed_version = advisory_vuln.affected.iter()
+    let fixed_version = advisory_vuln
+        .affected
+        .iter()
         .flat_map(|pkg| pkg.ranges.iter())
         .flat_map(|range| range.events.iter())
         .find_map(|event| {
@@ -74,18 +78,15 @@ pub fn load_policy_config<P: AsRef<Path>>(path: P) -> Result<PolicyConfig> {
 
     let content = fs::read_to_string(path)
         .with_context(|| format!("failed to read policy config from {:?}", path))?;
-    
+
     let config: PolicyConfig = serde_yaml::from_str(&content)
         .with_context(|| format!("failed to parse policy config from {:?}", path))?;
-    
+
     Ok(config)
 }
 
 /// Check vulnerabilities against policy and return violations
-pub fn check_policy(
-    advisory_vulns: &[AdvisoryVuln],
-    policy: &PolicyConfig,
-) -> PolicyResult {
+pub fn check_policy(advisory_vulns: &[AdvisoryVuln], policy: &PolicyConfig) -> PolicyResult {
     check_policy_with_reachability(advisory_vulns, policy, None)
 }
 
@@ -100,30 +101,26 @@ pub fn check_policy_with_reachability(
     for advisory_vuln in advisory_vulns {
         // Convert to policy vulnerability
         // Use first affected package as component, or "unknown" if none
-        let component = advisory_vuln.affected.first()
+        let component = advisory_vuln
+            .affected
+            .first()
             .map(|pkg| format!("{}:{}", pkg.ecosystem, pkg.package))
             .unwrap_or_else(|| "unknown".to_string());
-        
+
         // Determine reachability if analysis was performed
         let is_reachable = if let Some(reach) = reachability {
             // Extract package name from component (e.g., "maven:com.example:mylib" -> "com.example")
-            let package_name = component
-                .split(':')
-                .nth(1)
-                .unwrap_or("");
-            
+            let package_name = component.split(':').nth(1).unwrap_or("");
+
             // Check if the package is reachable
             Some(reach.is_package_reachable(package_name))
         } else {
             None
         };
-        
-        let policy_vuln = convert_to_policy_vuln_with_reachability(
-            advisory_vuln,
-            &component,
-            is_reachable,
-        );
-        
+
+        let policy_vuln =
+            convert_to_policy_vuln_with_reachability(advisory_vuln, &component, is_reachable);
+
         // Check vulnerability against policy
         if let Some(violation) = policy.check_vulnerability(&policy_vuln) {
             violations.push(violation);
@@ -139,7 +136,10 @@ pub fn check_policy_with_reachability(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bazbom_advisories::{AffectedPackage, Severity, SeverityLevel as AdvSeverityLevel, VersionRange, VersionEvent, EpssScore, KevEntry};
+    use bazbom_advisories::{
+        AffectedPackage, EpssScore, KevEntry, Severity, SeverityLevel as AdvSeverityLevel,
+        VersionEvent, VersionRange,
+    };
 
     #[test]
     fn test_convert_to_policy_vuln_critical() {
@@ -152,8 +152,12 @@ mod tests {
                 ranges: vec![VersionRange {
                     range_type: "SEMVER".to_string(),
                     events: vec![
-                        VersionEvent::Introduced { introduced: "0.0.0".to_string() },
-                        VersionEvent::Fixed { fixed: "2.0.0".to_string() },
+                        VersionEvent::Introduced {
+                            introduced: "0.0.0".to_string(),
+                        },
+                        VersionEvent::Fixed {
+                            fixed: "2.0.0".to_string(),
+                        },
                     ],
                 }],
             }],
@@ -226,7 +230,7 @@ mod tests {
 
         let result = load_policy_config(&config_path);
         assert!(result.is_ok());
-        
+
         let config = result.unwrap();
         assert_eq!(config.severity_threshold, Some(SeverityLevel::High));
     }
@@ -250,10 +254,13 @@ vex_auto_apply: true
 
         let result = load_policy_config(&config_path);
         assert!(result.is_ok());
-        
+
         let config = result.unwrap();
         assert_eq!(config.severity_threshold, Some(SeverityLevel::Critical));
-        assert_eq!(config.license_allowlist, Some(vec!["MIT".to_string(), "Apache-2.0".to_string()]));
+        assert_eq!(
+            config.license_allowlist,
+            Some(vec!["MIT".to_string(), "Apache-2.0".to_string()])
+        );
         assert!(config.kev_gate);
         assert_eq!(config.epss_threshold, Some(0.8));
     }

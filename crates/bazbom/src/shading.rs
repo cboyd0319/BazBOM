@@ -23,7 +23,7 @@ pub struct RelocationMapping {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[allow(non_snake_case)]
 pub struct ShadingConfiguration {
-    pub source: String,  // "maven-shade-plugin" or "gradle-shadow"
+    pub source: String, // "maven-shade-plugin" or "gradle-shadow"
     pub relocations: Vec<RelocationMapping>,
     pub finalName: Option<String>,
 }
@@ -45,12 +45,12 @@ pub struct ShadingMatch {
     pub shadedClassName: String,
     pub originalClassName: String,
     pub originalArtifact: Option<String>, // GAV coordinates
-    pub confidence: f32, // 0.0 to 1.0
+    pub confidence: f32,                  // 0.0 to 1.0
 }
 
 impl RelocationMapping {
     /// Check if a class name matches this relocation pattern
-    /// 
+    ///
     /// Future use: Runtime JAR analysis to match classes against relocation patterns
     /// for accurate vulnerability attribution in shaded dependencies.
     #[allow(dead_code)]
@@ -59,26 +59,26 @@ impl RelocationMapping {
         if !class_name.starts_with(&self.pattern) {
             return false;
         }
-        
+
         // Check includes if specified
         if let Some(includes) = &self.includes {
             if !includes.iter().any(|inc| class_name.starts_with(inc)) {
                 return false;
             }
         }
-        
+
         // Check excludes if specified
         if let Some(excludes) = &self.excludes {
             if excludes.iter().any(|exc| class_name.starts_with(exc)) {
                 return false;
             }
         }
-        
+
         true
     }
-    
+
     /// Apply this relocation to a class name, returning the original name
-    /// 
+    ///
     /// Future use: Map shaded class names back to original artifacts for
     /// accurate vulnerability reporting and dependency attribution.
     #[allow(dead_code)]
@@ -86,7 +86,7 @@ impl RelocationMapping {
         if !shaded_class_name.starts_with(&self.shadedPattern) {
             return None;
         }
-        
+
         let suffix = shaded_class_name.strip_prefix(&self.shadedPattern)?;
         Some(format!("{}{}", self.pattern, suffix))
     }
@@ -97,24 +97,23 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
     if !pom_path.exists() {
         return Ok(None);
     }
-    
-    let content = fs::read_to_string(pom_path)
-        .context("failed to read pom.xml")?;
-    
+
+    let content = fs::read_to_string(pom_path).context("failed to read pom.xml")?;
+
     // Quick check if shade plugin is present
     if !content.contains("maven-shade-plugin") {
         return Ok(None);
     }
-    
+
     let mut reader = Reader::from_str(&content);
     reader.trim_text(true);
-    
+
     let mut relocations = Vec::new();
     let mut in_shade_plugin = false;
     let mut in_configuration = false;
     let mut in_relocations = false;
     let mut in_relocation = false;
-    
+
     let mut current_pattern = String::new();
     let mut current_shaded_pattern = String::new();
     let mut current_includes: Vec<String> = Vec::new();
@@ -127,9 +126,9 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
     let mut in_exclude = false;
     let mut final_name: Option<String> = None;
     let mut in_final_name = false;
-    
+
     let mut buf = Vec::new();
-    
+
     loop {
         match reader.read_event_into(&mut buf) {
             Ok(Event::Start(ref e)) => {
@@ -188,8 +187,16 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
                             relocations.push(RelocationMapping {
                                 pattern: current_pattern.clone(),
                                 shadedPattern: current_shaded_pattern.clone(),
-                                includes: if current_includes.is_empty() { None } else { Some(current_includes.clone()) },
-                                excludes: if current_excludes.is_empty() { None } else { Some(current_excludes.clone()) },
+                                includes: if current_includes.is_empty() {
+                                    None
+                                } else {
+                                    Some(current_includes.clone())
+                                },
+                                excludes: if current_excludes.is_empty() {
+                                    None
+                                } else {
+                                    Some(current_excludes.clone())
+                                },
                             });
                         }
                         in_relocation = false;
@@ -206,17 +213,21 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
             }
             Ok(Event::Eof) => break,
             Err(e) => {
-                return Err(anyhow::anyhow!("XML parse error at position {}: {}", reader.buffer_position(), e));
+                return Err(anyhow::anyhow!(
+                    "XML parse error at position {}: {}",
+                    reader.buffer_position(),
+                    e
+                ));
             }
             _ => {}
         }
         buf.clear();
     }
-    
+
     if relocations.is_empty() {
         return Ok(None);
     }
-    
+
     Ok(Some(ShadingConfiguration {
         source: "maven-shade-plugin".to_string(),
         relocations,
@@ -229,17 +240,16 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
     if !build_file.exists() {
         return Ok(None);
     }
-    
-    let content = fs::read_to_string(build_file)
-        .context("failed to read build file")?;
-    
+
+    let content = fs::read_to_string(build_file).context("failed to read build file")?;
+
     // Look for shadow plugin and relocate statements
     if !content.contains("shadow") && !content.contains("com.github.johnrengelman.shadow") {
         return Ok(None);
     }
-    
+
     let mut relocations = Vec::new();
-    
+
     // Look for relocate() calls
     // Example: relocate 'org.apache', 'myapp.shaded.apache'
     for line in content.lines() {
@@ -256,11 +266,11 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
             }
         }
     }
-    
+
     if relocations.is_empty() {
         return Ok(None);
     }
-    
+
     Ok(Some(ShadingConfiguration {
         source: "gradle-shadow-plugin".to_string(),
         relocations,
@@ -269,59 +279,55 @@ pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingCon
 }
 
 /// Extract nested JARs from a fat JAR
-/// 
+///
 /// Future use: Deep analysis of fat JARs (uber JARs) to extract and analyze
 /// embedded dependencies, useful for Spring Boot applications and other
 /// packaging formats that bundle dependencies within the main JAR.
 #[allow(dead_code)]
 pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<String>> {
     use zip::ZipArchive;
-    
+
     if !jar_path.exists() {
         return Err(anyhow::anyhow!("JAR file not found: {:?}", jar_path));
     }
-    
+
     // Ensure output directory exists
-    fs::create_dir_all(output_dir)
-        .context("failed to create output directory")?;
-    
-    let file = fs::File::open(jar_path)
-        .context("failed to open JAR file")?;
-    let mut archive = ZipArchive::new(file)
-        .context("failed to read ZIP archive")?;
-    
+    fs::create_dir_all(output_dir).context("failed to create output directory")?;
+
+    let file = fs::File::open(jar_path).context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file).context("failed to read ZIP archive")?;
+
     let mut nested_jars = Vec::new();
-    
+
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i)
+        let mut file = archive
+            .by_index(i)
             .context("failed to read archive entry")?;
         let name = file.name().to_string();
-        
+
         // Look for nested JAR files
         if name.ends_with(".jar") {
             let output_path = output_dir.join(&name);
-            
+
             // Create parent directories
             if let Some(parent) = output_path.parent() {
-                fs::create_dir_all(parent)
-                    .context("failed to create nested directory")?;
+                fs::create_dir_all(parent).context("failed to create nested directory")?;
             }
-            
+
             // Extract the nested JAR
-            let mut output_file = fs::File::create(&output_path)
-                .context("failed to create output file")?;
-            std::io::copy(&mut file, &mut output_file)
-                .context("failed to copy nested JAR")?;
-            
+            let mut output_file =
+                fs::File::create(&output_path).context("failed to create output file")?;
+            std::io::copy(&mut file, &mut output_file).context("failed to copy nested JAR")?;
+
             nested_jars.push(name);
         }
     }
-    
+
     Ok(nested_jars)
 }
 
 /// Generate a fingerprint for a class file
-/// 
+///
 /// Future use: Create unique fingerprints of class files for matching shaded
 /// classes to their original artifacts when relocation patterns are ambiguous.
 /// Enables high-confidence attribution even for complex shading scenarios.
@@ -329,19 +335,19 @@ pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<Str
 pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
     // Compute bytecode hash for matching
     let hash = blake3::hash(class_bytes).to_hex().to_string();
-    
+
     // Extract class name from bytecode
     // The class file format has the class name at a specific offset
     // For a proper implementation, we would parse the constant pool
     // Here we provide a basic implementation that extracts the class name
-    let class_name = extract_class_name_from_bytecode(class_bytes)
-        .unwrap_or_else(|| "Unknown".to_string());
-    
+    let class_name =
+        extract_class_name_from_bytecode(class_bytes).unwrap_or_else(|| "Unknown".to_string());
+
     // Note: For production use, method and field signatures should be extracted
     // using ASM or similar bytecode parsing library. This would ideally be done
     // in the Java-based bazbom-reachability tool and the results provided to Rust.
     // For now, we rely on bytecode hash for matching.
-    
+
     Ok(ClassFingerprint {
         className: class_name,
         methodSignatures: vec![],
@@ -351,7 +357,7 @@ pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
 }
 
 /// Extract class name from bytecode (basic implementation)
-/// 
+///
 /// Future use: Helper function for fingerprint_class to extract class names
 /// directly from bytecode for more accurate matching. Currently relies on
 /// bytecode hash; future implementation would parse constant pool.
@@ -361,44 +367,43 @@ fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
     if class_bytes.len() < 10 || &class_bytes[0..4] != b"\xCA\xFE\xBA\xBE" {
         return None;
     }
-    
+
     // For a complete implementation, we would need to:
     // 1. Parse the constant pool
     // 2. Find the this_class index
     // 3. Resolve the class name from the constant pool
     // This is complex and better done with a proper bytecode library
-    
+
     // For now, return None and rely on bytecode hash matching
     None
 }
 
 /// Scan a JAR file and create fingerprints for all classes
-/// 
+///
 /// Future use: Build a database of class fingerprints from known artifacts
 /// for matching against shaded JARs. Enables identification of dependencies
 /// in fat JARs even without relocation configuration.
 #[allow(dead_code)]
 pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerprint>> {
     use zip::ZipArchive;
-    
-    let file = fs::File::open(jar_path)
-        .context("failed to open JAR file")?;
-    let mut archive = ZipArchive::new(file)
-        .context("failed to read ZIP archive")?;
-    
+
+    let file = fs::File::open(jar_path).context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file).context("failed to read ZIP archive")?;
+
     let mut fingerprints = HashMap::new();
-    
+
     for i in 0..archive.len() {
-        let mut file = archive.by_index(i)
+        let mut file = archive
+            .by_index(i)
             .context("failed to read archive entry")?;
         let name = file.name().to_string();
-        
+
         // Only process .class files
         if name.ends_with(".class") && !name.contains("module-info") {
             let mut class_bytes = Vec::new();
             file.read_to_end(&mut class_bytes)
                 .context("failed to read class file")?;
-            
+
             if let Ok(fingerprint) = fingerprint_class(&class_bytes) {
                 // Use the file path as the key (without .class extension)
                 let class_key = name.trim_end_matches(".class").replace('/', ".");
@@ -406,12 +411,12 @@ pub fn fingerprint_jar(jar_path: &Path) -> Result<HashMap<String, ClassFingerpri
             }
         }
     }
-    
+
     Ok(fingerprints)
 }
 
 /// Match a shaded class to its original artifact using fingerprints
-/// 
+///
 /// Future use: Compare fingerprints of shaded classes against a database
 /// of known artifacts to identify dependencies and enable accurate
 /// vulnerability attribution with confidence scoring.
@@ -422,7 +427,7 @@ pub fn match_shaded_class(
 ) -> Option<ShadingMatch> {
     // Compare fingerprints to find best match
     // This is a simplified implementation
-    
+
     for (artifact_gav, original_fingerprint) in known_fingerprints {
         if shaded_class.bytecodeHash == original_fingerprint.bytecodeHash {
             return Some(ShadingMatch {
@@ -433,12 +438,12 @@ pub fn match_shaded_class(
             });
         }
     }
-    
+
     None
 }
 
 /// Detect shading in a JAR by comparing its classes against a relocation map
-/// 
+///
 /// Future use: Runtime analysis of JAR files to detect shaded classes and
 /// map them to original artifacts. Complements build-time detection for
 /// cases where build configuration is unavailable or incomplete.
@@ -448,38 +453,35 @@ pub fn detect_shading_in_jar(
     relocation: &RelocationMapping,
 ) -> Result<Vec<ShadingMatch>> {
     use zip::ZipArchive;
-    
-    let file = fs::File::open(jar_path)
-        .context("failed to open JAR file")?;
-    let mut archive = ZipArchive::new(file)
-        .context("failed to read ZIP archive")?;
-    
+
+    let file = fs::File::open(jar_path).context("failed to open JAR file")?;
+    let mut archive = ZipArchive::new(file).context("failed to read ZIP archive")?;
+
     let mut matches = Vec::new();
-    
+
     for i in 0..archive.len() {
-        let file = archive.by_index(i)
+        let file = archive
+            .by_index(i)
             .context("failed to read archive entry")?;
         let name = file.name().to_string();
-        
+
         // Only process .class files
         if name.ends_with(".class") {
             // Convert file path to class name
-            let class_name = name
-                .trim_end_matches(".class")
-                .replace('/', ".");
-            
+            let class_name = name.trim_end_matches(".class").replace('/', ".");
+
             // Check if this class matches the relocation pattern
             if let Some(original_name) = relocation.reverse_relocate(&class_name) {
                 matches.push(ShadingMatch {
                     shadedClassName: class_name,
                     originalClassName: original_name.clone(),
                     originalArtifact: None, // Would need fingerprint matching to determine
-                    confidence: 0.8, // High confidence based on relocation pattern match
+                    confidence: 0.8,        // High confidence based on relocation pattern match
                 });
             }
         }
     }
-    
+
     Ok(matches)
 }
 
@@ -489,13 +491,14 @@ fn parse_gradle_relocate_line(line: &str) -> Option<(String, String)> {
     // Parse patterns like:
     // relocate 'org.apache', 'myapp.shaded.apache'
     // relocate("org.apache", "myapp.shaded.apache")
-    
-    let cleaned = line.trim()
+
+    let cleaned = line
+        .trim()
         .replace("relocate", "")
         .replace(['(', ')', '\'', '"'], "");
-    
+
     let parts: Vec<&str> = cleaned.split(',').map(|s| s.trim()).collect();
-    
+
     if parts.len() >= 2 {
         Some((parts[0].to_string(), parts[1].to_string()))
     } else {
@@ -515,7 +518,7 @@ mod tests {
             includes: None,
             excludes: None,
         };
-        
+
         assert!(relocation.matches("org.apache.commons.Lang"));
         assert!(!relocation.matches("com.example.Foo"));
     }
@@ -528,7 +531,7 @@ mod tests {
             includes: Some(vec!["org.apache.commons".to_string()]),
             excludes: None,
         };
-        
+
         assert!(relocation.matches("org.apache.commons.Lang"));
         assert!(!relocation.matches("org.apache.log4j.Logger"));
     }
@@ -541,7 +544,7 @@ mod tests {
             includes: None,
             excludes: Some(vec!["org.apache.log4j".to_string()]),
         };
-        
+
         assert!(relocation.matches("org.apache.commons.Lang"));
         assert!(!relocation.matches("org.apache.log4j.Logger"));
     }
@@ -554,10 +557,10 @@ mod tests {
             includes: None,
             excludes: None,
         };
-        
+
         let original = relocation.reverse_relocate("shaded.org.apache.commons.Lang");
         assert_eq!(original, Some("org.apache.commons.Lang".to_string()));
-        
+
         let no_match = relocation.reverse_relocate("com.example.Foo");
         assert_eq!(no_match, None);
     }
@@ -566,18 +569,24 @@ mod tests {
     fn test_parse_gradle_relocate_line() {
         let line1 = "  relocate 'org.apache', 'myapp.shaded.apache'  ";
         let result1 = parse_gradle_relocate_line(line1);
-        assert_eq!(result1, Some(("org.apache".to_string(), "myapp.shaded.apache".to_string())));
-        
+        assert_eq!(
+            result1,
+            Some(("org.apache".to_string(), "myapp.shaded.apache".to_string()))
+        );
+
         let line2 = r#"  relocate("org.apache", "myapp.shaded.apache")  "#;
         let result2 = parse_gradle_relocate_line(line2);
-        assert_eq!(result2, Some(("org.apache".to_string(), "myapp.shaded.apache".to_string())));
+        assert_eq!(
+            result2,
+            Some(("org.apache".to_string(), "myapp.shaded.apache".to_string()))
+        );
     }
 
     #[test]
     fn test_fingerprint_class() {
         let dummy_bytes = b"dummy class bytes";
         let fingerprint = fingerprint_class(dummy_bytes).unwrap();
-        
+
         assert_eq!(fingerprint.bytecodeHash.len(), 64); // Blake3 hash length
     }
 
@@ -590,18 +599,21 @@ mod tests {
             fieldSignatures: vec![],
             bytecodeHash: "abc123".to_string(),
         };
-        known.insert("org.apache.commons:commons-lang3:3.12.0".to_string(), original.clone());
-        
+        known.insert(
+            "org.apache.commons:commons-lang3:3.12.0".to_string(),
+            original.clone(),
+        );
+
         let shaded = ClassFingerprint {
             className: "shaded.org.apache.commons.Lang".to_string(),
             methodSignatures: vec![],
             fieldSignatures: vec![],
             bytecodeHash: "abc123".to_string(),
         };
-        
+
         let match_result = match_shaded_class(&shaded, &known);
         assert!(match_result.is_some());
-        
+
         let matched = match_result.unwrap();
         assert_eq!(matched.confidence, 1.0);
         assert_eq!(matched.originalClassName, "org.apache.commons.Lang");
@@ -609,9 +621,9 @@ mod tests {
 
     #[test]
     fn test_parse_maven_shade_config_complete() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
-        
+        use tempfile::NamedTempFile;
+
         let pom_content = r#"<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -649,24 +661,24 @@ mod tests {
     </build>
 </project>
 "#;
-        
+
         let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(pom_content.as_bytes()).unwrap();
-        
+
         let config = parse_maven_shade_config(temp_file.path()).unwrap();
         assert!(config.is_some());
-        
+
         let config = config.unwrap();
         assert_eq!(config.source, "maven-shade-plugin");
         assert_eq!(config.finalName, Some("shaded-app".to_string()));
         assert_eq!(config.relocations.len(), 2);
-        
+
         let first = &config.relocations[0];
         assert_eq!(first.pattern, "org.apache.commons");
         assert_eq!(first.shadedPattern, "com.example.shaded.commons");
         assert!(first.includes.is_none());
         assert!(first.excludes.is_none());
-        
+
         let second = &config.relocations[1];
         assert_eq!(second.pattern, "com.google.guava");
         assert_eq!(second.shadedPattern, "com.example.shaded.guava");
@@ -678,9 +690,9 @@ mod tests {
 
     #[test]
     fn test_parse_maven_shade_config_no_plugin() {
-        use tempfile::NamedTempFile;
         use std::io::Write;
-        
+        use tempfile::NamedTempFile;
+
         let pom_content = r#"<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0">
     <modelVersion>4.0.0</modelVersion>
@@ -689,10 +701,10 @@ mod tests {
     <version>1.0.0</version>
 </project>
 "#;
-        
+
         let mut temp_file = NamedTempFile::new().unwrap();
         temp_file.write_all(pom_content.as_bytes()).unwrap();
-        
+
         let config = parse_maven_shade_config(temp_file.path()).unwrap();
         assert!(config.is_none());
     }
@@ -703,7 +715,7 @@ mod tests {
         let invalid = b"not a class file";
         let result = super::extract_class_name_from_bytecode(invalid);
         assert!(result.is_none());
-        
+
         // Test with valid magic number but short content
         let short_valid = b"\xCA\xFE\xBA\xBE\x00\x00\x00\x34";
         let result = super::extract_class_name_from_bytecode(short_valid);

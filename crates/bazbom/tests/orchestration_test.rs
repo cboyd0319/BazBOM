@@ -45,10 +45,7 @@ artifact = true
 
     // Verify output directory structure
     assert!(out_dir.exists(), "Output directory should exist");
-    assert!(
-        out_dir.join("sbom").exists(),
-        "SBOM directory should exist"
-    );
+    assert!(out_dir.join("sbom").exists(), "SBOM directory should exist");
     assert!(
         out_dir.join("findings").exists(),
         "Findings directory should exist"
@@ -75,10 +72,7 @@ artifact = true
         Some("2.1.0"),
         "SARIF version should be 2.1.0"
     );
-    assert!(
-        sarif["runs"].is_array(),
-        "SARIF should have runs array"
-    );
+    assert!(sarif["runs"].is_array(), "SARIF should have runs array");
 
     Ok(())
 }
@@ -112,10 +106,7 @@ depsdev = true
 
     // Verify enrichment output exists
     let enrich_file = out_dir.join("enrich").join("depsdev.json");
-    assert!(
-        enrich_file.exists(),
-        "Enrichment file should be created"
-    );
+    assert!(enrich_file.exists(), "Enrichment file should be created");
 
     // Verify it's valid JSON
     let enrich_content = fs::read_to_string(&enrich_file)?;
@@ -262,11 +253,7 @@ fn test_output_directories_created() -> Result<()> {
     ];
 
     for dir in expected_dirs {
-        assert!(
-            dir.exists(),
-            "Directory {:?} should be created",
-            dir
-        );
+        assert!(dir.exists(), "Directory {:?} should be created", dir);
         assert!(dir.is_dir(), "Path {:?} should be a directory", dir);
     }
 

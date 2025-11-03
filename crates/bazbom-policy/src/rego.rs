@@ -22,11 +22,11 @@ impl RegoPolicy {
         let mut engine = Engine::new();
         let policy_content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read Rego policy file: {}", e))?;
-        
+
         engine
             .add_policy(path.to_string_lossy().to_string(), policy_content)
             .map_err(|e| format!("Failed to parse Rego policy: {}", e))?;
-        
+
         Ok(Self { engine })
     }
 
@@ -35,27 +35,26 @@ impl RegoPolicy {
         engine
             .add_policy(policy_name.to_string(), policy_content.to_string())
             .map_err(|e| format!("Failed to parse Rego policy: {}", e))?;
-        
+
         Ok(Self { engine })
     }
 
     pub fn evaluate(&mut self, input: &Value) -> Result<RegoEvaluationResult, String> {
         let rego_input: regorus::Value = serde_json::from_value(input.clone())
             .map_err(|e| format!("Failed to convert input to Rego value: {}", e))?;
-        
-        self.engine
-            .set_input(rego_input);
+
+        self.engine.set_input(rego_input);
 
         let deny_result = self
             .engine
             .eval_query("data.bazbom.deny".to_string(), false)
             .map_err(|e| format!("Failed to evaluate deny rule: {}", e))?;
-        
+
         let warn_result = self
             .engine
             .eval_query("data.bazbom.warn".to_string(), false)
             .map_err(|e| format!("Failed to evaluate warn rule: {}", e))?;
-        
+
         let allow_result = self
             .engine
             .eval_query("data.bazbom.allow".to_string(), false)
@@ -72,13 +71,13 @@ impl RegoPolicy {
 #[cfg(feature = "rego")]
 fn extract_messages_from_results(results: &regorus::QueryResults) -> Vec<String> {
     let mut messages = Vec::new();
-    
+
     for result in results.result.iter() {
         for expr in result.expressions.iter() {
             extract_strings_from_value(&expr.value, &mut messages);
         }
     }
-    
+
     messages
 }
 
@@ -158,7 +157,7 @@ mod tests {
         "#;
 
         let mut rego = RegoPolicy::from_string("test_policy", policy).unwrap();
-        
+
         let input = json!({
             "severity": "CRITICAL"
         });
@@ -181,7 +180,7 @@ mod tests {
         "#;
 
         let mut rego = RegoPolicy::from_string("test_policy", policy).unwrap();
-        
+
         let input = json!({
             "epss": 0.75
         });
@@ -210,7 +209,7 @@ mod tests {
         "#;
 
         let mut rego = RegoPolicy::from_string("test_policy", policy).unwrap();
-        
+
         let input = json!({
             "cve_id": "CVE-2023-12345",
             "exception": true
@@ -236,7 +235,7 @@ mod tests {
         "#;
 
         let mut rego = RegoPolicy::from_string("test_policy", policy).unwrap();
-        
+
         let input = json!({
             "vulnerabilities": [
                 {
@@ -271,7 +270,7 @@ mod tests {
         "#;
 
         let mut rego = RegoPolicy::from_string("test_policy", policy).unwrap();
-        
+
         let input = json!({
             "vulnerabilities": [
                 {

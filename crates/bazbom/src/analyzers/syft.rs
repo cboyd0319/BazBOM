@@ -27,52 +27,59 @@ impl SyftRunner {
             ContainerStrategy::Syft => self.run_syft(ctx, image_or_path),
             ContainerStrategy::Auto => {
                 // Try BazBOM first, fallback to Syft if not ready
-                println!("[bazbom] container strategy=auto: using Syft (BazBOM implementation pending)");
+                println!(
+                    "[bazbom] container strategy=auto: using Syft (BazBOM implementation pending)"
+                );
                 self.run_syft(ctx, image_or_path)
             }
             ContainerStrategy::Bazbom => {
                 println!("[bazbom] container strategy=bazbom: not yet implemented");
-                Err(anyhow::anyhow!("BazBOM container SBOM not yet implemented; use --containers=syft"))
+                Err(anyhow::anyhow!(
+                    "BazBOM container SBOM not yet implemented; use --containers=syft"
+                ))
             }
         }
     }
 
     fn run_syft(&self, ctx: &Context, image_or_path: &str) -> Result<PathBuf> {
-        println!("[bazbom] generating container SBOM with Syft for: {}", image_or_path);
+        println!(
+            "[bazbom] generating container SBOM with Syft for: {}",
+            image_or_path
+        );
 
         // Check if syft is available in PATH (user installed)
-        let syft_result = std::process::Command::new("syft")
-            .arg("--version")
-            .output();
+        let syft_result = std::process::Command::new("syft").arg("--version").output();
 
         let syft_bin = if syft_result.is_ok() {
             println!("[bazbom] using system-installed Syft");
             PathBuf::from("syft")
         } else {
             println!("[bazbom] Syft not found in PATH, checking tool cache...");
-            
+
             match ToolManifestLoader::load() {
-                Ok(loader) => match loader.get_descriptor("syft") {
-                    Ok(desc) => {
-                        let cache = ToolCache::new(ctx.tool_cache.clone());
-                        match cache.ensure(&desc) {
-                            Ok(path) => {
-                                println!("[bazbom] using managed Syft from cache");
-                                path
-                            }
-                            Err(e) => {
-                                println!("[bazbom] failed to download Syft: {}", e);
-                                println!("[bazbom] Install Syft: https://github.com/anchore/syft#installation");
-                                return Err(anyhow::anyhow!("Syft not available"));
+                Ok(loader) => {
+                    match loader.get_descriptor("syft") {
+                        Ok(desc) => {
+                            let cache = ToolCache::new(ctx.tool_cache.clone());
+                            match cache.ensure(&desc) {
+                                Ok(path) => {
+                                    println!("[bazbom] using managed Syft from cache");
+                                    path
+                                }
+                                Err(e) => {
+                                    println!("[bazbom] failed to download Syft: {}", e);
+                                    println!("[bazbom] Install Syft: https://github.com/anchore/syft#installation");
+                                    return Err(anyhow::anyhow!("Syft not available"));
+                                }
                             }
                         }
+                        Err(e) => {
+                            println!("[bazbom] tool manifest error: {}", e);
+                            println!("[bazbom] Install Syft: https://github.com/anchore/syft#installation");
+                            return Err(anyhow::anyhow!("Syft not available"));
+                        }
                     }
-                    Err(e) => {
-                        println!("[bazbom] tool manifest error: {}", e);
-                        println!("[bazbom] Install Syft: https://github.com/anchore/syft#installation");
-                        return Err(anyhow::anyhow!("Syft not available"));
-                    }
-                },
+                }
                 Err(e) => {
                     println!("[bazbom] failed to load tool manifest: {}", e);
                     return Err(anyhow::anyhow!("Syft not available"));
@@ -94,7 +101,10 @@ impl SyftRunner {
 
         if output.exit_code != 0 {
             eprintln!("[bazbom] Syft stderr: {}", output.stderr);
-            return Err(anyhow::anyhow!("Syft failed with exit code {}", output.exit_code));
+            return Err(anyhow::anyhow!(
+                "Syft failed with exit code {}",
+                output.exit_code
+            ));
         }
 
         println!("[bazbom] wrote container SBOM to {:?}", output_path);
@@ -133,13 +143,13 @@ mod tests {
     #[test]
     fn test_resolve_strategy_cli() {
         let config = Config::default();
-        
+
         let strategy = SyftRunner::resolve_strategy(&config, Some("syft"));
         assert_eq!(strategy, ContainerStrategy::Syft);
-        
+
         let strategy = SyftRunner::resolve_strategy(&config, Some("bazbom"));
         assert_eq!(strategy, ContainerStrategy::Bazbom);
-        
+
         let strategy = SyftRunner::resolve_strategy(&config, Some("auto"));
         assert_eq!(strategy, ContainerStrategy::Auto);
     }
@@ -148,7 +158,7 @@ mod tests {
     fn test_resolve_strategy_config() {
         let mut config = Config::default();
         config.containers.strategy = Some("syft".to_string());
-        
+
         let strategy = SyftRunner::resolve_strategy(&config, None);
         assert_eq!(strategy, ContainerStrategy::Syft);
     }
@@ -175,10 +185,13 @@ mod tests {
 
         let runner = SyftRunner::new(ContainerStrategy::Bazbom);
         let result = runner.generate_container_sbom(&ctx, "test-image");
-        
+
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("not yet implemented"));
-        
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("not yet implemented"));
+
         Ok(())
     }
 }

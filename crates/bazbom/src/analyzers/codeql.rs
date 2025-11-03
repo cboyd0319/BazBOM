@@ -20,7 +20,9 @@ impl CodeqlAnalyzer {
     fn detect_build_system(workspace: &PathBuf) -> Option<BuildSystem> {
         if workspace.join("pom.xml").exists() {
             Some(BuildSystem::Maven)
-        } else if workspace.join("build.gradle").exists() || workspace.join("build.gradle.kts").exists() {
+        } else if workspace.join("build.gradle").exists()
+            || workspace.join("build.gradle.kts").exists()
+        {
             Some(BuildSystem::Gradle)
         } else if workspace.join("BUILD").exists() || workspace.join("BUILD.bazel").exists() {
             Some(BuildSystem::Bazel)
@@ -49,16 +51,23 @@ impl CodeqlAnalyzer {
         Ok(path)
     }
 
-    fn create_database(&self, codeql_bin: &PathBuf, ctx: &Context, build_system: &BuildSystem) -> Result<PathBuf> {
+    fn create_database(
+        &self,
+        codeql_bin: &PathBuf,
+        ctx: &Context,
+        build_system: &BuildSystem,
+    ) -> Result<PathBuf> {
         let db_dir = ctx.out_dir.join("codeql-db");
-        
+
         // Clean up old database if it exists
         if db_dir.exists() {
-            std::fs::remove_dir_all(&db_dir)
-                .context("failed to remove old CodeQL database")?;
+            std::fs::remove_dir_all(&db_dir).context("failed to remove old CodeQL database")?;
         }
 
-        println!("[bazbom] creating CodeQL database for {:?}...", build_system);
+        println!(
+            "[bazbom] creating CodeQL database for {:?}...",
+            build_system
+        );
 
         let build_command = match build_system {
             BuildSystem::Maven => "mvn clean compile -DskipTests",
@@ -69,7 +78,7 @@ impl CodeqlAnalyzer {
         // Run codeql database create
         let db_path_str = db_dir.to_str().unwrap();
         let command_arg = format!("--command={}", build_command);
-        
+
         let args = vec![
             "database",
             "create",
@@ -80,7 +89,7 @@ impl CodeqlAnalyzer {
         ];
 
         println!("[bazbom] running: codeql {}", args.join(" "));
-        
+
         let status = std::process::Command::new(codeql_bin)
             .args(&args)
             .current_dir(&ctx.workspace)
@@ -95,7 +104,12 @@ impl CodeqlAnalyzer {
         Ok(db_dir)
     }
 
-    fn analyze_database(&self, codeql_bin: &PathBuf, ctx: &Context, db_dir: &PathBuf) -> Result<SarifReport> {
+    fn analyze_database(
+        &self,
+        codeql_bin: &PathBuf,
+        ctx: &Context,
+        db_dir: &PathBuf,
+    ) -> Result<SarifReport> {
         let output_path = ctx.findings_dir.join("codeql.sarif");
 
         // Map suite to CodeQL query pack
@@ -104,13 +118,16 @@ impl CodeqlAnalyzer {
             _ => "codeql/java-queries:codeql-suites/java-security-and-quality.qls",
         };
 
-        println!("[bazbom] analyzing database with query pack: {}", query_pack);
+        println!(
+            "[bazbom] analyzing database with query pack: {}",
+            query_pack
+        );
 
         let db_path_str = db_dir.to_str().unwrap();
         let output_path_str = output_path.to_str().unwrap();
         let format_arg = String::from("--format=sarif-latest");
         let output_arg = format!("--output={}", output_path_str);
-        
+
         let args = vec![
             "database",
             "analyze",
@@ -134,12 +151,15 @@ impl CodeqlAnalyzer {
         }
 
         // Read the generated SARIF file
-        let sarif_content = std::fs::read_to_string(&output_path)
-            .context("failed to read CodeQL SARIF output")?;
-        let report: SarifReport = serde_json::from_str(&sarif_content)
-            .context("failed to parse CodeQL SARIF output")?;
+        let sarif_content =
+            std::fs::read_to_string(&output_path).context("failed to read CodeQL SARIF output")?;
+        let report: SarifReport =
+            serde_json::from_str(&sarif_content).context("failed to parse CodeQL SARIF output")?;
 
-        println!("[bazbom] CodeQL analysis complete, wrote findings to {:?}", output_path);
+        println!(
+            "[bazbom] CodeQL analysis complete, wrote findings to {:?}",
+            output_path
+        );
 
         Ok(report)
     }
@@ -169,7 +189,10 @@ impl Analyzer for CodeqlAnalyzer {
     }
 
     fn run(&self, ctx: &Context) -> Result<SarifReport> {
-        println!("[bazbom] running CodeQL analysis (suite: {})...", self.suite);
+        println!(
+            "[bazbom] running CodeQL analysis (suite: {})...",
+            self.suite
+        );
 
         // Detect build system
         let build_system = match Self::detect_build_system(&ctx.workspace) {
@@ -236,11 +259,11 @@ mod tests {
     #[test]
     fn test_codeql_analyzer_enabled() {
         let analyzer = CodeqlAnalyzer::new(None);
-        
+
         // Test CLI override
         let config = Config::default();
         assert!(analyzer.enabled(&config, true));
-        
+
         // Test config enabled
         let mut config = Config::default();
         config.analysis.codeql = Some(crate::config::CodeqlConfig {
@@ -248,7 +271,7 @@ mod tests {
             suite: None,
         });
         assert!(analyzer.enabled(&config, false));
-        
+
         // Test disabled by default
         let config = Config::default();
         assert!(!analyzer.enabled(&config, false));
@@ -264,7 +287,7 @@ mod tests {
     fn test_codeql_analyzer_suite() {
         let analyzer1 = CodeqlAnalyzer::new(None);
         assert_eq!(analyzer1.suite, "default");
-        
+
         let analyzer2 = CodeqlAnalyzer::new(Some("security-extended".to_string()));
         assert_eq!(analyzer2.suite, "security-extended");
     }

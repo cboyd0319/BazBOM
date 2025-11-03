@@ -158,8 +158,8 @@ pub fn parse_nvd_entry(nvd: &NvdEntry) -> Result<Vulnerability> {
         references,
         published: cve.published.clone(),
         modified: cve.last_modified.clone(),
-        epss: None,  // EPSS enrichment happens separately
-        kev: None,   // KEV enrichment happens separately
+        epss: None,     // EPSS enrichment happens separately
+        kev: None,      // KEV enrichment happens separately
         priority: None, // Priority calculated after enrichment
     })
 }

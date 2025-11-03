@@ -65,7 +65,7 @@ impl PolicyTemplateLibrary {
             .ok_or_else(|| format!("Template not found: {}", template_id))?;
 
         let source_path = Path::new(&template.path);
-        
+
         let template_content = if source_path.exists() {
             fs::read_to_string(source_path)
                 .map_err(|e| format!("Failed to read template file: {}", e))?
@@ -75,7 +75,7 @@ impl PolicyTemplateLibrary {
         };
 
         let dest = project_path.join("bazbom.yml");
-        
+
         if dest.exists() {
             return Err(format!(
                 "File already exists: {}. Remove it first or use a different location.",
@@ -97,9 +97,13 @@ impl PolicyTemplateLibrary {
         match template_id {
             "pci-dss" => Some(include_str!("../../../examples/policies/pci-dss.yml").to_string()),
             "hipaa" => Some(include_str!("../../../examples/policies/hipaa.yml").to_string()),
-            "fedramp-moderate" => Some(include_str!("../../../examples/policies/fedramp-moderate.yml").to_string()),
+            "fedramp-moderate" => {
+                Some(include_str!("../../../examples/policies/fedramp-moderate.yml").to_string())
+            }
             "soc2" => Some(include_str!("../../../examples/policies/soc2.yml").to_string()),
-            "corporate-permissive" => Some(include_str!("../../../examples/policies/corporate-permissive.yml").to_string()),
+            "corporate-permissive" => Some(
+                include_str!("../../../examples/policies/corporate-permissive.yml").to_string(),
+            ),
             _ => None,
         }
     }
@@ -113,7 +117,7 @@ mod tests {
     fn test_list_templates() {
         let templates = PolicyTemplateLibrary::list_templates();
         assert_eq!(templates.len(), 5);
-        
+
         let template_ids: Vec<&str> = templates.iter().map(|t| t.id.as_str()).collect();
         assert!(template_ids.contains(&"pci-dss"));
         assert!(template_ids.contains(&"hipaa"));
@@ -126,7 +130,7 @@ mod tests {
     fn test_get_template() {
         let template = PolicyTemplateLibrary::get_template("pci-dss");
         assert!(template.is_some());
-        
+
         let template = template.unwrap();
         assert_eq!(template.id, "pci-dss");
         assert_eq!(template.name, "PCI-DSS v4.0 Compliance");
@@ -142,13 +146,15 @@ mod tests {
     #[test]
     fn test_template_categories() {
         let templates = PolicyTemplateLibrary::list_templates();
-        
-        let regulatory: Vec<_> = templates.iter()
+
+        let regulatory: Vec<_> = templates
+            .iter()
             .filter(|t| t.category == "Regulatory")
             .collect();
         assert_eq!(regulatory.len(), 4);
-        
-        let development: Vec<_> = templates.iter()
+
+        let development: Vec<_> = templates
+            .iter()
             .filter(|t| t.category == "Development")
             .collect();
         assert_eq!(development.len(), 1);
@@ -166,8 +172,16 @@ mod tests {
 
         for id in template_ids {
             let content = PolicyTemplateLibrary::get_embedded_template(id);
-            assert!(content.is_some(), "Embedded template should exist for: {}", id);
-            assert!(!content.unwrap().is_empty(), "Template content should not be empty for: {}", id);
+            assert!(
+                content.is_some(),
+                "Embedded template should exist for: {}",
+                id
+            );
+            assert!(
+                !content.unwrap().is_empty(),
+                "Template content should not be empty for: {}",
+                id
+            );
         }
     }
 

@@ -58,11 +58,11 @@ impl ScanOrchestrator {
 
     pub fn run(&self) -> Result<()> {
         println!("[bazbom] orchestrated scan starting...");
-        
+
         if self.cyclonedx {
             println!("[bazbom] CycloneDX output enabled");
         }
-        
+
         if let Some(ref target) = self.target {
             println!("[bazbom] targeting specific module: {}", target);
         }
@@ -130,8 +130,11 @@ impl ScanOrchestrator {
             let json = serde_json::to_string_pretty(&merged)?;
             std::fs::write(&merged_path, json)?;
             println!("[bazbom] wrote merged SARIF to {:?}", merged_path);
-            
-            println!("[bazbom] total runs in merged report: {}", merged.runs.len());
+
+            println!(
+                "[bazbom] total runs in merged report: {}",
+                merged.runs.len()
+            );
         }
 
         // 6. Autofix recipes (if enabled)
@@ -163,7 +166,10 @@ impl ScanOrchestrator {
         println!("[bazbom] outputs in: {:?}", self.context.out_dir);
         println!("[bazbom]");
         println!("[bazbom] Next steps:");
-        println!("[bazbom]   - Review findings in: {:?}", self.context.findings_dir);
+        println!(
+            "[bazbom]   - Review findings in: {:?}",
+            self.context.findings_dir
+        );
         println!("[bazbom]   - Upload SARIF: github/codeql-action/upload-sarif@v3");
         println!("[bazbom]   - Archive artifacts: actions/upload-artifact@v4");
 
@@ -172,14 +178,17 @@ impl ScanOrchestrator {
 
     fn run_enrichment(&self) -> Result<()> {
         println!("[bazbom] running deps.dev enrichment...");
-        
+
         let offline = std::env::var("BAZBOM_OFFLINE").is_ok();
         let client = DepsDevClient::new(offline);
-        
+
         // Read SBOM from sbom_dir
         let spdx_path = self.context.sbom_dir.join("spdx.json");
         if !spdx_path.exists() {
-            println!("[bazbom] no SBOM found at {:?}, skipping enrichment", spdx_path);
+            println!(
+                "[bazbom] no SBOM found at {:?}, skipping enrichment",
+                spdx_path
+            );
             // Still create the enrichment file to indicate enrichment was attempted
             let enrich_file = self.context.enrich_dir.join("depsdev.json");
             let enrichment_data = serde_json::json!({
@@ -191,15 +200,17 @@ impl ScanOrchestrator {
                 "failed": 0,
                 "packages": []
             });
-            std::fs::write(&enrich_file, serde_json::to_string_pretty(&enrichment_data)?)?;
+            std::fs::write(
+                &enrich_file,
+                serde_json::to_string_pretty(&enrichment_data)?,
+            )?;
             return Ok(());
         }
 
-        let content = std::fs::read_to_string(&spdx_path)
-            .context("failed to read SPDX file")?;
-        
-        let doc: serde_json::Value = serde_json::from_str(&content)
-            .context("failed to parse SPDX JSON")?;
+        let content = std::fs::read_to_string(&spdx_path).context("failed to read SPDX file")?;
+
+        let doc: serde_json::Value =
+            serde_json::from_str(&content).context("failed to parse SPDX JSON")?;
 
         // Extract PURLs from SBOM
         let mut purls = Vec::new();
@@ -227,7 +238,8 @@ impl ScanOrchestrator {
         for purl in &purls {
             match client.get_package_info(purl) {
                 Ok(info) => {
-                    println!("[bazbom]   enriched: {} (latest: {})", 
+                    println!(
+                        "[bazbom]   enriched: {} (latest: {})",
                         info.name,
                         info.latest_version.as_deref().unwrap_or("unknown")
                     );
@@ -244,7 +256,7 @@ impl ScanOrchestrator {
                     }
                 }
             }
-            
+
             // Rate limiting: small delay between requests
             if !offline && successful < purls.len() {
                 std::thread::sleep(std::time::Duration::from_millis(200));
@@ -261,35 +273,45 @@ impl ScanOrchestrator {
             "failed": failed,
             "packages": enriched_packages
         });
-        std::fs::write(&enrich_file, serde_json::to_string_pretty(&enrichment_data)?)?;
-        
+        std::fs::write(
+            &enrich_file,
+            serde_json::to_string_pretty(&enrichment_data)?,
+        )?;
+
         println!("[bazbom] wrote enrichment data to {:?}", enrich_file);
-        println!("[bazbom] enriched {}/{} components", successful, purls.len());
-        
+        println!(
+            "[bazbom] enriched {}/{} components",
+            successful,
+            purls.len()
+        );
+
         if offline {
             println!("[bazbom] (offline mode: enrichment skipped)");
         }
-        
+
         Ok(())
     }
 
     fn run_container_sbom(&self, strategy: &ContainerStrategy) -> Result<()> {
         println!("[bazbom] container SBOM generation requested");
-        
+
         // Map CLI ContainerStrategy to internal ContainerStrategy
         let internal_strategy = match strategy {
             ContainerStrategy::Auto => crate::analyzers::ContainerStrategy::Auto,
             ContainerStrategy::Syft => crate::analyzers::ContainerStrategy::Syft,
             ContainerStrategy::Bazbom => crate::analyzers::ContainerStrategy::Bazbom,
         };
-        
+
         let _runner = SyftRunner::new(internal_strategy);
-        
+
         // In a full implementation, this would detect container images
         // For now, just document what would happen
-        println!("[bazbom] container SBOM: would scan detected images with {:?}", internal_strategy);
+        println!(
+            "[bazbom] container SBOM: would scan detected images with {:?}",
+            internal_strategy
+        );
         println!("[bazbom] to enable: provide --containers with image path or auto-detect");
-        
+
         Ok(())
     }
 
@@ -299,67 +321,66 @@ impl ScanOrchestrator {
             AutofixMode::DryRun => crate::fixes::openrewrite::AutofixMode::DryRun,
             AutofixMode::Pr => crate::fixes::openrewrite::AutofixMode::Pr,
         };
-        
+
         let runner = OpenRewriteRunner::new(&self.config, Some(cli_mode));
-        
+
         if !runner.is_enabled() {
             return Ok(());
         }
-        
+
         println!("[bazbom] autofix mode: {}", mode.as_str());
-        
+
         // In a full implementation, this would:
         // 1. Load SARIF findings
         // 2. Extract vulnerability findings
         // 3. Generate recipes
         // 4. Apply if PR mode
-        
+
         // For now, generate example recipes
-        let example_vulns = vec![
-            VulnerabilityFinding {
-                cve_id: "CVE-2024-EXAMPLE".to_string(),
-                artifact: "commons-io".to_string(),
-                current_version: "2.11.0".to_string(),
-                fix_version: Some("2.14.0".to_string()),
-                severity: "high".to_string(),
-            },
-        ];
-        
+        let example_vulns = vec![VulnerabilityFinding {
+            cve_id: "CVE-2024-EXAMPLE".to_string(),
+            artifact: "commons-io".to_string(),
+            current_version: "2.11.0".to_string(),
+            fix_version: Some("2.14.0".to_string()),
+            severity: "high".to_string(),
+        }];
+
         let recipes = runner.generate_recipes(&self.context, &example_vulns)?;
-        
+
         if !recipes.is_empty() {
             println!("[bazbom] generated {} autofix recipes", recipes.len());
-            
+
             if cli_mode == crate::fixes::openrewrite::AutofixMode::Pr {
                 runner.open_pr(&self.context, &recipes)?;
             }
         }
-        
+
         Ok(())
     }
 
     fn generate_sbom(&self) -> Result<()> {
         println!("[bazbom] generating SBOM...");
-        
+
         // Detect build system
         let system = bazbom_core::detect_build_system(&self.context.workspace);
         println!("[bazbom] detected build system: {:?}", system);
-        
+
         // Generate SPDX SBOM (using stub for now - full implementations would parse build files)
         let spdx_path = bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
-        
+
         println!("[bazbom] wrote SPDX SBOM to {:?}", spdx_path);
-        
+
         // Optionally generate CycloneDX
         if self.cyclonedx {
             let cyclonedx_path = self.context.sbom_dir.join("cyclonedx.json");
             // For now, write a minimal CycloneDX document
-            let cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", env!("CARGO_PKG_VERSION"));
+            let cdx_doc =
+                bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", env!("CARGO_PKG_VERSION"));
             let json = serde_json::to_string_pretty(&cdx_doc)?;
             std::fs::write(&cyclonedx_path, json)?;
             println!("[bazbom] wrote CycloneDX SBOM to {:?}", cyclonedx_path);
         }
-        
+
         Ok(())
     }
 }
@@ -376,15 +397,7 @@ mod tests {
         let out_dir = workspace.join("out");
 
         let orchestrator = ScanOrchestrator::new(
-            workspace,
-            out_dir,
-            false,
-            false,
-            None,
-            None,
-            None,
-            true,
-            None,
+            workspace, out_dir, false, false, None, None, None, true, None,
         )?;
 
         assert!(!orchestrator.cyclonedx);
@@ -401,15 +414,7 @@ mod tests {
         let out_dir = workspace.join("out");
 
         let orchestrator = ScanOrchestrator::new(
-            workspace,
-            out_dir,
-            false,
-            false,
-            None,
-            None,
-            None,
-            true,
-            None,
+            workspace, out_dir, false, false, None, None, None, true, None,
         )?;
 
         // This should not fail even without tools installed

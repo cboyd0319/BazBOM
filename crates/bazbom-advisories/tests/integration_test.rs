@@ -85,8 +85,10 @@ fn test_osv_complete_pipeline() {
     let epss_map = load_epss_scores(epss_file.path()).unwrap();
 
     // Enrich vulnerability
-    vuln.kev = bazbom_advisories::enrichment::kev::find_kev_entry(&vuln.id, &vuln.aliases, &kev_map);
-    vuln.epss = bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+    vuln.kev =
+        bazbom_advisories::enrichment::kev::find_kev_entry(&vuln.id, &vuln.aliases, &kev_map);
+    vuln.epss =
+        bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
 
     assert!(vuln.kev.is_some());
     assert!(vuln.epss.is_some());
@@ -96,10 +98,7 @@ fn test_osv_complete_pipeline() {
     vuln.priority = Some(priority);
 
     // Should be P0 due to KEV + high CVSS
-    assert_eq!(
-        vuln.priority.unwrap(),
-        bazbom_advisories::Priority::P0
-    );
+    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P0);
 }
 
 /// Test NVD parsing and enrichment
@@ -149,17 +148,15 @@ fn test_nvd_complete_pipeline() {
     let epss_map = load_epss_scores(epss_file.path()).unwrap();
 
     // Enrich with EPSS
-    vuln.epss = bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+    vuln.epss =
+        bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
 
     // Calculate priority
     let priority = calculate_priority(&vuln.severity, &vuln.kev, &vuln.epss);
     vuln.priority = Some(priority);
 
     // Should be P1 due to high CVSS (8.5) and high EPSS (0.6)
-    assert_eq!(
-        vuln.priority.unwrap(),
-        bazbom_advisories::Priority::P1
-    );
+    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P1);
 }
 
 /// Test GHSA parsing and enrichment
@@ -206,10 +203,7 @@ fn test_ghsa_complete_pipeline() {
     vuln.priority = Some(priority);
 
     // Should be P3 due to medium CVSS (5.5)
-    assert_eq!(
-        vuln.priority.unwrap(),
-        bazbom_advisories::Priority::P3
-    );
+    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P3);
 }
 
 /// Test merging vulnerabilities from multiple sources

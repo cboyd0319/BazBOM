@@ -8,12 +8,7 @@ pub struct ToolOutput {
     pub stderr: String,
 }
 
-pub fn run_tool(
-    bin: &Path,
-    args: &[&str],
-    cwd: &Path,
-    _timeout_secs: u64,
-) -> Result<ToolOutput> {
+pub fn run_tool(bin: &Path, args: &[&str], cwd: &Path, _timeout_secs: u64) -> Result<ToolOutput> {
     let mut cmd = Command::new(bin);
     cmd.args(args)
         .current_dir(cwd)

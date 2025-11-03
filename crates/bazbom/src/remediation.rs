@@ -11,8 +11,8 @@ use std::fs;
 use std::path::Path;
 use std::process::Command;
 
-use crate::backup::{BackupHandle, choose_backup_strategy};
-use crate::test_runner::{run_tests, has_tests};
+use crate::backup::{choose_backup_strategy, BackupHandle};
+use crate::test_runner::{has_tests, run_tests};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RemediationSuggestion {
@@ -57,13 +57,12 @@ pub fn generate_suggestions(
             let current_version = "unknown"; // We don't have version info in AffectedPackage
 
             // Determine fixed version from ranges
-            let fixed_version = affected.ranges.iter()
-                .find_map(|r| {
-                    r.events.iter().find_map(|e| match e {
-                        bazbom_advisories::VersionEvent::Fixed { fixed } => Some(fixed.clone()),
-                        _ => None,
-                    })
-                });
+            let fixed_version = affected.ranges.iter().find_map(|r| {
+                r.events.iter().find_map(|e| match e {
+                    bazbom_advisories::VersionEvent::Fixed { fixed } => Some(fixed.clone()),
+                    _ => None,
+                })
+            });
 
             let is_fixable = fixed_version.is_some();
             if is_fixable {
@@ -72,21 +71,25 @@ pub fn generate_suggestions(
                 unfixable += 1;
             }
 
-            let severity = vuln.severity.as_ref()
+            let severity = vuln
+                .severity
+                .as_ref()
                 .map(|s| format!("{:?}", s.level))
                 .unwrap_or_else(|| "UNKNOWN".to_string());
 
-            let priority = vuln.priority.as_ref()
+            let priority = vuln
+                .priority
+                .as_ref()
                 .map(|p| format!("{:?}", p))
                 .unwrap_or_else(|| "P4".to_string());
 
             let why_fix = generate_why_fix(vuln);
-            let how_to_fix = generate_how_to_fix(package_name, current_version, &fixed_version, build_system);
-            let breaking_changes = generate_breaking_changes_warning(package_name, current_version, &fixed_version);
+            let how_to_fix =
+                generate_how_to_fix(package_name, current_version, &fixed_version, build_system);
+            let breaking_changes =
+                generate_breaking_changes_warning(package_name, current_version, &fixed_version);
 
-            let references = vuln.references.iter()
-                .map(|r| r.url.clone())
-                .collect();
+            let references = vuln.references.iter().map(|r| r.url.clone()).collect();
 
             suggestions.push(RemediationSuggestion {
                 vulnerability_id: vuln.id.clone(),
@@ -134,15 +137,11 @@ fn generate_why_fix(vuln: &Vulnerability) -> String {
             bazbom_advisories::SeverityLevel::Critical => {
                 "CRITICAL severity - immediate action required"
             }
-            bazbom_advisories::SeverityLevel::High => {
-                "HIGH severity - fix as soon as possible"
-            }
+            bazbom_advisories::SeverityLevel::High => "HIGH severity - fix as soon as possible",
             bazbom_advisories::SeverityLevel::Medium => {
                 "MEDIUM severity - schedule fix in near term"
             }
-            bazbom_advisories::SeverityLevel::Low => {
-                "LOW severity - fix when convenient"
-            }
+            bazbom_advisories::SeverityLevel::Low => "LOW severity - fix when convenient",
             _ => "Unknown severity",
         };
         reasons.push(severity_reason.to_string());
@@ -150,17 +149,29 @@ fn generate_why_fix(vuln: &Vulnerability) -> String {
 
     // KEV presence
     if vuln.kev.is_some() {
-        reasons.push("Listed in CISA KEV (Known Exploited Vulnerabilities) - actively exploited in the wild".to_string());
+        reasons.push(
+            "Listed in CISA KEV (Known Exploited Vulnerabilities) - actively exploited in the wild"
+                .to_string(),
+        );
     }
 
     // EPSS
     if let Some(epss) = &vuln.epss {
         if epss.score >= 0.9 {
-            reasons.push(format!("Very high exploit probability (EPSS: {:.1}%)", epss.score * 100.0));
+            reasons.push(format!(
+                "Very high exploit probability (EPSS: {:.1}%)",
+                epss.score * 100.0
+            ));
         } else if epss.score >= 0.5 {
-            reasons.push(format!("High exploit probability (EPSS: {:.1}%)", epss.score * 100.0));
+            reasons.push(format!(
+                "High exploit probability (EPSS: {:.1}%)",
+                epss.score * 100.0
+            ));
         } else if epss.score >= 0.1 {
-            reasons.push(format!("Moderate exploit probability (EPSS: {:.1}%)", epss.score * 100.0));
+            reasons.push(format!(
+                "Moderate exploit probability (EPSS: {:.1}%)",
+                epss.score * 100.0
+            ));
         }
     }
 
@@ -232,19 +243,15 @@ fn generate_how_to_fix(
                     format!("Upgrade {} from {} to {}", package, current_version, fixed)
                 }
             };
-            
-            format!(
-                "Upgrade to version {}.\n\n{}",
-                fixed, upgrade_instruction
-            )
+
+            format!("Upgrade to version {}.\n\n{}", fixed, upgrade_instruction)
         }
-        None => {
-            "No fixed version available yet. Consider:\n\
+        None => "No fixed version available yet. Consider:\n\
              1. Check for updates from the package maintainer\n\
              2. Apply temporary workarounds if available\n\
              3. Consider alternative packages\n\
-             4. Monitor security advisories for updates".to_string()
-        }
+             4. Monitor security advisories for updates"
+            .to_string(),
     }
 }
 
@@ -325,7 +332,7 @@ fn generate_breaking_changes_warning(
                  - Check for configuration property changes\n\
                  - Review deprecated @Bean definitions\n\
                  - Update Spring Boot parent version if applicable\n\
-                 - Test all integration points thoroughly\n\n"
+                 - Test all integration points thoroughly\n\n",
             );
         } else if package_lower.contains("jackson") {
             warning.push_str(
@@ -333,7 +340,7 @@ fn generate_breaking_changes_warning(
                  - Verify JSON serialization/deserialization behavior\n\
                  - Check for ObjectMapper configuration changes\n\
                  - Test custom serializers and deserializers\n\
-                 - Review annotation processing changes\n\n"
+                 - Review annotation processing changes\n\n",
             );
         } else if package_lower.contains("log4j") {
             warning.push_str(
@@ -341,7 +348,7 @@ fn generate_breaking_changes_warning(
                  - Update log4j2.xml configuration if needed\n\
                  - Review appender and filter configurations\n\
                  - Check for plugin compatibility\n\
-                 - Verify logging output format\n\n"
+                 - Verify logging output format\n\n",
             );
         } else if package_lower.contains("junit") {
             warning.push_str(
@@ -349,15 +356,17 @@ fn generate_breaking_changes_warning(
                  - Update test annotations (@Test, @Before, @After)\n\
                  - Review assertion methods (may have changed)\n\
                  - Check for runner compatibility\n\
-                 - Verify test lifecycle hooks\n\n"
+                 - Verify test lifecycle hooks\n\n",
             );
-        } else if package_lower.contains("hibernate") || package_lower.contains("jakarta.persistence") {
+        } else if package_lower.contains("hibernate")
+            || package_lower.contains("jakarta.persistence")
+        {
             warning.push_str(
                 "Hibernate/JPA specific considerations:\n\
                  - Review entity mapping annotations\n\
                  - Check for query language changes (HQL/JPQL)\n\
                  - Verify transaction management behavior\n\
-                 - Test database migrations carefully\n\n"
+                 - Test database migrations carefully\n\n",
             );
         }
 
@@ -368,7 +377,7 @@ fn generate_breaking_changes_warning(
              3. Test in a staging environment first\n\
              4. Have a rollback plan ready\n\
              5. Update any dependent libraries if needed\n\
-             6. Document any code changes required for the upgrade"
+             6. Document any code changes required for the upgrade",
         );
 
         Some(warning)
@@ -460,7 +469,10 @@ pub fn apply_fixes(
         match result {
             Ok(_) => applied += 1,
             Err(e) => {
-                eprintln!("[bazbom] failed to apply fix for {}: {}", suggestion.affected_package, e);
+                eprintln!(
+                    "[bazbom] failed to apply fix for {}: {}",
+                    suggestion.affected_package, e
+                );
                 failed += 1;
             }
         }
@@ -486,38 +498,49 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
         anyhow::bail!("pom.xml not found in project root");
     }
 
-    let fixed_version = suggestion.fixed_version.as_ref()
+    let fixed_version = suggestion
+        .fixed_version
+        .as_ref()
         .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
 
     // Read the pom.xml
     let content = fs::read_to_string(&pom_path)?;
-    
+
     // Extract artifact name
-    let artifact = suggestion.affected_package
+    let artifact = suggestion
+        .affected_package
         .rsplit(':')
         .next()
         .unwrap_or(&suggestion.affected_package);
-    
+
     // Simple approach: find <version> tags that follow <artifactId> tags containing our artifact
     // and replace the version if it matches the current version
     let mut updated = content.clone();
     let mut match_found = false;
-    
+
     let lines: Vec<&str> = content.lines().collect();
     for i in 0..lines.len() {
         let line = lines[i];
-        
+
         // If this line has the artifactId we're looking for
-        if line.contains("<artifactId>") && line.contains(artifact) && line.contains("</artifactId>") {
+        if line.contains("<artifactId>")
+            && line.contains(artifact)
+            && line.contains("</artifactId>")
+        {
             // Look ahead for a <version> tag
-            for j in (i+1).min(lines.len())..((i+5).min(lines.len())) {
+            for j in (i + 1).min(lines.len())..((i + 5).min(lines.len())) {
                 let version_line = lines[j];
-                if version_line.contains("<version>") && version_line.contains(&suggestion.current_version) {
+                if version_line.contains("<version>")
+                    && version_line.contains(&suggestion.current_version)
+                {
                     // Found it! Replace this line
                     let new_line = version_line.replace(&suggestion.current_version, fixed_version);
                     updated = updated.replace(version_line, &new_line);
                     match_found = true;
-                    println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+                    println!(
+                        "  ✓ Updated {}: {} → {}",
+                        artifact, suggestion.current_version, fixed_version
+                    );
                     break;
                 }
             }
@@ -528,8 +551,11 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
     }
 
     if !match_found {
-        anyhow::bail!("Dependency {} with version {} not found in pom.xml", 
-                      artifact, suggestion.current_version);
+        anyhow::bail!(
+            "Dependency {} with version {} not found in pom.xml",
+            artifact,
+            suggestion.current_version
+        );
     }
 
     // Write updated content back to file
@@ -538,13 +564,15 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
 }
 
 fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> Result<()> {
-    let fixed_version = suggestion.fixed_version.as_ref()
+    let fixed_version = suggestion
+        .fixed_version
+        .as_ref()
         .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
 
     // Try both build.gradle and build.gradle.kts
     let build_gradle = project_root.join("build.gradle");
     let build_gradle_kts = project_root.join("build.gradle.kts");
-    
+
     let gradle_file = if build_gradle.exists() {
         build_gradle
     } else if build_gradle_kts.exists() {
@@ -554,13 +582,14 @@ fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> 
     };
 
     let content = fs::read_to_string(&gradle_file)?;
-    
+
     // Extract artifact name (last part after ':')
-    let artifact = suggestion.affected_package
+    let artifact = suggestion
+        .affected_package
         .rsplit(':')
         .next()
         .unwrap_or(&suggestion.affected_package);
-    
+
     // Simple string-based replacement
     // Look for patterns like: 'group:artifact:version' or "group:artifact:version"
     let mut updated = content.clone();
@@ -573,14 +602,21 @@ fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> 
             let new_line = line.replace(&suggestion.current_version, fixed_version);
             updated = updated.replace(line, &new_line);
             match_found = true;
-            println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+            println!(
+                "  ✓ Updated {}: {} → {}",
+                artifact, suggestion.current_version, fixed_version
+            );
             break;
         }
     }
 
     if !match_found {
-        anyhow::bail!("Dependency {} with version {} not found in {}", 
-                      artifact, suggestion.current_version, gradle_file.display());
+        anyhow::bail!(
+            "Dependency {} with version {} not found in {}",
+            artifact,
+            suggestion.current_version,
+            gradle_file.display()
+        );
     }
 
     // Write updated content back
@@ -589,13 +625,15 @@ fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> 
 }
 
 fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> Result<()> {
-    let fixed_version = suggestion.fixed_version.as_ref()
+    let fixed_version = suggestion
+        .fixed_version
+        .as_ref()
         .ok_or_else(|| anyhow::anyhow!("No fixed version available"))?;
 
     // Try MODULE.bazel first, then WORKSPACE
     let module_bazel = project_root.join("MODULE.bazel");
     let workspace = project_root.join("WORKSPACE");
-    
+
     let bazel_file = if module_bazel.exists() {
         module_bazel
     } else if workspace.exists() {
@@ -605,13 +643,14 @@ fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
     };
 
     let content = fs::read_to_string(&bazel_file)?;
-    
+
     // Extract artifact coordinates
-    let artifact = suggestion.affected_package
+    let artifact = suggestion
+        .affected_package
         .rsplit(':')
         .next()
         .unwrap_or(&suggestion.affected_package);
-    
+
     // Simple string-based replacement
     let mut updated = content.clone();
     let mut match_found = false;
@@ -622,19 +661,26 @@ fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
             let new_line = line.replace(&suggestion.current_version, fixed_version);
             updated = updated.replace(line, &new_line);
             match_found = true;
-            println!("  ✓ Updated {}: {} → {}", artifact, suggestion.current_version, fixed_version);
+            println!(
+                "  ✓ Updated {}: {} → {}",
+                artifact, suggestion.current_version, fixed_version
+            );
             break;
         }
     }
 
     if !match_found {
-        anyhow::bail!("Dependency {} with version {} not found in {}", 
-                      artifact, suggestion.current_version, bazel_file.display());
+        anyhow::bail!(
+            "Dependency {} with version {} not found in {}",
+            artifact,
+            suggestion.current_version,
+            bazel_file.display()
+        );
     }
 
     // Write updated content back
     fs::write(&bazel_file, updated)?;
-    
+
     // Note: In a production system, we would also:
     // 1. Update maven_install.json if it exists
     // 2. Run `bazel run @maven//:pin` to regenerate lock files
@@ -656,11 +702,11 @@ pub fn apply_fixes_with_testing(
     println!("\n[bazbom] Creating backup before applying fixes...");
     let strategy = choose_backup_strategy(project_root);
     let backup = BackupHandle::create(project_root, strategy)?;
-    
+
     // Step 2: Apply fixes
     println!("\n[bazbom] Applying fixes...");
     let apply_result = apply_fixes(suggestions, build_system, project_root)?;
-    
+
     if apply_result.applied == 0 {
         println!("\n[bazbom] No fixes were applied");
         backup.cleanup()?;
@@ -671,10 +717,10 @@ pub fn apply_fixes_with_testing(
             test_output: None,
         });
     }
-    
+
     // Step 3: Run tests if not skipped and tests exist
     let should_run_tests = !skip_tests && has_tests(build_system, project_root);
-    
+
     if !should_run_tests {
         println!("\n[bazbom] Skipping tests");
         backup.cleanup()?;
@@ -685,17 +731,17 @@ pub fn apply_fixes_with_testing(
             test_output: None,
         });
     }
-    
+
     println!("\n[bazbom] Running tests to verify fixes...");
     let test_result = run_tests(build_system, project_root)?;
-    
+
     if test_result.success {
         println!("\n✅ Tests passed! Fixes applied successfully.");
         println!("   Duration: {:.2}s", test_result.duration.as_secs_f64());
-        
+
         // Clean up backup
         backup.cleanup()?;
-        
+
         Ok(ApplyResultWithTests {
             apply_result,
             tests_passed: true,
@@ -705,13 +751,13 @@ pub fn apply_fixes_with_testing(
     } else {
         println!("\n❌ Tests failed! Rolling back changes...");
         println!("   Exit code: {}", test_result.exit_code);
-        
+
         // Restore from backup
         backup.restore()?;
-        
+
         println!("\n[bazbom] Changes rolled back successfully.");
         println!("\nTest output:\n{}", test_result.output);
-        
+
         anyhow::bail!(
             "Fixes were rolled back because tests failed. \
              Review the test output above to understand the issue."
@@ -742,19 +788,19 @@ impl PrConfig {
         let github_token = std::env::var("GITHUB_TOKEN")
             .or_else(|_| std::env::var("GH_TOKEN"))
             .context("GITHUB_TOKEN or GH_TOKEN environment variable not set")?;
-        
+
         let repository = std::env::var("GITHUB_REPOSITORY")
             .context("GITHUB_REPOSITORY environment variable not set (format: owner/repo)")?;
-        
+
         let parts: Vec<&str> = repository.split('/').collect();
         if parts.len() != 2 {
             anyhow::bail!("GITHUB_REPOSITORY must be in format: owner/repo");
         }
-        
+
         let base_branch = std::env::var("GITHUB_BASE_REF")
             .or_else(|_| std::env::var("GITHUB_REF_NAME"))
             .unwrap_or_else(|_| "main".to_string());
-        
+
         Ok(Self {
             github_token,
             repo_owner: parts[0].to_string(),
@@ -765,7 +811,7 @@ impl PrConfig {
 }
 
 /// Generate a PR with fixes applied
-/// 
+///
 /// This function:
 /// 1. Creates a new branch
 /// 2. Applies fixes with testing
@@ -778,31 +824,31 @@ pub fn generate_pr(
     project_root: &Path,
 ) -> Result<String> {
     println!("\n[bazbom] Generating PR for vulnerability fixes...");
-    
+
     // Load configuration
     let config = PrConfig::from_env()?;
-    
+
     // Generate branch name with timestamp
     let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
     let branch_name = format!("bazbom/fix-vulnerabilities-{}", timestamp);
-    
+
     println!("[bazbom] Creating branch: {}", branch_name);
-    
+
     // Create new branch
     let status = Command::new("git")
         .args(&["checkout", "-b", &branch_name])
         .current_dir(project_root)
         .status()
         .context("Failed to create git branch")?;
-    
+
     if !status.success() {
         anyhow::bail!("Failed to create branch {}", branch_name);
     }
-    
+
     // Apply fixes with testing
     println!("\n[bazbom] Applying fixes...");
     let apply_result = apply_fixes_with_testing(suggestions, build_system, project_root, false)?;
-    
+
     if apply_result.apply_result.applied == 0 {
         println!("[bazbom] No fixes were applied, skipping PR creation");
         // Checkout back to original branch
@@ -812,7 +858,7 @@ pub fn generate_pr(
             .status();
         return Ok("No fixes applied, PR not created".to_string());
     }
-    
+
     // Stage all changes
     println!("\n[bazbom] Staging changes...");
     let status = Command::new("git")
@@ -820,25 +866,25 @@ pub fn generate_pr(
         .current_dir(project_root)
         .status()
         .context("Failed to stage changes")?;
-    
+
     if !status.success() {
         anyhow::bail!("Failed to stage changes");
     }
-    
+
     // Generate commit message
     let commit_message = generate_commit_message(suggestions, &apply_result);
-    
+
     println!("[bazbom] Committing changes...");
     let status = Command::new("git")
         .args(&["commit", "-m", &commit_message])
         .current_dir(project_root)
         .status()
         .context("Failed to commit changes")?;
-    
+
     if !status.success() {
         anyhow::bail!("Failed to commit changes");
     }
-    
+
     // Push branch
     println!("[bazbom] Pushing branch to remote...");
     let status = Command::new("git")
@@ -846,27 +892,22 @@ pub fn generate_pr(
         .current_dir(project_root)
         .status()
         .context("Failed to push branch")?;
-    
+
     if !status.success() {
         anyhow::bail!("Failed to push branch {}", branch_name);
     }
-    
+
     // Generate PR body
     let pr_body = generate_pr_body(suggestions, &apply_result);
     let pr_title = generate_pr_title(suggestions, &apply_result.apply_result);
-    
+
     // Create PR via GitHub API
     println!("\n[bazbom] Creating pull request...");
-    let pr_url = create_github_pr(
-        &config,
-        &pr_title,
-        &pr_body,
-        &branch_name,
-    )?;
-    
+    let pr_url = create_github_pr(&config, &pr_title, &pr_body, &branch_name)?;
+
     println!("\n✅ Pull request created successfully!");
     println!("   URL: {}", pr_url);
-    
+
     Ok(pr_url)
 }
 
@@ -876,7 +917,7 @@ fn generate_commit_message(
     apply_result: &ApplyResultWithTests,
 ) -> String {
     let cve_count = apply_result.apply_result.applied;
-    
+
     // Collect unique CVE IDs from applied suggestions
     let cves: Vec<String> = suggestions
         .iter()
@@ -884,15 +925,13 @@ fn generate_commit_message(
         .take(apply_result.apply_result.applied)
         .map(|s| s.vulnerability_id.clone())
         .collect();
-    
+
     let cve_list = if cves.len() <= 3 {
         cves.join(", ")
     } else {
-        format!("{} and {} more", 
-                cves[..3].join(", "), 
-                cves.len() - 3)
+        format!("{} and {} more", cves[..3].join(", "), cves.len() - 3)
     };
-    
+
     // Test status message
     let test_status = if apply_result.tests_run {
         if apply_result.tests_passed {
@@ -903,7 +942,7 @@ fn generate_commit_message(
     } else {
         "Tests were not run or not found."
     };
-    
+
     format!(
         "fix: upgrade {} dependencies to fix vulnerabilities\n\n\
          Fixes: {}\n\n\
@@ -911,18 +950,12 @@ fn generate_commit_message(
          {}\n\n\
          🤖 Generated by BazBOM\n\
          Co-Authored-By: BazBOM <noreply@bazbom.io>",
-        cve_count,
-        cve_list,
-        apply_result.apply_result.applied,
-        test_status
+        cve_count, cve_list, apply_result.apply_result.applied, test_status
     )
 }
 
 /// Generate PR title
-fn generate_pr_title(
-    _suggestions: &[RemediationSuggestion],
-    apply_result: &ApplyResult,
-) -> String {
+fn generate_pr_title(_suggestions: &[RemediationSuggestion], apply_result: &ApplyResult) -> String {
     let count = apply_result.applied;
     if count == 1 {
         "🔒 Fix 1 security vulnerability".to_string()
@@ -937,24 +970,35 @@ fn generate_pr_body(
     apply_result: &ApplyResultWithTests,
 ) -> String {
     let mut body = String::from("## 🔒 Security Fixes\n\n");
-    body.push_str("This PR automatically upgrades vulnerable dependencies identified by BazBOM.\n\n");
-    
+    body.push_str(
+        "This PR automatically upgrades vulnerable dependencies identified by BazBOM.\n\n",
+    );
+
     // Summary section
     body.push_str("### Summary\n\n");
-    body.push_str(&format!("- ✅ **{}** vulnerabilities fixed\n", apply_result.apply_result.applied));
+    body.push_str(&format!(
+        "- ✅ **{}** vulnerabilities fixed\n",
+        apply_result.apply_result.applied
+    ));
     if apply_result.apply_result.failed > 0 {
-        body.push_str(&format!("- ❌ **{}** fixes failed\n", apply_result.apply_result.failed));
+        body.push_str(&format!(
+            "- ❌ **{}** fixes failed\n",
+            apply_result.apply_result.failed
+        ));
     }
     if apply_result.apply_result.skipped > 0 {
-        body.push_str(&format!("- ⏭️  **{}** vulnerabilities skipped (no fix available)\n", apply_result.apply_result.skipped));
+        body.push_str(&format!(
+            "- ⏭️  **{}** vulnerabilities skipped (no fix available)\n",
+            apply_result.apply_result.skipped
+        ));
     }
     body.push_str("\n");
-    
+
     // Details section
     body.push_str("### Vulnerabilities Fixed\n\n");
     body.push_str("| Package | Current | Fixed | Severity | CVE |\n");
     body.push_str("|---------|---------|-------|----------|-----|\n");
-    
+
     for suggestion in suggestions {
         if let Some(fixed) = &suggestion.fixed_version {
             body.push_str(&format!(
@@ -968,7 +1012,7 @@ fn generate_pr_body(
         }
     }
     body.push_str("\n");
-    
+
     // Test results
     body.push_str("### Test Results\n\n");
     if apply_result.tests_run {
@@ -980,18 +1024,18 @@ fn generate_pr_body(
     } else {
         body.push_str("⏭️  Tests were skipped or not found.\n\n");
     }
-    
+
     // Review instructions
     body.push_str("### How to Review\n\n");
     body.push_str("1. Review the diff to ensure only dependency versions were changed\n");
     body.push_str("2. Check the CVE details in the table above\n");
     body.push_str("3. Verify that tests pass in CI\n");
     body.push_str("4. Merge if changes look correct\n\n");
-    
+
     // Footer
     body.push_str("---\n");
     body.push_str("🤖 Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)\n");
-    
+
     body
 }
 
@@ -1002,41 +1046,42 @@ fn create_github_pr(
     body: &str,
     head_branch: &str,
 ) -> Result<String> {
-    
     let api_url = format!(
         "https://api.github.com/repos/{}/{}/pulls",
         config.repo_owner, config.repo_name
     );
-    
+
     let pr_data = json!({
         "title": title,
         "body": body,
         "head": head_branch,
         "base": config.base_branch,
     });
-    
+
     let response = ureq::post(&api_url)
         .set("Authorization", &format!("token {}", config.github_token))
         .set("Accept", "application/vnd.github.v3+json")
         .set("User-Agent", "BazBOM/0.2.1")
         .send_json(pr_data)
         .context("Failed to create pull request via GitHub API")?;
-    
+
     let status = response.status();
     if status != 201 {
-        let error_body = response.into_string()
+        let error_body = response
+            .into_string()
             .unwrap_or_else(|_| "Unknown error".to_string());
         anyhow::bail!("GitHub API returned status {}: {}", status, error_body);
     }
-    
-    let pr_response: serde_json::Value = response.into_json()
+
+    let pr_response: serde_json::Value = response
+        .into_json()
         .context("Failed to parse GitHub API response")?;
-    
+
     let pr_url = pr_response["html_url"]
         .as_str()
         .ok_or_else(|| anyhow::anyhow!("No html_url in GitHub API response"))?
         .to_string();
-    
+
     Ok(pr_url)
 }
 
@@ -1088,11 +1133,7 @@ mod tests {
 
     #[test]
     fn test_breaking_changes_no_fixed_version() {
-        let warning = generate_breaking_changes_warning(
-            "test-package",
-            "1.0.0",
-            &None,
-        );
+        let warning = generate_breaking_changes_warning("test-package", "1.0.0", &None);
         assert!(warning.is_none());
     }
 
@@ -1149,41 +1190,38 @@ mod tests {
     }
 }
 
-    #[test]
-    fn test_breaking_changes_snapshot_version() {
-        let warning = generate_breaking_changes_warning(
-            "org.springframework:spring-core",
-            "5.3.0-SNAPSHOT",
-            &Some("6.0.0-RELEASE".to_string()),
-        );
-        assert!(warning.is_some());
-        let text = warning.unwrap();
-        assert!(text.contains("MAJOR VERSION UPGRADE"));
-        assert!(text.contains("Spring Framework specific considerations"));
-    }
+#[test]
+fn test_breaking_changes_snapshot_version() {
+    let warning = generate_breaking_changes_warning(
+        "org.springframework:spring-core",
+        "5.3.0-SNAPSHOT",
+        &Some("6.0.0-RELEASE".to_string()),
+    );
+    assert!(warning.is_some());
+    let text = warning.unwrap();
+    assert!(text.contains("MAJOR VERSION UPGRADE"));
+    assert!(text.contains("Spring Framework specific considerations"));
+}
 
-    #[test]
-    fn test_breaking_changes_invalid_version() {
-        let warning = generate_breaking_changes_warning(
-            "test-package",
-            "alpha",
-            &Some("beta".to_string()),
-        );
-        assert!(warning.is_some());
-        let text = warning.unwrap();
-        assert!(text.contains("Cannot parse semantic version"));
-        assert!(text.contains("review the changelog manually"));
-    }
+#[test]
+fn test_breaking_changes_invalid_version() {
+    let warning =
+        generate_breaking_changes_warning("test-package", "alpha", &Some("beta".to_string()));
+    assert!(warning.is_some());
+    let text = warning.unwrap();
+    assert!(text.contains("Cannot parse semantic version"));
+    assert!(text.contains("review the changelog manually"));
+}
 
-    #[test]
-    fn test_breaking_changes_complex_version() {
-        let warning = generate_breaking_changes_warning(
-            "org.apache.logging.log4j:log4j-core",
-            "2.17.1-rc1",
-            &Some("2.18.0-beta".to_string()),
-        );
-        assert!(warning.is_some());
-        let text = warning.unwrap();
-        // Should strip suffixes and detect minor version bump
-        assert!(text.contains("Minor version upgrade") || text.contains("Version change"));
-    }
+#[test]
+fn test_breaking_changes_complex_version() {
+    let warning = generate_breaking_changes_warning(
+        "org.apache.logging.log4j:log4j-core",
+        "2.17.1-rc1",
+        &Some("2.18.0-beta".to_string()),
+    );
+    assert!(warning.is_some());
+    let text = warning.unwrap();
+    // Should strip suffixes and detect minor version bump
+    assert!(text.contains("Minor version upgrade") || text.contains("Version change"));
+}

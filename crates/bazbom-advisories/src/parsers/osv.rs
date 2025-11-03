@@ -128,8 +128,8 @@ pub fn parse_osv_entry(osv: &OsvEntry) -> Result<Vulnerability> {
         references,
         published: osv.published.clone(),
         modified: osv.modified.clone(),
-        epss: None,  // EPSS enrichment happens separately
-        kev: None,   // KEV enrichment happens separately
+        epss: None,     // EPSS enrichment happens separately
+        kev: None,      // KEV enrichment happens separately
         priority: None, // Priority calculated after enrichment
     })
 }
@@ -188,7 +188,7 @@ fn parse_osv_severity(
 fn extract_cvss_score(cvss_string: &str) -> Option<f64> {
     // CVSS vector format: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
     // Or just a numeric score: "9.8"
-    
+
     // Try direct numeric parse first
     if let Ok(score) = cvss_string.parse::<f64>() {
         return Some(score);

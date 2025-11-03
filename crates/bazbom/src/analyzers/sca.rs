@@ -2,10 +2,13 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
-use bazbom_advisories::{db_sync, load_epss_scores, load_kev_catalog, is_version_affected, Priority, VersionRange, VersionEvent};
+use bazbom_advisories::{
+    db_sync, is_version_affected, load_epss_scores, load_kev_catalog, Priority, VersionEvent,
+    VersionRange,
+};
 use bazbom_formats::sarif::{
-    ArtifactLocation, Location, Message, PhysicalLocation, Result as SarifResult, Rule,
-    SarifReport, MessageString, Configuration,
+    ArtifactLocation, Configuration, Location, Message, MessageString, PhysicalLocation,
+    Result as SarifResult, Rule, SarifReport,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -19,7 +22,7 @@ impl ScaAnalyzer {
 
     fn ensure_advisory_database(&self, ctx: &Context) -> Result<PathBuf> {
         let cache_dir = ctx.workspace.join(".bazbom").join("advisories");
-        
+
         // Check if we have a recent database (less than 24 hours old)
         let manifest_path = cache_dir.join("manifest.json");
         let needs_sync = if manifest_path.exists() {
@@ -48,16 +51,18 @@ impl ScaAnalyzer {
         // Try to load SPDX SBOM from sbom directory
         let spdx_path = ctx.sbom_dir.join("spdx.json");
         if !spdx_path.exists() {
-            println!("[bazbom] no SBOM found at {:?}, running SCA with empty component list", spdx_path);
+            println!(
+                "[bazbom] no SBOM found at {:?}, running SCA with empty component list",
+                spdx_path
+            );
             return Ok(Vec::new());
         }
 
         println!("[bazbom] parsing SBOM from {:?}", spdx_path);
-        let content = std::fs::read_to_string(&spdx_path)
-            .context("failed to read SPDX file")?;
-        
-        let doc: serde_json::Value = serde_json::from_str(&content)
-            .context("failed to parse SPDX JSON")?;
+        let content = std::fs::read_to_string(&spdx_path).context("failed to read SPDX file")?;
+
+        let doc: serde_json::Value =
+            serde_json::from_str(&content).context("failed to parse SPDX JSON")?;
 
         let mut components = Vec::new();
 
@@ -65,19 +70,23 @@ impl ScaAnalyzer {
             for pkg in packages {
                 let name = pkg["name"].as_str().unwrap_or("unknown").to_string();
                 let version = pkg["versionInfo"].as_str().unwrap_or("").to_string();
-                
+
                 // Try to extract PURL from externalRefs
                 let mut ecosystem = "maven".to_string(); // Default to maven
                 let mut purl = String::new();
-                
+
                 if let Some(refs) = pkg["externalRefs"].as_array() {
                     for ext_ref in refs {
                         if ext_ref["referenceType"].as_str() == Some("purl") {
-                            purl = ext_ref["referenceLocator"].as_str().unwrap_or("").to_string();
+                            purl = ext_ref["referenceLocator"]
+                                .as_str()
+                                .unwrap_or("")
+                                .to_string();
                             // Extract ecosystem from PURL (format: pkg:ecosystem/...)
                             if let Some(colon_pos) = purl.find(':') {
                                 if let Some(slash_pos) = purl[colon_pos..].find('/') {
-                                    ecosystem = purl[colon_pos + 1..colon_pos + slash_pos].to_string();
+                                    ecosystem =
+                                        purl[colon_pos + 1..colon_pos + slash_pos].to_string();
                                 }
                             }
                             break;
@@ -100,7 +109,10 @@ impl ScaAnalyzer {
             }
         }
 
-        println!("[bazbom] extracted {} components from SBOM", components.len());
+        println!(
+            "[bazbom] extracted {} components from SBOM",
+            components.len()
+        );
         Ok(components)
     }
 
@@ -110,20 +122,22 @@ impl ScaAnalyzer {
         advisory_dir: &PathBuf,
     ) -> Result<Vec<VulnerabilityMatch>> {
         // Load EPSS scores
-        let epss_scores = load_epss_scores(advisory_dir)
-            .unwrap_or_else(|e| {
-                println!("[bazbom] warning: failed to load EPSS scores: {}", e);
-                HashMap::new()
-            });
+        let epss_scores = load_epss_scores(advisory_dir).unwrap_or_else(|e| {
+            println!("[bazbom] warning: failed to load EPSS scores: {}", e);
+            HashMap::new()
+        });
 
         // Load KEV catalog
-        let kev_entries = load_kev_catalog(advisory_dir)
-            .unwrap_or_else(|e| {
-                println!("[bazbom] warning: failed to load KEV catalog: {}", e);
-                HashMap::new()
-            });
+        let kev_entries = load_kev_catalog(advisory_dir).unwrap_or_else(|e| {
+            println!("[bazbom] warning: failed to load KEV catalog: {}", e);
+            HashMap::new()
+        });
 
-        println!("[bazbom] loaded {} EPSS scores and {} KEV entries", epss_scores.len(), kev_entries.len());
+        println!(
+            "[bazbom] loaded {} EPSS scores and {} KEV entries",
+            epss_scores.len(),
+            kev_entries.len()
+        );
 
         let mut matches = Vec::new();
 
@@ -158,7 +172,7 @@ impl ScaAnalyzer {
         use std::fs;
 
         let mut matches = Vec::new();
-        
+
         // Create a lookup map of components by name for faster matching
         let mut component_map: HashMap<String, &Component> = HashMap::new();
         for comp in components {
@@ -175,7 +189,7 @@ impl ScaAnalyzer {
                             // Extract vulnerability info
                             let vuln_id = vuln["id"].as_str().unwrap_or("").to_string();
                             let summary = vuln["summary"].as_str().map(|s| s.to_string());
-                            
+
                             // Check if this vulnerability affects any of our components
                             if let Some(affected) = vuln["affected"].as_array() {
                                 for aff in affected {
@@ -184,28 +198,43 @@ impl ScaAnalyzer {
                                         if let Some(component) = component_map.get(pkg) {
                                             // Parse version ranges and check if component version is affected
                                             if let Some(ranges_json) = aff["ranges"].as_array() {
-                                                let ranges: Vec<VersionRange> = ranges_json.iter()
+                                                let ranges: Vec<VersionRange> = ranges_json
+                                                    .iter()
                                                     .filter_map(|r| self.parse_version_range(r))
                                                     .collect();
-                                                
+
                                                 if !ranges.is_empty() {
-                                                    match is_version_affected(&component.version, &ranges) {
+                                                    match is_version_affected(
+                                                        &component.version,
+                                                        &ranges,
+                                                    ) {
                                                         Ok(true) => {
-                                                            let epss = epss_scores.get(&vuln_id).map(|e| e.score);
-                                                            let in_kev = kev_entries.contains_key(&vuln_id);
-                                                            
+                                                            let epss = epss_scores
+                                                                .get(&vuln_id)
+                                                                .map(|e| e.score);
+                                                            let in_kev =
+                                                                kev_entries.contains_key(&vuln_id);
+
                                                             // Calculate priority based on severity, EPSS, and KEV
-                                                            let priority = self.calculate_priority(&vuln, epss, in_kev);
-                                                            
+                                                            let priority = self.calculate_priority(
+                                                                &vuln, epss, in_kev,
+                                                            );
+
                                                             matches.push(VulnerabilityMatch {
                                                                 vulnerability_id: vuln_id.clone(),
-                                                                component_name: component.name.clone(),
-                                                                component_version: component.version.clone(),
+                                                                component_name: component
+                                                                    .name
+                                                                    .clone(),
+                                                                component_version: component
+                                                                    .version
+                                                                    .clone(),
                                                                 summary: summary.clone(),
                                                                 epss_score: epss,
                                                                 in_kev,
                                                                 priority,
-                                                                location: component.location.clone(),
+                                                                location: component
+                                                                    .location
+                                                                    .clone(),
                                                             });
                                                         }
                                                         Ok(false) => {
@@ -215,20 +244,31 @@ impl ScaAnalyzer {
                                                             // Error parsing version, be conservative and include it
                                                             eprintln!("[bazbom]   warning: version check failed for {} {}: {}", 
                                                                 component.name, component.version, e);
-                                                            
-                                                            let epss = epss_scores.get(&vuln_id).map(|e| e.score);
-                                                            let in_kev = kev_entries.contains_key(&vuln_id);
-                                                            let priority = self.calculate_priority(&vuln, epss, in_kev);
-                                                            
+
+                                                            let epss = epss_scores
+                                                                .get(&vuln_id)
+                                                                .map(|e| e.score);
+                                                            let in_kev =
+                                                                kev_entries.contains_key(&vuln_id);
+                                                            let priority = self.calculate_priority(
+                                                                &vuln, epss, in_kev,
+                                                            );
+
                                                             matches.push(VulnerabilityMatch {
                                                                 vulnerability_id: vuln_id.clone(),
-                                                                component_name: component.name.clone(),
-                                                                component_version: component.version.clone(),
+                                                                component_name: component
+                                                                    .name
+                                                                    .clone(),
+                                                                component_version: component
+                                                                    .version
+                                                                    .clone(),
                                                                 summary: summary.clone(),
                                                                 epss_score: epss,
                                                                 in_kev,
                                                                 priority,
-                                                                location: component.location.clone(),
+                                                                location: component
+                                                                    .location
+                                                                    .clone(),
                                                             });
                                                         }
                                                     }
@@ -250,7 +290,7 @@ impl ScaAnalyzer {
     fn parse_version_range(&self, range_json: &serde_json::Value) -> Option<VersionRange> {
         let range_type = range_json["type"].as_str()?.to_string();
         let events_json = range_json["events"].as_array()?;
-        
+
         let mut events = Vec::new();
         for event in events_json {
             if let Some(introduced) = event["introduced"].as_str() {
@@ -267,15 +307,12 @@ impl ScaAnalyzer {
                 });
             }
         }
-        
+
         if events.is_empty() {
             return None;
         }
-        
-        Some(VersionRange {
-            range_type,
-            events,
-        })
+
+        Some(VersionRange { range_type, events })
     }
 
     fn calculate_priority(
@@ -292,7 +329,10 @@ impl ScaAnalyzer {
         // Try to extract CVSS score
         let mut cvss_score: Option<f64> = None;
         if let Some(severity) = vuln["database_specific"]["severity"].as_str() {
-            cvss_score = severity.split(':').nth(1).and_then(|s| s.parse::<f64>().ok());
+            cvss_score = severity
+                .split(':')
+                .nth(1)
+                .and_then(|s| s.parse::<f64>().ok());
         }
 
         if let Some(epss_val) = epss {
@@ -336,9 +376,10 @@ impl ScaAnalyzer {
                     None => "warning",
                 };
 
-                let mut message_parts = vec![
-                    format!("Vulnerability {} found in {}", m.vulnerability_id, m.component_name),
-                ];
+                let mut message_parts = vec![format!(
+                    "Vulnerability {} found in {}",
+                    m.vulnerability_id, m.component_name
+                )];
 
                 if let Some(summary) = &m.summary {
                     message_parts.push(summary.clone());
@@ -349,7 +390,9 @@ impl ScaAnalyzer {
                 }
 
                 if m.in_kev {
-                    message_parts.push("⚠️  Listed in CISA KEV (Known Exploited Vulnerabilities)".to_string());
+                    message_parts.push(
+                        "⚠️  Listed in CISA KEV (Known Exploited Vulnerabilities)".to_string(),
+                    );
                 }
 
                 let mut properties = serde_json::json!({
@@ -442,27 +485,29 @@ impl Analyzer for ScaAnalyzer {
         };
 
         // Load SBOM components
-        let components = self.load_sbom_components(ctx)
+        let components = self
+            .load_sbom_components(ctx)
             .context("failed to load SBOM components")?;
 
         println!("[bazbom] loaded {} components from SBOM", components.len());
 
         // Match vulnerabilities
-        let matches = self.match_vulnerabilities(&components, &advisory_dir)
+        let matches = self
+            .match_vulnerabilities(&components, &advisory_dir)
             .context("failed to match vulnerabilities")?;
 
         println!("[bazbom] found {} vulnerability matches", matches.len());
 
         // Create SARIF report
         let mut report = SarifReport::new("BazBOM-SCA", env!("CARGO_PKG_VERSION"));
-        
+
         // Add rules for each unique vulnerability (using references to avoid cloning)
-        let unique_vulns: std::collections::HashSet<&String> = matches.iter()
-            .map(|m| &m.vulnerability_id)
-            .collect();
-        
-        let rules: Vec<Rule> = unique_vulns.into_iter().map(|id| {
-            Rule {
+        let unique_vulns: std::collections::HashSet<&String> =
+            matches.iter().map(|m| &m.vulnerability_id).collect();
+
+        let rules: Vec<Rule> = unique_vulns
+            .into_iter()
+            .map(|id| Rule {
                 id: id.clone(),
                 short_description: MessageString {
                     text: format!("Vulnerability {}", id),
@@ -472,8 +517,8 @@ impl Analyzer for ScaAnalyzer {
                 default_configuration: Some(Configuration {
                     level: "warning".to_string(),
                 }),
-            }
-        }).collect();
+            })
+            .collect();
 
         if !rules.is_empty() {
             report.runs[0].tool.driver.rules = Some(rules);
@@ -515,10 +560,10 @@ mod tests {
 
         let analyzer = ScaAnalyzer::new();
         let report = analyzer.run(&ctx)?;
-        
+
         assert_eq!(report.runs.len(), 1);
         assert_eq!(report.runs[0].tool.driver.name, "BazBOM-SCA");
-        
+
         Ok(())
     }
 }

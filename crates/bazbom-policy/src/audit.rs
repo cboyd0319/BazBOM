@@ -82,7 +82,7 @@ impl Default for AuditConfig {
             log_violations: true,
             log_warnings: true,
             max_size_bytes: 100 * 1024 * 1024, // 100 MB
-            retention_days: 365, // 1 year
+            retention_days: 365,               // 1 year
         }
     }
 }
@@ -134,8 +134,7 @@ impl AuditLogger {
             .expect("Time went backwards");
 
         let entry = AuditLogEntry {
-            timestamp: chrono::DateTime::<chrono::Utc>::from(SystemTime::now())
-                .to_rfc3339(),
+            timestamp: chrono::DateTime::<chrono::Utc>::from(SystemTime::now()).to_rfc3339(),
             timestamp_unix: now.as_secs(),
             action: action.to_string(),
             result: if result.passed {
@@ -194,10 +193,7 @@ impl AuditLogger {
 
         let rotated_name = format!(
             "{}.{}",
-            self.config
-                .log_file
-                .to_str()
-                .unwrap_or("audit.jsonl"),
+            self.config.log_file.to_str().unwrap_or("audit.jsonl"),
             timestamp
         );
 
@@ -318,9 +314,7 @@ mod tests {
         };
 
         // Should not error even with invalid path when disabled
-        assert!(logger
-            .log_policy_check("test", &result, None, None)
-            .is_ok());
+        assert!(logger.log_policy_check("test", &result, None, None).is_ok());
     }
 
     #[test]
@@ -445,9 +439,7 @@ mod tests {
         assert_eq!(all_logs.len(), 2);
 
         // Query by action
-        let scan_logs = logger
-            .query_logs(None, None, Some("scan"), None)
-            .unwrap();
+        let scan_logs = logger.query_logs(None, None, Some("scan"), None).unwrap();
         assert_eq!(scan_logs.len(), 1);
         assert_eq!(scan_logs[0].action, "scan");
 
@@ -493,14 +485,12 @@ mod tests {
         let entries = std::fs::read_dir(temp_dir.path()).unwrap();
         let rotated_files: Vec<_> = entries
             .filter_map(|e| e.ok())
-            .filter(|e| {
-                e.file_name()
-                    .to_str()
-                    .unwrap()
-                    .starts_with("audit.jsonl.")
-            })
+            .filter(|e| e.file_name().to_str().unwrap().starts_with("audit.jsonl."))
             .collect();
 
-        assert!(!rotated_files.is_empty(), "Log rotation should have occurred");
+        assert!(
+            !rotated_files.is_empty(),
+            "Log rotation should have occurred"
+        );
     }
 }

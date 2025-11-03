@@ -79,10 +79,9 @@ impl BazelDependencyGraph {
 
         // Add dependency relationships
         for edge in &self.edges {
-            if let (Some(from_id), Some(to_id)) = (
-                coord_to_id.get(&edge.from),
-                coord_to_id.get(&edge.to),
-            ) {
+            if let (Some(from_id), Some(to_id)) =
+                (coord_to_id.get(&edge.from), coord_to_id.get(&edge.to))
+            {
                 doc.add_relationship(Relationship {
                     spdx_element_id: format!("SPDXRef-{}", from_id),
                     relationship_type: "DEPENDS_ON".to_string(),
@@ -118,15 +117,15 @@ pub fn extract_bazel_dependencies(
     let graph = parse_maven_install_json(workspace_path, &maven_install_json)?;
 
     // Write the graph to output
-    let json_content = serde_json::to_string_pretty(&graph)
-        .context("failed to serialize dependency graph")?;
-    
+    let json_content =
+        serde_json::to_string_pretty(&graph).context("failed to serialize dependency graph")?;
+
     // Ensure parent directory exists
     if let Some(parent) = output_path.parent() {
         std::fs::create_dir_all(parent)
             .with_context(|| format!("failed to create directory {:?}", parent))?;
     }
-    
+
     std::fs::write(output_path, json_content)
         .with_context(|| format!("failed to write dependency graph to {:?}", output_path))?;
 
@@ -146,10 +145,10 @@ fn parse_maven_install_json(
 ) -> Result<BazelDependencyGraph> {
     use serde_json::Value;
 
-    let content = std::fs::read_to_string(maven_install_json)
-        .context("failed to read maven_install.json")?;
-    let data: Value = serde_json::from_str(&content)
-        .context("failed to parse maven_install.json")?;
+    let content =
+        std::fs::read_to_string(maven_install_json).context("failed to read maven_install.json")?;
+    let data: Value =
+        serde_json::from_str(&content).context("failed to parse maven_install.json")?;
 
     let mut components = Vec::new();
     let mut edges = Vec::new();
@@ -161,12 +160,14 @@ fn parse_maven_install_json(
         .context("maven_install.json missing 'artifacts' object")?;
 
     let empty_map = serde_json::Map::new();
-    let dependencies = data.get("dependencies")
+    let dependencies = data
+        .get("dependencies")
         .and_then(|v| v.as_object())
         .unwrap_or(&empty_map);
 
     let empty_repos = serde_json::Map::new();
-    let repositories = data.get("repositories")
+    let repositories = data
+        .get("repositories")
         .and_then(|v| v.as_object())
         .unwrap_or(&empty_repos);
 
@@ -186,11 +187,8 @@ fn parse_maven_install_json(
         let artifact = parts[1];
 
         // Extract version from artifact info
-        let version = artifact_info["version"]
-            .as_str()
-            .unwrap_or("")
-            .to_string();
-        
+        let version = artifact_info["version"].as_str().unwrap_or("").to_string();
+
         if version.is_empty() {
             continue;
         }
@@ -269,10 +267,7 @@ fn parse_maven_install_json(
     let metadata = BazelMetadata {
         build_system: "bazel".to_string(),
         workspace: workspace_path.to_string_lossy().to_string(),
-        maven_install_version: data["version"]
-            .as_str()
-            .unwrap_or("unknown")
-            .to_string(),
+        maven_install_version: data["version"].as_str().unwrap_or("unknown").to_string(),
     };
 
     Ok(BazelDependencyGraph {
@@ -305,11 +300,13 @@ pub fn query_bazel_targets(
         // Escape file paths to prevent shell injection
         // Validate against comprehensive list of shell metacharacters
         let is_safe_path = |path: &str| -> bool {
-            let dangerous_chars = ['\'', '"', '$', '`', ';', '&', '|', '>', '<', 
-                                   '(', ')', '{', '}', '[', ']', '*', '?', '~', '\n', '\r'];
+            let dangerous_chars = [
+                '\'', '"', '$', '`', ';', '&', '|', '>', '<', '(', ')', '{', '}', '[', ']', '*',
+                '?', '~', '\n', '\r',
+            ];
             !path.chars().any(|c| dangerous_chars.contains(&c))
         };
-        
+
         let file_set = files
             .iter()
             .filter_map(|f| {
@@ -318,13 +315,16 @@ pub fn query_bazel_targets(
                     // Escape for Bazel query (quotes are sufficient as we validated above)
                     Some(format!("\"{}\"", f))
                 } else {
-                    eprintln!("[bazbom] warning: skipping file with shell metacharacters: {}", f);
+                    eprintln!(
+                        "[bazbom] warning: skipping file with shell metacharacters: {}",
+                        f
+                    );
                     None
                 }
             })
             .collect::<Vec<_>>()
             .join(", ");
-        
+
         if file_set.is_empty() {
             anyhow::bail!("No valid files after filtering shell metacharacters");
         }
@@ -334,16 +334,14 @@ pub fn query_bazel_targets(
     };
 
     println!("[bazbom] executing Bazel query: {}", query);
-    
+
     let mut cmd = Command::new("bazel");
     cmd.arg("query")
         .arg(&query)
         .arg("--output=label")
         .current_dir(workspace_path);
 
-    let output = cmd
-        .output()
-        .context("failed to execute bazel query")?;
+    let output = cmd.output().context("failed to execute bazel query")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -375,24 +373,24 @@ pub fn extract_bazel_dependencies_for_targets(
     for target in targets {
         println!("  - {}", target);
     }
-    
+
     // First get all dependencies from maven_install.json
     let full_graph = extract_bazel_dependencies(workspace_path, output_path)?;
-    
+
     // If no specific targets, return full graph
     if targets.is_empty() {
         return Ok(full_graph);
     }
-    
+
     // Try to filter graph based on targets using Bazel query
     // This requires running `bazel query --output=proto` for each target
     // For now, return the full graph as filtering requires more complex query logic
     // TODO: Implement target-specific filtering using bazel cquery
-    
+
     println!(
         "[bazbom] note: returning full dependency graph (target-specific filtering not yet implemented)"
     );
-    
+
     Ok(full_graph)
 }
 
@@ -478,20 +476,20 @@ mod tests {
         };
 
         let spdx = graph.to_spdx("test-project");
-        
+
         // Verify document structure
         assert_eq!(spdx.name, "test-project-sbom");
         assert!(spdx.document_namespace.contains("test-project"));
-        
+
         // Verify packages
         assert_eq!(spdx.packages.len(), 2);
         assert_eq!(spdx.packages[0].name, "guava");
         assert_eq!(spdx.packages[0].version_info, Some("31.1-jre".to_string()));
         assert_eq!(spdx.packages[1].name, "jsr305");
-        
+
         // Verify relationships (DESCRIBES + DEPENDS_ON)
         assert_eq!(spdx.relationships.len(), 3); // 2 DESCRIBES + 1 DEPENDS_ON
-        
+
         // Check for DEPENDS_ON relationship
         let depends_on = spdx
             .relationships
@@ -528,10 +526,10 @@ mod tests {
 
         let workspace = std::env::temp_dir();
         let result = super::parse_maven_install_json(&workspace, temp_file.path());
-        
+
         assert!(result.is_ok());
         let graph = result.unwrap();
-        
+
         assert_eq!(graph.components.len(), 1);
         assert_eq!(graph.components[0].name, "guava");
         assert_eq!(graph.components[0].group, "com.google.guava");
@@ -568,13 +566,13 @@ mod tests {
 
         let workspace = std::env::temp_dir();
         let result = super::parse_maven_install_json(&workspace, temp_file.path());
-        
+
         assert!(result.is_ok());
         let graph = result.unwrap();
-        
+
         assert_eq!(graph.components.len(), 2);
         assert_eq!(graph.edges.len(), 1);
-        
+
         let edge = &graph.edges[0];
         assert_eq!(edge.from, "com.google.guava:guava:31.1-jre");
         assert_eq!(edge.to, "com.google.code.findbugs:jsr305:3.0.2");

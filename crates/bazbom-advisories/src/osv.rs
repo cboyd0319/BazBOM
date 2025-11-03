@@ -1,9 +1,9 @@
+use crate::{AffectedPackage, VersionEvent, VersionRange, Vulnerability};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use crate::{Vulnerability, AffectedPackage, VersionRange, VersionEvent};
 
 const OSV_API_BASE: &str = "https://api.osv.dev/v1";
 
@@ -133,7 +133,7 @@ pub fn query_batch_vulnerabilities(
                 if !vulns.is_empty() {
                     println!("[bazbom]     {} vulnerabilities for {}", vulns.len(), name);
                     results.insert(key.clone(), vulns.clone());
-                    
+
                     // Cache the results
                     if let Err(e) = cache_vulnerabilities(cache_dir, &key, &vulns) {
                         eprintln!("[bazbom]   warning: failed to cache results: {}", e);
@@ -146,7 +146,10 @@ pub fn query_batch_vulnerabilities(
         }
     }
 
-    println!("[bazbom] OSV query complete: {} packages with vulnerabilities", results.len());
+    println!(
+        "[bazbom] OSV query complete: {} packages with vulnerabilities",
+        results.len()
+    );
     Ok(results)
 }
 
@@ -169,8 +172,9 @@ fn convert_osv_to_vulnerability(osv: OsvVulnerability) -> Vulnerability {
                                 .map(|introduced| VersionEvent::Introduced { introduced })
                                 .or_else(|| e.fixed.map(|fixed| VersionEvent::Fixed { fixed }))
                                 .or_else(|| {
-                                    e.last_affected
-                                        .map(|last_affected| VersionEvent::LastAffected { last_affected })
+                                    e.last_affected.map(|last_affected| {
+                                        VersionEvent::LastAffected { last_affected }
+                                    })
                                 })
                         })
                         .collect();
@@ -210,8 +214,8 @@ fn convert_osv_to_vulnerability(osv: OsvVulnerability) -> Vulnerability {
         references,
         published: osv.published,
         modified: osv.modified,
-        epss: None, // Filled in by enrichment
-        kev: None,  // Filled in by enrichment
+        epss: None,     // Filled in by enrichment
+        kev: None,      // Filled in by enrichment
         priority: None, // Calculated later
     }
 }
@@ -242,14 +246,14 @@ fn decode_cache_key(encoded: &str) -> String {
 fn cache_vulnerabilities(cache_dir: &Path, key: &str, vulns: &[Vulnerability]) -> Result<()> {
     let osv_cache = cache_dir.join("osv");
     fs::create_dir_all(&osv_cache)?;
-    
+
     // Encode key for filesystem safety
     let safe_key = encode_cache_key(key);
     let cache_file = osv_cache.join(format!("{}.json", safe_key));
-    
+
     let json = serde_json::to_string_pretty(vulns)?;
     fs::write(cache_file, json)?;
-    
+
     Ok(())
 }
 
@@ -257,15 +261,15 @@ fn cache_vulnerabilities(cache_dir: &Path, key: &str, vulns: &[Vulnerability]) -
 fn load_cached_vulnerabilities(cache_dir: &Path) -> Result<HashMap<String, Vec<Vulnerability>>> {
     let mut results = HashMap::new();
     let osv_cache = cache_dir.join("osv");
-    
+
     if !osv_cache.exists() {
         return Ok(results);
     }
-    
+
     for entry in fs::read_dir(osv_cache)? {
         let entry = entry?;
         let path = entry.path();
-        
+
         if path.extension().and_then(|s| s.to_str()) == Some("json") {
             if let Ok(content) = fs::read_to_string(&path) {
                 if let Ok(vulns) = serde_json::from_str::<Vec<Vulnerability>>(&content) {
@@ -278,8 +282,11 @@ fn load_cached_vulnerabilities(cache_dir: &Path) -> Result<HashMap<String, Vec<V
             }
         }
     }
-    
-    println!("[bazbom] loaded {} cached vulnerability entries", results.len());
+
+    println!(
+        "[bazbom] loaded {} cached vulnerability entries",
+        results.len()
+    );
     Ok(results)
 }
 
