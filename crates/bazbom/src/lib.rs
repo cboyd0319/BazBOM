@@ -5,6 +5,7 @@ pub mod cli;
 pub mod config;
 pub mod context;
 pub mod enrich;
+pub mod explore;
 pub mod fixes;
 pub mod hooks;
 pub mod init;
