@@ -1,0 +1,46 @@
+# BazBOM Policy Template: GDPR Data Protection
+# EU General Data Protection Regulation compliance
+# Version: 1.0
+#
+# This policy template helps organizations comply with GDPR requirements
+# by ensuring secure handling of personal data through dependency security.
+#
+# Use Cases:
+# - Applications processing EU citizen data
+# - Cloud services with EU customers
+# - Data processors under GDPR
+# - Privacy-focused applications
+
+name: "GDPR Data Protection"
+description: "EU General Data Protection Regulation compliance"
+version: "1.0"
+
+# Strict security for data protection
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+# License Policy
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+license_denylist:
+  - AGPL-3.0
+  - SSPL
+  - Unknown
+
+# GDPR-specific requirements
+# - Data breach notification within 72 hours
+# - Privacy by design and by default
+# - Data protection impact assessments (DPIA)
+# - Regular security testing and evaluation
+# - Maintain records of processing activities
+# - Implement data minimization
+# - Enable data portability
+# - Support right to be forgotten
+
+vex_auto_apply: false  # Require documentation for GDPR compliance

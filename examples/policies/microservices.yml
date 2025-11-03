@@ -1,0 +1,54 @@
+# BazBOM Policy Template: Microservices Architecture
+# Cloud-native security policy for distributed systems
+# Version: 1.0
+#
+# This policy template is optimized for microservices architectures
+# with focus on container security, API security, and service mesh considerations.
+#
+# Use Cases:
+# - Microservices architectures
+# - Container-based deployments
+# - Service mesh environments
+# - Cloud-native applications
+# - Kubernetes deployments
+
+name: "Microservices Architecture"
+description: "Cloud-native security policy for distributed systems"
+version: "1.0"
+
+# Moderate to strict for microservices
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: true
+
+# License Policy
+# Standard permissive licenses
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+  - SSPL
+
+# Microservices-specific concerns
+blocked_packages:
+  - "log4j:log4j:1.*"
+
+# Microservices recommendations
+# - Implement service-to-service authentication
+# - Use API gateways for external traffic
+# - Enable distributed tracing and monitoring
+# - Implement circuit breakers and retry logic
+# - Use service mesh for traffic management
+# - Container scanning for all images
+# - Implement zero-trust networking
+# - Use secrets management for credentials
+# - Enable mTLS between services
+# - Implement rate limiting and throttling
+
+vex_auto_apply: true

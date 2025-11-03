@@ -1,0 +1,52 @@
+# BazBOM Policy Template: Production Environment
+# Strict policy with zero tolerance for known vulnerabilities
+# Version: 1.0
+#
+# This policy template enforces the strictest security controls
+# suitable for production environments. Zero tolerance for
+# critical vulnerabilities and KEV-listed exploits.
+#
+# Use Cases:
+# - Production environments
+# - Customer-facing applications
+# - Mission-critical systems
+# - Regulated production workloads
+
+name: "Production Environment"
+description: "Strict policy with zero tolerance for known vulnerabilities"
+version: "1.0"
+
+# Zero tolerance for production
+severity_threshold: MEDIUM
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+# License Policy
+# Conservative license policy for production
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+license_denylist:
+  - GPL-2.0
+  - GPL-3.0
+  - LGPL-2.1
+  - LGPL-3.0
+  - AGPL-3.0
+  - SSPL
+  - Unknown
+
+# Production-specific recommendations
+# - No vulnerabilities of MEDIUM or higher
+# - All KEV (Known Exploited Vulnerabilities) must be patched
+# - Require reachability analysis for all dependencies
+# - Maintain comprehensive audit trail
+# - Implement automated rollback on policy violations
+# - Use signed and verified artifacts only
+# - Enable continuous monitoring and alerting
+# - Maintain incident response procedures
+
+vex_auto_apply: false  # Require manual review in production

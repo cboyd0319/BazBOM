@@ -1,0 +1,54 @@
+# BazBOM Policy Template: Android Applications
+# Mobile security policy for Android app development
+# Version: 1.0
+#
+# This policy template addresses Android-specific security concerns
+# including mobile-specific vulnerabilities and license compliance
+# for app store distribution.
+#
+# Use Cases:
+# - Android mobile applications
+# - Android libraries and SDKs
+# - Google Play Store distribution
+# - Enterprise Android apps
+
+name: "Android Applications"
+description: "Mobile security policy for Android app development"
+version: "1.0"
+
+# Strict security for mobile apps
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.4
+reachability_required: true
+
+# License Policy
+# App store compatible licenses only
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+# Block GPL and LGPL - problematic for Play Store
+license_denylist:
+  - GPL-2.0
+  - GPL-3.0
+  - LGPL-2.1
+  - LGPL-3.0
+  - AGPL-3.0
+
+# Block known problematic Android dependencies
+blocked_packages:
+  - "com.android.support:*:*"  # Use AndroidX instead
+  - "androidx.legacy:legacy-support-v4:*"  # Deprecated
+
+# Android-specific recommendations
+# - Use AndroidX libraries (not support library)
+# - Keep Google Play Services updated
+# - Enable ProGuard/R8 for obfuscation
+# - Use Android App Bundles for distribution
+# - Test with Google Play Pre-launch Report
+# - Follow Android security best practices
+
+vex_auto_apply: true

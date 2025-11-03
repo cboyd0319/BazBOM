@@ -1,0 +1,48 @@
+# BazBOM Policy Template: Government/Defense
+# Security policy for government and defense applications
+# Version: 1.0
+#
+# This policy template provides stringent security controls
+# for government agencies and defense contractors.
+# Combines FedRAMP, NIST 800-53, and DoD requirements.
+#
+# Use Cases:
+# - Federal government agencies
+# - Defense contractors
+# - Classified systems
+# - National security applications
+
+name: "Government/Defense"
+description: "Security policy for government and defense applications"
+version: "1.0"
+
+# Maximum security for government systems
+severity_threshold: MEDIUM
+kev_gate: true
+epss_threshold: 0.2
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-2.0
+  - GPL-3.0
+  - LGPL-2.1
+  - LGPL-3.0
+  - AGPL-3.0
+  - Unknown
+
+# Government/Defense recommendations
+# - NIST 800-53 controls implementation
+# - Continuous monitoring (ConMon)
+# - Authority to Operate (ATO) requirements
+# - Supply chain risk management
+# - Security clearance requirements
+# - CMMC compliance for DoD contractors
+# - Air-gapped deployment options
+# - FIPS 140-2 cryptographic modules
+
+vex_auto_apply: false

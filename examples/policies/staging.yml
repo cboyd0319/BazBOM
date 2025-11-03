@@ -1,0 +1,51 @@
+# BazBOM Policy Template: Staging Environment
+# Moderate policy for pre-production testing
+# Version: 1.0
+#
+# This policy template provides a balanced approach suitable for
+# staging and QA environments where you want to catch issues
+# before production but need some flexibility for testing.
+#
+# Use Cases:
+# - Staging environments
+# - QA/test environments
+# - Integration testing
+# - Pre-production validation
+
+name: "Staging Environment"
+description: "Moderate policy for pre-production testing"
+version: "1.0"
+
+# Block HIGH and CRITICAL vulnerabilities
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.6
+reachability_required: false
+
+# License Policy
+# Allow common licenses, warn on copyleft
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+  - ISC
+
+license_denylist:
+  - AGPL-3.0
+  - SSPL
+
+# Block known dangerous packages
+blocked_packages:
+  - "log4j:log4j:1.*"
+
+# Staging environment recommendations
+# - Use staging to validate production policies
+# - Test remediation strategies in staging first
+# - Mirror production environment configuration
+# - Use staging data (not production data)
+# - Validate breaking changes before production
+# - Run full test suites including security tests
+# - Recommended workflow: Development → Staging → Production
+
+vex_auto_apply: true

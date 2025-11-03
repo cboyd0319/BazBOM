@@ -1,0 +1,51 @@
+# BazBOM Policy Template: Spring Boot Applications
+# Optimized for Spring Boot microservice architectures
+# Version: 1.0
+#
+# This policy template is designed specifically for Spring Boot applications,
+# with focus on common Spring ecosystem vulnerabilities and best practices.
+#
+# Use Cases:
+# - Spring Boot 2.x and 3.x applications
+# - Microservice architectures
+# - REST API services
+# - Spring Cloud applications
+
+name: "Spring Boot Microservices"
+description: "Optimized for Spring Boot microservice architectures"
+version: "1.0"
+
+# Block HIGH and above for Spring applications
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.5
+reachability_required: true
+
+# License Policy
+# Standard permissive licenses for Spring ecosystem
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+  - SSPL
+
+# Block problematic dependencies common in Spring
+blocked_packages:
+  - "org.springframework:spring-core:4.*"  # EOL versions
+  - "log4j:log4j:1.*"                      # CVE-2021-44228
+  - "com.fasterxml.jackson.core:jackson-databind:2.9.*"  # Multiple CVEs
+
+# Spring-specific recommendations
+# - Use Spring Boot 3.x for latest security updates
+# - Enable Spring Security for all endpoints
+# - Use SLF4J with Logback (not Log4J 1.x)
+# - Keep Jackson dependencies up to date
+# - Enable Spring Actuator securely with authentication
+# - Use spring-boot-starter-security for production deployments
+
+vex_auto_apply: true

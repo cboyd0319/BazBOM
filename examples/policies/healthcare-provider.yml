@@ -1,0 +1,44 @@
+# BazBOM Policy Template: Healthcare Provider
+# Comprehensive security for healthcare organizations
+# Version: 1.0
+#
+# This policy template combines HIPAA requirements with
+# healthcare-specific security best practices.
+#
+# Use Cases:
+# - Hospitals and clinics
+# - Electronic Health Records (EHR)
+# - Telemedicine platforms
+# - Healthcare SaaS
+
+name: "Healthcare Provider"
+description: "Comprehensive security for healthcare organizations"
+version: "1.0"
+
+# Strict for PHI protection
+severity_threshold: HIGH
+kev_gate: true
+epss_threshold: 0.3
+reachability_required: true
+
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+
+license_denylist:
+  - GPL-3.0
+  - AGPL-3.0
+  - SSPL
+  - Unknown
+
+# Healthcare recommendations
+# - HIPAA Security Rule compliance
+# - PHI encryption at rest and in transit
+# - Access controls and audit logging
+# - Business Associate Agreements (BAAs)
+# - Regular risk assessments
+# - Incident response procedures
+# - Patient data privacy protection
+
+vex_auto_apply: false

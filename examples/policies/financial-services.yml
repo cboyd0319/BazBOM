@@ -1,0 +1,59 @@
+# BazBOM Policy Template: Financial Services
+# Stringent security for banking and fintech applications
+# Version: 1.0
+#
+# This policy template provides strict security controls suitable
+# for financial services, banking, and payment processing applications.
+# Combines requirements from PCI-DSS, SOX, and general financial regulations.
+#
+# Use Cases:
+# - Banking applications
+# - Payment processing systems
+# - Cryptocurrency exchanges
+# - Trading platforms
+# - Wealth management systems
+
+name: "Financial Services"
+description: "Stringent security for banking and fintech applications"
+version: "1.0"
+
+# Zero tolerance for vulnerabilities in financial systems
+severity_threshold: MEDIUM
+kev_gate: true
+epss_threshold: 0.3
+reachability_required: true
+
+# License Policy
+# Conservative license policy for financial institutions
+license_allowlist:
+  - Apache-2.0
+  - MIT
+  - BSD-3-Clause
+  - BSD-2-Clause
+
+# Block copyleft and ambiguous licenses
+license_denylist:
+  - GPL-2.0
+  - GPL-3.0
+  - LGPL-2.1
+  - LGPL-3.0
+  - AGPL-3.0
+  - SSPL
+  - Unknown
+
+# Block high-risk packages
+blocked_packages:
+  - "log4j:log4j:1.*"
+  - "commons-collections:commons-collections:3.*"  # Deserialization vulnerabilities
+
+# Financial services recommendations
+# - Implement defense in depth
+# - Require code signing for all releases
+# - Enable audit logging for all security events
+# - Perform quarterly security assessments
+# - Maintain air-gapped deployment environments
+# - Follow PCI-DSS, SOX, and regulatory requirements
+# - Implement fraud detection and prevention
+# - Use hardware security modules (HSMs) for cryptographic operations
+
+vex_auto_apply: false  # Require manual review in financial services
