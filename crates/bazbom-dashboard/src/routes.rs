@@ -44,15 +44,18 @@ async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSum
     
     // Try to find findings file
     let findings_path = state.cache_dir.join("sca_findings.json");
-    if !findings_path.exists() {
+    let path_to_use = if findings_path.exists() {
+        findings_path
+    } else {
         // Try alternate location
         let alt_path = state.project_root.join("sca_findings.json");
         if !alt_path.exists() {
             anyhow::bail!("No findings file found");
         }
-    }
+        alt_path
+    };
     
-    let content = fs::read_to_string(&findings_path)?;
+    let content = fs::read_to_string(&path_to_use)?;
     let findings: Value = serde_json::from_str(&content)?;
     
     // Count vulnerabilities by severity
@@ -172,14 +175,18 @@ async fn load_vulnerabilities(state: &AppState) -> anyhow::Result<Vulnerabilitie
     use serde_json::Value;
     
     let findings_path = state.cache_dir.join("sca_findings.json");
-    if !findings_path.exists() {
+    let path_to_use = if findings_path.exists() {
+        findings_path
+    } else {
+        // Try alternate location
         let alt_path = state.project_root.join("sca_findings.json");
         if !alt_path.exists() {
             anyhow::bail!("No findings file found");
         }
-    }
+        alt_path
+    };
     
-    let content = fs::read_to_string(&findings_path)?;
+    let content = fs::read_to_string(&path_to_use)?;
     let findings: Value = serde_json::from_str(&content)?;
     
     let mut vulnerabilities = Vec::new();
