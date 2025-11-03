@@ -30,8 +30,8 @@ updates:
           - "minor"
           - "patch"
 
-  # Python dependencies - Weekly updates
-  - package-ecosystem: "pip"
+  # Rust dependencies - Weekly updates
+  - package-ecosystem: "cargo"
     directory: "/"
     schedule:
       interval: "weekly"
@@ -42,28 +42,15 @@ updates:
       include: "scope"
     labels:
       - "dependencies"
-      - "python"
+      - "rust"
       - "security"
     reviewers:
       - "cboyd0319"
     open-pull-requests-limit: 10
-    # Group test dependencies together
     groups:
-      test-dependencies:
+      rust-dependencies:
         patterns:
-          - "pytest*"
-          - "coverage"
-          - "responses"
-          - "freezegun"
-        update-types:
-          - "minor"
-          - "patch"
-      security-tools:
-        patterns:
-          - "bandit"
-          - "semgrep"
-          - "safety"
-          - "pip-audit"
+          - "*"
         update-types:
           - "minor"
           - "patch"
