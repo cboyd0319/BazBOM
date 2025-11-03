@@ -1097,54 +1097,52 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ## Roadmap
 
-> **🚀 Implementation Roadmap: Next 8 Weeks**
+> **📋 Complete Product Roadmap**
 > 
-> See [Implementation Roadmap](docs/copilot/IMPLEMENTATION_ROADMAP.md) for the detailed 8-week plan to make BazBOM the ultimate easy-to-use SBOM/SCA solution:
-> - **Phase 1 (Weeks 1-2):** Interactive init, TUI dependency explorer, smart batch fixing, 20+ policy templates
-> - **Phase 2 (Weeks 3-4):** Web dashboard with D3.js graphs, executive reports, shareable HTML
-> - **Phase 3 (Weeks 5-6):** VS Code/IntelliJ marketplace publishing, one-click remediation polish
-> - **Phase 4 (Weeks 7-8):** Git-based team coordination, assignments, notifications, audit trail
+> See [**Master Roadmap (docs/ROADMAP.md)**](docs/ROADMAP.md) for the complete feature tracking checklist with all phases, distribution channels, and milestones.
+>
+> **Quick Links:**
+> - [Distribution & Marketplaces](docs/ROADMAP.md#distribution--marketplaces) - GitHub Marketplace, Homebrew, IDE plugins, Windows support
+> - [Phase Checklist](docs/ROADMAP.md#phase-checklist) - Track all implemented and planned features
+> - [8-Week UX Sprint](docs/copilot/IMPLEMENTATION_ROADMAP.md) - Interactive init, TUI, dashboard, team features
+> - [Strategic Vision](docs/copilot/STRATEGIC_ROADMAP.md) - 12-18 month market leadership plan
 
-**Completed (Phases 0-5):**
-- [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Complete**
-- [x] Offline advisory DB sync - **Implemented**
-- [x] Maven plugin (bazbom-maven-plugin) - **Phase 1 Complete**
-- [x] Gradle plugin (io.bazbom.gradle-plugin) - **Phase 1 Complete**
-- [x] Advisory merge engine (OSV/NVD/GHSA + KEV + EPSS) - **Phase 2 Complete**
-- [x] Policy-as-code (YAML) + CI enforcement - **Phase 2 Complete**
-- [x] ASM-based reachability analysis - **Phase 3 Complete**
-- [x] Shading/relocation detection (Maven Shade, Gradle Shadow) - **Phase 3 Complete**
-- [x] Remediation automation (`bazbom fix --suggest`) - **Phase 4 Complete**
-- [x] Educational "why fix this?" context in suggestions - **Phase 4 Complete**
-- [x] Enterprise policy templates (PCI-DSS, HIPAA, FedRAMP, SOC 2) - **Phase 5 Complete**
-- [x] Rego/OPA policy support for advanced rules - **Phase 5 Complete**
-- [x] Policy inheritance (org → team → project) - **Phase 5 Complete**
-- [x] License compliance (200+ SPDX licenses, compatibility matrix) - **Phase 5 Complete**
-- [x] License obligations tracking and reporting - **Phase 5 Complete**
-- [x] Copyleft contamination detection - **Phase 5 Complete**
-- [x] SPDX 2.3 SBOM generation
-- [x] CycloneDX 1.5 SBOM generation
-- [x] SARIF 2.1.0 findings output
-- [x] SLSA Level 3 provenance infrastructure
-- [x] VEX statement support
-- [x] Large monorepo optimization
+**Current Status (v0.5.1): ~40% Complete**
 
-**In Progress (Phase 4 - Remaining Items):**
-- [ ] Full `bazbom fix --apply` implementation for automatic file updates
-- [ ] PR generation for Maven/Gradle/Bazel
-- [ ] Pre-commit hook installation and policy enforcement
-- [ ] LSP server for real-time IDE feedback
+### ✅ Completed (Phases 0-3, 5)
+- [x] **Rust single-binary CLI** - Memory-safe, signed releases
+- [x] **Build system plugins** - Maven & Gradle deep integration
+- [x] **Advisory intelligence** - OSV/NVD/GHSA + KEV + EPSS enrichment
+- [x] **Policy-as-code** - YAML + Rego/OPA, enterprise templates
+- [x] **License compliance** - 200+ SPDX licenses, compatibility matrix
+- [x] **Reachability analysis** - ASM-based call graphs
+- [x] **Shading detection** - Maven Shade, Gradle Shadow support
+- [x] **SBOM generation** - SPDX 2.3, CycloneDX 1.5, SARIF 2.1.0
+- [x] **SLSA Level 3** - Provenance infrastructure, Sigstore signing
+- [x] **Homebrew distribution** - `brew tap cboyd0319/bazbom`
+- [x] **GitHub Action** - Native CI/CD integration
 
-**Planned (Phases 6-7):**
-- [ ] Windows support with signed binaries
-- [ ] Homebrew bottles for macOS
-- [ ] Container image SBOM (`rules_oci` integration)
-- [ ] Kotlin Multiplatform support
-- [ ] Visual dependency graph UI (web-based)
+### 🚧 In Progress (Phase 4: 95% Complete)
+- [x] **IDE plugins** - IntelliJ & VS Code ready, needs publishing
+- [x] **Auto-remediation** - `bazbom fix --apply` & `--pr` implemented
+- [x] **Pre-commit hooks** - `bazbom install-hooks` functional
+- [ ] **Marketplace publishing** - VS Code & JetBrains (P0)
+- [ ] **Real-world testing** - Needs validation with live projects
 
-**Implementation Status:** See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed progress tracking.
+### 📋 Planned (Phases 6-11)
+- [ ] **GitHub Marketplace** - Actions marketplace listing (P0)
+- [ ] **Windows support** - Chocolatey, winget, MSI installer (P0)
+- [ ] **Web dashboard** - Interactive D3.js graphs, executive reports (P1)
+- [ ] **Threat intelligence** - Supply chain attack detection (P1)
+- [ ] **Scale optimization** - 50K+ target monorepo support (P0)
+- [ ] **Containers** - Docker, Kubernetes, OCI images (P1)
+- [ ] **Multi-language** - Node.js, Python, Go support (P1)
+- [ ] **AI intelligence** - ML prioritization, LLM-powered fixes (P2)
+- [ ] **Enterprise distribution** - K8s operator, air-gapped bundles (P1)
 
-Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
+**Detailed Tracking:** [Complete Roadmap](docs/ROADMAP.md) | [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)
+
+**Have Input?** [Vote on Features](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
 
 ---
 
