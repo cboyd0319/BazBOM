@@ -1097,6 +1097,14 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ## Roadmap
 
+> **🚀 Implementation Roadmap: Next 8 Weeks**
+> 
+> See [Implementation Roadmap](docs/copilot/IMPLEMENTATION_ROADMAP.md) for the detailed 8-week plan to make BazBOM the ultimate easy-to-use SBOM/SCA solution:
+> - **Phase 1 (Weeks 1-2):** Interactive init, TUI dependency explorer, smart batch fixing, 20+ policy templates
+> - **Phase 2 (Weeks 3-4):** Web dashboard with D3.js graphs, executive reports, shareable HTML
+> - **Phase 3 (Weeks 5-6):** VS Code/IntelliJ marketplace publishing, one-click remediation polish
+> - **Phase 4 (Weeks 7-8):** Git-based team coordination, assignments, notifications, audit trail
+
 **Completed (Phases 0-5):**
 - [x] Rust single-binary CLI (signed, memory-safe) - **Phase 0 Complete**
 - [x] Offline advisory DB sync - **Implemented**
