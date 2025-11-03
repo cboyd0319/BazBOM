@@ -1,21 +1,30 @@
 # BazBOM Capabilities Reference
 
-**Complete catalog of BazBOM features and integrations.**
+**Complete catalog of BazBOM features and integrations with implementation status.**
+
+> **⚠️ Transition Phase:** BazBOM is actively migrating from Python to Rust. This document uses status indicators:
+> - ✅ **Complete** - Fully implemented and tested
+> - ⚠️ **Partial** - Working but requires plugins or Python backend
+> - 🚧 **In Progress** - Under active development
+> - 📋 **Planned** - Documented but not yet implemented
+>
+> See [Implementation Status](../copilot/IMPLEMENTATION_STATUS.md) for comprehensive details.
 
 > **TL;DR**: Universal JVM supply chain security toolkit. Supports Maven, Gradle, and Bazel with unified CLI. Generates SPDX/CycloneDX SBOMs, scans vulnerabilities (OSV/NVD/GHSA/KEV/EPSS), SLSA Level 3 provenance, Sigstore signing, VEX support, and GitHub Action integration.
 
 ## Statistics at a Glance
 
-| Category | Count | Status |
-|----------|-------|--------|
-| **Python Files** | 99 | ✅ Production |
-| **Lines of Code** | 45,000+ | ✅ Production |
-| **Test Files** | 49 | ✅ Comprehensive |
-| **Test Coverage** | 90%+ | 🎯 Target |
-| **Build Systems** | 3 | ✅ Maven, Gradle, Bazel |
+| Category | Count | Implementation Status |
+|----------|-------|----------------------|
+| **Rust Crates** | 7 | ✅ All Build Successfully |
+| **Python Files** | 101 | ✅ Production (Being Ported) |
+| **Lines of Code** | 60,000+ | ✅ Rust + Python Combined |
+| **Rust Tests** | 74+ | ✅ All Passing |
+| **Test Coverage (Rust)** | 90%+ | 🎯 Maintained |
+| **Build Systems** | 3 | ⚠️ CLI + Plugins |
 | **SBOM Formats** | 2 | ✅ SPDX 2.3, CycloneDX 1.5 |
 | **Vulnerability Sources** | 5+ | ✅ OSV, NVD, GHSA, KEV, EPSS |
-| **SLSA Level** | 3 | ✅ Provenance + Signing |
+| **SLSA Level** | 3 | ⚠️ Infrastructure Ready |
 | **GitHub Action** | ✅ Native | ✅ Full Integration |
 
 ---
@@ -24,13 +33,18 @@
 
 BazBOM is a JVM supply chain security toolkit that generates SBOMs, performs vulnerability scanning, and integrates with CI/CD. It supports Maven, Gradle, and Bazel with a unified CLI and GitHub Action.
 
+**Architecture:**
+- **Rust CLI** (Primary Interface) - Command parsing, orchestration, policy
+- **Build Plugins** (Maven/Gradle) - Deep dependency extraction
+- **Python Backend** (Being Ported) - Advanced features and Bazel support
+
 **Key Differentiators:**
-- Universal build system support (Maven, Gradle, Bazel) with auto-detection
-- Zero-config installation via single-line installer
-- SLSA Level 3 provenance with Sigstore signing
-- VEX support for false positive management
-- Offline/air-gapped mode for secure environments
-- Risk scoring with CISA KEV and EPSS integration
+- Universal build system support (Maven, Gradle, Bazel) with auto-detection ✅
+- Zero-config installation via single-line installer ✅
+- SLSA Level 3 provenance with Sigstore signing ⚠️ (Documented)
+- VEX support for false positive management ⚠️ (Documented)
+- Offline/air-gapped mode for secure environments ✅
+- Risk scoring with CISA KEV and EPSS integration ✅
 
 ## Table of Contents
 
@@ -49,16 +63,23 @@ BazBOM is a JVM supply chain security toolkit that generates SBOMs, performs vul
 
 ## 1. Build System Support
 
-- Maven (pom.xml)
-- Gradle (build.gradle / build.gradle.kts)
-- Bazel (WORKSPACE/MODULE.bazel) with advanced monorepo support
-- Auto-detection and unified CLI: `bazbom scan .`
+**Status Overview:**
+- ✅ Build system detection (Maven, Gradle, Bazel)
+- ⚠️ Full dependency extraction (requires plugins for Maven/Gradle)
+- ✅ Bazel query support (CLI flags)
+- ⚠️ Bazel aspects (Python implementation)
 
-**Bazel Monorepo Features:**
-- Bazel query integration for selective target scanning
-- Incremental scanning with `rdeps()` (scan only affected targets)
-- Scalable for large monorepos (5000+ targets)
-- 6x faster PR scans compared to full workspace analysis
+**Build Systems:**
+- Maven (pom.xml) ⚠️ **Requires bazbom-maven-plugin**
+- Gradle (build.gradle / build.gradle.kts) ⚠️ **Requires bazbom-gradle-plugin**
+- Bazel (WORKSPACE/MODULE.bazel) ⚠️ **Uses Python tools**
+- Auto-detection ✅ **Fully functional**: `bazbom scan .`
+
+**Bazel Monorepo Features:** ✅ **CLI Support** + ⚠️ **Python Backend**
+- Bazel query integration for selective target scanning ✅
+- Incremental scanning with `rdeps()` (scan only affected targets) ✅
+- Scalable for large-scale monorepos ⚠️ (Documented, needs verification)
+- Faster PR scans with incremental mode ⚠️ (Claimed, needs benchmarking)
 
 Examples:
 ```bash
@@ -77,11 +98,21 @@ bazbom scan . --bazel-targets //src/java:app //src/java:lib
 
 ## 2. SBOM Generation
 
-- SPDX 2.3 JSON (primary)
-- CycloneDX 1.5 (optional)
-- Per-target or workspace-wide
-- Container SBOMs (Docker/Podman images)
-- License and hash extraction
+**Status:** ⚠️ **Formats Complete, Full Data Requires Plugins**
+
+- SPDX 2.3 JSON (primary) ✅ **Format implemented**
+- CycloneDX 1.5 (optional) ✅ **Format implemented**
+- Per-target or workspace-wide ⚠️ **Requires build plugins**
+- Container SBOMs (Docker/Podman images) 📋 **Documented**
+- License and hash extraction ⚠️ **Requires build plugins**
+
+**Current Behavior:**
+- Rust CLI generates valid SPDX/CycloneDX structure
+- Minimal data (stub) without build plugin integration
+- Full dependency extraction requires:
+  - Maven: `bazbom-maven-plugin` (generates `target/bazbom-graph.json`)
+  - Gradle: `bazbom-gradle-plugin`
+  - Bazel: Python tools in `tools/supplychain/`
 
 Examples:
 ```bash
@@ -97,10 +128,22 @@ bazel run //tools/supplychain:scan_container -- myimage:latest
 
 ## 3. Vulnerability Scanning
 
-- Data sources: OSV, NVD, GHSA, CISA KEV, EPSS
-- SARIF 2.1.0 output for GitHub Code Scanning
-- Policy enforcement with thresholds (CRITICAL/HIGH/...)
-- Offline mode (air-gapped)
+**Status:** ✅ **Advisory System Complete** + ⚠️ **Requires Dependency Data**
+
+- Data sources: OSV, NVD, GHSA, CISA KEV, EPSS ✅ **Fully functional**
+- SARIF 2.1.0 output for GitHub Code Scanning ✅ **Format complete**
+- Policy enforcement with thresholds (CRITICAL/HIGH/...) ✅ **Fully functional**
+- Offline mode (air-gapped) ✅ **via `bazbom db sync`**
+
+**Advisory Database Features:** ✅ **Production Ready**
+- Sync: `bazbom db sync` downloads all 5 sources
+- Cache location: `.bazbom/cache/advisories/`
+- Enrichment: KEV flags, EPSS scores, severity canonicalization
+- Merge engine: Combines multiple sources intelligently
+
+**Integration Status:**
+- Works when SBOM has dependency data
+- Full workflow requires build plugins to extract dependencies
 
 Examples:
 ```bash

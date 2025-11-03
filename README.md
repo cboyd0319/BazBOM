@@ -24,6 +24,18 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 
 ---
 
+> **⚠️ Transition Phase Notice**
+> 
+> BazBOM is actively transitioning from Python-based tooling to a Rust-first implementation. Both systems coexist:
+> - ✅ **Rust CLI** - Fully functional for commands, policy, and orchestration
+> - ✅ **Python Backend** - Mature implementation for SBOM generation and enrichment
+> - ✅ **Build Plugins** - Maven and Gradle plugins provide deep integration
+> 
+> **Full SBOM generation requires build system plugins (Maven/Gradle) or Python tools (Bazel).**
+> See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed feature breakdown.
+
+---
+
 ## Table of Contents
 
 - [What is BazBOM?](#what-is-bazbom)
@@ -1124,6 +1136,67 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 **Implementation Status:** See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed progress tracking.
 
 Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
+
+---
+
+## Known Limitations & Current State
+
+### Architecture Transition
+
+BazBOM is transitioning from Python to Rust. See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for complete details.
+
+**What Works Today:**
+- ✅ Rust CLI with all commands functional
+- ✅ Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
+- ✅ Policy system with enterprise templates
+- ✅ Pre-commit hooks installation
+- ✅ Build system detection
+- ✅ LSP server for IDE integration
+
+**What Requires Build Plugins or Python Tools:**
+- ⚠️ **Full SBOM generation** - Rust CLI generates valid but minimal SBOMs
+    - Maven projects: Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
+    - Gradle projects: Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
+    - Bazel projects: Python tools in `tools/supplychain/` provide full implementation
+- ⚠️ **Dependency extraction** - Not done by Rust CLI alone
+- ⚠️ **Vulnerability enrichment** - Python backend provides full context
+
+**Features Needing Verification:**
+- ⚠️ `bazbom fix --apply` - Code complete but needs real-world testing
+- ⚠️ `bazbom fix --pr` - GitHub PR generation implemented but not tested in production
+- ⚠️ IDE plugins - Scaffolding complete, needs marketplace publishing and user testing
+- ⚠️ Reachability analysis - Implementation status needs verification
+- ⚠️ Orchestrated scanning - Semgrep/CodeQL integration needs testing
+
+### Installation Workflows
+
+**For Maven Projects:**
+1. Install Rust CLI: `brew install bazbom` or download binary
+2. Add Maven plugin to `pom.xml`:
+   ```xml
+   <plugin>
+       <groupId>io.bazbom</groupId>
+       <artifactId>bazbom-maven-plugin</artifactId>
+       <version>1.0.0</version>
+   </plugin>
+   ```
+3. Run: `mvn bazbom:graph` to generate dependency data
+4. Run: `bazbom scan .` to analyze
+
+**For Gradle Projects:**
+- Similar workflow with Gradle plugin
+
+**For Bazel Projects:**
+- Rust CLI provides query support
+- Python tools perform actual extraction
+
+### Getting Help
+
+If something doesn't work as documented:
+1. Check [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)
+2. Review [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+3. Open an issue with `documentation` label if docs are incorrect
+4. Open an issue with `bug` label if functionality is broken
 
 ---
 

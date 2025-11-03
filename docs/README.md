@@ -13,7 +13,8 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Architecture & Design
 
-- **[Architecture](ARCHITECTURE.md)** - System design and architecture diagrams
+- **[Architecture (Current State)](ARCHITECTURE_CURRENT.md)** ⭐ - **Current Python/Rust dual architecture with data flows**
+- **[Architecture (Planned)](ARCHITECTURE.md)** - Long-term system design and architecture diagrams
 - **[Supply Chain Security](SUPPLY_CHAIN.md)** - SBOM/SCA architecture and usage
 - **[Threat Model](THREAT_MODEL.md)** - Security assets, risks, and controls
 - **[ADRs](ADR/)** - Architecture Decision Records
@@ -60,6 +61,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 For maintainers and contributors:
 
+- **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)** ⭐ - **Comprehensive audit of actual vs. documented capabilities**
 - **[Copilot Directory](copilot/)** - Planning documents, roadmaps, and implementation specifications
 - **[Developer Guides](developer/)** - Internal development documentation
 
