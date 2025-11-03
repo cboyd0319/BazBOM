@@ -685,6 +685,12 @@ fn main() -> Result<()> {
                     for line in suggestion.how_to_fix.lines() {
                         println!("   {}", line);
                     }
+                    if let Some(breaking) = &suggestion.breaking_changes {
+                        println!("\n   BREAKING CHANGES:");
+                        for line in breaking.lines() {
+                            println!("   {}", line);
+                        }
+                    }
                     if !suggestion.references.is_empty() {
                         println!("\n   REFERENCES:");
                         for ref_url in &suggestion.references {

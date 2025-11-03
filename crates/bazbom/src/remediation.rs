@@ -24,6 +24,7 @@ pub struct RemediationSuggestion {
     pub priority: String,
     pub why_fix: String,
     pub how_to_fix: String,
+    pub breaking_changes: Option<String>,
     pub references: Vec<String>,
 }
 
@@ -81,6 +82,7 @@ pub fn generate_suggestions(
 
             let why_fix = generate_why_fix(vuln);
             let how_to_fix = generate_how_to_fix(package_name, current_version, &fixed_version, build_system);
+            let breaking_changes = generate_breaking_changes_warning(package_name, current_version, &fixed_version);
 
             let references = vuln.references.iter()
                 .map(|r| r.url.clone())
@@ -95,6 +97,7 @@ pub fn generate_suggestions(
                 priority,
                 why_fix,
                 how_to_fix,
+                breaking_changes,
                 references,
             });
         }
@@ -242,6 +245,146 @@ fn generate_how_to_fix(
              3. Consider alternative packages\n\
              4. Monitor security advisories for updates".to_string()
         }
+    }
+}
+
+/// Generate breaking changes warning
+fn generate_breaking_changes_warning(
+    package: &str,
+    current_version: &str,
+    fixed_version: &Option<String>,
+) -> Option<String> {
+    let fixed = match fixed_version {
+        Some(v) => v,
+        None => return None,
+    };
+
+    // Parse semantic versions to detect major version changes
+    let current_parts: Vec<&str> = current_version.split('.').collect();
+    let fixed_parts: Vec<&str> = fixed.split('.').collect();
+
+    let current_major = current_parts.first()
+        .and_then(|s| s.parse::<u32>().ok())
+        .unwrap_or(0);
+    let fixed_major = fixed_parts.first()
+        .and_then(|s| s.parse::<u32>().ok())
+        .unwrap_or(0);
+
+    if fixed_major > current_major {
+        // Major version bump detected
+        let mut warning = format!(
+            "⚠️  MAJOR VERSION UPGRADE ({} → {})\n\n\
+             This is a major version upgrade which may include breaking changes:\n\n\
+             - API changes: Methods may be removed, renamed, or have different signatures\n\
+             - Deprecated features: Previously deprecated APIs may be removed\n\
+             - Behavioral changes: Existing functionality may behave differently\n\
+             - Configuration changes: Configuration file formats or options may change\n\
+             - Dependency changes: Transitive dependencies may change significantly\n\n",
+            current_version, fixed
+        );
+
+        // Add package-specific warnings for well-known libraries
+        let package_lower = package.to_lowercase();
+        if package_lower.contains("spring") {
+            warning.push_str(
+                "Spring Framework specific considerations:\n\
+                 - Check for configuration property changes\n\
+                 - Review deprecated @Bean definitions\n\
+                 - Update Spring Boot parent version if applicable\n\
+                 - Test all integration points thoroughly\n\n"
+            );
+        } else if package_lower.contains("jackson") {
+            warning.push_str(
+                "Jackson specific considerations:\n\
+                 - Verify JSON serialization/deserialization behavior\n\
+                 - Check for ObjectMapper configuration changes\n\
+                 - Test custom serializers and deserializers\n\
+                 - Review annotation processing changes\n\n"
+            );
+        } else if package_lower.contains("log4j") {
+            warning.push_str(
+                "Log4j specific considerations:\n\
+                 - Update log4j2.xml configuration if needed\n\
+                 - Review appender and filter configurations\n\
+                 - Check for plugin compatibility\n\
+                 - Verify logging output format\n\n"
+            );
+        } else if package_lower.contains("junit") {
+            warning.push_str(
+                "JUnit specific considerations:\n\
+                 - Update test annotations (@Test, @Before, @After)\n\
+                 - Review assertion methods (may have changed)\n\
+                 - Check for runner compatibility\n\
+                 - Verify test lifecycle hooks\n\n"
+            );
+        } else if package_lower.contains("hibernate") || package_lower.contains("jakarta.persistence") {
+            warning.push_str(
+                "Hibernate/JPA specific considerations:\n\
+                 - Review entity mapping annotations\n\
+                 - Check for query language changes (HQL/JPQL)\n\
+                 - Verify transaction management behavior\n\
+                 - Test database migrations carefully\n\n"
+            );
+        }
+
+        warning.push_str(
+            "Recommended actions before upgrading:\n\
+             1. Review the library's changelog and migration guide\n\
+             2. Run all unit and integration tests\n\
+             3. Test in a staging environment first\n\
+             4. Have a rollback plan ready\n\
+             5. Update any dependent libraries if needed\n\
+             6. Document any code changes required for the upgrade"
+        );
+
+        Some(warning)
+    } else if fixed_major == current_major {
+        // Minor or patch version upgrade
+        let current_minor = current_parts.get(1)
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+        let fixed_minor = fixed_parts.get(1)
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+
+        if fixed_minor > current_minor {
+            // Minor version bump
+            Some(format!(
+                "ℹ️  Minor version upgrade ({} → {})\n\n\
+                 This is a minor version upgrade which should be backward compatible but may include:\n\
+                 - New features and APIs\n\
+                 - Deprecation warnings for future removal\n\
+                 - Performance improvements\n\
+                 - Bug fixes\n\n\
+                 Recommended actions:\n\
+                 1. Review release notes for new deprecations\n\
+                 2. Run full test suite to verify compatibility\n\
+                 3. Check for any new security recommendations",
+                current_version, fixed
+            ))
+        } else {
+            // Patch version bump
+            Some(format!(
+                "✅ Patch version upgrade ({} → {})\n\n\
+                 This is a patch version upgrade which should be fully backward compatible.\n\
+                 It typically includes:\n\
+                 - Bug fixes\n\
+                 - Security patches\n\
+                 - Performance improvements\n\n\
+                 This upgrade should be safe, but it's still recommended to:\n\
+                 1. Run your test suite\n\
+                 2. Review the changelog for the specific fixes included",
+                current_version, fixed
+            ))
+        }
+    } else {
+        // Downgrade or unusual version scheme
+        Some(format!(
+            "⚠️  Version change ({} → {})\n\n\
+             This version change doesn't follow typical semantic versioning.\n\
+             Please review the library's changelog carefully before upgrading.",
+            current_version, fixed
+        ))
     }
 }
 
@@ -853,4 +996,113 @@ fn create_github_pr(
         .to_string();
     
     Ok(pr_url)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_breaking_changes_major_version() {
+        let warning = generate_breaking_changes_warning(
+            "org.springframework:spring-core",
+            "5.3.0",
+            &Some("6.0.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("MAJOR VERSION UPGRADE"));
+        assert!(text.contains("5.3.0 → 6.0.0"));
+        assert!(text.contains("Spring Framework specific considerations"));
+    }
+
+    #[test]
+    fn test_breaking_changes_minor_version() {
+        let warning = generate_breaking_changes_warning(
+            "com.fasterxml.jackson.core:jackson-databind",
+            "2.13.0",
+            &Some("2.14.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Minor version upgrade"));
+        assert!(text.contains("2.13.0 → 2.14.0"));
+        assert!(text.contains("backward compatible"));
+    }
+
+    #[test]
+    fn test_breaking_changes_patch_version() {
+        let warning = generate_breaking_changes_warning(
+            "org.apache.logging.log4j:log4j-core",
+            "2.17.0",
+            &Some("2.17.1".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Patch version upgrade"));
+        assert!(text.contains("2.17.0 → 2.17.1"));
+        assert!(text.contains("fully backward compatible"));
+    }
+
+    #[test]
+    fn test_breaking_changes_no_fixed_version() {
+        let warning = generate_breaking_changes_warning(
+            "test-package",
+            "1.0.0",
+            &None,
+        );
+        assert!(warning.is_none());
+    }
+
+    #[test]
+    fn test_breaking_changes_log4j_specific() {
+        let warning = generate_breaking_changes_warning(
+            "org.apache.logging.log4j:log4j-core",
+            "2.14.0",
+            &Some("3.0.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Log4j specific considerations"));
+        assert!(text.contains("log4j2.xml configuration"));
+    }
+
+    #[test]
+    fn test_breaking_changes_jackson_specific() {
+        let warning = generate_breaking_changes_warning(
+            "com.fasterxml.jackson.core:jackson-databind",
+            "2.0.0",
+            &Some("3.0.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Jackson specific considerations"));
+        assert!(text.contains("JSON serialization"));
+    }
+
+    #[test]
+    fn test_breaking_changes_junit_specific() {
+        let warning = generate_breaking_changes_warning(
+            "org.junit:junit",
+            "4.13.0",
+            &Some("5.0.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("JUnit specific considerations"));
+        assert!(text.contains("test annotations"));
+    }
+
+    #[test]
+    fn test_breaking_changes_hibernate_specific() {
+        let warning = generate_breaking_changes_warning(
+            "org.hibernate:hibernate-core",
+            "5.6.0",
+            &Some("6.0.0".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Hibernate/JPA specific considerations"));
+        assert!(text.contains("entity mapping"));
+    }
 }
