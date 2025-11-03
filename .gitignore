@@ -14,18 +14,6 @@ bazel-*
 .DS_Store
 Thumbs.db
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-env/
-venv/
-ENV/
-.pytest_cache/
-*.egg-info/
-
 # Java
 *.class
 *.jar

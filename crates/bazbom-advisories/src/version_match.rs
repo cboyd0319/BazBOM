@@ -76,7 +76,7 @@ fn is_version_affected_semver(version_str: &str, range: &VersionRange) -> Result
     }
 
     // Check if version is in the affected range
-    let after_introduced = introduced.map_or(true, |intro| version >= intro);
+    let after_introduced = introduced.is_none_or(|intro| version >= intro);
     
     let before_fixed = if let Some(fix) = fixed {
         version < fix

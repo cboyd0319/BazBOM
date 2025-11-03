@@ -165,15 +165,13 @@ fn convert_osv_to_vulnerability(osv: OsvVulnerability) -> Vulnerability {
                         .events
                         .into_iter()
                         .filter_map(|e| {
-                            if let Some(introduced) = e.introduced {
-                                Some(VersionEvent::Introduced { introduced })
-                            } else if let Some(fixed) = e.fixed {
-                                Some(VersionEvent::Fixed { fixed })
-                            } else if let Some(last_affected) = e.last_affected {
-                                Some(VersionEvent::LastAffected { last_affected })
-                            } else {
-                                None
-                            }
+                            e.introduced
+                                .map(|introduced| VersionEvent::Introduced { introduced })
+                                .or_else(|| e.fixed.map(|fixed| VersionEvent::Fixed { fixed }))
+                                .or_else(|| {
+                                    e.last_affected
+                                        .map(|last_affected| VersionEvent::LastAffected { last_affected })
+                                })
                         })
                         .collect();
 

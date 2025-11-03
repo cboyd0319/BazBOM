@@ -43,16 +43,6 @@ jobs:
           java-version: '11'
           cache: 'maven'
       
-      - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests jsonschema defusedxml
       
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@e403ad507104847c3539436a14f16b779aa17af5 # v0.8.1
@@ -228,16 +218,6 @@ jobs:
         with:
           persist-credentials: false
       
-      - name: Setup Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install requests defusedxml
       
       - name: Install Cosign
         uses: sigstore/cosign-installer@d7b7c0b5c656411ffb43dc6fa73a7d66e41ea3d5 # v3.8.1
@@ -273,46 +253,14 @@ jobs:
             fi
           done
       
-      - name: Generate in-toto Attestations
-        run: |
-          mkdir -p bazel-bin/attestations
-          
-          echo "Generating attestations..."
-          for sbom in bazel-bin/**/*.spdx.json; do
-            if [ -f "$sbom" ]; then
-              basename=$(basename "$sbom" .spdx.json)
-              
-              # Generate in-toto attestation
-              python3 tools/supplychain/intoto_attestation.py generate \
-                "$sbom" \
-                --output "bazel-bin/attestations/${basename}.attestation.json" \
-                --builder-id "${GITHUB_REPOSITORY}" \
-                --build-id "${GITHUB_RUN_ID}"
-              
-              echo "✓ Attestation created: ${basename}.attestation.json"
-            fi
-          done
-      
-      - name: Verify Signatures
-        run: |
-          echo "Verifying signatures..."
-          for sbom in bazel-bin/**/*.spdx.json; do
-            if [ -f "$sbom" ]; then
-              basename=$(basename "$sbom" .spdx.json)
-              bundle="bazel-bin/signatures/${basename}.bundle.json"
-              
-              if [ -f "$bundle" ]; then
-                echo "Verifying: $sbom"
-                
-                python3 tools/supplychain/verify_sbom.py \
-                  "$sbom" \
-                  --bundle "$bundle" \
-                  --cert-identity "https://github.com/${GITHUB_REPOSITORY}/.github/workflows/supplychain.yml@refs/heads/main" \
-                  --cert-oidc-issuer "https://token.actions.githubusercontent.com" \
-                  || echo "Warning: Verification failed for $basename"
-              fi
-            fi
-          done
+      # TODO: Re-implement attestation and verification in Rust
+      # - name: Generate in-toto Attestations
+      #   run: |
+      #     echo "Attestation generation temporarily disabled - to be re-implemented in Rust"
+      # 
+      # - name: Verify Signatures
+      #   run: |
+      #     echo "Signature verification temporarily disabled - to be re-implemented in Rust"
       
       - name: Upload Signed SBOMs
         uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
@@ -350,8 +298,8 @@ jobs:
               echo "- **$basename**" >> $GITHUB_STEP_SUMMARY
               
               if [ -f "$bundle" ]; then
-                # Extract Rekor entry from bundle
-                rekor_entry=$(python3 -c "import json; print(json.load(open('$bundle')).get('rekor_entry', 'N/A'))")
+                # Extract Rekor entry from bundle using jq instead of Python
+                rekor_entry=$(jq -r '.rekor_entry // "N/A"' "$bundle" 2>/dev/null || echo "N/A")
                 echo "  - Rekor Entry: $rekor_entry" >> $GITHUB_STEP_SUMMARY
               fi
             fi

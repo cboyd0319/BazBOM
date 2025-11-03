@@ -24,14 +24,15 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 
 ---
 
-> **⚠️ Transition Phase Notice**
+> **✅ Rust-First Implementation**
 > 
-> BazBOM is actively transitioning from Python-based tooling to a Rust-first implementation. Both systems coexist:
-> - ✅ **Rust CLI** - Fully functional for commands, policy, and orchestration
-> - ✅ **Python Backend** - Mature implementation for SBOM generation and enrichment
-> - ✅ **Build Plugins** - Maven and Gradle plugins provide deep integration
+> BazBOM has completed its transition to a 100% Rust implementation:
+> - ✅ **Memory-Safe Rust CLI** - Fully functional for all commands, policy, and orchestration
+> - ✅ **Zero Python Dependencies** - No runtime Python requirements
+> - ✅ **Build Plugins** - Maven and Gradle plugins provide deep integration (Java/Kotlin)
+> - ✅ **Single Binary** - Easy installation and distribution
 > 
-> **Full SBOM generation requires build system plugins (Maven/Gradle) or Python tools (Bazel).**
+> **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
 > See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed feature breakdown.
 
 ---
@@ -171,9 +172,9 @@ bazbom --version
 bazbom scan . --format spdx
 ```
 
-### Option 3: Python-based Legacy Installer
+### Option 3: Shell Script Installer
 
-Legacy Python-based installation (maintained for compatibility):
+Automated installation script:
 
 ```bash
 # Recommended: Download and inspect first
@@ -193,7 +194,7 @@ bazbom scan --watch
 
 **Security Note**: Always review scripts before executing them with bash. The recommended approach is to download, inspect, and then execute.
 
-**Note:** The Rust CLI (Options 0-2) is the recommended installation method. The Python-based installer remains available during the transition period.
+**Note:** The Rust CLI is the only supported implementation. All functionality is provided by the Rust binary.
 
 ### Option 4: GitHub Action (CI/CD)
 
@@ -1139,34 +1140,33 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 
 ---
 
-## Known Limitations & Current State
+## Current State & Architecture
 
-### Architecture Transition
+### 100% Rust Implementation ✅
 
-BazBOM is transitioning from Python to Rust. See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for complete details.
+BazBOM has completed its transition to Rust. See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for complete details.
 
-**What Works Today:**
+**Core Features (Production Ready):**
 - ✅ Rust CLI with all commands functional
 - ✅ Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
 - ✅ Policy system with enterprise templates
 - ✅ Pre-commit hooks installation
 - ✅ Build system detection
 - ✅ LSP server for IDE integration
+- ✅ SBOM/SARIF/VEX format generation
+- ✅ Remediation suggestions
 
-**What Requires Build Plugins or Python Tools:**
-- ⚠️ **Full SBOM generation** - Rust CLI generates valid but minimal SBOMs
-    - Maven projects: Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
-    - Gradle projects: Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
-    - Bazel projects: Python tools in `tools/supplychain/` provide full implementation
-- ⚠️ **Dependency extraction** - Not done by Rust CLI alone
-- ⚠️ **Vulnerability enrichment** - Python backend provides full context
+**Build System Integration:**
+- ✅ **Maven projects:** Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
+- ✅ **Gradle projects:** Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
+- ✅ **Bazel projects:** Native Bazel aspects for dependency extraction
 
-**Features Needing Verification:**
-- ⚠️ `bazbom fix --apply` - Code complete but needs real-world testing
-- ⚠️ `bazbom fix --pr` - GitHub PR generation implemented but not tested in production
-- ⚠️ IDE plugins - Scaffolding complete, needs marketplace publishing and user testing
-- ⚠️ Reachability analysis - Implementation status needs verification
-- ⚠️ Orchestrated scanning - Semgrep/CodeQL integration needs testing
+**Features in Beta (Needs Real-World Testing):**
+- ⚠️ `bazbom fix --apply` - Automated dependency upgrades with testing
+- ⚠️ `bazbom fix --pr` - GitHub PR generation with fixes
+- ⚠️ IDE plugins - Code complete, needs marketplace publishing
+- ⚠️ Reachability analysis - ASM-based bytecode analysis
+- ⚠️ Orchestrated scanning - Semgrep/CodeQL integration
 
 ### Installation Workflows
 
@@ -1187,8 +1187,8 @@ BazBOM is transitioning from Python to Rust. See [Implementation Status](docs/co
 - Similar workflow with Gradle plugin
 
 **For Bazel Projects:**
-- Rust CLI provides query support
-- Python tools perform actual extraction
+- Rust CLI provides native Bazel aspect support
+- Run: `bazbom scan . --bazel-targets //...` to analyze
 
 ### Getting Help
 

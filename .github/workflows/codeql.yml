@@ -10,13 +10,13 @@ on:
     - cron: '0 3 * * 1'
   workflow_dispatch:
 
-# Restrict permissions following PYSEC_OMEGA standards
+# Restrict permissions following security standards
 permissions:
   contents: read
 
 jobs:
   analyze:
-    name: CodeQL Analysis - Python
+    name: CodeQL Analysis - Rust
     runs-on: ubuntu-latest
     timeout-minutes: 360
     
@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [ 'python' ]
+        language: [ 'rust' ]
     
     steps:
       - name: Checkout repository
@@ -45,12 +45,11 @@ jobs:
           languages: ${{ matrix.language }}
           # Use security-extended query suite for comprehensive analysis
           queries: security-extended,security-and-quality
-          # Configure CodeQL for Python
+          # Configure CodeQL for Rust
           config: |
             paths-ignore:
               - '**/tests/**'
-              - '**/test_*.py'
-              - '**/__pycache__/**'
+              - '**/target/**'
               - '**/bazel-*/**'
       
       - name: Autobuild
@@ -79,119 +78,3 @@ jobs:
           path: sarif-results/${{ matrix.language }}.sarif
           retention-days: 30
           if-no-files-found: warn
-
-  # Additional Python-specific security scanning
-  python-security:
-    name: Python Security Tools
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    permissions:
-      contents: read
-      security-events: write
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-        with:
-          persist-credentials: false
-      
-      - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      
-      - name: Install security tools
-        run: |
-          python -m pip install --upgrade pip
-          pip install bandit[toml] semgrep safety pip-audit
-      
-      - name: Run Bandit SAST
-        id: bandit
-        run: |
-          bandit -r tools/supplychain \
-            -f sarif \
-            -o bandit-results.sarif \
-            -c .bandit \
-            --severity-level medium \
-            || true
-        continue-on-error: true
-      
-      - name: Run Semgrep SAST
-        id: semgrep
-        run: |
-          semgrep scan \
-            --config auto \
-            --config security/POLICIES/semgrep/ \
-            --sarif \
-            --output semgrep-results.sarif \
-            tools/supplychain \
-            || true
-        continue-on-error: true
-      
-      - name: Run pip-audit
-        id: pip-audit
-        run: |
-          pip-audit --format json --output pip-audit-results.json || true
-        continue-on-error: true
-      
-      - name: Run Safety check
-        id: safety
-        run: |
-          safety check --json --output safety-results.json || true
-        continue-on-error: true
-      
-      - name: Upload Bandit SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
-        if: always() && steps.bandit.outcome != 'skipped'
-        with:
-          sarif_file: bandit-results.sarif
-          category: bandit
-        continue-on-error: true
-      
-      - name: Upload Semgrep SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
-        if: always() && steps.semgrep.outcome != 'skipped'
-        with:
-          sarif_file: semgrep-results.sarif
-          category: semgrep
-        continue-on-error: true
-      
-      - name: Upload security scan results
-        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
-        if: always()
-        with:
-          name: python-security-results
-          path: |
-            bandit-results.sarif
-            semgrep-results.sarif
-            pip-audit-results.json
-            safety-results.json
-          retention-days: 30
-          if-no-files-found: warn
-      
-      - name: Generate security summary
-        if: always()
-        run: |
-          echo "## Python Security Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f bandit-results.sarif ]; then
-            echo "✅ Bandit SAST completed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ -f semgrep-results.sarif ]; then
-            echo "✅ Semgrep SAST completed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ -f pip-audit-results.json ]; then
-            echo "✅ pip-audit completed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          if [ -f safety-results.json ]; then
-            echo "✅ Safety check completed" >> $GITHUB_STEP_SUMMARY
-          fi
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "View detailed results in the Security tab." >> $GITHUB_STEP_SUMMARY
