@@ -40,7 +40,7 @@ pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
     Some((major, minor, patch))
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RemediationSuggestion {
     pub vulnerability_id: String,
     pub affected_package: String,

@@ -76,6 +76,9 @@ pub enum Commands {
         /// Create a pull request with fixes (requires GitHub authentication)
         #[arg(long)]
         pr: bool,
+        /// Interactive mode with smart batch processing
+        #[arg(long)]
+        interactive: bool,
     },
     /// Advisory database operations (offline sync)
     Db {
@@ -110,6 +113,18 @@ pub enum Commands {
         /// Path to findings JSON file
         #[arg(long, value_name = "FILE")]
         findings: Option<String>,
+    },
+    /// Start web dashboard server
+    Dashboard {
+        /// Port to listen on
+        #[arg(long, default_value = "3000")]
+        port: u16,
+        /// Open browser automatically
+        #[arg(long)]
+        open: bool,
+        /// Export static HTML instead of starting server
+        #[arg(long, value_name = "FILE")]
+        export: Option<String>,
     },
 }
 

@@ -6,7 +6,7 @@ members = [
   "crates/bazbom-advisories",
   "crates/bazbom-policy",
   "crates/bazbom-graph",
-  "crates/bazbom-lsp", "crates/bazbom-tui",
+  "crates/bazbom-lsp", "crates/bazbom-tui", "crates/bazbom-dashboard",
 ]
 resolver = "2"
 
