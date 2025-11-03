@@ -463,35 +463,30 @@ Risk Score = (CVSS × 0.40) + (EPSS × 0.30) + (KEV × 0.20) + (Exploit × 0.10)
 
 #### Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                   Vulnerability Enrichment                   │
-│                                                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  │
-│  │   KEV    │  │   EPSS   │  │   GHSA   │  │VulnCheck │  │
-│  │(CISA API)│  │(FIRST.org)│(GitHub API)│  │(Optional)│  │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  │
-│       │             │             │             │          │
-│       └─────────────┴─────────────┴─────────────┘          │
-│                         │                                   │
-│              ┌──────────▼──────────┐                       │
-│              │ VulnerabilityEnricher│                       │
-│              │  - Risk Scoring      │                       │
-│              │  - Priority Mapping  │                       │
-│              │  - Data Normalization│                       │
-│              └──────────┬──────────┘                       │
-│                         │                                   │
-│                         ▼                                   │
-│              ┌────────────────────┐                         │
-│              │ Enriched Findings  │                         │
-│              │ - Risk Score 0-100 │                         │
-│              │ - Priority P0-P4   │                         │
-│              │ - KEV Context      │                         │
-│              │ - EPSS Probability │                         │
-│              │ - Exploit Status   │                         │
-│              │ - GHSA Remediation │                         │
-│              └────────────────────┘                         │
-└──────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph VulnEnrich["Vulnerability Enrichment Pipeline"]
+        KEV["KEV<br/>(CISA API)"]
+        EPSS["EPSS<br/>(FIRST.org)"]
+        GHSA["GHSA<br/>(GitHub API)"]
+        VulnCheck["VulnCheck<br/>(Optional)"]
+        
+        KEV --> Enricher
+        EPSS --> Enricher
+        GHSA --> Enricher
+        VulnCheck --> Enricher
+        
+        Enricher["Vulnerability Enricher<br/>- Risk Scoring<br/>- Priority Mapping<br/>- Data Normalization"]
+        
+        Enricher --> Findings["Enriched Findings<br/>- Risk Score 0-100<br/>- Priority P0-P4<br/>- KEV Context<br/>- EPSS Probability<br/>- Exploit Status<br/>- GHSA Remediation"]
+    end
+    
+    style KEV fill:#e74c3c
+    style EPSS fill:#3498db
+    style GHSA fill:#2ecc71
+    style VulnCheck fill:#95a5a6
+    style Enricher fill:#f39c12
+    style Findings fill:#9b59b6
 ```
 
 #### Performance Considerations

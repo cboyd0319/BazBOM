@@ -282,7 +282,7 @@ fn parse_maven_install_json(
     })
 }
 
-/// Query Bazel targets using the bazel_query.py script
+/// Query Bazel targets directly using bazel query command (Rust-native, no Python)
 pub fn query_bazel_targets(
     workspace_path: &Path,
     query_expr: Option<&str>,
@@ -290,60 +290,75 @@ pub fn query_bazel_targets(
     affected_by_files: Option<&[String]>,
     universe: &str,
 ) -> Result<Vec<String>> {
-    let script_path = workspace_path.join("tools/supplychain/bazel_query.py");
-    
-    if !script_path.exists() {
-        anyhow::bail!(
-            "Bazel query script not found at {:?}. This workspace may not support BazBOM.",
-            script_path
-        );
-    }
-
-    let mut cmd = Command::new("python3");
-    cmd.arg(&script_path)
-        .arg("--workspace")
-        .arg(workspace_path)
-        .arg("--universe")
-        .arg(universe)
-        .arg("--format")
-        .arg("json");
-
-    // Add query type based on what was provided
-    if let Some(query) = query_expr {
-        cmd.arg("--query").arg(query);
+    // Build the query expression based on input parameters
+    let query = if let Some(q) = query_expr {
+        // Use provided query directly
+        q.to_string()
     } else if let Some(target_kind) = kind {
-        cmd.arg("--kind").arg(target_kind);
+        // Generate kind query
+        format!("kind({}, {})", target_kind, universe)
     } else if let Some(files) = affected_by_files {
-        cmd.arg("--affected-by-files");
-        for file in files {
-            cmd.arg(file);
+        // Generate rdeps query for affected files
+        if files.is_empty() {
+            anyhow::bail!("affected_by_files cannot be empty");
         }
+        // Escape file paths to prevent shell injection
+        // Validate against comprehensive list of shell metacharacters
+        let is_safe_path = |path: &str| -> bool {
+            let dangerous_chars = ['\'', '"', '$', '`', ';', '&', '|', '>', '<', 
+                                   '(', ')', '{', '}', '[', ']', '*', '?', '~', '\n', '\r'];
+            !path.chars().any(|c| dangerous_chars.contains(&c))
+        };
+        
+        let file_set = files
+            .iter()
+            .filter_map(|f| {
+                // Validate file path doesn't contain dangerous characters
+                if is_safe_path(f) {
+                    // Escape for Bazel query (quotes are sufficient as we validated above)
+                    Some(format!("\"{}\"", f))
+                } else {
+                    eprintln!("[bazbom] warning: skipping file with shell metacharacters: {}", f);
+                    None
+                }
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+        
+        if file_set.is_empty() {
+            anyhow::bail!("No valid files after filtering shell metacharacters");
+        }
+        format!("rdeps({}, set({}))", universe, file_set)
     } else {
         anyhow::bail!("Must provide either query, kind, or affected_by_files");
-    }
+    };
 
-    println!("[bazbom] executing Bazel query...");
+    println!("[bazbom] executing Bazel query: {}", query);
+    
+    let mut cmd = Command::new("bazel");
+    cmd.arg("query")
+        .arg(&query)
+        .arg("--output=label")
+        .current_dir(workspace_path);
+
     let output = cmd
         .output()
-        .context("failed to execute bazel_query.py")?;
+        .context("failed to execute bazel query")?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         anyhow::bail!("Bazel query failed: {}", stderr);
     }
 
-    // Parse JSON output
+    // Parse output - one target per line
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let result: serde_json::Value = serde_json::from_str(&stdout)
-        .context("failed to parse query results")?;
-    
-    let targets = result["targets"]
-        .as_array()
-        .context("query result missing 'targets' array")?
-        .iter()
-        .filter_map(|v| v.as_str().map(String::from))
+    let targets: Vec<String> = stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|s| s.to_string())
         .collect();
 
+    println!("[bazbom] found {} matching targets", targets.len());
     Ok(targets)
 }
 
