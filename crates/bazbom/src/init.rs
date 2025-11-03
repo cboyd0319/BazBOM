@@ -74,41 +74,35 @@ pub fn run_init(path: &str) -> Result<()> {
 fn select_policy_template() -> Result<PolicyTemplate> {
     let templates = PolicyTemplateLibrary::list_templates();
     
-    // Create readable items for selection
-    let items = vec![
-        "1. Development (Permissive) - Fast feedback, low restrictions",
-        "2. Corporate Standard - Balanced security and productivity",
-        "3. PCI-DSS Compliance - Payment card industry security",
-        "4. HIPAA Healthcare - Healthcare data protection",
-        "5. FedRAMP Moderate - Federal government compliance",
-        "6. SOC 2 Type II - Service organization controls",
-        "7. Custom (manual configuration) - Full control",
-    ];
+    // Dynamically build selection items from templates
+    let mut items: Vec<String> = templates
+        .iter()
+        .enumerate()
+        .map(|(i, t)| format!("{}. {} - {}", i + 1, t.name, t.description))
+        .collect();
+    
+    // Add custom option
+    items.push(format!("{}. Custom (manual configuration) - Full control", items.len() + 1));
 
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Your choice")
         .items(&items)
-        .default(1) // Corporate Standard as default
+        .default(0) // First template as default
         .interact()?;
 
-    // Map selection to template ID
-    let template_id = match selection {
-        0 => "corporate-permissive",
-        1 => "corporate-permissive", // Default
-        2 => "pci-dss",
-        3 => "hipaa",
-        4 => "fedramp-moderate",
-        5 => "soc2",
-        6 => "custom",
-        _ => "corporate-permissive",
-    };
+    // If custom selected (last item), create a basic template
+    if selection >= templates.len() {
+        return Ok(PolicyTemplate {
+            id: "custom".to_string(),
+            name: "Custom Configuration".to_string(),
+            description: "User-defined policy".to_string(),
+            category: "Custom".to_string(),
+            path: String::new(),
+        });
+    }
 
-    // Find the actual template
-    let template = PolicyTemplateLibrary::get_template(template_id)
-        .or_else(|| templates.first().cloned())
-        .context("No policy templates available")?;
-
-    Ok(template)
+    // Return the selected template
+    Ok(templates[selection].clone())
 }
 
 /// Create bazbom.yml configuration file
@@ -121,6 +115,13 @@ fn create_config_file(project_path: &Path, template: &PolicyTemplate) -> Result<
         return Ok(());
     }
 
+    // Determine severity threshold based on template type
+    let severity_threshold = if template.id.contains("permissive") || template.id == "custom" {
+        "CRITICAL" // More permissive for development
+    } else {
+        "HIGH" // Stricter for compliance/production
+    };
+    
     // For now, create a simple config based on template
     // In the future, this should use the actual template content
     let config_content = format!(
@@ -151,7 +152,7 @@ policy:
 "#,
         template.name,
         template.description,
-        if template.id == "development" { "CRITICAL" } else { "HIGH" }
+        severity_threshold
     );
 
     fs::write(&config_path, config_content)
