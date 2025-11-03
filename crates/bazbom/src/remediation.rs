@@ -12,7 +12,33 @@ use std::path::Path;
 use std::process::Command;
 
 use crate::backup::{choose_backup_strategy, BackupHandle};
+use crate::enrich::depsdev::{BreakingChanges, DepsDevClient};
 use crate::test_runner::{has_tests, run_tests};
+
+/// Shared utility for parsing semantic version strings
+/// Returns (major, minor, patch) tuple
+pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
+    let clean_version = version.split('-').next()?;
+    let parts: Vec<&str> = clean_version.split('.').collect();
+    
+    if parts.len() < 3 {
+        return None;
+    }
+    
+    let parse_part = |s: &str| -> Option<u32> {
+        if s.chars().all(|c| c.is_ascii_digit()) {
+            s.parse().ok()
+        } else {
+            None
+        }
+    };
+    
+    let major = parse_part(parts[0])?;
+    let minor = parse_part(parts[1])?;
+    let patch = parse_part(parts[2])?;
+    
+    Some((major, minor, patch))
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RemediationSuggestion {
@@ -124,6 +150,104 @@ pub fn generate_suggestions(
             estimated_effort,
         },
         suggestions,
+    }
+}
+
+/// Enrich remediation suggestions with deps.dev breaking changes information
+pub fn enrich_with_depsdev(
+    mut report: RemediationReport,
+    depsdev_client: &DepsDevClient,
+) -> RemediationReport {
+    for suggestion in &mut report.suggestions {
+        // Only enrich if we have a fixed version
+        if let Some(ref fixed_version) = suggestion.fixed_version {
+            // Try to construct a PURL for the package
+            // This is a simplified approach - in production, you'd want to extract
+            // the actual PURL from the SBOM or vulnerability data
+            if let Some(purl) = construct_purl(&suggestion.affected_package, fixed_version) {
+                if let Ok(package_info) = depsdev_client.get_package_info(&purl) {
+                    if let Some(breaking_changes) = package_info.breaking_changes {
+                        suggestion.breaking_changes =
+                            Some(format_breaking_changes(&breaking_changes));
+                        
+                        // Add changelog URL to references if available
+                        if let Some(url) = breaking_changes.changelog_url {
+                            if !suggestion.references.contains(&url) {
+                                suggestion.references.push(url);
+                            }
+                        }
+                        
+                        // Add migration guide URL to references if available
+                        if let Some(url) = breaking_changes.migration_guide_url {
+                            if !suggestion.references.contains(&url) {
+                                suggestion.references.push(url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    report
+}
+
+/// Format breaking changes for display in remediation suggestions
+fn format_breaking_changes(breaking_changes: &BreakingChanges) -> String {
+    let mut output = String::new();
+
+    if let Some(ref summary) = breaking_changes.summary {
+        output.push_str(summary);
+        output.push_str("\n\n");
+    }
+
+    if !breaking_changes.details.is_empty() {
+        output.push_str("Breaking changes details:\n");
+        for detail in &breaking_changes.details {
+            output.push_str("  - ");
+            output.push_str(detail);
+            output.push('\n');
+        }
+        output.push('\n');
+    }
+
+    if let Some(ref url) = breaking_changes.changelog_url {
+        output.push_str(&format!("Changelog: {}\n", url));
+    }
+
+    if let Some(ref url) = breaking_changes.migration_guide_url {
+        output.push_str(&format!("Migration guide: {}\n", url));
+    }
+
+    output
+}
+
+/// Construct a PURL from package name and version
+/// This is a heuristic approach - ideally PURLs would come from the SBOM
+fn construct_purl(package_name: &str, version: &str) -> Option<String> {
+    // Try to detect package ecosystem from name patterns
+    if package_name.contains('/') || package_name.contains('.') {
+        // Likely Maven: groupId/artifactId or groupId.artifactId
+        let maven_name = if package_name.contains('/') {
+            package_name.to_string()
+        } else {
+            // Convert groupId.artifactId to groupId/artifactId
+            let parts: Vec<&str> = package_name.rsplitn(2, '.').collect();
+            if parts.len() == 2 {
+                format!("{}/{}", parts[1], parts[0])
+            } else {
+                package_name.to_string()
+            }
+        };
+        Some(format!("pkg:maven/{}@{}", maven_name, version))
+    } else if package_name.starts_with('@') {
+        // Likely scoped npm package
+        Some(format!("pkg:npm/{}@{}", package_name, version))
+    } else if package_name.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c == '_') {
+        // Likely npm or PyPI package
+        // Default to npm for now
+        Some(format!("pkg:npm/{}@{}", package_name, version))
+    } else {
+        None
     }
 }
 
@@ -267,38 +391,10 @@ fn generate_breaking_changes_warning(
     };
 
     // Parse semantic versions to detect major version changes
-    // Strip common suffixes like -SNAPSHOT, .RELEASE, -alpha, -beta, -RC1
-    let clean_current = current_version
-        .split('-')
-        .next()
-        .unwrap_or(current_version)
-        .split('.')
-        .take(3)
-        .collect::<Vec<_>>();
-    let clean_fixed = fixed
-        .split('-')
-        .next()
-        .unwrap_or(fixed)
-        .split('.')
-        .take(3)
-        .collect::<Vec<_>>();
-
-    // Helper to parse version part safely, returning None if non-numeric
-    let parse_version_part = |s: &str| -> Option<u32> {
-        if s.chars().all(|c| c.is_ascii_digit()) {
-            s.parse::<u32>().ok()
-        } else {
-            None
-        }
-    };
-
-    let current_major = clean_current.first().and_then(|s| parse_version_part(s));
-    let fixed_major = clean_fixed.first().and_then(|s| parse_version_part(s));
-
-    // If we can't parse versions, provide a generic warning
-    let (current_major, fixed_major) = match (current_major, fixed_major) {
-        (Some(c), Some(f)) => (c, f),
-        _ => {
+    // Use shared utility to parse versions
+    let (current_major, current_minor, _) = match parse_semantic_version(current_version) {
+        Some(v) => v,
+        None => {
             return Some(format!(
                 "⚠️  Version change ({} → {})\n\n\
                  Cannot parse semantic version numbers. Please review the changelog manually.\n\
@@ -306,6 +402,17 @@ fn generate_breaking_changes_warning(
                  1. Check the library's release notes\n\
                  2. Review breaking changes documentation\n\
                  3. Test thoroughly in a staging environment",
+                current_version, fixed
+            ));
+        }
+    };
+    
+    let (fixed_major, fixed_minor, _) = match parse_semantic_version(fixed) {
+        Some(v) => v,
+        None => {
+            return Some(format!(
+                "⚠️  Version change ({} → {})\n\n\
+                 Cannot parse target version number. Please review the changelog manually.",
                 current_version, fixed
             ));
         }
@@ -383,21 +490,6 @@ fn generate_breaking_changes_warning(
         Some(warning)
     } else if fixed_major == current_major {
         // Minor or patch version upgrade
-        let current_minor = clean_current.get(1).and_then(|s| parse_version_part(s));
-        let fixed_minor = clean_fixed.get(1).and_then(|s| parse_version_part(s));
-
-        let (current_minor, fixed_minor) = match (current_minor, fixed_minor) {
-            (Some(c), Some(f)) => (c, f),
-            _ => {
-                return Some(format!(
-                    "ℹ️  Version change ({} → {})\n\n\
-                     Minor version component cannot be parsed.\n\
-                     Please review release notes for compatibility information.",
-                    current_version, fixed
-                ));
-            }
-        };
-
         if fixed_minor > current_minor {
             // Minor version bump
             Some(format!(

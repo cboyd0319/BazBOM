@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::remediation::parse_semantic_version;
+
 const DEPSDEV_API_BASE: &str = "https://api.deps.dev/v3alpha";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -15,6 +17,15 @@ pub struct PackageInfo {
     pub popularity_score: Option<f64>,
     pub latest_version: Option<String>,
     pub versions: Vec<VersionInfo>,
+    pub breaking_changes: Option<BreakingChanges>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BreakingChanges {
+    pub summary: Option<String>,
+    pub details: Vec<String>,
+    pub migration_guide_url: Option<String>,
+    pub changelog_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,6 +62,16 @@ struct VersionDetails {
     version_key: VersionKey,
     licenses: Option<Vec<String>>,
     links: Option<Vec<Link>>,
+    advisories: Option<Vec<Advisory>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[allow(dead_code)]
+struct Advisory {
+    id: Option<String>,
+    title: Option<String>,
+    description: Option<String>,
+    url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -152,6 +173,18 @@ impl DepsDevClient {
             .find(|v| v.is_default)
             .map(|v| v.version.clone());
 
+        // Fetch breaking changes information if latest_version differs from queried version
+        let breaking_changes = if let Some(ref latest) = latest_version {
+            if latest != &version {
+                self.get_breaking_changes(&system, &name, &version, latest)
+                    .ok()
+            } else {
+                None
+            }
+        } else {
+            None
+        };
+
         Ok(PackageInfo {
             purl: purl.to_string(),
             name: name.clone(),
@@ -163,7 +196,115 @@ impl DepsDevClient {
             popularity_score: None, // Would need additional API call
             latest_version,
             versions,
+            breaking_changes,
         })
+    }
+
+    /// Fetch breaking changes information between two versions
+    /// This method analyzes changelog URLs and advisories from deps.dev
+    fn get_breaking_changes(
+        &self,
+        system: &str,
+        name: &str,
+        from_version: &str,
+        to_version: &str,
+    ) -> Result<BreakingChanges> {
+        // Query the target version for advisories and links
+        let url = format!(
+            "{}/systems/{}/packages/{}/versions/{}",
+            DEPSDEV_API_BASE,
+            Self::system_to_depsdev(system),
+            urlencoding::encode(name),
+            urlencoding::encode(to_version)
+        );
+
+        let response = ureq::get(&url)
+            .timeout(std::time::Duration::from_secs(10))
+            .call()
+            .context("deps.dev API request failed for breaking changes")?;
+
+        let deps_dev_resp: DepsDevResponse = response
+            .into_json()
+            .context("failed to parse deps.dev response for breaking changes")?;
+
+        let mut details = Vec::new();
+        let mut migration_guide_url = None;
+        let mut changelog_url = None;
+
+        // Extract changelog and migration guide URLs from links
+        if let Some(version_details) = &deps_dev_resp.version {
+            if let Some(links) = &version_details.links {
+                for link in links {
+                    match link.label.as_str() {
+                        "SOURCE_REPO" | "HOMEPAGE" => {
+                            if link.url.to_lowercase().contains("changelog")
+                                || link.url.to_lowercase().contains("releases")
+                                || link.url.to_lowercase().contains("release-notes")
+                            {
+                                changelog_url = Some(link.url.clone());
+                            }
+                        }
+                        _ => {
+                            // Look for migration guides in any link
+                            if link.url.to_lowercase().contains("migration")
+                                || link.url.to_lowercase().contains("upgrade")
+                            {
+                                migration_guide_url = Some(link.url.clone());
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Extract advisory information that might indicate breaking changes
+            if let Some(advisories) = &version_details.advisories {
+                for advisory in advisories {
+                    if let Some(desc) = &advisory.description {
+                        if desc.to_lowercase().contains("breaking")
+                            || desc.to_lowercase().contains("incompatible")
+                        {
+                            details.push(desc.clone());
+                        }
+                    }
+                }
+            }
+        }
+
+        // Generate a summary based on semantic versioning
+        let summary = Self::generate_version_change_summary(from_version, to_version);
+
+        Ok(BreakingChanges {
+            summary: Some(summary),
+            details,
+            migration_guide_url,
+            changelog_url,
+        })
+    }
+
+    /// Generate a summary of version changes based on semantic versioning
+    fn generate_version_change_summary(from_version: &str, to_version: &str) -> String {
+        if let (Some((from_maj, from_min, _)), Some((to_maj, to_min, _))) =
+            (parse_semantic_version(from_version), parse_semantic_version(to_version))
+        {
+            if to_maj > from_maj {
+                return format!(
+                    "Major version upgrade ({} → {}) - expect breaking changes. \
+                     Review the changelog and test thoroughly before upgrading.",
+                    from_version, to_version
+                );
+            } else if to_min > from_min {
+                return format!(
+                    "Minor version upgrade ({} → {}) - may include new features \
+                     and deprecations. Review release notes for details.",
+                    from_version, to_version
+                );
+            }
+        }
+
+        format!(
+            "Version upgrade ({} → {}) - review the changelog for compatibility information.",
+            from_version, to_version
+        )
     }
 
     fn parse_purl(purl: &str) -> Result<(String, String, String)> {
@@ -238,5 +379,32 @@ mod tests {
         let client = DepsDevClient::new(true);
         let result = client.get_package_info("pkg:maven/test/test@1.0.0");
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_version_change_summary_major() {
+        let summary = DepsDevClient::generate_version_change_summary("1.0.0", "2.0.0");
+        assert!(summary.contains("Major version upgrade"));
+        assert!(summary.contains("breaking changes"));
+    }
+
+    #[test]
+    fn test_version_change_summary_minor() {
+        let summary = DepsDevClient::generate_version_change_summary("1.0.0", "1.1.0");
+        assert!(summary.contains("Minor version upgrade"));
+        assert!(summary.contains("new features"));
+    }
+
+    #[test]
+    fn test_version_change_summary_patch() {
+        let summary = DepsDevClient::generate_version_change_summary("1.0.0", "1.0.1");
+        assert!(summary.contains("Version upgrade"));
+        assert!(summary.contains("changelog"));
+    }
+
+    #[test]
+    fn test_version_change_summary_with_suffix() {
+        let summary = DepsDevClient::generate_version_change_summary("1.0.0-SNAPSHOT", "2.0.0-RELEASE");
+        assert!(summary.contains("Major version upgrade"));
     }
 }

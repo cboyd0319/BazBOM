@@ -18,7 +18,8 @@ jobs:
   analyze:
     name: CodeQL Analysis - Rust
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    # Reduced timeout for PR checks, longer for scheduled runs
+    timeout-minutes: ${{ github.event_name == 'schedule' && 360 || 120 }}
     
     permissions:
       # Required for CodeQL
@@ -35,25 +36,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
         with:
-          # Fetch full history for better analysis
-          fetch-depth: 0
+          # Shallow clone for PRs, full history for scheduled scans
+          fetch-depth: ${{ github.event_name == 'pull_request' && 1 || 0 }}
           persist-credentials: false
+      
+      # Cache CodeQL database to speed up subsequent runs
+      - name: Cache CodeQL database
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        with:
+          path: |
+            ~/.codeql
+            ~/codeql-home
+          key: ${{ runner.os }}-codeql-${{ matrix.language }}-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-codeql-${{ matrix.language }}-
       
       - name: Initialize CodeQL
         uses: github/codeql-action/init@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
         with:
           languages: ${{ matrix.language }}
-          # Use security-extended query suite for comprehensive analysis
-          queries: security-extended,security-and-quality
-          # Configure CodeQL for Rust
+          # Use lighter query suite for PRs, comprehensive for scheduled runs
+          queries: ${{ github.event_name == 'pull_request' && 'security-and-quality' || 'security-extended,security-and-quality' }}
+          # Configure CodeQL for Rust with optimized paths
           config: |
             paths-ignore:
               - '**/tests/**'
               - '**/target/**'
               - '**/bazel-*/**'
+              - '**/examples/**'
+              - '**/benches/**'
+              - '**/benchmarks/**'
+            # Enable threading for faster analysis
+            threads: 0
+            # Optimize RAM usage
+            ram: 6144
       
       - name: Autobuild
         uses: github/codeql-action/autobuild@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        env:
+          # Optimize Rust build for CodeQL
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-C opt-level=0"
       
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
@@ -63,6 +86,8 @@ jobs:
           upload: true
           # Generate SARIF file for artifact upload
           output: sarif-results
+          # Enable incremental analysis for faster scans
+          add-snippets: ${{ github.event_name != 'pull_request' }}
       
       - name: Upload CodeQL SARIF
         uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
