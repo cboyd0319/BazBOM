@@ -6,10 +6,9 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
 
 ### Prerequisites
 
+- Rust 1.70 or later (for core BazBOM CLI)
 - [Bazelisk](https://github.com/bazelbuild/bazelisk) (recommended) or Bazel 7.0.0
-- Java 11 or later (for examples)
-- Python 3.12 or later (for supply chain tools)
-- pip-tools (for dependency management)
+- Java 11 or later (for Maven/Gradle plugins and examples)
 
 ### Setup
 
@@ -20,16 +19,11 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
    cd BazBOM
    ```
 
-2. Install Python dependencies with hash verification:
+2. Build Rust workspace:
 
    ```bash
-   pip install pip-tools
-   pip install -r requirements.txt --require-hashes
-   pip install -r requirements-test.txt --require-hashes
-   pip install -r requirements-security.txt --require-hashes
+   cargo build --all
    ```
-
-   See [Dependency Management Guide](docs/DEPENDENCY_MANAGEMENT.md) for details.
 
 3. Install pre-commit hooks:
 
@@ -37,15 +31,16 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
    pre-commit install
    ```
 
-4. Build the project:
+4. Run tests:
+
+   ```bash
+   cargo test --all
+   ```
+
+5. Build with Bazel (optional, for examples):
 
    ```bash
    bazel build //...
-   ```
-
-5. Run tests:
-
-   ```bash
    bazel test //...
    ```
 
@@ -65,8 +60,8 @@ Example:
 ```text
 feat: add SPDX 3.0 support to SBOM generation
 
-- Implement SPDX 3.0 schema
-- Update write_sbom.py to support both 2.3 and 3.0
+- Implement SPDX 3.0 schema in bazbom-formats crate
+- Update SBOM generation to support both 2.3 and 3.0
 - Add validation for SPDX 3.0 format
 ```
 
@@ -97,20 +92,18 @@ BazBOM follows **PYSEC_OMEGA** security standards. All contributions must meet t
 
 1. **No security vulnerabilities** - Run security scans before submitting:
    ```bash
-   bandit -r tools/supplychain
-   pip-audit -r requirements.txt
+   cargo audit
+   cargo clippy -- -D warnings
    ```
 
-2. **Dependency management** - Use pip-tools with hashes:
+2. **Dependency management** - Use Cargo.lock for reproducible builds:
    ```bash
-   # Add new dependency to .in file
-   echo "package>=1.0.0" >> requirements.in
+   # Add new dependency to Cargo.toml
+   cargo add package@1.0.0
    
-   # Generate locked requirements with hashes
-   pip-compile --generate-hashes requirements.in
-   
-   # Verify no vulnerabilities
-   pip-audit -r requirements.txt
+   # Update and audit dependencies
+   cargo update
+   cargo audit
    ```
 
 3. **Input validation** - Validate ALL external input
@@ -136,8 +129,8 @@ All submissions require review. We use GitHub pull requests for this purpose. Co
 - Code must pass all CI checks
 - Documentation must be updated for user-facing changes
 - Tests must be included for new functionality
-- **Security scans must pass** (Bandit, Semgrep, CodeQL, pip-audit)
-- **Dependencies must have SHA256 hashes** (use pip-tools)
+- **Security scans must pass** (cargo-audit, clippy, CodeQL)
+- **Dependencies must be audited** (cargo audit)
 - Security implications must be documented
 
 ## Testing
