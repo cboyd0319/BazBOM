@@ -78,8 +78,8 @@ BazBOM is a JVM supply chain security toolkit that generates SBOMs, performs vul
 **Bazel Monorepo Features:** ✅ **CLI Support** + ⚠️ **Python Backend**
 - Bazel query integration for selective target scanning ✅
 - Incremental scanning with `rdeps()` (scan only affected targets) ✅
-- Scalable for large monorepos (5000+ targets) ⚠️ (Documented, needs verification)
-- 6x faster PR scans compared to full workspace analysis ⚠️ (Claimed, needs benchmarking)
+- Scalable for large-scale monorepos ⚠️ (Documented, needs verification)
+- Significantly faster PR scans with incremental mode ⚠️ (Claimed, needs benchmarking)
 
 Examples:
 ```bash

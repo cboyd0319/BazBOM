@@ -305,7 +305,7 @@ bazbom scan --bazel-affected-by-files src/file.java
 **Evidence:**
 ```
 $ ./target/debug/bazbom-lsp
-2025-11-03T06:37:02.776882Z  INFO bazbom_lsp: Starting BazBOM Language Server
+YYYY-MM-DDTHH:MM:SS.SSSZ  INFO bazbom_lsp: Starting BazBOM Language Server
 ```
 
 **Features Implemented:**

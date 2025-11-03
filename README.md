@@ -1155,9 +1155,9 @@ BazBOM is transitioning from Python to Rust. See [Implementation Status](docs/co
 
 **What Requires Build Plugins or Python Tools:**
 - ⚠️ **Full SBOM generation** - Rust CLI generates valid but minimal SBOMs
-  - Maven projects: Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
-  - Gradle projects: Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
-  - Bazel projects: Python tools in `tools/supplychain/` provide full implementation
+    - Maven projects: Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
+    - Gradle projects: Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
+    - Bazel projects: Python tools in `tools/supplychain/` provide full implementation
 - ⚠️ **Dependency extraction** - Not done by Rust CLI alone
 - ⚠️ **Vulnerability enrichment** - Python backend provides full context
 
