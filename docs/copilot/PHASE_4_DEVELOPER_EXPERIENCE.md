@@ -749,7 +749,7 @@ export function deactivate() {}
 
 **Goal:** Implement `bazbom fix --apply` to automatically upgrade vulnerable dependencies
 
-**Current State:** Phase 4 not started (docs/copilot/IMPLEMENTATION_STATUS.md:304)
+**Current State:** Phase 4 not started (docs/copilot/PHASE_4_PROGRESS.md:304)
 
 ### 4.2.1 `bazbom fix` Command Design
 

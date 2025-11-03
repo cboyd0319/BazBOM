@@ -108,7 +108,7 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 
 | Phase | Timeline | Priority | Status | Key Deliverable |
 |-------|----------|----------|--------|-----------------|
-| [Phase 0-3](IMPLEMENTATION_STATUS.md) | ✅ Complete | - | Done | Rust CLI, Maven/Gradle plugins, Advisories |
+| [Phase 0-3](PHASE_4_PROGRESS.md) | ✅ Complete | - | Done | Rust CLI, Maven/Gradle plugins, Advisories |
 | [Phase 4: Developer Experience](PHASE_4_DEVELOPER_EXPERIENCE.md) | Months 1-3 | 🔴 P0 | Planned | IDE plugins, auto-remediation |
 | [Phase 5: Enterprise Policy](PHASE_5_ENTERPRISE_POLICY.md) | Months 2-4 | 🔴 P0 | Planned | Policy templates, license compliance |
 | [Phase 6: Visualization](PHASE_6_VISUALIZATION.md) | Months 3-5 | 🟡 P1 | Planned | Web dashboard, executive reports |
@@ -554,7 +554,7 @@ This strategic roadmap references the following detailed documents:
 **Supporting Documentation:**
 - [COMPETITIVE_ANALYSIS.md](COMPETITIVE_ANALYSIS.md) - Deep dive on EndorLabs, Snyk, Sonatype
 - [OPEN_SOURCE_SUSTAINABILITY.md](OPEN_SOURCE_SUSTAINABILITY.md) - Financial model, funding strategy
-- [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) - Current progress (Phases 0-3)
+- [PHASE_4_PROGRESS.md](PHASE_4_PROGRESS.md) - Current progress (Phases 0-3)
 - [MASTER_PLAN.md](MASTER_PLAN.md) - Original vision document
 
 ### Version History

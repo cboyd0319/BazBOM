@@ -535,7 +535,7 @@ Features:
 - **Curated rulesets**: 10 high-impact JVM security rules (no noise)
 - **Backward compatible**: Original scan behavior unchanged without flags
 
-See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCANNING.md) for details and [examples/bazbom.toml](examples/bazbom.toml) for configuration.
+See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCAN.md) for details and [examples/bazbom.toml](examples/bazbom.toml) for configuration.
 
 ---
 
@@ -1139,8 +1139,8 @@ Vote on features: [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discu
 - **[Supply Chain](docs/SUPPLY_CHAIN.md)** - SBOM/SCA implementation
 - **[Threat Model](docs/THREAT_MODEL.md)** - Security analysis
 - **[ADRs](docs/ADR/)** - Architecture Decision Records
-- **[Master Plan](docs/copilot/MASTER_PLAN.md)** - Complete vision and roadmap
-- **[Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)** - Current progress tracking
+- **[Strategic Roadmap](docs/copilot/STRATEGIC_ROADMAP.md)** - Complete vision and roadmap
+- **[Phase 4 Progress](docs/copilot/PHASE_4_PROGRESS.md)** - IDE integration development status
 
 ### Advanced Features
 - **[Performance](docs/PERFORMANCE.md)** - Large monorepo optimization
