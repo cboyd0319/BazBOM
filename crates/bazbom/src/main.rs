@@ -1024,46 +1024,19 @@ fn main() -> Result<()> {
             bazbom::init::run_init(&path)?;
         }
         Commands::Explore { sbom, findings } => {
-            // For now, create mock data to demonstrate the TUI
-            // In the future, this will load actual SBOM/findings data
-            let dependencies = vec![
-                bazbom_tui::Dependency {
-                    name: "org.springframework:spring-web".to_string(),
-                    version: "5.3.20".to_string(),
-                    scope: "compile".to_string(),
-                    vulnerabilities: vec![
-                        bazbom_tui::Vulnerability {
-                            cve: "CVE-2024-22243".to_string(),
-                            severity: "HIGH".to_string(),
-                            cvss: 7.5,
-                            fixed_version: Some("5.3.31".to_string()),
-                        },
-                    ],
-                },
-                bazbom_tui::Dependency {
-                    name: "org.apache.logging.log4j:log4j-core".to_string(),
-                    version: "2.14.1".to_string(),
-                    scope: "compile".to_string(),
-                    vulnerabilities: vec![
-                        bazbom_tui::Vulnerability {
-                            cve: "CVE-2021-44228".to_string(),
-                            severity: "CRITICAL".to_string(),
-                            cvss: 10.0,
-                            fixed_version: Some("2.21.1".to_string()),
-                        },
-                    ],
-                },
-                bazbom_tui::Dependency {
-                    name: "com.google.guava:guava".to_string(),
-                    version: "31.1-jre".to_string(),
-                    scope: "compile".to_string(),
-                    vulnerabilities: vec![],
-                },
-            ];
+            use bazbom::explore;
+
+            // Load dependencies from SBOM/findings or use mock data
+            let dependencies = explore::load_dependencies(
+                sbom.as_deref(),
+                findings.as_deref(),
+            )?;
 
             if sbom.is_some() || findings.is_some() {
-                println!("[bazbom] Loading from SBOM/findings not yet implemented");
-                println!("[bazbom] Showing demo data for now");
+                println!("[bazbom] Loaded {} dependencies", dependencies.len());
+            } else {
+                println!("[bazbom] No SBOM/findings specified, using demo data");
+                println!("[bazbom] Hint: Use --sbom=<file> or --findings=<file> to load your data");
             }
 
             bazbom_tui::run(dependencies)?;
