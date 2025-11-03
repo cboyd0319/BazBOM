@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
       
       - name: Setup Java
-        uses: actions/setup-java@5896cecc08fd8a1fbdfbb517a8bd08b42909ff46 # v4.7.0
+        uses: actions/setup-java@de5a937a1dc73fbc1a67d7d1aa4bebc1082f3190 # v4.7.0
         with:
           distribution: 'temurin'
           java-version: '11'
