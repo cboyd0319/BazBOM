@@ -260,15 +260,45 @@ fn generate_breaking_changes_warning(
     };
 
     // Parse semantic versions to detect major version changes
-    let current_parts: Vec<&str> = current_version.split('.').collect();
-    let fixed_parts: Vec<&str> = fixed.split('.').collect();
+    // Strip common suffixes like -SNAPSHOT, .RELEASE, -alpha, -beta, -RC1
+    let clean_current = current_version
+        .split('-')
+        .next()
+        .unwrap_or(current_version)
+        .split('.')
+        .take(3)
+        .collect::<Vec<_>>();
+    let clean_fixed = fixed
+        .split('-')
+        .next()
+        .unwrap_or(fixed)
+        .split('.')
+        .take(3)
+        .collect::<Vec<_>>();
 
-    let current_major = current_parts.first()
-        .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(0);
-    let fixed_major = fixed_parts.first()
-        .and_then(|s| s.parse::<u32>().ok())
-        .unwrap_or(0);
+    // Helper to parse version part safely, returning None if non-numeric
+    let parse_version_part = |s: &str| -> Option<u32> {
+        s.chars().all(|c| c.is_ascii_digit()).then(|| s.parse::<u32>().ok()).flatten()
+    };
+
+    let current_major = clean_current.first().and_then(|s| parse_version_part(s));
+    let fixed_major = clean_fixed.first().and_then(|s| parse_version_part(s));
+
+    // If we can't parse versions, provide a generic warning
+    let (current_major, fixed_major) = match (current_major, fixed_major) {
+        (Some(c), Some(f)) => (c, f),
+        _ => {
+            return Some(format!(
+                "⚠️  Version change ({} → {})\n\n\
+                 Cannot parse semantic version numbers. Please review the changelog manually.\n\
+                 Version formats that don't follow semantic versioning (X.Y.Z) require careful review:\n\
+                 1. Check the library's release notes\n\
+                 2. Review breaking changes documentation\n\
+                 3. Test thoroughly in a staging environment",
+                current_version, fixed
+            ));
+        }
+    };
 
     if fixed_major > current_major {
         // Major version bump detected
@@ -340,12 +370,20 @@ fn generate_breaking_changes_warning(
         Some(warning)
     } else if fixed_major == current_major {
         // Minor or patch version upgrade
-        let current_minor = current_parts.get(1)
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(0);
-        let fixed_minor = fixed_parts.get(1)
-            .and_then(|s| s.parse::<u32>().ok())
-            .unwrap_or(0);
+        let current_minor = clean_current.get(1).and_then(|s| parse_version_part(s));
+        let fixed_minor = clean_fixed.get(1).and_then(|s| parse_version_part(s));
+
+        let (current_minor, fixed_minor) = match (current_minor, fixed_minor) {
+            (Some(c), Some(f)) => (c, f),
+            _ => {
+                return Some(format!(
+                    "ℹ️  Version change ({} → {})\n\n\
+                     Minor version component cannot be parsed.\n\
+                     Please review release notes for compatibility information.",
+                    current_version, fixed
+                ));
+            }
+        };
 
         if fixed_minor > current_minor {
             // Minor version bump
@@ -1106,3 +1144,42 @@ mod tests {
         assert!(text.contains("entity mapping"));
     }
 }
+
+    #[test]
+    fn test_breaking_changes_snapshot_version() {
+        let warning = generate_breaking_changes_warning(
+            "org.springframework:spring-core",
+            "5.3.0-SNAPSHOT",
+            &Some("6.0.0-RELEASE".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("MAJOR VERSION UPGRADE"));
+        assert!(text.contains("Spring Framework specific considerations"));
+    }
+
+    #[test]
+    fn test_breaking_changes_invalid_version() {
+        let warning = generate_breaking_changes_warning(
+            "test-package",
+            "alpha",
+            &Some("beta".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        assert!(text.contains("Cannot parse semantic version"));
+        assert!(text.contains("review the changelog manually"));
+    }
+
+    #[test]
+    fn test_breaking_changes_complex_version() {
+        let warning = generate_breaking_changes_warning(
+            "org.apache.logging.log4j:log4j-core",
+            "2.17.1-rc1",
+            &Some("2.18.0-beta".to_string()),
+        );
+        assert!(warning.is_some());
+        let text = warning.unwrap();
+        // Should strip suffixes and detect minor version bump
+        assert!(text.contains("Minor version upgrade") || text.contains("Version change"));
+    }

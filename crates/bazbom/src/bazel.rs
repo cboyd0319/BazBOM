@@ -302,11 +302,27 @@ pub fn query_bazel_targets(
         if files.is_empty() {
             anyhow::bail!("affected_by_files cannot be empty");
         }
+        // Escape file paths to prevent shell injection
+        // Bazel query expects paths without shell metacharacters
         let file_set = files
             .iter()
-            .map(|f| format!("\"{}\"", f))
+            .map(|f| {
+                // Validate file path doesn't contain dangerous characters
+                if f.contains('\'') || f.contains('"') || f.contains('$') || f.contains('`') {
+                    eprintln!("[bazbom] warning: skipping file with shell metacharacters: {}", f);
+                    None
+                } else {
+                    // Escape for Bazel query (quotes are sufficient as we validated above)
+                    Some(format!("\"{}\"", f))
+                }
+            })
+            .flatten()
             .collect::<Vec<_>>()
             .join(", ");
+        
+        if file_set.is_empty() {
+            anyhow::bail!("No valid files after filtering shell metacharacters");
+        }
         format!("rdeps({}, set({}))", universe, file_set)
     } else {
         anyhow::bail!("Must provide either query, kind, or affected_by_files");
