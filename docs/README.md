@@ -56,6 +56,13 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[PyTest Best Practices](testing/PYTEST_BEST_PRACTICES.md)** - Python testing standards
 - **[Test Fixtures](testing/TEST_FIXTURES_README.md)** - Sample data for testing
 
+## Internal & Planning Documentation
+
+For maintainers and contributors:
+
+- **[Copilot Directory](copilot/)** - Planning documents, roadmaps, and implementation specifications
+- **[Developer Guides](developer/)** - Internal development documentation
+
 ## Diagrams
 
 Architecture diagrams are available in the [diagrams](diagrams/) directory in Mermaid format.
