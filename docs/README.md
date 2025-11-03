@@ -7,10 +7,9 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[90-Second Quickstart](90-SECOND-QUICKSTART.md)** ⚡ Zero to first scan in 90 seconds
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
+- **[IDE Setup](quickstart/IDE_SETUP.md)** - Quick start guide for IDE integration
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
 - **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from Python to Rust CLI
-- **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
-- **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
 
 ## Architecture & Design
 
@@ -28,13 +27,14 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Advanced Features
 
-- **[Orchestrated Scanning](ORCHESTRATED_SCANNING.md)** - Integrate Semgrep and CodeQL with merged SARIF output
-- **[Integration Plan Status](INTEGRATION_PLAN_STATUS.md)** - Implementation status of the orchestrated scan architecture
+- **[Orchestrated Scanning](ORCHESTRATED_SCAN.md)** - Integrate Semgrep and CodeQL with merged SARIF output
+- **[IDE Integration](IDE_INTEGRATION.md)** - Real-time vulnerability scanning in your IDE
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
 - **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
 - **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
 - **[VEX Statements](VEX.md)** - Managing false positives and accepted risks
 - **[Dependency Graph Analysis](GRAPH_ANALYSIS.md)** - Querying and visualizing dependencies
+- **[RipGrep Integration](RIPGREP_INTEGRATION.md)** - Fast file scanning for large monorepos
 - **[Capabilities Reference](reference/capabilities-reference.md)** - Complete feature catalog
 
 ## Operations
@@ -43,10 +43,25 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
 - **[Versioning](VERSIONING.md)** - Release process and semantic versioning guidelines
 
+## Developer & Maintainer Guides
+
+- **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
+- **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
+- **[Release Checklist](RELEASE_CHECKLIST.md)** - Pre-release verification steps
+
 ## Testing & Coverage
 
 - **[Test Plan](TEST_PLAN.md)** - Strategy and scope
-- **[Testing Reports](testing/)** - Coverage, summaries, and optimization reports
+- **[Testing Guide](testing/TESTING_GUIDE.md)** - Comprehensive testing documentation
+- **[PyTest Best Practices](testing/PYTEST_BEST_PRACTICES.md)** - Python testing standards
+- **[Test Fixtures](testing/TEST_FIXTURES_README.md)** - Sample data for testing
+
+## Internal & Planning Documentation
+
+For maintainers and contributors:
+
+- **[Copilot Directory](copilot/)** - Planning documents, roadmaps, and implementation specifications
+- **[Developer Guides](developer/)** - Internal development documentation
 
 ## Diagrams
 

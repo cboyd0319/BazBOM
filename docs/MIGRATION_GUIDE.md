@@ -259,7 +259,7 @@ The Rust CLI should be faster than the Python version. If you experience slownes
 If you rely on a feature not yet available in the Rust CLI:
 
 1. Continue using the Python version for that specific workflow
-2. Check the [Roadmap](ROADMAP_IMPLEMENTATION.md) for planned implementation
+2. Check the [Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md) for planned implementation
 3. Open a feature request on GitHub to prioritize your use case
 
 ## Getting Help

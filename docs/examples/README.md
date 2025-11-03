@@ -18,7 +18,7 @@ This interactive demo showcases:
 
 All scans produce unified SARIF 2.1.0 output for GitHub Code Scanning.
 
-See [Orchestrated Scanning Guide](../ORCHESTRATED_SCAN.md) and [Integration Plan Status](../INTEGRATION_PLAN_STATUS.md) for details.
+See [Orchestrated Scanning Guide](../ORCHESTRATED_SCAN.md) for details.
 
 ## Quick Demo
 

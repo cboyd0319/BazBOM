@@ -541,7 +541,7 @@ exit 0
 ## Resources
 
 - **Phase 4 Specification:** `docs/copilot/PHASE_4_DEVELOPER_EXPERIENCE.md`
-- **Implementation Status:** `docs/copilot/IMPLEMENTATION_STATUS.md`
+- **Implementation Status:** `docs/copilot/PHASE_4_PROGRESS.md`
 - **LSP Server:** `crates/bazbom-lsp/`
 - **VS Code Extension:** `crates/bazbom-vscode-extension/`
 - **IntelliJ Plugin:** `crates/bazbom-intellij-plugin/`
