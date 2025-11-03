@@ -1,7 +1,7 @@
 # BazBOM IDE Integration
 
-**Status:** Beta (90% Complete)  
-**Last Updated:** 2025-10-31
+**Status:** Beta (95% Complete)  
+**Last Updated:** 2025-11-03
 
 BazBOM now integrates directly into your IDE, providing real-time vulnerability scanning and one-click fixes without leaving your development environment.
 
@@ -21,9 +21,9 @@ BazBOM Phase 4 brings the security scanning experience into your IDE:
 
 ### Supported IDEs
 
-- **IntelliJ IDEA** (Community & Ultimate) - 90% complete
-- **VS Code** - 85% complete
-- **Any LSP-compatible editor** (via `bazbom-lsp`) - 90% complete
+- **IntelliJ IDEA** (Community & Ultimate) - 95% complete
+- **VS Code** - 95% complete
+- **Any LSP-compatible editor** (via `bazbom-lsp`) - 95% complete
 
 ---
 
