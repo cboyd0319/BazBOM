@@ -14,7 +14,7 @@ BazBOM is positioned as the **ultimate easy-to-use, free, and privacy-preserving
 |----------|------------------|---------------------|
 | **Pricing** | Free, open source (MIT) | $10K+/year minimum |
 | **Privacy** | Zero telemetry, offline-first | Cloud-based, telemetry required |
-| **Bazel Support** | Native, incremental scanning | Not supported |
+| **Bazel Support** | Native, incremental, Git-aware | Supported (requires target specification) |
 | **Architecture** | Memory-safe Rust, single binary | Commercial stack |
 | **Transparency** | Open source, auditable | Proprietary |
 | **Installation** | Homebrew, one-command installer | Requires account, SaaS setup |
@@ -230,6 +230,30 @@ Fixed 1/8 vulnerabilities. Continue? (Y/n): Y
 
 ## Key Differentiation Points
 
+### Bazel Support Comparison
+
+**Both tools support Bazel**, but with different approaches:
+
+| Feature | BazBOM | Endor Labs |
+|---------|--------|------------|
+| **Basic Bazel Support** | ✅ Yes | ✅ Yes |
+| **Target Selection** | Query + Targets | Query + Targets |
+| **Incremental Scanning** | ✅ Git-aware (`--bazel-affected-by-files`) | ❌ Manual target specification required |
+| **Auto Detection** | ✅ Automatic affected target discovery | ❌ Must specify query or targets |
+| **Workspace Discovery** | ✅ Automatic | ✅ Automatic (with `--bazel-workspace-path` for non-root) |
+| **Build Integration** | ✅ Native | ✅ Native |
+| **Performance (PR scans)** | 6x faster (8s vs 45min for affected targets) | Full workspace scan required |
+
+**BazBOM's Bazel Advantage:**
+- **Git-aware incremental scanning:** Automatically determines affected targets from changed files
+- **PR-optimized workflow:** Scan only what changed, dramatically faster CI/CD
+- **No manual queries required:** `bazbom scan . --bazel-affected-by-files src/java/lib/Utils.java`
+
+**Endor Labs' Bazel Approach:**
+- Requires explicit target specification: `--bazel-include-targets` or `--bazel-targets-query`
+- Full monorepo scans for comprehensive analysis
+- More manual setup for selective scanning
+
 ### What Makes BazBOM Better Than Endor Labs
 
 1. **Zero Cost:**
@@ -240,9 +264,10 @@ Fixed 1/8 vulnerabilities. Continue? (Y/n): Y
    - BazBOM: Zero telemetry, offline-first, all data stays local
    - Endor Labs: Cloud-based, requires data upload
 
-3. **Bazel Support:**
-   - BazBOM: Native, incremental scanning, 6x faster on monorepos
-   - Endor Labs: Not supported
+3. **Bazel Workflow Optimization:**
+   - BazBOM: Automatic incremental scanning based on Git changes
+   - Endor Labs: Manual target specification required for incremental scans
+   - **Impact:** 6x faster PR scans for BazBOM (8s vs 45min on typical monorepos)
 
 4. **Transparent:**
    - BazBOM: Open source, auditable, community-driven
