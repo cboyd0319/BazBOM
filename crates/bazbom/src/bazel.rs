@@ -303,20 +303,25 @@ pub fn query_bazel_targets(
             anyhow::bail!("affected_by_files cannot be empty");
         }
         // Escape file paths to prevent shell injection
-        // Bazel query expects paths without shell metacharacters
+        // Validate against comprehensive list of shell metacharacters
+        let is_safe_path = |path: &str| -> bool {
+            let dangerous_chars = ['\'', '"', '$', '`', ';', '&', '|', '>', '<', 
+                                   '(', ')', '{', '}', '[', ']', '*', '?', '~', '\n', '\r'];
+            !path.chars().any(|c| dangerous_chars.contains(&c))
+        };
+        
         let file_set = files
             .iter()
-            .map(|f| {
+            .filter_map(|f| {
                 // Validate file path doesn't contain dangerous characters
-                if f.contains('\'') || f.contains('"') || f.contains('$') || f.contains('`') {
-                    eprintln!("[bazbom] warning: skipping file with shell metacharacters: {}", f);
-                    None
-                } else {
+                if is_safe_path(f) {
                     // Escape for Bazel query (quotes are sufficient as we validated above)
                     Some(format!("\"{}\"", f))
+                } else {
+                    eprintln!("[bazbom] warning: skipping file with shell metacharacters: {}", f);
+                    None
                 }
             })
-            .flatten()
             .collect::<Vec<_>>()
             .join(", ");
         

@@ -278,7 +278,11 @@ fn generate_breaking_changes_warning(
 
     // Helper to parse version part safely, returning None if non-numeric
     let parse_version_part = |s: &str| -> Option<u32> {
-        s.chars().all(|c| c.is_ascii_digit()).then(|| s.parse::<u32>().ok()).flatten()
+        if s.chars().all(|c| c.is_ascii_digit()) {
+            s.parse::<u32>().ok()
+        } else {
+            None
+        }
     };
 
     let current_major = clean_current.first().and_then(|s| parse_version_part(s));
