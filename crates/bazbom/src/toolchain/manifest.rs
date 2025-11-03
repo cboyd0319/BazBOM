@@ -13,7 +13,7 @@ struct ToolManifest {
 struct ToolConfig {
     version: String,
     #[serde(default)]
-    #[allow(dead_code)]  // Used for documentation in manifest but not accessed in code
+    #[allow(dead_code)] // Used for documentation in manifest but not accessed in code
     install_method: Option<String>,
     #[serde(flatten)]
     platforms: HashMap<String, PlatformConfig>,
@@ -50,10 +50,9 @@ impl ToolManifestLoader {
             .with_context(|| format!("tool {} not found in manifest", tool_name))?;
 
         let platform_key = Self::get_platform_key();
-        let platform = tool
-            .platforms
-            .get(&platform_key)
-            .with_context(|| format!("platform {} not supported for {}", platform_key, tool_name))?;
+        let platform = tool.platforms.get(&platform_key).with_context(|| {
+            format!("platform {} not supported for {}", platform_key, tool_name)
+        })?;
 
         Ok(ToolDescriptor {
             name: tool_name.to_string(),
@@ -112,7 +111,7 @@ mod tests {
             return; // Skip if manifest cannot be loaded in test environment
         }
         let loader = loader.unwrap();
-        
+
         // This might fail if the current platform is not in the manifest
         // That's expected for unsupported platforms
         let result = loader.get_descriptor("codeql");

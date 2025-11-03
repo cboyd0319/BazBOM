@@ -44,30 +44,32 @@ impl Analyzer for SemgrepAnalyzer {
         } else {
             // Try to use managed installation from tool cache
             println!("[bazbom] Semgrep not found in PATH, checking tool cache...");
-            
+
             match ToolManifestLoader::load() {
-                Ok(loader) => match loader.get_descriptor("semgrep") {
-                    Ok(desc) => {
-                        let cache = ToolCache::new(ctx.tool_cache.clone());
-                        match cache.ensure(&desc) {
-                            Ok(path) => {
-                                println!("[bazbom] using managed Semgrep from cache");
-                                path
-                            }
-                            Err(e) => {
-                                println!("[bazbom] failed to download Semgrep: {}", e);
-                                println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
-                                println!("[bazbom] Or use: pipx install semgrep");
-                                return Ok(SarifReport::new("Semgrep", "not-installed"));
+                Ok(loader) => {
+                    match loader.get_descriptor("semgrep") {
+                        Ok(desc) => {
+                            let cache = ToolCache::new(ctx.tool_cache.clone());
+                            match cache.ensure(&desc) {
+                                Ok(path) => {
+                                    println!("[bazbom] using managed Semgrep from cache");
+                                    path
+                                }
+                                Err(e) => {
+                                    println!("[bazbom] failed to download Semgrep: {}", e);
+                                    println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
+                                    println!("[bazbom] Or use: pipx install semgrep");
+                                    return Ok(SarifReport::new("Semgrep", "not-installed"));
+                                }
                             }
                         }
+                        Err(e) => {
+                            println!("[bazbom] tool manifest error: {}", e);
+                            println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
+                            return Ok(SarifReport::new("Semgrep", "not-installed"));
+                        }
                     }
-                    Err(e) => {
-                        println!("[bazbom] tool manifest error: {}", e);
-                        println!("[bazbom] Install Semgrep: https://semgrep.dev/docs/getting-started/");
-                        return Ok(SarifReport::new("Semgrep", "not-installed"));
-                    }
-                },
+                }
                 Err(e) => {
                     println!("[bazbom] failed to load tool manifest: {}", e);
                     return Ok(SarifReport::new("Semgrep", "not-installed"));
@@ -85,12 +87,7 @@ impl Analyzer for SemgrepAnalyzer {
             "auto"
         };
 
-        let args = vec![
-            "--config", config_value,
-            "--sarif",
-            "--timeout", "120",
-            ".",
-        ];
+        let args = vec!["--config", config_value, "--sarif", "--timeout", "120", "."];
 
         let output = run_tool(&semgrep_bin, &args, &ctx.workspace, 180)?;
 
@@ -114,24 +111,22 @@ impl Analyzer for SemgrepAnalyzer {
         }
 
         // Parse SARIF output from stdout
-        let sarif: SarifReport = serde_json::from_str(&output.stdout)
-            .with_context(|| {
-                let preview = output.stdout.chars().take(200).collect::<String>();
-                let preview = preview.replace('\n', " ");
-                format!(
-                    "failed to parse Semgrep SARIF output as valid JSON. First 200 chars: {}{}",
-                    preview,
-                    if output.stdout.len() > 200 { "..." } else { "" }
-                )
-            })?;
+        let sarif: SarifReport = serde_json::from_str(&output.stdout).with_context(|| {
+            let preview = output.stdout.chars().take(200).collect::<String>();
+            let preview = preview.replace('\n', " ");
+            format!(
+                "failed to parse Semgrep SARIF output as valid JSON. First 200 chars: {}{}",
+                preview,
+                if output.stdout.len() > 200 { "..." } else { "" }
+            )
+        })?;
 
         println!("[bazbom] Semgrep found {} runs", sarif.runs.len());
-        
+
         // Write to findings directory
         let output_path = ctx.findings_dir.join("semgrep.sarif");
-        std::fs::write(&output_path, &output.stdout)
-            .context("failed to write Semgrep SARIF")?;
-        
+        std::fs::write(&output_path, &output.stdout).context("failed to write Semgrep SARIF")?;
+
         println!("[bazbom] wrote Semgrep findings to {:?}", output_path);
 
         Ok(sarif)
@@ -145,11 +140,11 @@ mod tests {
     #[test]
     fn test_semgrep_analyzer_enabled() {
         let analyzer = SemgrepAnalyzer::new();
-        
+
         // Test CLI override
         let config = Config::default();
         assert!(analyzer.enabled(&config, true));
-        
+
         // Test config enabled
         let mut config = Config::default();
         config.analysis.semgrep = Some(crate::config::SemgrepConfig {
@@ -157,7 +152,7 @@ mod tests {
             ruleset: None,
         });
         assert!(analyzer.enabled(&config, false));
-        
+
         // Test disabled by default
         let config = Config::default();
         assert!(!analyzer.enabled(&config, false));

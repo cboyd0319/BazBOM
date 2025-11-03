@@ -53,8 +53,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 ## Testing & Coverage
 
 - **[Test Plan](TEST_PLAN.md)** - Strategy and scope
-- **[Testing Guide](testing/TESTING_GUIDE.md)** - Comprehensive testing documentation
-- **[PyTest Best Practices](testing/PYTEST_BEST_PRACTICES.md)** - Python testing standards
+- **[Testing Guide](testing/TESTING_GUIDE.md)** - Comprehensive testing documentation (Rust)
 - **[Test Fixtures](testing/TEST_FIXTURES_README.md)** - Sample data for testing
 
 ## Internal & Planning Documentation

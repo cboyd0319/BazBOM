@@ -59,7 +59,7 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
             );
             let content = serde_json::to_vec_pretty(&doc).unwrap();
             fs::write(&path, content)?;
-            
+
             // Also write sca_findings.json as expected by tests
             let findings_path = dir.join("sca_findings.json");
             let empty_findings = serde_json::json!({
@@ -69,8 +69,11 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
                     "build_system": format!("{:?}", system)
                 }
             });
-            fs::write(&findings_path, serde_json::to_vec_pretty(&empty_findings).unwrap())?;
-            
+            fs::write(
+                &findings_path,
+                serde_json::to_vec_pretty(&empty_findings).unwrap(),
+            )?;
+
             Ok(path)
         }
     }

@@ -7,7 +7,6 @@
 /// 3. Analyzer interfaces
 /// 4. Configuration handling
 /// 5. Output formats
-
 use anyhow::Result;
 use std::fs;
 use tempfile::tempdir;
@@ -54,10 +53,22 @@ artifact = true
     // Validate directory structure per integration plan
     // Section 1: Architecture overview
     assert!(out_dir.exists(), "Output directory should exist");
-    assert!(out_dir.join("sbom").exists(), "sbom/ directory should exist");
-    assert!(out_dir.join("findings").exists(), "findings/ directory should exist");
-    assert!(out_dir.join("enrich").exists(), "enrich/ directory should exist");
-    assert!(out_dir.join("fixes").exists(), "fixes/ directory should exist");
+    assert!(
+        out_dir.join("sbom").exists(),
+        "sbom/ directory should exist"
+    );
+    assert!(
+        out_dir.join("findings").exists(),
+        "findings/ directory should exist"
+    );
+    assert!(
+        out_dir.join("enrich").exists(),
+        "enrich/ directory should exist"
+    );
+    assert!(
+        out_dir.join("fixes").exists(),
+        "fixes/ directory should exist"
+    );
 
     // Validate SARIF files exist
     let merged_sarif = out_dir.join("findings").join("merged.sarif");
@@ -80,7 +91,13 @@ fn test_sarif_2_1_0_compliance() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, false, None, None, None, true, None,
+        false,
+        false,
+        None,
+        None,
+        None,
+        true,
+        None,
     )?;
 
     orchestrator.run()?;
@@ -262,7 +279,10 @@ fn test_output_formats() -> Result<()> {
     let workspace = temp.path().to_path_buf();
     let out_dir = workspace.join("bazbom-output");
 
-    fs::write(workspace.join("bazbom.toml"), "[analysis]\ncyclonedx = true\n")?;
+    fs::write(
+        workspace.join("bazbom.toml"),
+        "[analysis]\ncyclonedx = true\n",
+    )?;
 
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
@@ -334,7 +354,13 @@ fn test_merged_sarif_deduplication() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, false, None, None, None, true, None,
+        false,
+        false,
+        None,
+        None,
+        None,
+        true,
+        None,
     )?;
 
     orchestrator.run()?;
@@ -401,7 +427,13 @@ fn test_enrichment_directory() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, false, None, None, None, true, None,
+        false,
+        false,
+        None,
+        None,
+        None,
+        true,
+        None,
     )?;
 
     orchestrator.run()?;

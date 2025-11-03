@@ -1,11 +1,8 @@
 use anyhow::{Context, Result};
-use bazbom_advisories::{
-    load_epss_scores, load_kev_catalog, calculate_priority, Vulnerability,
-};
 use bazbom_advisories::parsers::{
-    parse_ghsa_entry, parse_nvd_entry, parse_osv_entry,
-    GhsaEntry, NvdEntry, OsvEntry,
+    parse_ghsa_entry, parse_nvd_entry, parse_osv_entry, GhsaEntry, NvdEntry, OsvEntry,
 };
+use bazbom_advisories::{calculate_priority, load_epss_scores, load_kev_catalog, Vulnerability};
 use bazbom_graph::Component;
 use std::collections::HashMap;
 use std::fs;
@@ -21,7 +18,7 @@ pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability
     if osv_path.exists() {
         let content = fs::read_to_string(&osv_path)
             .with_context(|| format!("failed to read OSV file at {:?}", osv_path))?;
-        
+
         // Try to parse as a single entry or skip if it's a placeholder
         if !content.contains("\"note\"") {
             if let Ok(osv_entry) = serde_json::from_str::<OsvEntry>(&content) {
@@ -37,15 +34,18 @@ pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability
     if nvd_path.exists() {
         let content = fs::read_to_string(&nvd_path)
             .with_context(|| format!("failed to read NVD file at {:?}", nvd_path))?;
-        
+
         // Try to parse as NVD API response wrapper or single entry
         if !content.contains("\"note\"") {
             // Try parsing as API response wrapper first
             if let Ok(response) = serde_json::from_str::<serde_json::Value>(&content) {
-                if let Some(vulns_array) = response.get("vulnerabilities").and_then(|v| v.as_array()) {
+                if let Some(vulns_array) =
+                    response.get("vulnerabilities").and_then(|v| v.as_array())
+                {
                     // NVD API 2.0 response format
                     for vuln_obj in vulns_array {
-                        if let Ok(nvd_entry) = serde_json::from_value::<NvdEntry>(vuln_obj.clone()) {
+                        if let Ok(nvd_entry) = serde_json::from_value::<NvdEntry>(vuln_obj.clone())
+                        {
                             if let Ok(vuln) = parse_nvd_entry(&nvd_entry) {
                                 vulnerabilities.push(vuln);
                             }
@@ -66,7 +66,7 @@ pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability
     if ghsa_path.exists() {
         let content = fs::read_to_string(&ghsa_path)
             .with_context(|| format!("failed to read GHSA file at {:?}", ghsa_path))?;
-        
+
         // Try to parse as a single entry or skip if it's a placeholder
         if !content.contains("\"note\"") {
             if let Ok(ghsa_entry) = serde_json::from_str::<GhsaEntry>(&content) {
@@ -151,7 +151,7 @@ pub fn match_vulnerabilities(
 
     for component in components {
         let component_key = format!("{}:{}", component.name, component.version);
-        
+
         for vuln in vulnerabilities {
             for affected in &vuln.affected {
                 // Simple matching based on package name
@@ -271,7 +271,7 @@ mod tests {
         assert!(result.is_ok());
         let vulns = result.unwrap();
         assert_eq!(vulns.len(), 1);
-        
+
         // Verify priority calculation
         assert!(vulns[0].priority.is_some());
         // CVSS 10.0 should be P0

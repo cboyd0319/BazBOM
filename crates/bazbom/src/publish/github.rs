@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use std::path::Path;
 
 /// Publisher for GitHub Code Scanning SARIF upload
-/// 
+///
 /// Note: In a real GitHub Actions environment, the upload is typically done
 /// via the github/codeql-action/upload-sarif action. This publisher provides
 /// the interface for programmatic uploads if needed in the future.
@@ -24,14 +24,14 @@ impl GitHubPublisher {
     }
 
     /// Upload SARIF file to GitHub Code Scanning
-    /// 
+    ///
     /// In most cases, users should use the GitHub Action:
     /// ```yaml
     /// - uses: github/codeql-action/upload-sarif@v3
     ///   with:
     ///     sarif_file: findings/merged.sarif
     /// ```
-    /// 
+    ///
     /// This method is provided for programmatic uploads outside of Actions.
     pub fn upload_sarif(&self, sarif_path: &Path) -> Result<()> {
         if !self.is_configured() {
@@ -47,17 +47,17 @@ impl GitHubPublisher {
         }
 
         // Read and validate SARIF
-        let sarif_content = std::fs::read_to_string(sarif_path)
-            .context("failed to read SARIF file")?;
-        
+        let sarif_content =
+            std::fs::read_to_string(sarif_path).context("failed to read SARIF file")?;
+
         // Basic validation: ensure it's valid JSON
-        let _sarif: serde_json::Value = serde_json::from_str(&sarif_content)
-            .context("SARIF file is not valid JSON")?;
+        let _sarif: serde_json::Value =
+            serde_json::from_str(&sarif_content).context("SARIF file is not valid JSON")?;
 
         println!("[bazbom] SARIF validation passed");
         println!("[bazbom] Note: Direct API upload not yet implemented");
         println!("[bazbom] Please use: github/codeql-action/upload-sarif@v3");
-        
+
         Ok(())
     }
 }

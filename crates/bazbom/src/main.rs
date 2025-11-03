@@ -11,8 +11,8 @@ mod reachability;
 mod reachability_cache;
 mod shading;
 
-use bazbom::cli::{Cli, Commands, PolicyCmd, DbCmd, LicenseCmd};
-use bazbom::hooks::{HooksConfig, install_hooks};
+use bazbom::cli::{Cli, Commands, DbCmd, LicenseCmd, PolicyCmd};
+use bazbom::hooks::{install_hooks, HooksConfig};
 use bazbom::remediation;
 use bazbom::scan_orchestrator::ScanOrchestrator;
 
@@ -55,15 +55,18 @@ fn main() -> Result<()> {
             target,
         } => {
             // Check if any orchestration flags are set
-            let use_orchestrator = cyclonedx || with_semgrep || with_codeql.is_some() 
-                || autofix.is_some() || containers.is_some();
-            
+            let use_orchestrator = cyclonedx
+                || with_semgrep
+                || with_codeql.is_some()
+                || autofix.is_some()
+                || containers.is_some();
+
             if use_orchestrator {
                 // Use new orchestration path
                 println!("[bazbom] using orchestrated scan mode");
                 let workspace = PathBuf::from(&path);
                 let output_dir = PathBuf::from(&out_dir);
-                
+
                 let orchestrator = ScanOrchestrator::new(
                     workspace,
                     output_dir,
@@ -75,19 +78,25 @@ fn main() -> Result<()> {
                     no_upload,
                     target,
                 )?;
-                
+
                 return orchestrator.run();
             }
-            
+
             // Original scan logic follows
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
-            
+
             // Handle Bazel-specific target selection
             let bazel_targets_to_scan = if system == bazbom_core::BuildSystem::Bazel {
                 if let Some(query) = &bazel_targets_query {
                     println!("[bazbom] using Bazel query: {}", query);
-                    match bazel::query_bazel_targets(&root, Some(query), None, None, &bazel_universe) {
+                    match bazel::query_bazel_targets(
+                        &root,
+                        Some(query),
+                        None,
+                        None,
+                        &bazel_universe,
+                    ) {
                         Ok(targets) => Some(targets),
                         Err(e) => {
                             eprintln!("[bazbom] warning: Bazel query failed: {}", e);
@@ -99,7 +108,13 @@ fn main() -> Result<()> {
                     Some(targets.clone())
                 } else if let Some(files) = &bazel_affected_by_files {
                     println!("[bazbom] finding targets affected by {} files", files.len());
-                    match bazel::query_bazel_targets(&root, None, None, Some(files), &bazel_universe) {
+                    match bazel::query_bazel_targets(
+                        &root,
+                        None,
+                        None,
+                        Some(files),
+                        &bazel_universe,
+                    ) {
                         Ok(targets) => Some(targets),
                         Err(e) => {
                             eprintln!("[bazbom] warning: failed to find affected targets: {}", e);
@@ -107,12 +122,12 @@ fn main() -> Result<()> {
                         }
                     }
                 } else {
-                    None  // Scan all targets
+                    None // Scan all targets
                 }
             } else {
                 None
             };
-            
+
             if let Some(ref targets) = bazel_targets_to_scan {
                 if targets.is_empty() {
                     println!("[bazbom] warning: no targets selected, scanning entire workspace");
@@ -120,32 +135,39 @@ fn main() -> Result<()> {
                     println!("[bazbom] scanning {} selected targets", targets.len());
                 }
             }
-            
+
             if fast {
                 println!("[bazbom] fast mode enabled (skipping reachability analysis)");
             }
-            
+
             println!(
                 "[bazbom] scan path={} reachability={} format={} system={:?}",
-                path, reachability && !fast, format, system
+                path,
+                reachability && !fast,
+                format,
+                system
             );
             let out = PathBuf::from(&out_dir);
-            
+
             // For Bazel projects, extract dependencies and generate SBOM
             let sbom_path = if system == bazbom_core::BuildSystem::Bazel {
                 let deps_json_path = out.join("bazel_deps.json");
-                
+
                 // If we have specific targets, extract dependencies for those
                 let extraction_result = if let Some(targets) = &bazel_targets_to_scan {
                     if !targets.is_empty() {
-                        bazel::extract_bazel_dependencies_for_targets(&root, targets, &deps_json_path)
+                        bazel::extract_bazel_dependencies_for_targets(
+                            &root,
+                            targets,
+                            &deps_json_path,
+                        )
                     } else {
                         bazel::extract_bazel_dependencies(&root, &deps_json_path)
                     }
                 } else {
                     bazel::extract_bazel_dependencies(&root, &deps_json_path)
                 };
-                
+
                 match extraction_result {
                     Ok(graph) => {
                         println!(
@@ -153,29 +175,32 @@ fn main() -> Result<()> {
                             graph.components.len(),
                             graph.edges.len()
                         );
-                        
+
                         // Write raw dependency graph
                         println!("[bazbom] wrote dependency graph to {:?}", deps_json_path);
-                        
+
                         // Convert to SPDX format
                         let project_name = root
                             .file_name()
                             .and_then(|n| n.to_str())
                             .unwrap_or("bazel-project");
                         let spdx_doc = graph.to_spdx(project_name);
-                        
+
                         let sbom_path = match format.as_str() {
                             "cyclonedx" => out.join("sbom.cyclonedx.json"),
                             _ => out.join("sbom.spdx.json"),
                         };
-                        
+
                         fs::write(&sbom_path, serde_json::to_vec_pretty(&spdx_doc).unwrap())
                             .with_context(|| format!("failed writing {:?}", sbom_path))?;
-                        
+
                         sbom_path
                     }
                     Err(e) => {
-                        eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
+                        eprintln!(
+                            "[bazbom] warning: failed to extract Bazel dependencies: {}",
+                            e
+                        );
                         eprintln!("[bazbom] falling back to stub SBOM");
                         write_stub_sbom(&out, &format, system)
                             .with_context(|| format!("failed writing stub SBOM to {:?}", out))?
@@ -211,57 +236,68 @@ fn main() -> Result<()> {
                 if let Ok(jar) = std::env::var("BAZBOM_REACHABILITY_JAR") {
                     let jar_path = PathBuf::from(&jar);
                     if !jar_path.exists() {
-                        eprintln!("[bazbom] BAZBOM_REACHABILITY_JAR points to non-existent file: {:?}", jar_path);
+                        eprintln!(
+                            "[bazbom] BAZBOM_REACHABILITY_JAR points to non-existent file: {:?}",
+                            jar_path
+                        );
                         None
                     } else {
                         let out_file = out.join("reachability.json");
-                        
+
                         // Extract classpath based on build system
                         let classpath = match system {
                             bazbom_core::BuildSystem::Maven => {
-                                reachability::extract_maven_classpath(&root)
-                                    .unwrap_or_else(|e| {
-                                        eprintln!("[bazbom] failed to extract Maven classpath: {}", e);
-                                        String::new()
-                                    })
+                                reachability::extract_maven_classpath(&root).unwrap_or_else(|e| {
+                                    eprintln!("[bazbom] failed to extract Maven classpath: {}", e);
+                                    String::new()
+                                })
                             }
                             bazbom_core::BuildSystem::Gradle => {
-                                reachability::extract_gradle_classpath(&root)
-                                    .unwrap_or_else(|e| {
-                                        eprintln!("[bazbom] failed to extract Gradle classpath: {}", e);
-                                        String::new()
-                                    })
+                                reachability::extract_gradle_classpath(&root).unwrap_or_else(|e| {
+                                    eprintln!("[bazbom] failed to extract Gradle classpath: {}", e);
+                                    String::new()
+                                })
                             }
                             bazbom_core::BuildSystem::Bazel => {
-                                reachability::extract_bazel_classpath(&root, "")
-                                    .unwrap_or_else(|e| {
-                                        eprintln!("[bazbom] failed to extract Bazel classpath: {}", e);
+                                reachability::extract_bazel_classpath(&root, "").unwrap_or_else(
+                                    |e| {
+                                        eprintln!(
+                                            "[bazbom] failed to extract Bazel classpath: {}",
+                                            e
+                                        );
                                         String::new()
-                                    })
+                                    },
+                                )
                             }
                             _ => String::new(),
                         };
-                        
+
                         let entrypoints = "";
                         let cache_dir = reachability_cache::get_cache_dir();
-                        
+
                         // Check cache first
-                        let result = if let Ok(Some(cached)) = reachability_cache::load_cached_result(
-                            &cache_dir,
-                            &classpath,
-                            entrypoints,
-                        ) {
+                        let result = if let Ok(Some(cached)) =
+                            reachability_cache::load_cached_result(
+                                &cache_dir,
+                                &classpath,
+                                entrypoints,
+                            ) {
                             println!("[bazbom] using cached reachability result");
                             Some(cached)
                         } else {
                             // Run analysis and cache result
-                            match reachability::analyze_reachability(&jar_path, &classpath, entrypoints, &out_file) {
+                            match reachability::analyze_reachability(
+                                &jar_path,
+                                &classpath,
+                                entrypoints,
+                                &out_file,
+                            ) {
                                 Ok(result) => {
                                     println!("[bazbom] reachability analysis complete");
                                     if result.reachable_classes.is_empty() {
                                         println!("[bazbom] no reachable classes found (classpath may be empty)");
                                     }
-                                    
+
                                     // Save to cache
                                     if let Err(e) = reachability_cache::save_cached_result(
                                         &cache_dir,
@@ -271,7 +307,7 @@ fn main() -> Result<()> {
                                     ) {
                                         eprintln!("[bazbom] warning: failed to cache reachability result: {}", e);
                                     }
-                                    
+
                                     Some(result)
                                 }
                                 Err(e) => {
@@ -280,11 +316,13 @@ fn main() -> Result<()> {
                                 }
                             }
                         };
-                        
+
                         result
                     }
                 } else {
-                    eprintln!("[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured");
+                    eprintln!(
+                        "[bazbom] --reachability set but BAZBOM_REACHABILITY_JAR not configured"
+                    );
                     eprintln!("[bazbom] set BAZBOM_REACHABILITY_JAR to the path of bazbom-reachability.jar");
                     None
                 }
@@ -299,13 +337,18 @@ fn main() -> Result<()> {
                     if pom_path.exists() {
                         match shading::parse_maven_shade_config(&pom_path) {
                             Ok(Some(config)) => {
-                                println!("[bazbom] detected Maven Shade plugin with {} relocations", 
-                                         config.relocations.len());
+                                println!(
+                                    "[bazbom] detected Maven Shade plugin with {} relocations",
+                                    config.relocations.len()
+                                );
                                 Some(config)
                             }
                             Ok(None) => None,
                             Err(e) => {
-                                eprintln!("[bazbom] warning: failed to parse Maven Shade config: {}", e);
+                                eprintln!(
+                                    "[bazbom] warning: failed to parse Maven Shade config: {}",
+                                    e
+                                );
                                 None
                             }
                         }
@@ -323,17 +366,22 @@ fn main() -> Result<()> {
                     } else {
                         PathBuf::new()
                     };
-                    
+
                     if build_file.exists() {
                         match shading::parse_gradle_shadow_config(&build_file) {
                             Ok(Some(config)) => {
-                                println!("[bazbom] detected Gradle Shadow plugin with {} relocations", 
-                                         config.relocations.len());
+                                println!(
+                                    "[bazbom] detected Gradle Shadow plugin with {} relocations",
+                                    config.relocations.len()
+                                );
                                 Some(config)
                             }
                             Ok(None) => None,
                             Err(e) => {
-                                eprintln!("[bazbom] warning: failed to parse Gradle Shadow config: {}", e);
+                                eprintln!(
+                                    "[bazbom] warning: failed to parse Gradle Shadow config: {}",
+                                    e
+                                );
                                 None
                             }
                         }
@@ -372,7 +420,7 @@ fn main() -> Result<()> {
                     }).count(),
                 }
             });
-            
+
             // Add reachability info if available
             if let Some(ref reach) = reachability_result {
                 findings_data["reachability"] = serde_json::json!({
@@ -387,7 +435,7 @@ fn main() -> Result<()> {
                     "enabled": false,
                 });
             }
-            
+
             // Add shading info if available
             if let Some(ref config) = shading_config {
                 findings_data["shading"] = serde_json::json!({
@@ -400,15 +448,22 @@ fn main() -> Result<()> {
                     "detected": false,
                 });
             }
-            
-            fs::write(&findings_path, serde_json::to_vec_pretty(&findings_data).unwrap())
-                .with_context(|| format!("failed writing {:?}", findings_path))?;
-            println!("[bazbom] wrote {:?} ({} vulnerabilities)", findings_path, vulnerabilities.len());
+
+            fs::write(
+                &findings_path,
+                serde_json::to_vec_pretty(&findings_data).unwrap(),
+            )
+            .with_context(|| format!("failed writing {:?}", findings_path))?;
+            println!(
+                "[bazbom] wrote {:?} ({} vulnerabilities)",
+                findings_path,
+                vulnerabilities.len()
+            );
 
             // Create SARIF report with vulnerability results
             let sarif_path = out.join("sca_findings.sarif");
             let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom", bazbom_core::VERSION);
-            
+
             // Add informational note about shading if detected
             if let Some(ref config) = shading_config {
                 let shading_note = format!(
@@ -416,14 +471,11 @@ fn main() -> Result<()> {
                     config.relocations.len(),
                     config.source
                 );
-                let info_result = bazbom_formats::sarif::Result::new(
-                    "shading/detected",
-                    "note",
-                    &shading_note
-                );
+                let info_result =
+                    bazbom_formats::sarif::Result::new("shading/detected", "note", &shading_note);
                 sarif.add_result(info_result);
             }
-            
+
             // Add vulnerability results to SARIF with reachability info if available
             for vuln in &vulnerabilities {
                 let level = match vuln.severity.as_ref().map(|s| s.level) {
@@ -433,11 +485,13 @@ fn main() -> Result<()> {
                     Some(bazbom_advisories::SeverityLevel::Low) => "note",
                     _ => "note",
                 };
-                
-                let mut message = vuln.summary.clone()
+
+                let mut message = vuln
+                    .summary
+                    .clone()
                     .or_else(|| vuln.details.clone())
                     .unwrap_or_else(|| format!("Vulnerability {}", vuln.id));
-                
+
                 // Add reachability info to message if available
                 if let Some(ref reach) = reachability_result {
                     // Extract package name from first affected package
@@ -450,11 +504,11 @@ fn main() -> Result<()> {
                         }
                     }
                 }
-                
+
                 let result = bazbom_formats::sarif::Result::new(&vuln.id, level, &message);
                 sarif.add_result(result);
             }
-            
+
             fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
                 .with_context(|| format!("failed writing {:?}", sarif_path))?;
             println!("[bazbom] wrote {:?}", sarif_path);
@@ -464,23 +518,29 @@ fn main() -> Result<()> {
             if policy_path.exists() {
                 let policy = policy_integration::load_policy_config(&policy_path)
                     .context("failed to load policy configuration")?;
-                
+
                 let policy_result = policy_integration::check_policy_with_reachability(
                     &vulnerabilities,
                     &policy,
                     reachability_result.as_ref(),
                 );
-                
+
                 if !policy_result.passed {
-                    println!("[bazbom] ⚠ policy violations detected ({} violations)", policy_result.violations.len());
+                    println!(
+                        "[bazbom] ⚠ policy violations detected ({} violations)",
+                        policy_result.violations.len()
+                    );
                     for violation in &policy_result.violations {
                         println!("  - {}: {}", violation.rule, violation.message);
                     }
-                    
+
                     // Write policy violations to separate file
                     let policy_violations_path = out.join("policy_violations.json");
-                    fs::write(&policy_violations_path, serde_json::to_vec_pretty(&policy_result).unwrap())
-                        .with_context(|| format!("failed writing {:?}", policy_violations_path))?;
+                    fs::write(
+                        &policy_violations_path,
+                        serde_json::to_vec_pretty(&policy_result).unwrap(),
+                    )
+                    .with_context(|| format!("failed writing {:?}", policy_violations_path))?;
                     println!("[bazbom] wrote {:?}", policy_violations_path);
                 } else {
                     println!("[bazbom] ✓ all policy checks passed");
@@ -490,13 +550,16 @@ fn main() -> Result<()> {
         Commands::Policy { action } => match action {
             PolicyCmd::Check {} => {
                 println!("[bazbom] policy check");
-                
+
                 // Load policy configuration
                 let policy_path = PathBuf::from("bazbom.yml");
                 let policy = policy_integration::load_policy_config(&policy_path)
                     .context("failed to load policy configuration")?;
-                println!("[bazbom] loaded policy config (threshold={:?})", policy.severity_threshold);
-                
+                println!(
+                    "[bazbom] loaded policy config (threshold={:?})",
+                    policy.severity_threshold
+                );
+
                 // Load advisories from cache
                 let cache_dir = PathBuf::from(".bazbom/cache");
                 let vulnerabilities = if cache_dir.exists() {
@@ -514,20 +577,21 @@ fn main() -> Result<()> {
                     eprintln!("[bazbom] warning: advisory cache not found at {:?}, run 'bazbom db sync' first", cache_dir);
                     Vec::new()
                 };
-                
+
                 // Check vulnerabilities against policy
                 let result = policy_integration::check_policy(&vulnerabilities, &policy);
-                
+
                 // Write policy result to JSON
                 let policy_output = PathBuf::from("policy_result.json");
                 fs::write(&policy_output, serde_json::to_vec_pretty(&result).unwrap())
                     .with_context(|| format!("failed writing {:?}", policy_output))?;
                 println!("[bazbom] wrote {:?}", policy_output);
-                
+
                 // Write policy violations to SARIF
                 let sarif_path = PathBuf::from("policy_violations.sarif");
-                let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom-policy", bazbom_core::VERSION);
-                
+                let mut sarif =
+                    bazbom_formats::sarif::SarifReport::new("bazbom-policy", bazbom_core::VERSION);
+
                 for violation in &result.violations {
                     let level = if violation.rule == "kev_gate" {
                         "error"
@@ -541,37 +605,53 @@ fn main() -> Result<()> {
                     } else {
                         "warning"
                     };
-                    
+
                     let rule_id = format!("policy/{}", violation.rule);
-                    let result_item = bazbom_formats::sarif::Result::new(&rule_id, level, &violation.message);
+                    let result_item =
+                        bazbom_formats::sarif::Result::new(&rule_id, level, &violation.message);
                     sarif.add_result(result_item);
                 }
-                
+
                 fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
                     .with_context(|| format!("failed writing {:?}", sarif_path))?;
-                println!("[bazbom] wrote {:?} ({} violations)", sarif_path, result.violations.len());
-                
+                println!(
+                    "[bazbom] wrote {:?} ({} violations)",
+                    sarif_path,
+                    result.violations.len()
+                );
+
                 // Print summary
                 if result.passed {
                     println!("[bazbom] ✓ policy check passed (no violations)");
                 } else {
-                    println!("[bazbom] ✗ policy check failed ({} violations)", result.violations.len());
+                    println!(
+                        "[bazbom] ✗ policy check failed ({} violations)",
+                        result.violations.len()
+                    );
                     for violation in &result.violations {
                         println!("  - {}: {}", violation.rule, violation.message);
                     }
                     std::process::exit(1);
                 }
             }
-            PolicyCmd::Init { list, template, output } => {
+            PolicyCmd::Init {
+                list,
+                template,
+                output,
+            } => {
                 if list {
                     println!("[bazbom] Available policy templates:\n");
                     let templates = bazbom_policy::PolicyTemplateLibrary::list_templates();
-                    
-                    let mut by_category: std::collections::HashMap<String, Vec<_>> = std::collections::HashMap::new();
+
+                    let mut by_category: std::collections::HashMap<String, Vec<_>> =
+                        std::collections::HashMap::new();
                     for template in templates {
-                        by_category.entry(template.category.clone()).or_insert_with(Vec::new).push(template);
+                        by_category
+                            .entry(template.category.clone())
+                            .or_insert_with(Vec::new)
+                            .push(template);
                     }
-                    
+
                     for (category, templates) in by_category {
                         println!("{}:", category);
                         for template in templates {
@@ -580,11 +660,14 @@ fn main() -> Result<()> {
                         }
                         println!();
                     }
-                    
+
                     println!("Usage: bazbom policy init --template <template-id>");
                 } else if let Some(template_id) = template {
                     let output_path = PathBuf::from(&output);
-                    match bazbom_policy::PolicyTemplateLibrary::initialize_template(&template_id, &output_path) {
+                    match bazbom_policy::PolicyTemplateLibrary::initialize_template(
+                        &template_id,
+                        &output_path,
+                    ) {
                         Ok(msg) => println!("{}", msg),
                         Err(e) => {
                             eprintln!("Error: {}", e);
@@ -599,7 +682,7 @@ fn main() -> Result<()> {
             }
             PolicyCmd::Validate { policy_file } => {
                 println!("[bazbom] validating policy file: {}", policy_file);
-                
+
                 let policy_path = PathBuf::from(&policy_file);
                 match policy_integration::load_policy_config(&policy_path) {
                     Ok(policy) => {
@@ -610,7 +693,7 @@ fn main() -> Result<()> {
                         println!("  EPSS threshold: {:?}", policy.epss_threshold);
                         println!("  Reachability required: {}", policy.reachability_required);
                         println!("  VEX auto-apply: {}", policy.vex_auto_apply);
-                        
+
                         if let Some(allowlist) = &policy.license_allowlist {
                             println!("  License allowlist: {} licenses", allowlist.len());
                         }
@@ -627,12 +710,12 @@ fn main() -> Result<()> {
         },
         Commands::Fix { suggest, apply, pr } => {
             println!("[bazbom] fix suggest={} apply={} pr={}", suggest, apply, pr);
-            
+
             // Detect build system
             let root = PathBuf::from(".");
             let system = detect_build_system(&root);
             println!("[bazbom] detected build system: {:?}", system);
-            
+
             // Load advisories from cache
             let cache_dir = PathBuf::from(".bazbom/cache");
             let vulnerabilities = if cache_dir.exists() {
@@ -650,35 +733,46 @@ fn main() -> Result<()> {
                 eprintln!("[bazbom] warning: advisory cache not found at {:?}, run 'bazbom db sync' first", cache_dir);
                 Vec::new()
             };
-            
+
             if vulnerabilities.is_empty() {
                 println!("[bazbom] no vulnerabilities found - nothing to fix");
                 return Ok(());
             }
-            
+
             // Generate remediation suggestions
             let report = remediation::generate_suggestions(&vulnerabilities, system);
-            
+
             // Display summary
             println!("\n[bazbom] Remediation Summary:");
-            println!("  Total vulnerabilities: {}", report.summary.total_vulnerabilities);
+            println!(
+                "  Total vulnerabilities: {}",
+                report.summary.total_vulnerabilities
+            );
             println!("  Fixable: {}", report.summary.fixable);
             println!("  Unfixable: {}", report.summary.unfixable);
             println!("  Estimated effort: {}", report.summary.estimated_effort);
-            
+
             if suggest {
                 // Suggest mode: display suggestions
                 println!("\n[bazbom] Remediation Suggestions:\n");
-                
+
                 for (i, suggestion) in report.suggestions.iter().enumerate() {
-                    println!("{}. {} ({})", i + 1, suggestion.vulnerability_id, suggestion.affected_package);
+                    println!(
+                        "{}. {} ({})",
+                        i + 1,
+                        suggestion.vulnerability_id,
+                        suggestion.affected_package
+                    );
                     println!("   Current version: {}", suggestion.current_version);
                     if let Some(fixed) = &suggestion.fixed_version {
                         println!("   Fixed version: {}", fixed);
                     } else {
                         println!("   Fixed version: NOT AVAILABLE");
                     }
-                    println!("   Severity: {} | Priority: {}", suggestion.severity, suggestion.priority);
+                    println!(
+                        "   Severity: {} | Priority: {}",
+                        suggestion.severity, suggestion.priority
+                    );
                     println!("\n   WHY FIX THIS:");
                     println!("   {}", suggestion.why_fix);
                     println!("\n   HOW TO FIX:");
@@ -699,27 +793,32 @@ fn main() -> Result<()> {
                     }
                     println!();
                 }
-                
+
                 // Write suggestions to file
                 let suggestions_path = PathBuf::from("remediation_suggestions.json");
-                fs::write(&suggestions_path, serde_json::to_vec_pretty(&report).unwrap())
-                    .with_context(|| format!("failed writing {:?}", suggestions_path))?;
+                fs::write(
+                    &suggestions_path,
+                    serde_json::to_vec_pretty(&report).unwrap(),
+                )
+                .with_context(|| format!("failed writing {:?}", suggestions_path))?;
                 println!("[bazbom] wrote {:?}", suggestions_path);
             }
-            
+
             if apply {
                 // Apply mode: attempt to apply fixes
                 println!("\n[bazbom] Applying fixes...");
-                
+
                 match remediation::apply_fixes(&report.suggestions, system, &root) {
                     Ok(result) => {
                         println!("\n[bazbom] Apply Results:");
                         println!("  Applied: {}", result.applied);
                         println!("  Failed: {}", result.failed);
                         println!("  Skipped: {}", result.skipped);
-                        
+
                         if result.applied > 0 {
-                            println!("\n[bazbom] Please review changes and run tests before committing");
+                            println!(
+                                "\n[bazbom] Please review changes and run tests before committing"
+                            );
                         }
                         if result.failed > 0 || result.skipped > 0 {
                             println!("[bazbom] Some fixes require manual intervention - see suggestions above");
@@ -731,11 +830,11 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            
+
             if pr {
                 // PR mode: apply fixes with testing and create a pull request
                 println!("\n[bazbom] Creating pull request with fixes...");
-                
+
                 match remediation::generate_pr(&report.suggestions, system, &root) {
                     Ok(pr_url) => {
                         println!("\n✅ Pull request created successfully!");
@@ -752,7 +851,7 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            
+
             if !suggest && !apply && !pr {
                 println!("\n[bazbom] Use --suggest to see remediation suggestions");
                 println!("[bazbom] Use --apply to automatically apply fixes");
@@ -762,24 +861,24 @@ fn main() -> Result<()> {
         Commands::License { action } => match action {
             LicenseCmd::Obligations { sbom_file } => {
                 println!("[bazbom] generating license obligations report");
-                
+
                 let sbom_path = sbom_file.as_deref().unwrap_or("sbom.spdx.json");
-                
+
                 if sbom_file.is_some() {
                     println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
                 }
-                
+
                 let obligations_db = bazbom_formats::licenses::LicenseObligations::new();
-                
+
                 println!("\n# License Obligations Report\n");
                 println!("Example output for: {}\n", sbom_path);
-                
+
                 let example_licenses = vec![
                     ("MIT", "example-mit-lib:1.0.0"),
                     ("Apache-2.0", "example-apache-lib:2.0.0"),
                     ("GPL-3.0-only", "example-gpl-lib:3.0.0"),
                 ];
-                
+
                 for (license, component) in example_licenses {
                     if let Some(obligations) = obligations_db.get(license) {
                         println!("## {} ({})\n", component, license);
@@ -794,33 +893,38 @@ fn main() -> Result<()> {
                         println!();
                     }
                 }
-                
-                println!("Note: This is a demonstration. Full SBOM parsing integration coming soon.");
+
+                println!(
+                    "Note: This is a demonstration. Full SBOM parsing integration coming soon."
+                );
             }
-            LicenseCmd::Compatibility { project_license, sbom_file } => {
+            LicenseCmd::Compatibility {
+                project_license,
+                sbom_file,
+            } => {
                 println!("[bazbom] checking license compatibility");
                 println!("Project license: {}", project_license);
-                
+
                 if let Some(sbom) = &sbom_file {
                     println!("SBOM file: {}", sbom);
                     println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
                 }
-                
+
                 let test_dependencies = vec![
                     ("MIT", "example-mit-lib"),
                     ("Apache-2.0", "example-apache-lib"),
                     ("GPL-3.0-only", "example-gpl-lib"),
                     ("AGPL-3.0-only", "example-agpl-lib"),
                 ];
-                
+
                 println!("\n# License Compatibility Report\n");
-                
+
                 for (dep_license, dep_name) in test_dependencies {
                     let risk = bazbom_formats::licenses::LicenseCompatibility::is_compatible(
                         &project_license,
                         dep_license,
                     );
-                    
+
                     let risk_str = format!("{:?}", risk);
                     let indicator = match risk {
                         bazbom_formats::licenses::LicenseRisk::Safe => "✓",
@@ -829,20 +933,25 @@ fn main() -> Result<()> {
                         bazbom_formats::licenses::LicenseRisk::High => "✗",
                         bazbom_formats::licenses::LicenseRisk::Critical => "✗✗",
                     };
-                    
-                    println!("{} {} ({}) - Risk: {}", indicator, dep_name, dep_license, risk_str);
+
+                    println!(
+                        "{} {} ({}) - Risk: {}",
+                        indicator, dep_name, dep_license, risk_str
+                    );
                 }
-                
-                println!("\nNote: This is a demonstration. Full SBOM parsing integration coming soon.");
+
+                println!(
+                    "\nNote: This is a demonstration. Full SBOM parsing integration coming soon."
+                );
             }
             LicenseCmd::Contamination { sbom_file } => {
                 println!("[bazbom] detecting copyleft contamination");
-                
+
                 if let Some(sbom) = &sbom_file {
                     println!("SBOM file: {}", sbom);
                     println!("[bazbom] note: SBOM file parsing not yet implemented, showing example data");
                 }
-                
+
                 let test_dependencies = vec![
                     bazbom_formats::licenses::Dependency {
                         name: "example-mit-lib:1.0.0".to_string(),
@@ -857,11 +966,13 @@ fn main() -> Result<()> {
                         license: "AGPL-3.0-only".to_string(),
                     },
                 ];
-                
-                let warnings = bazbom_formats::licenses::LicenseCompatibility::check_contamination(&test_dependencies);
-                
+
+                let warnings = bazbom_formats::licenses::LicenseCompatibility::check_contamination(
+                    &test_dependencies,
+                );
+
                 println!("\n# Copyleft Contamination Report\n");
-                
+
                 if warnings.is_empty() {
                     println!("✓ No copyleft contamination detected");
                 } else {
@@ -872,14 +983,19 @@ fn main() -> Result<()> {
                             bazbom_formats::licenses::LicenseRisk::Medium => "⚠ MEDIUM",
                             _ => "ⓘ INFO",
                         };
-                        
+
                         println!("{}: {}", risk_indicator, warning.message);
-                        println!("Affected licenses: {}", warning.affected_licenses.join(", "));
+                        println!(
+                            "Affected licenses: {}",
+                            warning.affected_licenses.join(", ")
+                        );
                         println!();
                     }
                 }
-                
-                println!("Note: This is a demonstration. Full SBOM parsing integration coming soon.");
+
+                println!(
+                    "Note: This is a demonstration. Full SBOM parsing integration coming soon."
+                );
             }
         },
         Commands::Db { action } => match action {

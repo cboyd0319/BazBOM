@@ -21,13 +21,13 @@ fn test_orchestrator_basic_scan() -> Result<()> {
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,        // cyclonedx
-        false,        // with_semgrep (would require semgrep installed)
-        None,         // with_codeql
-        None,         // autofix
-        None,         // containers
-        true,         // no_upload
-        None,         // target
+        false, // cyclonedx
+        false, // with_semgrep (would require semgrep installed)
+        None,  // with_codeql
+        None,  // autofix
+        None,  // containers
+        true,  // no_upload
+        None,  // target
     )?;
 
     orchestrator.run()?;
@@ -46,11 +46,11 @@ fn test_orchestrator_basic_scan() -> Result<()> {
     // Verify SARIF is valid JSON
     let sarif_content = fs::read_to_string(&merged_sarif)?;
     let sarif: serde_json::Value = serde_json::from_str(&sarif_content)?;
-    
+
     // Check SARIF structure
     assert!(sarif.get("version").is_some());
     assert!(sarif.get("runs").is_some());
-    
+
     let runs = sarif["runs"].as_array().unwrap();
     assert!(!runs.is_empty(), "SARIF should have at least one run (SCA)");
 
@@ -120,9 +120,18 @@ fn test_orchestrator_creates_all_directories() -> Result<()> {
 
     // Verify all expected directories exist
     assert!(out_dir.join("sbom").exists(), "sbom directory should exist");
-    assert!(out_dir.join("findings").exists(), "findings directory should exist");
-    assert!(out_dir.join("enrich").exists(), "enrich directory should exist");
-    assert!(out_dir.join("fixes").exists(), "fixes directory should exist");
+    assert!(
+        out_dir.join("findings").exists(),
+        "findings directory should exist"
+    );
+    assert!(
+        out_dir.join("enrich").exists(),
+        "enrich directory should exist"
+    );
+    assert!(
+        out_dir.join("fixes").exists(),
+        "fixes directory should exist"
+    );
 
     Ok(())
 }
@@ -178,8 +187,11 @@ fn test_orchestrator_merged_sarif_structure() -> Result<()> {
 
     // Verify SARIF 2.1.0 structure
     assert_eq!(sarif["version"], "2.1.0");
-    assert_eq!(sarif["$schema"], "https://json.schemastore.org/sarif-2.1.0.json");
-    
+    assert_eq!(
+        sarif["$schema"],
+        "https://json.schemastore.org/sarif-2.1.0.json"
+    );
+
     let runs = sarif["runs"].as_array().unwrap();
     assert!(!runs.is_empty());
 

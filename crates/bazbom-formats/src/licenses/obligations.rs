@@ -37,9 +37,9 @@ pub struct LicenseObligations {
 impl LicenseObligations {
     pub fn new() -> Self {
         let mut obligations = HashMap::new();
-        
+
         Self::populate_obligations(&mut obligations);
-        
+
         Self { obligations }
     }
 
@@ -65,7 +65,8 @@ impl LicenseObligations {
             vec![
                 Obligation {
                     obligation_type: ObligationType::Attribution,
-                    description: "Must include NOTICE file if present in original distribution".to_string(),
+                    description: "Must include NOTICE file if present in original distribution"
+                        .to_string(),
                     severity: ObligationSeverity::Medium,
                 },
                 Obligation {
@@ -75,7 +76,9 @@ impl LicenseObligations {
                 },
                 Obligation {
                     obligation_type: ObligationType::NoticeFile,
-                    description: "Must retain all copyright, patent, trademark, and attribution notices".to_string(),
+                    description:
+                        "Must retain all copyright, patent, trademark, and attribution notices"
+                            .to_string(),
                     severity: ObligationSeverity::Medium,
                 },
                 Obligation {
@@ -91,7 +94,8 @@ impl LicenseObligations {
             vec![
                 Obligation {
                     obligation_type: ObligationType::Disclosure,
-                    description: "Must provide source code to recipients of binary distribution".to_string(),
+                    description: "Must provide source code to recipients of binary distribution"
+                        .to_string(),
                     severity: ObligationSeverity::High,
                 },
                 Obligation {
@@ -127,12 +131,15 @@ impl LicenseObligations {
             vec![
                 Obligation {
                     obligation_type: ObligationType::Disclosure,
-                    description: "Must provide source code to recipients of binary distribution".to_string(),
+                    description: "Must provide source code to recipients of binary distribution"
+                        .to_string(),
                     severity: ObligationSeverity::High,
                 },
                 Obligation {
                     obligation_type: ObligationType::NetworkUse,
-                    description: "Must provide source code to network users (not just binary recipients)".to_string(),
+                    description:
+                        "Must provide source code to network users (not just binary recipients)"
+                            .to_string(),
                     severity: ObligationSeverity::High,
                 },
                 Obligation {
@@ -184,7 +191,9 @@ impl LicenseObligations {
                 },
                 Obligation {
                     obligation_type: ObligationType::Trademark,
-                    description: "Cannot use names of copyright holders to endorse derived products".to_string(),
+                    description:
+                        "Cannot use names of copyright holders to endorse derived products"
+                            .to_string(),
                     severity: ObligationSeverity::Low,
                 },
                 Obligation {
@@ -200,7 +209,8 @@ impl LicenseObligations {
             vec![
                 Obligation {
                     obligation_type: ObligationType::Disclosure,
-                    description: "Must make source code of modified MPL files available".to_string(),
+                    description: "Must make source code of modified MPL files available"
+                        .to_string(),
                     severity: ObligationSeverity::Medium,
                 },
                 Obligation {
@@ -230,11 +240,7 @@ impl LicenseObligations {
             .unwrap_or(false)
     }
 
-    pub fn get_by_type(
-        &self,
-        spdx_id: &str,
-        obligation_type: ObligationType,
-    ) -> Vec<&Obligation> {
+    pub fn get_by_type(&self, spdx_id: &str, obligation_type: ObligationType) -> Vec<&Obligation> {
         self.get(spdx_id)
             .map(|obls| {
                 obls.iter()
@@ -315,9 +321,7 @@ mod tests {
         let obligations = LicenseObligations::new();
         let disclosures = obligations.get_by_type("GPL-3.0-only", ObligationType::Disclosure);
         assert_eq!(disclosures.len(), 1);
-        assert!(disclosures[0]
-            .description
-            .contains("source code"));
+        assert!(disclosures[0].description.contains("source code"));
     }
 
     #[test]

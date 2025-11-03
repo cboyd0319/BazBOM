@@ -31,7 +31,7 @@ impl LicenseCompatibility {
 
         match (project_license, dependency_license) {
             (proj, dep) if proj == dep => Safe,
-            
+
             ("MIT", "MIT") => Safe,
             ("MIT", "Apache-2.0") => Safe,
             ("MIT", "BSD-2-Clause") => Safe,
@@ -40,51 +40,51 @@ impl LicenseCompatibility {
             ("MIT", "0BSD") => Safe,
             ("MIT", "CC0-1.0") => Safe,
             ("MIT", "Unlicense") => Safe,
-            
+
             ("MIT", "GPL-2.0-only") => Critical,
             ("MIT", "GPL-2.0-or-later") => Critical,
             ("MIT", "GPL-3.0-only") => Critical,
             ("MIT", "GPL-3.0-or-later") => Critical,
             ("MIT", "AGPL-3.0-only") => Critical,
             ("MIT", "AGPL-3.0-or-later") => Critical,
-            
+
             ("Apache-2.0", "MIT") => Safe,
             ("Apache-2.0", "Apache-2.0") => Safe,
             ("Apache-2.0", "BSD-2-Clause") => Safe,
             ("Apache-2.0", "BSD-3-Clause") => Safe,
             ("Apache-2.0", "ISC") => Safe,
             ("Apache-2.0", "0BSD") => Safe,
-            
+
             ("Apache-2.0", "GPL-2.0-only") => High,
             ("Apache-2.0", "GPL-2.0-or-later") => High,
             ("Apache-2.0", "GPL-3.0-only") => Medium,
             ("Apache-2.0", "GPL-3.0-or-later") => Medium,
             ("Apache-2.0", "AGPL-3.0-only") => High,
             ("Apache-2.0", "AGPL-3.0-or-later") => High,
-            
+
             ("GPL-3.0-only", _) => Safe,
             ("GPL-3.0-or-later", _) => Safe,
             ("AGPL-3.0-only", _) => Safe,
             ("AGPL-3.0-or-later", _) => Safe,
-            
+
             ("BSD-2-Clause", "MIT") => Safe,
             ("BSD-2-Clause", "Apache-2.0") => Safe,
             ("BSD-2-Clause", "BSD-3-Clause") => Safe,
             ("BSD-2-Clause", "ISC") => Safe,
             ("BSD-2-Clause", "GPL-3.0-only") => Critical,
             ("BSD-2-Clause", "AGPL-3.0-only") => Critical,
-            
+
             ("BSD-3-Clause", "MIT") => Safe,
             ("BSD-3-Clause", "Apache-2.0") => Safe,
             ("BSD-3-Clause", "BSD-2-Clause") => Safe,
             ("BSD-3-Clause", "ISC") => Safe,
             ("BSD-3-Clause", "GPL-3.0-only") => Critical,
             ("BSD-3-Clause", "AGPL-3.0-only") => Critical,
-            
+
             (_, "NOASSERTION") => High,
             (_, "Unknown") => High,
             (_, "NONE") => High,
-            
+
             (_, _) => Medium,
         }
     }

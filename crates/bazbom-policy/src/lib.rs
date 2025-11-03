@@ -1,14 +1,14 @@
 use serde::{Deserialize, Serialize};
 
-pub mod templates;
+pub mod audit;
 pub mod inheritance;
 pub mod rego;
-pub mod audit;
+pub mod templates;
 
+pub use audit::{AuditConfig, AuditContext, AuditLogEntry, AuditLogger, AuditResult};
+pub use inheritance::{merge_policies, MergeStrategy};
+pub use rego::{RegoEvaluationResult, RegoPolicy};
 pub use templates::{PolicyTemplate, PolicyTemplateLibrary};
-pub use inheritance::{MergeStrategy, merge_policies};
-pub use rego::{RegoPolicy, RegoEvaluationResult};
-pub use audit::{AuditLogger, AuditConfig, AuditLogEntry, AuditResult, AuditContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PolicyConfig {

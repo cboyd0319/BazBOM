@@ -69,10 +69,7 @@ pub struct GhsaCvss {
 /// Parse a GHSA entry into our canonical Vulnerability format
 pub fn parse_ghsa_entry(ghsa: &GhsaEntry) -> Result<Vulnerability> {
     // Extract ID (prefer ghsaId, fall back to id)
-    let id = ghsa
-        .ghsa_id
-        .clone()
-        .unwrap_or_else(|| ghsa.id.clone());
+    let id = ghsa.ghsa_id.clone().unwrap_or_else(|| ghsa.id.clone());
 
     // Extract aliases from identifiers
     let aliases: Vec<String> = ghsa
@@ -87,10 +84,8 @@ pub fn parse_ghsa_entry(ghsa: &GhsaEntry) -> Result<Vulnerability> {
         .vulnerabilities
         .iter()
         .map(|v| {
-            let ranges = parse_ghsa_version_range(
-                &v.vulnerable_version_range,
-                &v.first_patched_version,
-            );
+            let ranges =
+                parse_ghsa_version_range(&v.vulnerable_version_range, &v.first_patched_version);
             AffectedPackage {
                 ecosystem: v.package.ecosystem.clone(),
                 package: v.package.name.clone(),
@@ -122,8 +117,8 @@ pub fn parse_ghsa_entry(ghsa: &GhsaEntry) -> Result<Vulnerability> {
         references,
         published: ghsa.published_at.clone(),
         modified: ghsa.updated_at.clone(),
-        epss: None,  // EPSS enrichment happens separately
-        kev: None,   // KEV enrichment happens separately
+        epss: None,     // EPSS enrichment happens separately
+        kev: None,      // KEV enrichment happens separately
         priority: None, // Priority calculated after enrichment
     })
 }

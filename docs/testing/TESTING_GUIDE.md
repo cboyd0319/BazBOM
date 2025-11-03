@@ -2,130 +2,143 @@
 
 ## Overview
 
-This document describes the test infrastructure and practices for BazBOM Python modules.
+This document describes the test infrastructure and practices for BazBOM's Rust implementation.
 
 ## Quick Start
 
-### Install Test Dependencies
+### Prerequisites
 
 ```bash
-# Install all test dependencies
-pip install -r requirements-test.txt
+# Rust toolchain (if not already installed)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Or install individual packages
-pip install pytest pytest-cov pytest-xdist pytest-mock freezegun responses
+# Install test tools
+rustup component add rustfmt clippy llvm-tools-preview
+cargo install cargo-llvm-cov
 ```
 
 ## Test Framework
 
-- **Framework**: pytest (not unittest)
-- **Coverage Tool**: coverage.py with branch coverage enabled
-- **Coverage Target**: 90% line coverage, 85% branch coverage
-- **Test Location**: `tools/supplychain/tests/`
-- **Parallel Execution**: pytest-xdist for multi-core speedup
+- **Framework**: Rust's built-in test framework (`cargo test`)
+- **Coverage Tool**: cargo-llvm-cov with branch coverage enabled
+- **Coverage Target**: 90% line coverage, 85% branch coverage (enforced in CI)
+- **Test Location**: Tests are colocated with source code in `crates/*/src/` and `crates/*/tests/`
+- **Parallel Execution**: Cargo runs tests in parallel by default
 
 ## Running Tests
 
 ### Run All Tests
 ```bash
 cd /home/runner/work/BazBOM/BazBOM
-python3 -m pytest tools/supplychain/tests/ -v
+cargo test --workspace
 ```
 
-### Run Tests in Parallel (Faster)
+### Run Tests for Specific Crate
 ```bash
-# Use all CPU cores (recommended)
-python3 -m pytest tools/supplychain/tests/ -n auto
-
-# Use specific number of workers
-python3 -m pytest tools/supplychain/tests/ -n 4
-
-# Parallel with coverage (slower but comprehensive)
-python3 -m pytest tools/supplychain/tests/ -n auto \
-    --cov=tools/supplychain \
-    --cov-report=term-missing
+# Test a specific crate
+cargo test -p bazbom-core
+cargo test -p bazbom-advisories
+cargo test -p bazbom-policy
 ```
 
-**Performance**: Parallel execution provides ~50% speedup on multi-core systems.
-
-### Run with Coverage
+### Run Tests with Coverage
 ```bash
-python3 -m pytest tools/supplychain/tests/ \
-    --cov=tools/supplychain \
-    --cov-report=term-missing \
-    --cov-branch
+# Generate coverage report
+cargo llvm-cov --workspace --all-features
+
+# Generate HTML coverage report
+cargo llvm-cov --workspace --all-features --html
+
+# Generate LCOV format for CI
+cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
 ```
 
-### Run Fast Tests Only (Skip Slow Tests)
+**Performance**: Cargo's parallel test execution provides excellent performance on multi-core systems.
+
+### Run Tests with Verbose Output
 ```bash
-# Exclude slow tests for rapid iteration
-python3 -m pytest tools/supplychain/tests/ -m "not slow"
+cargo test --workspace -- --nocapture
 ```
 
-### Run Specific Test File
+### Run Tests Matching a Pattern
 ```bash
-python3 -m pytest tools/supplychain/tests/test_badge_generator.py -v
+# Run tests with "policy" in the name
+cargo test policy
+
+# Run tests in a specific module
+cargo test bazbom_core::graph::tests
 ```
 
-### Run Specific Test Class or Function
+### Run Specific Test
 ```bash
-python3 -m pytest tools/supplychain/tests/test_badge_generator.py::test_calculate_badge_data -v
+# Run a specific test by name
+cargo test test_calculate_risk_score
 ```
 
-### Show Test Durations
+### Run Tests in Single Thread (for debugging)
 ```bash
-# Show 20 slowest tests
-python3 -m pytest tools/supplychain/tests/ --durations=20
+cargo test --workspace -- --test-threads=1
+```
 
-# Show all test durations
-python3 -m pytest tools/supplychain/tests/ --durations=0
+### Show Test Timings
+```bash
+# Show test execution times
+cargo test --workspace -- --report-time
 ```
 
 ## Test Infrastructure
 
 ### Configuration Files
 
-#### pytest.ini
-Located at repository root, configures pytest behavior:
-- Test discovery patterns
-- Coverage settings
-- Warning filters
-- Test markers
+#### Cargo.toml
+Each crate's `Cargo.toml` can specify test dependencies:
+```toml
+[dev-dependencies]
+tempfile = "3.8"
+```
 
-#### .coveragerc
-Configures coverage.py:
+#### codecov.yml
+Located at repository root, configures coverage reporting:
+- Coverage thresholds (90% minimum)
 - Branch coverage enabled
-- Source directory: `tools/supplychain`
-- Exclusions for import guards and boilerplate code
-
-#### conftest.py
-Located at `tools/supplychain/tests/conftest.py`, provides shared fixtures:
-- `sample_sbom_data` - Example SPDX SBOM
-- `sample_vulnerability_data` - Example vulnerability findings
-- `sample_maven_coordinates` - Example Maven dependency data
-- `temp_json_file` - Factory for creating temporary JSON files
-- `env_vars` - Helper for setting environment variables
-- `mock_http_response` - Factory for mock HTTP responses
+- Test coverage tracking for all crates
 
 ### Test Organization
 
-Tests follow a clear naming convention:
-- Test files: `test_<module_name>.py`
-- Test classes: `Test<Functionality>`
-- Test methods: `test_<unit>_<scenario>_<expected>()`
+Tests in Rust can be organized in multiple ways:
 
-Example:
-```python
-class TestCalculateBadgeData:
-    def test_no_vulnerabilities_returns_success_color(self):
-        # Arrange
-        findings = {"vulnerabilities": []}
+#### Unit Tests (Inline)
+Located in the same file as the code being tested:
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_risk_score() {
+        // Arrange
+        let cvss = 8.0;
+        let epss = 0.5;
         
-        # Act
-        result = calculate_badge_data(findings)
+        // Act
+        let score = calculate_risk_score(cvss, epss, false, false);
         
-        # Assert
-        assert result["color"] == "success"
+        // Assert
+        assert!(score > 0.0);
+    }
+}
+```
+
+#### Integration Tests
+Located in `tests/` directory of each crate:
+```rust
+// crates/bazbom-core/tests/integration_test.rs
+use bazbom_core::*;
+
+#[test]
+fn test_full_scan_workflow() {
+    // Integration test
+}
 ```
 
 ## Test Quality Standards
@@ -137,10 +150,11 @@ All tests follow the Arrange-Act-Assert pattern:
 3. **Assert**: Verify the expected outcome
 
 ### Deterministic Tests
-- Random number generators are seeded (seed=1337)
-- Time-dependent tests use `freezegun` for deterministic timestamps
-- No network calls (mocked with `pytest-mock` or `responses`)
-- No real file I/O (use `tmp_path` fixture)
+- Use fixed seeds for any randomization
+- Time-dependent tests use fixed timestamps or mocked time
+- No network calls (mock external services)
+- Use `tempfile` crate for file I/O tests
+- All tests must be hermetic and reproducible
 
 ### Isolation
 - Each test is independent
@@ -335,8 +349,9 @@ The workflow:
 
 ## Best Practices
 
-### DO:
-✅ Use pytest, not unittest
+### DO
+
+✅ Use Rust's built-in test framework
 ✅ Follow AAA pattern
 ✅ Write descriptive test names
 ✅ Test happy path and error paths
@@ -346,8 +361,9 @@ The workflow:
 ✅ Keep tests fast (< 100ms each)
 ✅ Make tests deterministic
 
-### DON'T:
-❌ Use unittest.TestCase (use plain pytest)
+### DON'T
+
+❌ Use unsafe code in tests without justification
 ❌ Share state between tests
 ❌ Make real network calls
 ❌ Write to source tree

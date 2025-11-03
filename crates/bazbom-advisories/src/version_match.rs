@@ -24,7 +24,10 @@ pub fn is_version_affected(version: &str, ranges: &[VersionRange]) -> Result<boo
                     }
                     Err(e) => {
                         // Semver parsing failed, log and use string comparison
-                        eprintln!("[bazbom] semver parse failed for '{}': {}, using string comparison", version, e);
+                        eprintln!(
+                            "[bazbom] semver parse failed for '{}': {}, using string comparison",
+                            version, e
+                        );
                         if is_version_affected_string(version, range) {
                             return Ok(true);
                         }
@@ -39,7 +42,10 @@ pub fn is_version_affected(version: &str, ranges: &[VersionRange]) -> Result<boo
             }
             _ => {
                 // Unknown range type - log and be conservative
-                eprintln!("[bazbom] warning: unknown version range type '{}', assuming affected", range.range_type);
+                eprintln!(
+                    "[bazbom] warning: unknown version range type '{}', assuming affected",
+                    range.range_type
+                );
                 return Ok(true);
             }
         }
@@ -77,7 +83,7 @@ fn is_version_affected_semver(version_str: &str, range: &VersionRange) -> Result
 
     // Check if version is in the affected range
     let after_introduced = introduced.is_none_or(|intro| version >= intro);
-    
+
     let before_fixed = if let Some(fix) = fixed {
         version < fix
     } else if let Some(last) = last_affected {

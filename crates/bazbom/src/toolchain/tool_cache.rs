@@ -42,14 +42,12 @@ impl ToolCache {
         );
 
         // Download to a temporary file
-        let tmp_file = tempfile::NamedTempFile::new_in(&dir)
-            .context("create temp file for download")?;
+        let tmp_file =
+            tempfile::NamedTempFile::new_in(&dir).context("create temp file for download")?;
         let tmp_path = tmp_file.path();
 
         // Download the file
-        let resp = ureq::get(&desc.url)
-            .call()
-            .context("HTTP request failed")?;
+        let resp = ureq::get(&desc.url).call().context("HTTP request failed")?;
 
         let mut file = fs::File::create(tmp_path).context("create temp file")?;
         let mut hasher = Sha256::new();
@@ -57,13 +55,11 @@ impl ToolCache {
         let mut buffer = [0; 8192];
 
         loop {
-            let n = std::io::Read::read(&mut reader, &mut buffer)
-                .context("read response body")?;
+            let n = std::io::Read::read(&mut reader, &mut buffer).context("read response body")?;
             if n == 0 {
                 break;
             }
-            file.write_all(&buffer[..n])
-                .context("write to temp file")?;
+            file.write_all(&buffer[..n]).context("write to temp file")?;
             hasher.update(&buffer[..n]);
         }
 
@@ -86,18 +82,18 @@ impl ToolCache {
         // Handle archives
         let final_bin = if desc.archive {
             let archive_path = tmp_path.to_path_buf();
-            
+
             // Determine if it's a zip or tar.gz based on the URL
             if desc.url.ends_with(".zip") {
                 // Extract ZIP archive
                 let archive = fs::File::open(&archive_path).context("open zip archive")?;
                 let mut zip = zip::ZipArchive::new(archive).context("read zip archive")?;
-                
+
                 // Extract all files to maintain directory structure
                 for i in 0..zip.len() {
                     let mut file = zip.by_index(i).context("read zip entry")?;
                     let outpath = dir.join(file.name());
-                    
+
                     if file.is_dir() {
                         fs::create_dir_all(&outpath).context("create directory")?;
                     } else {
@@ -106,7 +102,7 @@ impl ToolCache {
                         }
                         let mut outfile = fs::File::create(&outpath).context("create file")?;
                         std::io::copy(&mut file, &mut outfile).context("extract file")?;
-                        
+
                         // Set executable permissions on Unix for the extracted file
                         #[cfg(unix)]
                         {
@@ -118,7 +114,8 @@ impl ToolCache {
                             if let Some(mode) = file.unix_mode() {
                                 if mode & 0o111 != 0 {
                                     perms.set_mode(mode);
-                                    fs::set_permissions(&outpath, perms).context("set permissions")?;
+                                    fs::set_permissions(&outpath, perms)
+                                        .context("set permissions")?;
                                 }
                             }
                         }
@@ -128,26 +125,33 @@ impl ToolCache {
                 // Extract tar.gz archive
                 use std::process::Command;
                 let status = Command::new("tar")
-                    .args(&["-xzf", archive_path.to_str().unwrap(), "-C", dir.to_str().unwrap()])
+                    .args(&[
+                        "-xzf",
+                        archive_path.to_str().unwrap(),
+                        "-C",
+                        dir.to_str().unwrap(),
+                    ])
                     .status()
                     .context("run tar extraction")?;
-                
+
                 if !status.success() {
                     bail!("tar extraction failed");
                 }
             } else {
                 bail!("unsupported archive format: {}", desc.url);
             }
-            
+
             // Find the executable based on executable_path or tool name
-            let exec_path = desc.executable_path.as_ref()
+            let exec_path = desc
+                .executable_path
+                .as_ref()
                 .map(|p| dir.join(p))
                 .unwrap_or_else(|| dir.join(self.binary_name(&desc.name)));
-                
+
             if !exec_path.exists() {
                 bail!("executable not found at {:?} after extraction", exec_path);
             }
-            
+
             exec_path
         } else {
             // Move the downloaded file to the final location
@@ -169,7 +173,10 @@ impl ToolCache {
         // Write marker file to indicate successful download and verification
         fs::write(&marker, b"ok").context("write marker file")?;
 
-        println!("[bazbom] cached {} {} to {:?}", desc.name, desc.version, final_bin);
+        println!(
+            "[bazbom] cached {} {} to {:?}",
+            desc.name, desc.version, final_bin
+        );
 
         Ok(final_bin)
     }
@@ -197,10 +204,10 @@ mod tests {
     fn test_binary_name() {
         let temp = tempdir().unwrap();
         let cache = ToolCache::new(temp.path().to_path_buf());
-        
+
         #[cfg(windows)]
         assert_eq!(cache.binary_name("semgrep"), "semgrep.exe");
-        
+
         #[cfg(not(windows))]
         assert_eq!(cache.binary_name("semgrep"), "semgrep");
     }
@@ -210,7 +217,7 @@ mod tests {
         let temp = tempdir().unwrap();
         let cache = ToolCache::new(temp.path().to_path_buf());
         let path = cache.get_tool_path("semgrep", "1.78.0");
-        
+
         assert!(path.to_string_lossy().contains("semgrep"));
         assert!(path.to_string_lossy().contains("1.78.0"));
     }

@@ -5,13 +5,18 @@ use std::process::Command;
 use tempfile::tempdir;
 
 /// Helper to create a simple test Java class
-fn create_test_java_class(dir: &Path, package: &str, class: &str, has_main: bool) -> std::io::Result<()> {
+fn create_test_java_class(
+    dir: &Path,
+    package: &str,
+    class: &str,
+    has_main: bool,
+) -> std::io::Result<()> {
     let package_dir = dir.join(package.replace('.', "/"));
     fs::create_dir_all(&package_dir)?;
-    
+
     let class_file = package_dir.join(format!("{}.java", class));
     let mut file = fs::File::create(&class_file)?;
-    
+
     let main_method = if has_main {
         r#"
     public static void main(String[] args) {
@@ -30,14 +35,18 @@ fn create_test_java_class(dir: &Path, package: &str, class: &str, has_main: bool
     }
 "#
     };
-    
+
     writeln!(file, "package {};", package)?;
     writeln!(file, "")?;
     writeln!(file, "public class {} {{", class)?;
-    writeln!(file, "    private static final String CLASS_NAME = \"{}\";", class)?;
+    writeln!(
+        file,
+        "    private static final String CLASS_NAME = \"{}\";",
+        class
+    )?;
     writeln!(file, "{}", main_method)?;
     writeln!(file, "}}")?;
-    
+
     Ok(())
 }
 
@@ -50,31 +59,31 @@ fn compile_to_jar(src_dir: &Path, jar_path: &Path) -> std::io::Result<()> {
         .filter(|e| e.path().extension().map_or(false, |ext| ext == "java"))
         .map(|e| e.path().to_owned())
         .collect();
-    
+
     if java_files.is_empty() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::NotFound,
             "No Java files found",
         ));
     }
-    
+
     // Compile Java files
     let classes_dir = src_dir.join("classes");
     fs::create_dir_all(&classes_dir)?;
-    
+
     let status = Command::new("javac")
         .arg("-d")
         .arg(&classes_dir)
         .args(&java_files)
         .status()?;
-    
+
     if !status.success() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             "javac compilation failed",
         ));
     }
-    
+
     // Create JAR
     let status = Command::new("jar")
         .arg("cf")
@@ -83,14 +92,14 @@ fn compile_to_jar(src_dir: &Path, jar_path: &Path) -> std::io::Result<()> {
         .arg(&classes_dir)
         .arg(".")
         .status()?;
-    
+
     if !status.success() {
         return Err(std::io::Error::new(
             std::io::ErrorKind::Other,
             "jar creation failed",
         ));
     }
-    
+
     Ok(())
 }
 
@@ -100,29 +109,32 @@ fn test_reachability_with_simple_jar() {
     let tmp = tempdir().unwrap();
     let src_dir = tmp.path().join("src");
     let jar_path = tmp.path().join("test.jar");
-    
+
     // Create test Java classes
     create_test_java_class(&src_dir, "com.example", "Main", true).unwrap();
     create_test_java_class(&src_dir, "com.example", "Unused", false).unwrap();
-    
+
     // Compile to JAR
     if let Err(e) = compile_to_jar(&src_dir, &jar_path) {
         eprintln!("Warning: Could not compile test JAR: {}", e);
         eprintln!("Skipping integration test (requires javac and jar)");
         return;
     }
-    
+
     // Find the reachability JAR
     let reachability_jar = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tools/reachability/target")
         .join("bazbom-reachability-0.1.0-SNAPSHOT.jar");
-    
+
     if !reachability_jar.exists() {
-        eprintln!("Warning: Reachability JAR not found at {:?}", reachability_jar);
+        eprintln!(
+            "Warning: Reachability JAR not found at {:?}",
+            reachability_jar
+        );
         eprintln!("Build it with: cd tools/reachability && mvn package");
         return;
     }
-    
+
     // Run reachability analysis
     let output_path = tmp.path().join("reachability.json");
     let status = Command::new("java")
@@ -134,35 +146,31 @@ fn test_reachability_with_simple_jar() {
         .arg(&output_path)
         .status()
         .expect("Failed to run reachability analyzer");
-    
+
     assert!(status.success(), "Reachability analyzer should succeed");
     assert!(output_path.exists(), "Output file should be created");
-    
+
     // Parse and verify output
     let content = fs::read_to_string(&output_path).unwrap();
     let result: serde_json::Value = serde_json::from_str(&content).unwrap();
-    
+
     assert_eq!(result["tool"], "bazbom-reachability");
     assert_eq!(result["version"], "0.1.0");
-    
+
     // Verify reachable classes include Main but may or may not include Unused
-    let reachable_classes = result["reachableClasses"]
-        .as_array()
-        .unwrap();
+    let reachable_classes = result["reachableClasses"].as_array().unwrap();
     let class_names: Vec<&str> = reachable_classes
         .iter()
         .filter_map(|v| v.as_str())
         .collect();
-    
+
     assert!(
         class_names.iter().any(|c| c.contains("Main")),
         "Main class should be reachable"
     );
-    
+
     // Verify packages
-    let reachable_packages = result["reachablePackages"]
-        .as_array()
-        .unwrap();
+    let reachable_packages = result["reachablePackages"].as_array().unwrap();
     assert!(
         !reachable_packages.is_empty(),
         "Should have at least one reachable package"
@@ -175,25 +183,25 @@ fn test_reachability_with_entrypoints() {
     let tmp = tempdir().unwrap();
     let src_dir = tmp.path().join("src");
     let jar_path = tmp.path().join("test.jar");
-    
+
     // Create test Java class
     create_test_java_class(&src_dir, "com.test", "App", true).unwrap();
-    
+
     // Compile to JAR
     if let Err(e) = compile_to_jar(&src_dir, &jar_path) {
         eprintln!("Skipping test: {}", e);
         return;
     }
-    
+
     let reachability_jar = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../tools/reachability/target")
         .join("bazbom-reachability-0.1.0-SNAPSHOT.jar");
-    
+
     if !reachability_jar.exists() {
         eprintln!("Skipping test: reachability JAR not found");
         return;
     }
-    
+
     // Run with explicit entrypoint
     let output_path = tmp.path().join("reachability.json");
     let status = Command::new("java")
@@ -207,16 +215,14 @@ fn test_reachability_with_entrypoints() {
         .arg(&output_path)
         .status()
         .expect("Failed to run reachability analyzer");
-    
+
     assert!(status.success());
-    
+
     let content = fs::read_to_string(&output_path).unwrap();
     let result: serde_json::Value = serde_json::from_str(&content).unwrap();
-    
+
     // Verify detected entrypoints
-    let detected = result["detectedEntrypoints"]
-        .as_array()
-        .unwrap();
+    let detected = result["detectedEntrypoints"].as_array().unwrap();
     assert!(
         !detected.is_empty(),
         "Should detect at least one entrypoint"
@@ -245,25 +251,25 @@ fn test_reachability_result_parsing() {
             "java.lang"
         ]
     }"#;
-    
-    let result: bazbom::reachability::ReachabilityResult = 
+
+    let result: bazbom::reachability::ReachabilityResult =
         serde_json::from_str(json).expect("Should parse reachability result");
-    
+
     assert_eq!(result.tool, "bazbom-reachability");
     assert_eq!(result.version, "0.1.0");
     assert_eq!(result.detected_entrypoints.len(), 1);
     assert_eq!(result.reachable_methods.len(), 2);
     assert_eq!(result.reachable_classes.len(), 2);
     assert_eq!(result.reachable_packages.len(), 2);
-    
+
     // Test helper methods
     assert!(result.is_class_reachable("com.example.Main"));
     assert!(!result.is_class_reachable("com.example.Unused"));
-    
+
     assert!(result.is_package_reachable("com.example"));
     assert!(result.is_package_reachable("java.lang"));
     assert!(!result.is_package_reachable("org.other"));
-    
+
     assert!(result.is_method_reachable("Main.main"));
     assert!(result.is_method_reachable("Main.helper"));
     assert!(!result.is_method_reachable("Main.unused"));
@@ -282,10 +288,10 @@ fn test_reachability_result_with_error() {
         "reachablePackages": [],
         "error": "Empty classpath provided"
     }"#;
-    
-    let result: bazbom::reachability::ReachabilityResult = 
+
+    let result: bazbom::reachability::ReachabilityResult =
         serde_json::from_str(json).expect("Should parse result with error");
-    
+
     assert!(result.error.is_some());
     assert_eq!(result.error.unwrap(), "Empty classpath provided");
 }
@@ -306,16 +312,16 @@ fn test_package_reachability_parent_matching() {
         ],
         error: None,
     };
-    
+
     // Should match exact package
     assert!(result.is_package_reachable("com.example.core"));
-    
+
     // Should match subpackages
     assert!(result.is_package_reachable("com.example.core"));
-    
+
     // Should not match parent packages
     assert!(!result.is_package_reachable("com.example"));
-    
+
     // Should not match unrelated packages
     assert!(!result.is_package_reachable("com.other"));
 }

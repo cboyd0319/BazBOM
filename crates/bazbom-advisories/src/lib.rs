@@ -11,14 +11,14 @@ pub mod osv;
 pub mod parsers;
 pub mod version_match;
 
+pub use enrichment::{load_epss_scores, load_kev_catalog};
 pub use merge::{
     calculate_priority, merge_vulnerabilities, AffectedPackage, EpssScore, KevEntry, Priority,
     Reference, Severity, SeverityLevel, VersionEvent, VersionRange, Vulnerability,
 };
+pub use osv::{query_batch_vulnerabilities, query_package_vulnerabilities};
 pub use parsers::{parse_ghsa_entry, parse_nvd_entry, parse_osv_entry};
-pub use enrichment::{load_epss_scores, load_kev_catalog};
 pub use version_match::is_version_affected;
-pub use osv::{query_package_vulnerabilities, query_batch_vulnerabilities};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ManifestEntry {

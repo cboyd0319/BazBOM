@@ -128,7 +128,7 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
 
     // Use the first vulnerability as base
     let mut merged = vulns[0].clone();
-    
+
     // Collect all aliases
     let mut all_aliases = HashSet::new();
     all_aliases.insert(merged.id.clone());
@@ -140,7 +140,7 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
     }
     merged.aliases = all_aliases.into_iter().collect();
     merged.aliases.sort();
-    
+
     // Merge affected packages
     let mut package_map: HashMap<String, AffectedPackage> = HashMap::new();
     for vuln in &vulns {
@@ -150,28 +150,31 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
         }
     }
     merged.affected = package_map.into_values().collect();
-    
+
     // Take highest severity
     let mut best_severity: Option<Severity> = None;
     for vuln in &vulns {
         if let Some(sev) = &vuln.severity {
-            if best_severity.is_none() 
-                || (best_severity.as_ref().unwrap().cvss_v3.unwrap_or(0.0) 
-                    < sev.cvss_v3.unwrap_or(0.0)) {
+            if best_severity.is_none()
+                || (best_severity.as_ref().unwrap().cvss_v3.unwrap_or(0.0)
+                    < sev.cvss_v3.unwrap_or(0.0))
+            {
                 best_severity = Some(sev.clone());
             }
         }
     }
     merged.severity = best_severity;
-    
+
     // Use longest/best description
     for vuln in &vulns {
-        if vuln.details.is_some() && (merged.details.is_none() 
-            || vuln.details.as_ref().unwrap().len() > merged.details.as_ref().unwrap().len()) {
+        if vuln.details.is_some()
+            && (merged.details.is_none()
+                || vuln.details.as_ref().unwrap().len() > merged.details.as_ref().unwrap().len())
+        {
             merged.details = vuln.details.clone();
         }
     }
-    
+
     // Merge references (dedup by URL)
     let mut ref_map: HashMap<String, Reference> = HashMap::new();
     for vuln in &vulns {
@@ -180,7 +183,7 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
         }
     }
     merged.references = ref_map.into_values().collect();
-    
+
     merged
 }
 
@@ -194,30 +197,30 @@ pub fn calculate_priority(
         .as_ref()
         .and_then(|s| s.cvss_v3.or(s.cvss_v4))
         .unwrap_or(0.0);
-    
+
     let epss_score = epss.as_ref().map(|e| e.score).unwrap_or(0.0);
     let has_kev = kev.is_some();
-    
+
     // P0: Critical severity or KEV with high CVSS or very high EPSS
     if has_kev && cvss >= 7.0 || cvss >= 9.0 || epss_score >= 0.9 {
         return Priority::P0;
     }
-    
+
     // P1: High severity with KEV or high EPSS
     if cvss >= 7.0 && (has_kev || epss_score >= 0.5) {
         return Priority::P1;
     }
-    
+
     // P2: High severity or medium with notable EPSS
     if cvss >= 7.0 || (cvss >= 4.0 && epss_score >= 0.1) {
         return Priority::P2;
     }
-    
+
     // P3: Medium severity
     if cvss >= 4.0 {
         return Priority::P3;
     }
-    
+
     // P4: Low or unknown
     Priority::P4
 }
@@ -259,7 +262,7 @@ mod tests {
         };
 
         let merged = merge_vulnerabilities(vec![vuln1, vuln2]);
-        
+
         assert!(merged.aliases.contains(&"CVE-2024-1234".to_string()));
         assert!(merged.aliases.contains(&"GHSA-xxxx-yyyy".to_string()));
     }

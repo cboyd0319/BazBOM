@@ -9,12 +9,11 @@ use std::path::Path;
 /// Format: cve,epss,percentile
 /// Example: CVE-2024-1234,0.00123,0.45678
 pub fn load_epss_scores<P: AsRef<Path>>(path: P) -> Result<HashMap<String, EpssScore>> {
-    let file = File::open(path.as_ref())
-        .context("Failed to open EPSS scores file")?;
-    
+    let file = File::open(path.as_ref()).context("Failed to open EPSS scores file")?;
+
     let reader = BufReader::new(file);
     let mut epss_map = HashMap::new();
-    
+
     // Skip header line
     let mut lines = reader.lines();
     if let Some(Ok(header)) = lines.next() {
@@ -23,36 +22,30 @@ pub fn load_epss_scores<P: AsRef<Path>>(path: P) -> Result<HashMap<String, EpssS
             return Err(anyhow::anyhow!("Invalid EPSS CSV header: {}", header));
         }
     }
-    
+
     for line in lines {
         let line = line.context("Failed to read line from EPSS file")?;
-        
+
         // Skip empty lines and comments
         if line.trim().is_empty() || line.starts_with('#') {
             continue;
         }
-        
+
         let parts: Vec<&str> = line.split(',').collect();
         if parts.len() < 3 {
             // Skip malformed lines
             continue;
         }
-        
+
         let cve_id = parts[0].trim().to_string();
         let score = parts[1].trim().parse::<f64>().ok();
         let percentile = parts[2].trim().parse::<f64>().ok();
-        
+
         if let (Some(score), Some(percentile)) = (score, percentile) {
-            epss_map.insert(
-                cve_id,
-                EpssScore {
-                    score,
-                    percentile,
-                },
-            );
+            epss_map.insert(cve_id, EpssScore { score, percentile });
         }
     }
-    
+
     Ok(epss_map)
 }
 
@@ -66,14 +59,14 @@ pub fn find_epss_score(
     if let Some(score) = epss_map.get(vuln_id) {
         return Some(score.clone());
     }
-    
+
     // Check all aliases
     for alias in aliases {
         if let Some(score) = epss_map.get(alias) {
             return Some(score.clone());
         }
     }
-    
+
     None
 }
 
@@ -96,7 +89,7 @@ mod tests {
 
         let epss_map = load_epss_scores(temp_file.path()).unwrap();
         assert_eq!(epss_map.len(), 3);
-        
+
         let score = epss_map.get("CVE-2024-1234").unwrap();
         assert!((score.score - 0.00123).abs() < 0.00001);
         assert!((score.percentile - 0.45678).abs() < 0.00001);
@@ -178,7 +171,10 @@ mod tests {
             },
         );
 
-        let aliases = vec!["CVE-2024-1234".to_string(), "GHSA-xxxx-yyyy-zzzz".to_string()];
+        let aliases = vec![
+            "CVE-2024-1234".to_string(),
+            "GHSA-xxxx-yyyy-zzzz".to_string(),
+        ];
         let score = find_epss_score("GHSA-xxxx-yyyy-zzzz", &aliases, &epss_map);
         assert!(score.is_some());
         let score = score.unwrap();
