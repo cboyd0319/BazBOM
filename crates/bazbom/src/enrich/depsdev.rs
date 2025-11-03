@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
+use crate::remediation::parse_semantic_version;
+
 const DEPSDEV_API_BASE: &str = "https://api.deps.dev/v3alpha";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -171,7 +173,7 @@ impl DepsDevClient {
             .find(|v| v.is_default)
             .map(|v| v.version.clone());
 
-        // Fetch breaking changes information if latest_version differs from current
+        // Fetch breaking changes information if latest_version differs from queried version
         let breaking_changes = if let Some(ref latest) = latest_version {
             if latest != &version {
                 self.get_breaking_changes(&system, &name, &version, latest)
@@ -281,20 +283,8 @@ impl DepsDevClient {
 
     /// Generate a summary of version changes based on semantic versioning
     fn generate_version_change_summary(from_version: &str, to_version: &str) -> String {
-        let parse_version = |v: &str| -> Option<(u32, u32, u32)> {
-            let parts: Vec<&str> = v.split('-').next()?.split('.').collect();
-            if parts.len() >= 3 {
-                let major = parts[0].parse().ok()?;
-                let minor = parts[1].parse().ok()?;
-                let patch = parts[2].parse().ok()?;
-                Some((major, minor, patch))
-            } else {
-                None
-            }
-        };
-
         if let (Some((from_maj, from_min, _)), Some((to_maj, to_min, _))) =
-            (parse_version(from_version), parse_version(to_version))
+            (parse_semantic_version(from_version), parse_semantic_version(to_version))
         {
             if to_maj > from_maj {
                 return format!(

@@ -15,6 +15,31 @@ use crate::backup::{choose_backup_strategy, BackupHandle};
 use crate::enrich::depsdev::{BreakingChanges, DepsDevClient};
 use crate::test_runner::{has_tests, run_tests};
 
+/// Shared utility for parsing semantic version strings
+/// Returns (major, minor, patch) tuple
+pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
+    let clean_version = version.split('-').next()?;
+    let parts: Vec<&str> = clean_version.split('.').collect();
+    
+    if parts.len() < 3 {
+        return None;
+    }
+    
+    let parse_part = |s: &str| -> Option<u32> {
+        if s.chars().all(|c| c.is_ascii_digit()) {
+            s.parse().ok()
+        } else {
+            None
+        }
+    };
+    
+    let major = parse_part(parts[0])?;
+    let minor = parse_part(parts[1])?;
+    let patch = parse_part(parts[2])?;
+    
+    Some((major, minor, patch))
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RemediationSuggestion {
     pub vulnerability_id: String,
@@ -366,38 +391,10 @@ fn generate_breaking_changes_warning(
     };
 
     // Parse semantic versions to detect major version changes
-    // Strip common suffixes like -SNAPSHOT, .RELEASE, -alpha, -beta, -RC1
-    let clean_current = current_version
-        .split('-')
-        .next()
-        .unwrap_or(current_version)
-        .split('.')
-        .take(3)
-        .collect::<Vec<_>>();
-    let clean_fixed = fixed
-        .split('-')
-        .next()
-        .unwrap_or(fixed)
-        .split('.')
-        .take(3)
-        .collect::<Vec<_>>();
-
-    // Helper to parse version part safely, returning None if non-numeric
-    let parse_version_part = |s: &str| -> Option<u32> {
-        if s.chars().all(|c| c.is_ascii_digit()) {
-            s.parse::<u32>().ok()
-        } else {
-            None
-        }
-    };
-
-    let current_major = clean_current.first().and_then(|s| parse_version_part(s));
-    let fixed_major = clean_fixed.first().and_then(|s| parse_version_part(s));
-
-    // If we can't parse versions, provide a generic warning
-    let (current_major, fixed_major) = match (current_major, fixed_major) {
-        (Some(c), Some(f)) => (c, f),
-        _ => {
+    // Use shared utility to parse versions
+    let (current_major, current_minor, _) = match parse_semantic_version(current_version) {
+        Some(v) => v,
+        None => {
             return Some(format!(
                 "⚠️  Version change ({} → {})\n\n\
                  Cannot parse semantic version numbers. Please review the changelog manually.\n\
@@ -405,6 +402,17 @@ fn generate_breaking_changes_warning(
                  1. Check the library's release notes\n\
                  2. Review breaking changes documentation\n\
                  3. Test thoroughly in a staging environment",
+                current_version, fixed
+            ));
+        }
+    };
+    
+    let (fixed_major, fixed_minor, _) = match parse_semantic_version(fixed) {
+        Some(v) => v,
+        None => {
+            return Some(format!(
+                "⚠️  Version change ({} → {})\n\n\
+                 Cannot parse target version number. Please review the changelog manually.",
                 current_version, fixed
             ));
         }
@@ -482,21 +490,6 @@ fn generate_breaking_changes_warning(
         Some(warning)
     } else if fixed_major == current_major {
         // Minor or patch version upgrade
-        let current_minor = clean_current.get(1).and_then(|s| parse_version_part(s));
-        let fixed_minor = clean_fixed.get(1).and_then(|s| parse_version_part(s));
-
-        let (current_minor, fixed_minor) = match (current_minor, fixed_minor) {
-            (Some(c), Some(f)) => (c, f),
-            _ => {
-                return Some(format!(
-                    "ℹ️  Version change ({} → {})\n\n\
-                     Minor version component cannot be parsed.\n\
-                     Please review release notes for compatibility information.",
-                    current_version, fixed
-                ));
-            }
-        };
-
         if fixed_minor > current_minor {
             // Minor version bump
             Some(format!(
