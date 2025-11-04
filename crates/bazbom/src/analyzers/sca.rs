@@ -15,6 +15,12 @@ use std::path::PathBuf;
 
 pub struct ScaAnalyzer;
 
+impl Default for ScaAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ScaAnalyzer {
     pub fn new() -> Self {
         Self

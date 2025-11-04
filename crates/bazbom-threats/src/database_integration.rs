@@ -73,10 +73,7 @@ impl MaliciousPackageDatabase {
     /// Add a malicious package entry
     pub fn add_entry(&mut self, entry: MaliciousPackageEntry) {
         let ecosystem = entry.ecosystem.clone();
-        self.packages
-            .entry(ecosystem)
-            .or_default()
-            .push(entry);
+        self.packages.entry(ecosystem).or_default().push(entry);
     }
 
     /// Check if a package is malicious

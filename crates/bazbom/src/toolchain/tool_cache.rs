@@ -125,7 +125,7 @@ impl ToolCache {
                 // Extract tar.gz archive
                 use std::process::Command;
                 let status = Command::new("tar")
-                    .args(&[
+                    .args([
                         "-xzf",
                         archive_path.to_str().unwrap(),
                         "-C",

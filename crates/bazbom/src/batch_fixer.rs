@@ -194,7 +194,7 @@ impl BatchFixer {
     /// This is a simplified heuristic - in production, would use dependency graph
     fn is_commonly_conflicting(&self, package: &str) -> bool {
         // Common packages that often have version conflicts
-        let common_conflicts = vec![
+        let common_conflicts = [
             "netty",
             "jackson",
             "guava",

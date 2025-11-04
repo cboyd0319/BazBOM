@@ -9,6 +9,16 @@ use crate::publish::GitHubPublisher;
 use anyhow::{Context as _, Result};
 use std::path::PathBuf;
 
+pub struct ScanOrchestratorOptions {
+    pub cyclonedx: bool,
+    pub with_semgrep: bool,
+    pub with_codeql: Option<CodeqlSuite>,
+    pub autofix: Option<AutofixMode>,
+    pub containers: Option<ContainerStrategy>,
+    pub no_upload: bool,
+    pub target: Option<String>,
+}
+
 pub struct ScanOrchestrator {
     config: Config,
     context: Context,
@@ -25,13 +35,7 @@ impl ScanOrchestrator {
     pub fn new(
         workspace: PathBuf,
         out_dir: PathBuf,
-        cyclonedx: bool,
-        with_semgrep: bool,
-        with_codeql: Option<CodeqlSuite>,
-        autofix: Option<AutofixMode>,
-        containers: Option<ContainerStrategy>,
-        no_upload: bool,
-        target: Option<String>,
+        options: ScanOrchestratorOptions,
     ) -> Result<Self> {
         // Load config from bazbom.toml if it exists
         let config_path = workspace.join("bazbom.toml");
@@ -46,13 +50,13 @@ impl ScanOrchestrator {
         Ok(Self {
             config,
             context,
-            cyclonedx,
-            with_semgrep,
-            with_codeql,
-            autofix,
-            containers,
-            no_upload,
-            target,
+            cyclonedx: options.cyclonedx,
+            with_semgrep: options.with_semgrep,
+            with_codeql: options.with_codeql,
+            autofix: options.autofix,
+            containers: options.containers,
+            no_upload: options.no_upload,
+            target: options.target,
         })
     }
 
@@ -397,7 +401,17 @@ mod tests {
         let out_dir = workspace.join("out");
 
         let orchestrator = ScanOrchestrator::new(
-            workspace, out_dir, false, false, None, None, None, true, None,
+            workspace,
+            out_dir,
+            ScanOrchestratorOptions {
+                cyclonedx: false,
+                with_semgrep: false,
+                with_codeql: None,
+                autofix: None,
+                containers: None,
+                no_upload: true,
+                target: None,
+            },
         )?;
 
         assert!(!orchestrator.cyclonedx);
@@ -414,7 +428,17 @@ mod tests {
         let out_dir = workspace.join("out");
 
         let orchestrator = ScanOrchestrator::new(
-            workspace, out_dir, false, false, None, None, None, true, None,
+            workspace,
+            out_dir,
+            ScanOrchestratorOptions {
+                cyclonedx: false,
+                with_semgrep: false,
+                with_codeql: None,
+                autofix: None,
+                containers: None,
+                no_upload: true,
+                target: None,
+            },
         )?;
 
         // This should not fail even without tools installed

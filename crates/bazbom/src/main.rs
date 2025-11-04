@@ -70,13 +70,15 @@ fn main() -> Result<()> {
                 let orchestrator = ScanOrchestrator::new(
                     workspace,
                     output_dir,
-                    cyclonedx,
-                    with_semgrep,
-                    with_codeql,
-                    autofix,
-                    containers,
-                    no_upload,
-                    target,
+                    bazbom::scan_orchestrator::ScanOrchestratorOptions {
+                        cyclonedx,
+                        with_semgrep,
+                        with_codeql,
+                        autofix,
+                        containers,
+                        no_upload,
+                        target,
+                    },
                 )?;
 
                 return orchestrator.run();

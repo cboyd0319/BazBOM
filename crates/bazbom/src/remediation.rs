@@ -17,6 +17,7 @@ use crate::test_runner::{has_tests, run_tests};
 
 /// Shared utility for parsing semantic version strings
 /// Returns (major, minor, patch) tuple
+#[allow(clippy::should_implement_trait)]
 pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
     let clean_version = version.split('-').next()?;
     let parts: Vec<&str> = clean_version.split('.').collect();
@@ -623,8 +624,11 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
             && line.contains("</artifactId>")
         {
             // Look ahead for a <version> tag
-            for j in (i + 1).min(lines.len())..((i + 5).min(lines.len())) {
-                let version_line = lines[j];
+            for version_line in lines
+                .iter()
+                .take((i + 5).min(lines.len()))
+                .skip((i + 1).min(lines.len()))
+            {
                 if version_line.contains("<version>")
                     && version_line.contains(&suggestion.current_version)
                 {
@@ -931,7 +935,7 @@ pub fn generate_pr(
 
     // Create new branch
     let status = Command::new("git")
-        .args(&["checkout", "-b", &branch_name])
+        .args(["checkout", "-b", &branch_name])
         .current_dir(project_root)
         .status()
         .context("Failed to create git branch")?;
@@ -948,7 +952,7 @@ pub fn generate_pr(
         println!("[bazbom] No fixes were applied, skipping PR creation");
         // Checkout back to original branch
         let _ = Command::new("git")
-            .args(&["checkout", "-"])
+            .args(["checkout", "-"])
             .current_dir(project_root)
             .status();
         return Ok("No fixes applied, PR not created".to_string());
@@ -957,7 +961,7 @@ pub fn generate_pr(
     // Stage all changes
     println!("\n[bazbom] Staging changes...");
     let status = Command::new("git")
-        .args(&["add", "-A"])
+        .args(["add", "-A"])
         .current_dir(project_root)
         .status()
         .context("Failed to stage changes")?;
@@ -971,7 +975,7 @@ pub fn generate_pr(
 
     println!("[bazbom] Committing changes...");
     let status = Command::new("git")
-        .args(&["commit", "-m", &commit_message])
+        .args(["commit", "-m", &commit_message])
         .current_dir(project_root)
         .status()
         .context("Failed to commit changes")?;
@@ -983,7 +987,7 @@ pub fn generate_pr(
     // Push branch
     println!("[bazbom] Pushing branch to remote...");
     let status = Command::new("git")
-        .args(&["push", "-u", "origin", &branch_name])
+        .args(["push", "-u", "origin", &branch_name])
         .current_dir(project_root)
         .status()
         .context("Failed to push branch")?;
@@ -1087,7 +1091,7 @@ fn generate_pr_body(
             apply_result.apply_result.skipped
         ));
     }
-    body.push_str("\n");
+    body.push('\n');
 
     // Details section
     body.push_str("### Vulnerabilities Fixed\n\n");
@@ -1106,7 +1110,7 @@ fn generate_pr_body(
             ));
         }
     }
-    body.push_str("\n");
+    body.push('\n');
 
     // Test results
     body.push_str("### Test Results\n\n");
