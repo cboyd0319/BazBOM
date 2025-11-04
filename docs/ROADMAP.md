@@ -287,15 +287,17 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans (with remote cache)
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (75% Complete, ⬆️ +15%)
+### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (75% Complete, ⬆️ +15%)
 
-**Container Support, Multi-Language, Kubernetes**
+**Container Support for JVM Artifacts, Additional JVM Build Systems**
+
+> **⚠️ SCOPE CLARIFICATION:** Phase 9 focuses on JVM artifact detection in containers and expanding JVM build system support (Ant, Buildr). Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE** for BazBOM.
 
 See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for details.
 
 - [x] Container scanning crate (bazbom-containers)
 - [x] Java artifact detection in containers
-- [x] Container SBOM generation framework
+- [x] Container SBOM generation framework for JVM artifacts
 - [x] Docker daemon integration (DockerClient)
 - [x] Docker API client architecture with Unix socket support
 - [x] Pull, export, list, inspect operations with real/stub modes
@@ -310,30 +312,14 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
 - [ ] Full HTTP client integration with hyperlocal
 - [x] Container layer extraction and analysis workflow ✅ **COMPLETE**
 - [x] Integration with scan command ✅ **COMPLETE**
-- [x] Multi-language ecosystem plugin framework ✅ **NEW 2025-11-04**
-  - [x] EcosystemPlugin trait
-  - [x] EcosystemRegistry for plugin management
-  - [x] Dependency and scope modeling
-- [x] Node.js/npm support ✅ **NEW 2025-11-04**
-  - [x] package.json parsing
-  - [x] package-lock.json parsing
-  - [x] Dev vs production dependency detection
-  - [x] PURL generation
-  - [x] 6 passing tests
-- [x] Python/pip support ✅ **NEW 2025-11-04**
-  - [x] requirements.txt parsing
-  - [x] Pipfile.lock parsing
-  - [x] poetry.lock parsing (TOML)
-  - [x] Version specifier support (==, >=, ~=)
-  - [x] 5 passing tests
-- [ ] Go modules support
-- [ ] Rust/Cargo support
-- [ ] Container image SBOM (`rules_oci` integration)
-- [ ] Kubernetes manifest scanning
-- [ ] Kotlin Multiplatform support
-- [ ] Scala support
-- [ ] Android-specific features
-- [ ] Multi-language monorepo support
+- [ ] Ant build system support (build.xml)
+- [ ] Buildr build system support (buildfile, Rakefile)
+- [ ] Groovy language support enhancements
+- [ ] Clojure language support enhancements
+- [ ] Container image SBOM for JVM artifacts (`rules_oci` integration)
+- [ ] Kotlin Multiplatform support (JVM targets only)
+- [ ] Additional Scala build tool support (sbt)
+- [ ] Android-specific features (JVM-based)
 
 ### Phase 10: AI Intelligence 📋 PLANNED
 
