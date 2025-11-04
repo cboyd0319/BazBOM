@@ -10,6 +10,7 @@ pub mod explore;
 pub mod fixes;
 pub mod hooks;
 pub mod init;
+pub mod notifications;
 pub mod pipeline;
 pub mod publish;
 pub mod reachability;
