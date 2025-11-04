@@ -165,6 +165,11 @@ fn main() -> Result<()> {
                     root.join("WORKSPACE.bazel"),
                     root.join("MODULE.bazel"),
                 ],
+                bazbom_core::BuildSystem::Ant => vec![root.join("build.xml")],
+                bazbom_core::BuildSystem::Buildr => vec![
+                    root.join("buildfile"),
+                    root.join("Rakefile"),
+                ],
                 bazbom_core::BuildSystem::Unknown => vec![],
             };
 

@@ -37,7 +37,7 @@
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
 - **Phase 7:** Threat intelligence (95% complete)
 - **Phase 8:** Scale & performance (90% complete - Bazel optimization & parallel processing ⬆️ +5%)
-- **Phase 9:** Ecosystem expansion (75% complete - Node.js & Python support)
+- **Phase 9:** Ecosystem expansion (80% complete - Container scanning & Ant/Buildr support ⬆️ +5%)
 
 ### 📋 Planned
 - **Phase 10:** AI-powered intelligence
