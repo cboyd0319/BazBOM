@@ -291,6 +291,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bazbom-cache"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "hex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "bazbom-core"
 version = "0.5.1"
 dependencies = [
@@ -380,11 +393,13 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "log",
  "regex",
  "reqwest",
  "serde",
  "serde_json",
  "strsim",
+ "tempfile",
  "tokio",
 ]
 
