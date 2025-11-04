@@ -106,4 +106,28 @@ mod tests {
         assert_eq!(config.port, 3000);
         assert_eq!(config.cache_dir, PathBuf::from(".bazbom/cache"));
     }
+
+    #[test]
+    fn test_static_files_exist() {
+        // Verify that the static dashboard files exist
+        let static_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
+        
+        assert!(static_dir.join("index.html").exists(), 
+            "index.html should exist in static directory");
+        assert!(static_dir.join("css/dashboard.css").exists(), 
+            "dashboard.css should exist in static/css directory");
+        assert!(static_dir.join("js/dashboard.js").exists(), 
+            "dashboard.js should exist in static/js directory");
+    }
+
+    #[test]
+    fn test_app_state_creation() {
+        let state = AppState {
+            cache_dir: PathBuf::from(".bazbom/cache"),
+            project_root: PathBuf::from("."),
+        };
+        
+        assert_eq!(state.cache_dir, PathBuf::from(".bazbom/cache"));
+        assert_eq!(state.project_root, PathBuf::from("."));
+    }
 }

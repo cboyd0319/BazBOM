@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BazBOM Security Dashboard</title>
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="header-content">
+                <h1>BazBOM Security Dashboard</h1>
+                <div class="header-actions">
+                    <button id="refresh-btn" class="btn btn-primary">
+                        <span class="icon">↻</span> Refresh
+                    </button>
+                    <button id="export-btn" class="btn btn-secondary">
+                        <span class="icon">↓</span> Export
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <main class="dashboard-main">
+            <!-- Summary Cards -->
+            <section class="summary-section">
+                <div class="summary-cards">
+                    <div class="card score-card">
+                        <div class="card-header">
+                            <h3>Security Score</h3>
+                            <span class="icon">🛡️</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="score-display">
+                                <span id="security-score" class="score-value">--</span>
+                                <span class="score-max">/100</span>
+                            </div>
+                            <div id="score-trend" class="score-trend"></div>
+                        </div>
+                    </div>
+
+                    <div class="card vulnerabilities-card">
+                        <div class="card-header">
+                            <h3>Vulnerabilities</h3>
+                            <span class="icon">⚠️</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="vulnerability-counts">
+                                <div class="vuln-item vuln-critical">
+                                    <span class="vuln-count" id="critical-count">0</span>
+                                    <span class="vuln-label">Critical</span>
+                                </div>
+                                <div class="vuln-item vuln-high">
+                                    <span class="vuln-count" id="high-count">0</span>
+                                    <span class="vuln-label">High</span>
+                                </div>
+                                <div class="vuln-item vuln-medium">
+                                    <span class="vuln-count" id="medium-count">0</span>
+                                    <span class="vuln-label">Medium</span>
+                                </div>
+                                <div class="vuln-item vuln-low">
+                                    <span class="vuln-count" id="low-count">0</span>
+                                    <span class="vuln-label">Low</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card dependencies-card">
+                        <div class="card-header">
+                            <h3>Dependencies</h3>
+                            <span class="icon">📦</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-row">
+                                <span class="stat-label">Total</span>
+                                <span id="total-deps" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Direct</span>
+                                <span id="direct-deps" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">Transitive</span>
+                                <span id="transitive-deps" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card policy-card">
+                        <div class="card-header">
+                            <h3>Policy Status</h3>
+                            <span class="icon">📋</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="stat-row">
+                                <span class="stat-label">Violations</span>
+                                <span id="policy-violations" class="stat-value">0</span>
+                            </div>
+                            <div class="stat-row">
+                                <span class="stat-label">License Issues</span>
+                                <span id="license-issues" class="stat-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Visualization Tabs -->
+            <section class="visualization-section">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="graph">Dependency Graph</button>
+                    <button class="tab-button" data-tab="timeline">Vulnerability Timeline</button>
+                    <button class="tab-button" data-tab="explorer">SBOM Explorer</button>
+                </div>
+
+                <!-- Dependency Graph Tab -->
+                <div id="graph-tab" class="tab-content active">
+                    <div class="graph-controls">
+                        <label>
+                            <input type="checkbox" id="show-transitive" checked>
+                            Show Transitive Dependencies
+                        </label>
+                        <label>
+                            Filter by Severity:
+                            <select id="severity-filter">
+                                <option value="all">All</option>
+                                <option value="critical">Critical</option>
+                                <option value="high">High</option>
+                                <option value="medium">Medium</option>
+                                <option value="low">Low</option>
+                            </select>
+                        </label>
+                    </div>
+                    <div id="dependency-graph" class="graph-container"></div>
+                    <div class="graph-legend">
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff4444;"></div>
+                            <span>Critical</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ff8800;"></div>
+                            <span>High</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #ffcc00;"></div>
+                            <span>Medium</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #4caf50;"></div>
+                            <span>No Vulnerabilities</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline Tab -->
+                <div id="timeline-tab" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="vulnerability-timeline"></canvas>
+                    </div>
+                </div>
+
+                <!-- SBOM Explorer Tab -->
+                <div id="explorer-tab" class="tab-content">
+                    <div class="explorer-controls">
+                        <input type="text" id="search-input" placeholder="Search dependencies...">
+                        <button id="export-sbom-btn" class="btn btn-secondary">Export SBOM</button>
+                    </div>
+                    <div class="explorer-table-container">
+                        <table id="sbom-table" class="explorer-table">
+                            <thead>
+                                <tr>
+                                    <th>Package</th>
+                                    <th>Version</th>
+                                    <th>License</th>
+                                    <th>Vulnerabilities</th>
+                                    <th>Scope</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sbom-tbody">
+                                <tr>
+                                    <td colspan="5" class="loading">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="dashboard-footer">
+            <p>BazBOM v0.5.1 | Privacy-Preserving Security Analysis</p>
+        </footer>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html>
