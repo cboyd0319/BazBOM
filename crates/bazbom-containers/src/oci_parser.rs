@@ -260,6 +260,87 @@ impl OciImageParser {
 
         Ok(artifacts)
     }
+
+    /// Extract Maven metadata from a JAR file in a layer
+    pub fn extract_maven_metadata(&self, layer_path: impl AsRef<Path>, jar_path: &str) -> Result<Option<MavenMetadata>> {
+        let file = File::open(layer_path.as_ref())
+            .with_context(|| format!("Failed to open layer: {}", layer_path.as_ref().display()))?;
+
+        let mut archive = Archive::new(file);
+
+        // First, extract the JAR file from the layer
+        for entry_result in archive.entries()? {
+            let mut entry = entry_result?;
+            let path = entry.path()?;
+
+            if path.to_string_lossy() == jar_path {
+                // Read JAR contents into memory
+                let mut jar_contents = Vec::new();
+                entry.read_to_end(&mut jar_contents)?;
+
+                // Parse JAR as a ZIP archive to find pom.properties
+                return self.parse_jar_for_maven_metadata(&jar_contents);
+            }
+        }
+
+        Ok(None)
+    }
+
+    /// Parse JAR file (as ZIP) to extract Maven metadata
+    fn parse_jar_for_maven_metadata(&self, jar_contents: &[u8]) -> Result<Option<MavenMetadata>> {
+        use std::io::Cursor;
+        
+        let cursor = Cursor::new(jar_contents);
+        let mut archive = zip::ZipArchive::new(cursor)
+            .context("Failed to read JAR as ZIP archive")?;
+
+        // Look for META-INF/maven/*/*/pom.properties
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let name = file.name().to_string();
+
+            if name.starts_with("META-INF/maven/") && name.ends_with("pom.properties") {
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+
+                return Ok(Some(Self::parse_pom_properties(&contents)?));
+            }
+        }
+
+        Ok(None)
+    }
+
+    /// Parse pom.properties file format
+    fn parse_pom_properties(contents: &str) -> Result<MavenMetadata> {
+        let mut group_id = None;
+        let mut artifact_id = None;
+        let mut version = None;
+
+        for line in contents.lines() {
+            let line = line.trim();
+            if line.starts_with('#') || line.is_empty() {
+                continue;
+            }
+
+            if let Some((key, value)) = line.split_once('=') {
+                match key.trim() {
+                    "groupId" => group_id = Some(value.trim().to_string()),
+                    "artifactId" => artifact_id = Some(value.trim().to_string()),
+                    "version" => version = Some(value.trim().to_string()),
+                    _ => {}
+                }
+            }
+        }
+
+        match (group_id, artifact_id, version) {
+            (Some(g), Some(a), Some(v)) => Ok(MavenMetadata {
+                group_id: g,
+                artifact_id: a,
+                version: v,
+            }),
+            _ => anyhow::bail!("Incomplete Maven metadata in pom.properties"),
+        }
+    }
 }
 
 /// Docker manifest entry (Docker image format)
@@ -279,6 +360,14 @@ pub struct JavaArtifactCandidate {
     pub path: String,
     pub size: u64,
     pub artifact_type: String,
+}
+
+/// Maven metadata extracted from pom.properties
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MavenMetadata {
+    pub group_id: String,
+    pub artifact_id: String,
+    pub version: String,
 }
 
 #[cfg(test)]

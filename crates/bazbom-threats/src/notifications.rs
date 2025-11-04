@@ -174,38 +174,87 @@ impl Notifier {
             payload["username"] = json!(user);
         }
 
-        // In production, use reqwest to send HTTP POST
-        // For now, log the payload
-        log::info!("Slack notification: {}", serde_json::to_string_pretty(&payload)?);
+        // Send HTTP POST to Slack webhook
+        let client = reqwest::blocking::Client::new();
+        let response = client
+            .post(webhook_url)
+            .json(&payload)
+            .send()
+            .map_err(|e| anyhow::anyhow!("Failed to send Slack notification: {}", e))?;
 
+        if !response.status().is_success() {
+            anyhow::bail!(
+                "Slack webhook returned error: {} - {}",
+                response.status(),
+                response.text().unwrap_or_default()
+            );
+        }
+
+        log::info!("✓ Slack notification sent successfully");
         Ok(())
     }
 
     /// Send email notification (SMTP)
     fn send_email(
         &self,
-        _smtp_server: &str,
-        _smtp_port: u16,
-        _from: &str,
-        _to: &[String],
+        smtp_server: &str,
+        smtp_port: u16,
+        from: &str,
+        to: &[String],
         notification: &Notification,
-        _username: Option<&str>,
-        _password: Option<&str>,
+        username: Option<&str>,
+        password: Option<&str>,
     ) -> Result<()> {
-        // In production, use lettre crate for SMTP
-        // For now, log the email
-        log::info!(
-            "Email notification to {:?}: {} - {}",
-            _to,
-            notification.title,
-            notification.message
+        use lettre::message::header::ContentType;
+        use lettre::transport::smtp::authentication::Credentials;
+        use lettre::{Message, SmtpTransport, Transport};
+
+        // Build email body with severity indicator
+        let emoji = notification.get_emoji();
+        let email_body = format!(
+            "{} {}\n\nSeverity: {}\n\n{}\n\n---\nSent by BazBOM",
+            emoji, notification.title, notification.severity, notification.message
         );
 
+        // Build the email message
+        let mut email_builder = Message::builder()
+            .from(from.parse()?)
+            .subject(format!("{} {}", emoji, notification.title))
+            .header(ContentType::TEXT_PLAIN);
+
+        // Add all recipients
+        for recipient in to {
+            email_builder = email_builder.to(recipient.parse()?);
+        }
+
+        let email = email_builder.body(email_body)?;
+
+        // Build SMTP client
+        let mailer = if let (Some(user), Some(pass)) = (username, password) {
+            // Authenticated SMTP
+            let creds = Credentials::new(user.to_string(), pass.to_string());
+            SmtpTransport::relay(smtp_server)?
+                .port(smtp_port)
+                .credentials(creds)
+                .build()
+        } else {
+            // Unauthenticated SMTP
+            SmtpTransport::builder_dangerous(smtp_server)
+                .port(smtp_port)
+                .build()
+        };
+
+        // Send email
+        mailer
+            .send(&email)
+            .map_err(|e| anyhow::anyhow!("Failed to send email: {}", e))?;
+
+        log::info!("✓ Email notification sent successfully to {:?}", to);
         Ok(())
     }
 
     /// Send Microsoft Teams notification
-    fn send_teams(&self, _webhook_url: &str, notification: &Notification) -> Result<()> {
+    fn send_teams(&self, webhook_url: &str, notification: &Notification) -> Result<()> {
         let color = notification.get_color();
 
         let payload = json!({
@@ -224,22 +273,32 @@ impl Notifier {
             }]
         });
 
-        // In production, use reqwest to send HTTP POST
-        log::info!(
-            "Teams notification to {}: {}",
-            _webhook_url,
-            serde_json::to_string_pretty(&payload)?
-        );
+        // Send HTTP POST to Teams webhook
+        let client = reqwest::blocking::Client::new();
+        let response = client
+            .post(webhook_url)
+            .json(&payload)
+            .send()
+            .map_err(|e| anyhow::anyhow!("Failed to send Teams notification: {}", e))?;
 
+        if !response.status().is_success() {
+            anyhow::bail!(
+                "Teams webhook returned error: {} - {}",
+                response.status(),
+                response.text().unwrap_or_default()
+            );
+        }
+
+        log::info!("✓ Teams notification sent successfully");
         Ok(())
     }
 
     /// Create GitHub issue
     fn send_github_issue(
         &self,
-        _token: &str,
-        _owner: &str,
-        _repo: &str,
+        token: &str,
+        owner: &str,
+        repo: &str,
         labels: &[String],
         notification: &Notification,
     ) -> Result<()> {
@@ -254,17 +313,38 @@ impl Notifier {
         let mut issue_labels = labels.to_vec();
         issue_labels.push(format!("severity:{}", notification.severity.to_lowercase()));
 
-        // In production, use GitHub API via reqwest
-        log::info!(
-            "GitHub issue for {}/{}: {} {}\nLabels: {:?}",
-            _owner,
-            _repo,
-            emoji,
-            notification.title,
-            issue_labels
-        );
-        log::info!("Issue body:\n{}", issue_body);
+        let issue_payload = json!({
+            "title": format!("{} {}", emoji, notification.title),
+            "body": issue_body,
+            "labels": issue_labels
+        });
 
+        // Send HTTP POST to GitHub API
+        let client = reqwest::blocking::Client::new();
+        let url = format!("https://api.github.com/repos/{}/{}/issues", owner, repo);
+        
+        let response = client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", token))
+            .header("User-Agent", "BazBOM")
+            .header("Accept", "application/vnd.github+json")
+            .header("X-GitHub-Api-Version", "2022-11-28")
+            .json(&issue_payload)
+            .send()
+            .map_err(|e| anyhow::anyhow!("Failed to create GitHub issue: {}", e))?;
+
+        if !response.status().is_success() {
+            anyhow::bail!(
+                "GitHub API returned error: {} - {}",
+                response.status(),
+                response.text().unwrap_or_default()
+            );
+        }
+
+        let issue_response: serde_json::Value = response.json()?;
+        let issue_number = issue_response["number"].as_u64().unwrap_or(0);
+        
+        log::info!("✓ GitHub issue #{} created successfully", issue_number);
         Ok(())
     }
 }
