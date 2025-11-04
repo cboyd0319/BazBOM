@@ -12,6 +12,7 @@ pub mod hooks;
 pub mod incremental;
 pub mod init;
 pub mod notifications;
+pub mod parallel;
 pub mod pipeline;
 pub mod publish;
 pub mod reachability;
