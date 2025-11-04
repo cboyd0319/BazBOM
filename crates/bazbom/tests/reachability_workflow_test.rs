@@ -74,7 +74,7 @@ fn compile_java_app(project_dir: &Path) -> std::io::Result<PathBuf> {
     let java_files: Vec<PathBuf> = walkdir::WalkDir::new(&src_dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "java"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "java"))
         .map(|e| e.path().to_owned())
         .collect();
 
@@ -93,10 +93,7 @@ fn compile_java_app(project_dir: &Path) -> std::io::Result<PathBuf> {
         .status()?;
 
     if !status.success() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "javac compilation failed",
-        ));
+        return Err(std::io::Error::other("javac compilation failed"));
     }
 
     Ok(classes_dir)

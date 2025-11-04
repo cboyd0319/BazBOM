@@ -21,13 +21,15 @@ fn test_orchestrator_basic_scan() -> Result<()> {
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, // cyclonedx
-        false, // with_semgrep (would require semgrep installed)
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -80,13 +82,15 @@ github_code_scanning = false
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false, // cyclonedx (CLI flag not set, config has it as true)
-        false, // with_semgrep
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -107,13 +111,15 @@ fn test_orchestrator_creates_all_directories() -> Result<()> {
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -145,13 +151,15 @@ fn test_orchestrator_no_upload_flag() -> Result<()> {
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true, // no_upload = true
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     // Should run without attempting upload
@@ -170,13 +178,15 @@ fn test_orchestrator_merged_sarif_structure() -> Result<()> {
     let orchestrator = ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
