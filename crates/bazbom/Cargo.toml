@@ -23,7 +23,7 @@ serde_yaml = "0.9"
 toml = "0.8"
 blake3 = "1"
 chrono = "0.4"
-quick-xml = "0.31"
+quick-xml = "0.38"
 zip = "0.6"
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
