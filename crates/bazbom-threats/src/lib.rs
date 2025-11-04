@@ -14,6 +14,7 @@ pub mod database_integration;
 pub mod dependency_confusion;
 pub mod malicious;
 pub mod monitoring;
+pub mod notifications;
 pub mod supply_chain;
 pub mod typosquatting;
 
