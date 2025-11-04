@@ -7,6 +7,12 @@ use bazbom_formats::sarif::SarifReport;
 
 pub struct SemgrepAnalyzer;
 
+impl Default for SemgrepAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SemgrepAnalyzer {
     pub fn new() -> Self {
         Self

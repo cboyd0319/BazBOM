@@ -32,7 +32,7 @@ pub fn run_tests(build_system: BuildSystem, project_root: &Path) -> Result<TestR
     let success = output.status.success();
 
     let output_text = String::from_utf8_lossy(&output.stdout).to_string()
-        + &String::from_utf8_lossy(&output.stderr).to_string();
+        + String::from_utf8_lossy(&output.stderr).as_ref();
 
     Ok(TestResult {
         success,
@@ -46,7 +46,7 @@ fn run_maven_tests(project_root: &Path) -> Result<Output> {
     println!("[bazbom] Running Maven tests...");
 
     Command::new("mvn")
-        .args(&["test", "-DskipTests=false", "--batch-mode"])
+        .args(["test", "-DskipTests=false", "--batch-mode"])
         .current_dir(project_root)
         .output()
         .context("Failed to execute Maven tests")
@@ -65,7 +65,7 @@ fn run_gradle_tests(project_root: &Path) -> Result<Output> {
     };
 
     Command::new(gradle_cmd)
-        .args(&["test", "--no-daemon", "--console=plain"])
+        .args(["test", "--no-daemon", "--console=plain"])
         .current_dir(project_root)
         .output()
         .context("Failed to execute Gradle tests")
@@ -75,7 +75,7 @@ fn run_bazel_tests(project_root: &Path) -> Result<Output> {
     println!("[bazbom] Running Bazel tests...");
 
     Command::new("bazel")
-        .args(&["test", "//...", "--test_output=errors"])
+        .args(["test", "//...", "--test_output=errors"])
         .current_dir(project_root)
         .output()
         .context("Failed to execute Bazel tests")

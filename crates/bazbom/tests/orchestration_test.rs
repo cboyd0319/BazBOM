@@ -31,13 +31,15 @@ artifact = true
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace.clone(),
         out_dir.clone(),
-        false, // cyclonedx
-        false, // with_semgrep
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     // Run the orchestrator
@@ -93,13 +95,15 @@ depsdev = true
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -132,13 +136,15 @@ recipe_allowlist = ["commons-io", "jackson"]
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        Some(bazbom::cli::AutofixMode::DryRun),
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: Some(bazbom::cli::AutofixMode::DryRun),
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -164,13 +170,15 @@ fn test_orchestrated_scan_minimal() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     // Should run successfully with just SCA
@@ -192,13 +200,15 @@ fn test_merged_sarif_structure() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -233,13 +243,15 @@ fn test_output_directories_created() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -269,13 +281,15 @@ fn test_tool_cache_directory() -> Result<()> {
     let _orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace.clone(),
         out_dir,
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     // Verify tool cache directory is created in workspace

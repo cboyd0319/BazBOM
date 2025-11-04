@@ -115,8 +115,7 @@ mod tests {
         // This might fail if the current platform is not in the manifest
         // That's expected for unsupported platforms
         let result = loader.get_descriptor("codeql");
-        if result.is_ok() {
-            let desc = result.unwrap();
+        if let Ok(desc) = result {
             assert_eq!(desc.name, "codeql");
             assert_eq!(desc.version, "2.19.4");
             assert!(desc.archive);

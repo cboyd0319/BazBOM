@@ -211,7 +211,7 @@ mod tests {
 
         assert_eq!(result.sbom_json, "{}");
         assert_eq!(result.findings_json, Some("[]".to_string()));
-        assert_eq!(result.parameters.fast, true);
+        assert!(result.parameters.fast);
     }
 
     #[test]

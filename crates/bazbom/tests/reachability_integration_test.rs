@@ -37,7 +37,7 @@ fn create_test_java_class(
     };
 
     writeln!(file, "package {};", package)?;
-    writeln!(file, "")?;
+    writeln!(file)?;
     writeln!(file, "public class {} {{", class)?;
     writeln!(
         file,
@@ -56,7 +56,7 @@ fn compile_to_jar(src_dir: &Path, jar_path: &Path) -> std::io::Result<()> {
     let java_files: Vec<_> = walkdir::WalkDir::new(src_dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map_or(false, |ext| ext == "java"))
+        .filter(|e| e.path().extension().is_some_and(|ext| ext == "java"))
         .map(|e| e.path().to_owned())
         .collect();
 
@@ -78,10 +78,7 @@ fn compile_to_jar(src_dir: &Path, jar_path: &Path) -> std::io::Result<()> {
         .status()?;
 
     if !status.success() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "javac compilation failed",
-        ));
+        return Err(std::io::Error::other("javac compilation failed"));
     }
 
     // Create JAR
@@ -94,10 +91,7 @@ fn compile_to_jar(src_dir: &Path, jar_path: &Path) -> std::io::Result<()> {
         .status()?;
 
     if !status.success() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "jar creation failed",
-        ));
+        return Err(std::io::Error::other("jar creation failed"));
     }
 
     Ok(())

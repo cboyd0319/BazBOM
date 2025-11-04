@@ -39,13 +39,15 @@ artifact = true
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace.clone(),
         out_dir.clone(),
-        true,  // cyclonedx
-        false, // with_semgrep
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: true,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -91,13 +93,15 @@ fn test_sarif_2_1_0_compliance() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -158,13 +162,15 @@ fn test_analyzer_interfaces() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace.clone(),
         out_dir.clone(),
-        false, // cyclonedx
-        false, // with_semgrep
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -287,13 +293,15 @@ fn test_output_formats() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        true,  // cyclonedx
-        false, // with_semgrep
-        None,  // with_codeql
-        None,  // autofix
-        None,  // containers
-        true,  // no_upload
-        None,  // target
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: true,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -354,13 +362,15 @@ fn test_merged_sarif_deduplication() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;
@@ -427,13 +437,15 @@ fn test_enrichment_directory() -> Result<()> {
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         out_dir.clone(),
-        false,
-        false,
-        None,
-        None,
-        None,
-        true,
-        None,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx: false,
+            with_semgrep: false,
+            with_codeql: None,
+            autofix: None,
+            containers: None,
+            no_upload: true,
+            target: None,
+        },
     )?;
 
     orchestrator.run()?;

@@ -4,7 +4,7 @@ use crate::pipeline::Analyzer;
 use crate::toolchain::{ToolCache, ToolManifestLoader};
 use anyhow::{Context as _, Result};
 use bazbom_formats::sarif::SarifReport;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct CodeqlAnalyzer {
     suite: String,
@@ -17,7 +17,7 @@ impl CodeqlAnalyzer {
         }
     }
 
-    fn detect_build_system(workspace: &PathBuf) -> Option<BuildSystem> {
+    fn detect_build_system(workspace: &Path) -> Option<BuildSystem> {
         if workspace.join("pom.xml").exists() {
             Some(BuildSystem::Maven)
         } else if workspace.join("build.gradle").exists()
@@ -108,7 +108,7 @@ impl CodeqlAnalyzer {
         &self,
         codeql_bin: &PathBuf,
         ctx: &Context,
-        db_dir: &PathBuf,
+        db_dir: &Path,
     ) -> Result<SarifReport> {
         let output_path = ctx.findings_dir.join("codeql.sarif");
 

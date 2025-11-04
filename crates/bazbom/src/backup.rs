@@ -47,7 +47,7 @@ impl BackupHandle {
 
         // Create stash with message
         let output = Command::new("git")
-            .args(&[
+            .args([
                 "stash",
                 "push",
                 "-m",
@@ -65,7 +65,7 @@ impl BackupHandle {
 
         // Get stash ID
         let list_output = Command::new("git")
-            .args(&["stash", "list", "-n", "1"])
+            .args(["stash", "list", "-n", "1"])
             .current_dir(project_root)
             .output()
             .context("Failed to list git stash")?;
@@ -137,7 +137,7 @@ impl BackupHandle {
         let branch_name = format!("bazbom-backup-{}", chrono::Utc::now().timestamp());
 
         let output = Command::new("git")
-            .args(&["branch", &branch_name])
+            .args(["branch", &branch_name])
             .current_dir(project_root)
             .output()
             .context("Failed to create git branch")?;
@@ -177,14 +177,14 @@ impl BackupHandle {
 
         // Reset working directory
         Command::new("git")
-            .args(&["reset", "--hard", "HEAD"])
+            .args(["reset", "--hard", "HEAD"])
             .current_dir(&self.project_root)
             .output()
             .context("Failed to reset working directory")?;
 
         // Apply stash
         let output = Command::new("git")
-            .args(&["stash", "apply", stash_id])
+            .args(["stash", "apply", stash_id])
             .current_dir(&self.project_root)
             .output()
             .context("Failed to apply git stash")?;
@@ -230,7 +230,7 @@ impl BackupHandle {
 
         // Reset to branch
         let output = Command::new("git")
-            .args(&["reset", "--hard", branch_name])
+            .args(["reset", "--hard", branch_name])
             .current_dir(&self.project_root)
             .output()
             .context("Failed to reset to branch")?;
@@ -251,7 +251,7 @@ impl BackupHandle {
                 // Drop the stash
                 if let Some(stash_id) = &self.git_stash_id {
                     Command::new("git")
-                        .args(&["stash", "drop", stash_id])
+                        .args(["stash", "drop", stash_id])
                         .current_dir(&self.project_root)
                         .output()
                         .context("Failed to drop git stash")?;
@@ -267,7 +267,7 @@ impl BackupHandle {
                 // Delete the backup branch
                 if let Some(branch_name) = &self.git_branch {
                     Command::new("git")
-                        .args(&["branch", "-D", branch_name])
+                        .args(["branch", "-D", branch_name])
                         .current_dir(&self.project_root)
                         .output()
                         .context("Failed to delete backup branch")?;
@@ -285,7 +285,7 @@ pub fn choose_backup_strategy(project_root: &Path) -> BackupStrategy {
     if project_root.join(".git").exists() {
         // Check if working tree is clean
         let status_output = Command::new("git")
-            .args(&["status", "--porcelain"])
+            .args(["status", "--porcelain"])
             .current_dir(project_root)
             .output();
 
