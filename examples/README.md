@@ -1,6 +1,42 @@
 # BazBOM Examples
 
-This directory contains example configurations and CI workflows for BazBOM.
+This directory contains example configurations, CI workflows, and sample projects for BazBOM.
+
+## Build System Examples
+
+BazBOM supports all major JVM build systems. Example projects demonstrate build system detection:
+
+### Maven (`maven_spring_boot/`)
+Standard Maven project with Spring Boot.
+- **Detection:** `pom.xml`
+- **Features:** Full dependency resolution, plugin integration
+
+### Gradle (`gradle_kotlin/`)
+Gradle project with Kotlin DSL.
+- **Detection:** `build.gradle.kts`, `settings.gradle.kts`
+- **Features:** Multi-configuration scanning, Shadow plugin support
+
+### Bazel (multiple examples)
+Bazel workspace with JVM rules.
+- **Detection:** `MODULE.bazel`, `WORKSPACE`, `BUILD.bazel`
+- **Features:** Target-specific scanning, incremental analysis
+
+### Ant (`ant_project/`) ✨ NEW
+Apache Ant project with traditional XML build configuration.
+- **Detection:** `build.xml`
+- **Features:** JAR dependency scanning, legacy project support
+
+### Buildr (`buildr_project/`) ✨ NEW
+Apache Buildr project with Ruby-based DSL.
+- **Detection:** `buildfile` or `Rakefile` with Buildr
+- **Features:** Maven coordinate resolution, Ruby DSL builds
+
+### sbt (`sbt_project/`) ✨ NEW
+sbt (Scala Build Tool) project for Scala applications.
+- **Detection:** `build.sbt` or `project/build.properties`
+- **Features:** Incremental compilation, Ivy/Maven repository support
+
+Each example includes a README with build instructions and BazBOM usage.
 
 ## Policy Configurations
 

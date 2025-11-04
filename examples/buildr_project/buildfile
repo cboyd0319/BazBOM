@@ -1,0 +1,28 @@
+# Apache Buildr buildfile
+# Buildr is a Ruby-based build system for Java projects
+
+require 'buildr'
+
+# Project definition
+define 'example-buildr-project' do
+  project.version = '1.0.0'
+  project.group = 'com.example'
+  
+  # Compiler settings
+  compile.options.source = '11'
+  compile.options.target = '11'
+  
+  # Dependencies (Maven coordinates)
+  compile.with(
+    'org.slf4j:slf4j-api:jar:1.7.36',
+    'ch.qos.logback:logback-classic:jar:1.2.11'
+  )
+  
+  # Main class for packaging
+  package(:jar).with :manifest => { 'Main-Class' => 'com.example.Main' }
+  
+  # Test dependencies
+  test.with(
+    'junit:junit:jar:4.13.2'
+  )
+end

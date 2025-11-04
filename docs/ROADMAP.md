@@ -37,7 +37,7 @@
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
 - **Phase 7:** Threat intelligence (95% complete)
 - **Phase 8:** Scale & performance (90% complete - Bazel optimization & parallel processing ⬆️ +5%)
-- **Phase 9:** Ecosystem expansion (75% complete - Node.js & Python support)
+- **Phase 9:** Ecosystem expansion (85% complete - Container scanning & build systems ⬆️ +5%)
 
 ### 📋 Planned
 - **Phase 10:** AI-powered intelligence
@@ -287,11 +287,11 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans (with remote cache)
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (75% Complete, ⬆️ +15%)
+### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (85% Complete, ⬆️ +10%)
 
 **Container Support for JVM Artifacts, Additional JVM Build Systems**
 
-> **⚠️ SCOPE CLARIFICATION:** Phase 9 focuses on JVM artifact detection in containers and expanding JVM build system support (Ant, Buildr). Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE** for BazBOM.
+> **⚠️ SCOPE CLARIFICATION:** Phase 9 focuses on JVM artifact detection in containers and expanding JVM build system support (Ant, Buildr, sbt). Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE** for BazBOM.
 
 See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for details.
 
@@ -312,13 +312,13 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
 - [ ] Full HTTP client integration with hyperlocal
 - [x] Container layer extraction and analysis workflow ✅ **COMPLETE**
 - [x] Integration with scan command ✅ **COMPLETE**
-- [ ] Ant build system support (build.xml)
-- [ ] Buildr build system support (buildfile, Rakefile)
+- [x] Ant build system support (build.xml) ✅ **NEW 2025-11-04**
+- [x] Buildr build system support (buildfile, Rakefile) ✅ **NEW 2025-11-04**
+- [x] sbt (Scala Build Tool) support (build.sbt) ✅ **NEW 2025-11-04**
 - [ ] Groovy language support enhancements
 - [ ] Clojure language support enhancements
 - [ ] Container image SBOM for JVM artifacts (`rules_oci` integration)
 - [ ] Kotlin Multiplatform support (JVM targets only)
-- [ ] Additional Scala build tool support (sbt)
 - [ ] Android-specific features (JVM-based)
 
 ### Phase 10: AI Intelligence 📋 PLANNED

@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="example-ant-project" default="compile" basedir=".">
+    <description>
+        Example Ant build file for BazBOM testing
+    </description>
+
+    <!-- Properties -->
+    <property name="src.dir" value="src/main/java"/>
+    <property name="build.dir" value="build"/>
+    <property name="classes.dir" value="${build.dir}/classes"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="dist.dir" value="dist"/>
+    <property name="jar.name" value="example-ant-project.jar"/>
+
+    <!-- Dependencies (would typically use Ivy or manual JAR management) -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Initialize -->
+    <target name="init">
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${classes.dir}"/>
+        <mkdir dir="${dist.dir}"/>
+    </target>
+
+    <!-- Clean -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Compile -->
+    <target name="compile" depends="init">
+        <javac srcdir="${src.dir}"
+               destdir="${classes.dir}"
+               classpathref="classpath"
+               includeantruntime="false"
+               source="11"
+               target="11"/>
+    </target>
+
+    <!-- JAR -->
+    <target name="jar" depends="compile">
+        <jar destfile="${dist.dir}/${jar.name}" basedir="${classes.dir}">
+            <manifest>
+                <attribute name="Main-Class" value="com.example.Main"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- Run -->
+    <target name="run" depends="jar">
+        <java jar="${dist.dir}/${jar.name}" fork="true"/>
+    </target>
+
+    <!-- Test -->
+    <target name="test" depends="compile">
+        <echo message="Running tests (example only)"/>
+    </target>
+
+    <!-- Default target -->
+    <target name="all" depends="clean,jar,test"/>
+</project>
