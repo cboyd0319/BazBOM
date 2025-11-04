@@ -6,7 +6,7 @@ use std::fs;
 use std::path::Path;
 
 /// CISA KEV (Known Exploited Vulnerabilities) catalog format
-/// Based on https://www.cisa.gov/known-exploited-vulnerabilities-catalog
+/// Based on <https://www.cisa.gov/known-exploited-vulnerabilities-catalog>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct KevCatalog {
     pub title: Option<String>,

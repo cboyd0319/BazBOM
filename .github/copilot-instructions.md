@@ -103,6 +103,16 @@ Target OS: macOS → Linux → Windows.
 
 ## Sanity Checks Before Merge
 
+**Code Quality:**
+- [ ] `cargo check --workspace --all-features --all-targets` passes
+- [ ] `cargo clippy --workspace --all-features --all-targets -- -D warnings` passes
+- [ ] `cargo fmt --all -- --check` passes
+- [ ] `cargo test --workspace --all-features` passes
+- [ ] `cargo doc --workspace --no-deps` produces no warnings
+- [ ] No new unsafe code blocks introduced
+- [ ] All new Cargo.toml files include: name, version, edition, license, repository
+
+**Documentation & Features:**
 - [ ] Capabilities Reference updated and consistent with README
 - [ ] CLI docs updated; examples for Maven/Gradle/Bazel verified
 - [ ] Schema changes versioned; golden tests updated; validators pass
@@ -165,6 +175,29 @@ Target OS: macOS → Linux → Windows.
 - Policy enforcement blocks commits with violations
 - Must be bypassable with `git commit --no-verify`
 - Works on macOS, Linux, Windows (Git Bash)
+
+## Code Quality Standards
+
+**Quality Metrics (Latest Deep Analysis):**
+- ✅ All Rust code compiles without errors
+- ✅ Zero clippy warnings with `-D warnings` flag
+- ✅ All tests passing (100% success rate)
+- ✅ Code formatting verified with `cargo fmt --check`
+- ✅ Zero unsafe code blocks across entire codebase
+- ✅ All YAML configuration files validated
+- ✅ All Cargo.toml files include license and repository metadata
+- ✅ No debug statements (dbg!) in production code
+- ✅ Proper error handling patterns (minimal unwrap/expect in critical paths)
+
+**Continuous Quality Enforcement:**
+- Run `cargo check --workspace --all-features --all-targets` before commits
+- Run `cargo clippy --workspace --all-features --all-targets -- -D warnings` to catch issues
+- Run `cargo fmt --all -- --check` to verify formatting
+- Run `cargo test --workspace --all-features` to verify all tests pass
+- All Cargo.toml files must include: name, version, edition, license, repository
+- Document TODOs with context (not just placeholders)
+- Use proper error handling (Result types, descriptive errors)
+- Prefer logging over println! in production code paths
 
 ## Additional Sources
 

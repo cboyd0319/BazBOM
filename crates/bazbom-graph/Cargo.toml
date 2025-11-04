@@ -2,6 +2,8 @@
 name = "bazbom-graph"
 version = "0.5.1"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

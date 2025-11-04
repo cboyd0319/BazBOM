@@ -4,7 +4,7 @@ use crate::merge::{
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-/// OSV format structures based on https://ossf.github.io/osv-schema/
+/// OSV format structures based on <https://ossf.github.io/osv-schema/>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct OsvEntry {
     pub id: String,

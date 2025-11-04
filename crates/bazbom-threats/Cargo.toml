@@ -2,6 +2,8 @@
 name = "bazbom-threats"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }

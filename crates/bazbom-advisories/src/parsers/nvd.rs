@@ -5,7 +5,7 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 /// NVD API 2.0 format structures
-/// Based on https://nvd.nist.gov/developers/vulnerabilities
+/// Based on <https://nvd.nist.gov/developers/vulnerabilities>
 #[derive(Debug, Deserialize, Serialize)]
 pub struct NvdEntry {
     pub cve: NvdCve,
