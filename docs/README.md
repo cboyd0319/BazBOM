@@ -7,6 +7,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 - **[90-Second Quickstart](90-SECOND-QUICKSTART.md)** ⚡ Zero to first scan in 90 seconds
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
+- **[JVM Language Support](JVM_LANGUAGE_SUPPORT.md)** ⭐ - **Complete guide for Java, Kotlin, and Scala across Maven, Gradle, and Bazel**
 - **[IDE Setup](quickstart/IDE_SETUP.md)** - Quick start guide for IDE integration
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
 - **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from Python to Rust CLI

@@ -844,4 +844,110 @@ mod tests {
         assert_eq!(metrics.query_count, 0);
         assert_eq!(metrics.cache_hits, 0);
     }
+
+    #[test]
+    fn test_jvm_rule_detection() {
+        assert!(is_jvm_rule("java_library"));
+        assert!(is_jvm_rule("java_binary"));
+        assert!(is_jvm_rule("kotlin_library"));
+        assert!(is_jvm_rule("kt_jvm_library"));
+        assert!(is_jvm_rule("scala_library"));
+        assert!(is_jvm_rule("scala_binary"));
+        assert!(!is_jvm_rule("py_binary"));
+        assert!(!is_jvm_rule("go_library"));
+    }
+
+    #[test]
+    fn test_get_jvm_rule_query() {
+        let query = get_jvm_rule_query("//...");
+        assert!(query.contains("java_"));
+        assert!(query.contains("kotlin_"));
+        assert!(query.contains("scala_"));
+    }
+}
+
+/// Check if a Bazel rule is a JVM-related rule (Java, Kotlin, or Scala)
+pub fn is_jvm_rule(rule_kind: &str) -> bool {
+    let jvm_rules = [
+        // Java rules
+        "java_library",
+        "java_binary",
+        "java_test",
+        "java_plugin",
+        "java_import",
+        // Kotlin rules (rules_kotlin)
+        "kotlin_library",
+        "kotlin_jvm_library",
+        "kt_jvm_library",
+        "kt_jvm_binary",
+        "kt_jvm_test",
+        "kt_jvm_import",
+        // Scala rules (rules_scala)
+        "scala_library",
+        "scala_binary",
+        "scala_test",
+        "scala_import",
+        "scala_macro_library",
+    ];
+    
+    jvm_rules.contains(&rule_kind)
+}
+
+/// Get a Bazel query expression for all JVM rules in the workspace
+pub fn get_jvm_rule_query(universe: &str) -> String {
+    let rule_kinds = [
+        "java_library", "java_binary", "java_test",
+        "kotlin_library", "kt_jvm_library", "kt_jvm_binary", "kt_jvm_test",
+        "scala_library", "scala_binary", "scala_test",
+    ];
+    
+    let kind_queries: Vec<String> = rule_kinds
+        .iter()
+        .map(|kind| format!("kind({}, {})", kind, universe))
+        .collect();
+    
+    // Combine all queries with union operator
+    kind_queries.join(" + ")
+}
+
+/// Query all JVM targets in the workspace (Java, Kotlin, Scala)
+pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
+    let query = get_jvm_rule_query("//...");
+    println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
+    
+    query_bazel_targets(
+        workspace_path,
+        Some(&query),
+        None,
+        None,
+        "//...",
+    )
+}
+
+/// Query Kotlin-specific targets in the workspace
+pub fn query_kotlin_targets(workspace_path: &Path) -> Result<Vec<String>> {
+    let query = "kind(kotlin_library, //...) + kind(kt_jvm_library, //...) + kind(kt_jvm_binary, //...) + kind(kt_jvm_test, //...)";
+    println!("[bazbom] querying Kotlin targets");
+    
+    query_bazel_targets(
+        workspace_path,
+        Some(query),
+        None,
+        None,
+        "//...",
+    )
+}
+
+/// Query Scala-specific targets in the workspace
+pub fn query_scala_targets(workspace_path: &Path) -> Result<Vec<String>> {
+    let query = "kind(scala_library, //...) + kind(scala_binary, //...) + kind(scala_test, //...)";
+    println!("[bazbom] querying Scala targets");
+    
+    query_bazel_targets(
+        workspace_path,
+        Some(query),
+        None,
+        None,
+        "//...",
+    )
 }

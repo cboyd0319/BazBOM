@@ -77,6 +77,8 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 - ✅ **Containers:** Java artifact detection in Docker/OCI images
 - ❌ **Out of scope:** Node.js, Python, Go, Rust, or other non-JVM ecosystems
 
+For detailed language and build system support, see [JVM Language Support](docs/JVM_LANGUAGE_SUPPORT.md).
+
 For multi-language SBOM generation, use specialized tools for each ecosystem.
 
 ### Who is this for?
