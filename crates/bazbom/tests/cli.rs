@@ -4,6 +4,13 @@ use std::fs;
 use std::process::Command;
 use tempfile::tempdir;
 
+// Helper function to create a command with caching disabled
+fn bazbom_cmd() -> Command {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.env("BAZBOM_DISABLE_CACHE", "1");
+    cmd
+}
+
 #[test]
 fn shows_help() {
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
@@ -28,7 +35,7 @@ fn scan_writes_stub_outputs() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan")
         .arg(".")
         .arg("--format")
@@ -47,7 +54,7 @@ fn scan_cyclonedx_format() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan")
         .arg(".")
         .arg("--format")
@@ -65,7 +72,7 @@ fn scan_default_format_is_spdx() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
@@ -74,7 +81,7 @@ fn scan_default_format_is_spdx() {
 
 #[test]
 fn scan_default_path_is_current_dir() {
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan");
     cmd.assert()
         .success()
@@ -87,7 +94,7 @@ fn scan_with_reachability_flag() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan")
         .arg(".")
         .arg("--reachability")
@@ -104,7 +111,7 @@ fn scan_creates_sarif_output() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
@@ -159,7 +166,7 @@ fn scan_outputs_contain_valid_json() {
     let outdir = tmp.path().join("out");
     fs::create_dir_all(&outdir).unwrap();
 
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.arg("scan").arg(".").arg("--out-dir").arg(&outdir);
     cmd.assert().success();
 
@@ -176,7 +183,7 @@ fn scan_outputs_contain_valid_json() {
 
 #[test]
 fn no_command_defaults_to_scan() {
-    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    let mut cmd = bazbom_cmd();
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("scan path=."));

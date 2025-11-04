@@ -88,6 +88,79 @@ fn main() -> Result<()> {
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
 
+            // Initialize cache (unless disabled via env var for testing)
+            let cache_enabled = std::env::var("BAZBOM_DISABLE_CACHE").is_err();
+            let cache_dir = root.join(".bazbom").join("cache");
+            let mut scan_cache_opt = if cache_enabled {
+                bazbom::scan_cache::ScanCache::new(cache_dir.clone())
+                    .context("Failed to initialize scan cache")
+                    .ok()
+            } else {
+                None
+            };
+
+            // Build scan parameters for cache key
+            let scan_params = bazbom::scan_cache::ScanParameters {
+                reachability: reachability && !fast,
+                fast,
+                format: format.clone(),
+                bazel_targets: bazel_targets.clone(),
+            };
+
+            // Determine build files for cache key
+            let build_files: Vec<PathBuf> = match system {
+                bazbom_core::BuildSystem::Maven => vec![root.join("pom.xml")],
+                bazbom_core::BuildSystem::Gradle => vec![
+                    root.join("build.gradle"),
+                    root.join("build.gradle.kts"),
+                    root.join("settings.gradle"),
+                    root.join("settings.gradle.kts"),
+                ],
+                bazbom_core::BuildSystem::Bazel => vec![
+                    root.join("BUILD"),
+                    root.join("BUILD.bazel"),
+                    root.join("WORKSPACE"),
+                    root.join("WORKSPACE.bazel"),
+                    root.join("MODULE.bazel"),
+                ],
+                bazbom_core::BuildSystem::Unknown => vec![],
+            };
+
+            // Generate cache key
+            let cache_key = bazbom::scan_cache::ScanCache::generate_cache_key(
+                &root,
+                &build_files,
+                &scan_params,
+            )?;
+
+            // Check cache first (if enabled)
+            if let Some(scan_cache) = scan_cache_opt.as_mut() {
+                if let Some(cached_result) = scan_cache.get_scan_result(&cache_key)? {
+                println!(
+                    "[bazbom] cache hit! using cached scan from {}",
+                    cached_result.scanned_at
+                );
+
+                // Write cached results to disk
+                let out = PathBuf::from(&out_dir);
+                let sbom_path = match format.as_str() {
+                    "cyclonedx" => out.join("sbom.cyclonedx.json"),
+                    _ => out.join("sbom.spdx.json"),
+                };
+                fs::write(&sbom_path, cached_result.sbom_json.as_bytes())
+                    .context("Failed to write cached SBOM")?;
+
+                if let Some(findings) = cached_result.findings_json {
+                    let findings_path = out.join("findings.json");
+                    fs::write(&findings_path, findings.as_bytes())
+                        .context("Failed to write cached findings")?;
+                }
+
+                    println!("[bazbom] scan complete (from cache)");
+                    return Ok(());
+                }
+            }
+
             // Handle Bazel-specific target selection
             let bazel_targets_to_scan = if system == bazbom_core::BuildSystem::Bazel {
                 if let Some(query) = &bazel_targets_query {
@@ -546,6 +619,31 @@ fn main() -> Result<()> {
                     println!("[bazbom] wrote {:?}", policy_violations_path);
                 } else {
                     println!("[bazbom] ✓ all policy checks passed");
+                }
+            }
+
+            // Store results in cache for next time
+            let sbom_json = fs::read_to_string(&sbom_path)
+                .context("Failed to read SBOM for caching")?;
+            let findings_json = if findings_path.exists() {
+                Some(
+                    fs::read_to_string(&findings_path)
+                        .context("Failed to read findings for caching")?,
+                )
+            } else {
+                None
+            };
+
+            // Store in cache if enabled
+            if let Some(scan_cache) = scan_cache_opt.as_mut() {
+                let scan_result =
+                    bazbom::scan_cache::ScanResult::new(sbom_json, findings_json, scan_params);
+                
+                if let Err(e) = scan_cache.put_scan_result(&cache_key, &scan_result) {
+                    eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
+                    // Don't fail the scan if caching fails
+                } else {
+                    println!("[bazbom] scan results cached for future runs");
                 }
             }
         }
