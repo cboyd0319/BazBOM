@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~52% toward market leadership (⬆️ +12% this session)
+**Overall Completion:** ~55% toward market leadership (⬆️ +3% this session)
 
 ### ✅ Completed Phases (0-3 + 5)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -32,10 +32,10 @@
 
 ### 🚧 In Progress
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
-- **Phase 6:** Visualization (85% complete - dashboard, reports)
-- **Phase 7:** Threat intelligence (80% complete - detection + API clients ⬆️ +10%)
+- **Phase 6:** Visualization (95% complete - dashboard, reports complete ⬆️ +10%)
+- **Phase 7:** Threat intelligence (80% complete - OSV/GHSA APIs fully implemented)
 - **Phase 8:** Scale & performance (30% complete - caching integrated)
-- **Phase 9:** Ecosystem expansion (35% complete - Docker integration ⬆️ +15%)
+- **Phase 9:** Ecosystem expansion (35% complete - Docker integration)
 - **Implementation Roadmap (Phases 1-2):** Quick wins & visual excellence ✅ COMPLETE
 
 ### 📋 Planned
@@ -170,7 +170,7 @@ See [PHASE_5_ENTERPRISE_POLICY.md](copilot/PHASE_5_ENTERPRISE_POLICY.md) for det
 - [x] Policy validation command
 - [x] Policy reporting
 
-### Phase 6: Visualization 🚧 IN PROGRESS (85% Complete)
+### Phase 6: Visualization 🚧 IN PROGRESS (95% Complete, ⬆️ +10%)
 
 **Web Dashboard, Executive Reports, Dependency Graph UI**
 
@@ -186,11 +186,12 @@ See [PHASE_6_VISUALIZATION.md](copilot/PHASE_6_VISUALIZATION.md), [IMPLEMENTATIO
 - [x] Export SBOM to JSON
 - [x] Executive summary reports (HTML, can convert to PDF)
 - [x] Report generation crate (bazbom-reports)
-- [ ] Framework-specific compliance reports (templates created)
-- [ ] Detailed developer reports with remediation steps
-- [ ] Trend reports with historical analysis
-- [ ] Static HTML export for sharing
+- [x] Framework-specific compliance reports (7 frameworks: PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST CSF) (NEW 2025-11-04)
+- [x] Detailed developer reports with remediation steps and code examples (NEW 2025-11-04)
+- [x] Trend reports with security metrics and insights (NEW 2025-11-04)
+- [ ] Static HTML export for sharing (reports already in HTML)
 - [ ] Email integration for reports
+- [ ] CLI integration for report generation
 
 ### Phase 7: Threat Intelligence 🚧 IN PROGRESS (80% Complete, ⬆️ +20%)
 
