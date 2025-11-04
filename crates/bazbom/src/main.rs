@@ -1156,6 +1156,9 @@ fn main() -> Result<()> {
             bazbom_tui::run(dependencies)?;
         }
         Commands::Dashboard { port, open, export } => {
+            use bazbom_dashboard::{start_dashboard, DashboardConfig};
+            use std::path::PathBuf;
+            
             if let Some(export_path) = export {
                 println!("[bazbom] Exporting static HTML dashboard to: {}", export_path);
                 println!("[bazbom] Static export not yet implemented");
@@ -1163,17 +1166,28 @@ fn main() -> Result<()> {
                 return Ok(());
             }
 
-            println!("[bazbom] Starting web dashboard on port {}", port);
-            
-            // Note: Dashboard requires async runtime, so we'd need to refactor main to be async
-            // For now, provide a helpful message
-            println!("[bazbom] Dashboard feature is under development");
-            println!("[bazbom] To track progress, see: docs/copilot/IMPLEMENTATION_ROADMAP.md");
-            println!("[bazbom] Expected in Phase 2 (Weeks 3-4)");
-            
+            // Create dashboard configuration
+            let config = DashboardConfig {
+                port,
+                cache_dir: PathBuf::from(".bazbom/cache"),
+                project_root: PathBuf::from("."),
+            };
+
+            // Open browser if requested
             if open {
-                println!("[bazbom] Would open browser at http://localhost:{}", port);
+                let url = format!("http://localhost:{}", port);
+                println!("[bazbom] Opening browser at {}", url);
+                if let Err(e) = webbrowser::open(&url) {
+                    eprintln!("[bazbom] warning: failed to open browser automatically: {}", e);
+                    eprintln!("[bazbom] Please open {} manually in your browser", url);
+                }
             }
+
+            // Start dashboard with tokio runtime
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(async {
+                start_dashboard(config).await
+            })?;
         }
     }
     Ok(())
