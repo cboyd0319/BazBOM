@@ -1,0 +1,79 @@
+# CIS Benchmarks Security Policy
+# Center for Internet Security Benchmarks
+# 
+# This policy enforces security controls based on CIS Benchmarks for
+# software development and deployment security best practices.
+# 
+# CIS Benchmarks are consensus-based security configuration guidelines
+# developed by cybersecurity experts worldwide.
+
+name: CIS Benchmarks
+version: 1.0.0
+description: CIS Benchmarks security configuration policy
+
+# Severity threshold - Block HIGH and above
+severity_threshold: HIGH
+
+# Known Exploited Vulnerabilities (KEV)
+# CIS recommends remediating known-exploited vulnerabilities immediately
+kev_policy:
+  action: block
+  message: "CIS Benchmarks: Known exploited vulnerabilities must be remediated immediately"
+
+# EPSS (Exploit Prediction Scoring System)
+# Block vulnerabilities with high exploit likelihood
+epss_threshold: 0.6
+epss_action: block
+
+# License Policy - CIS recommends clear license compliance
+license_policy:
+  allowed:
+    - Apache-2.0
+    - MIT
+    - BSD-2-Clause
+    - BSD-3-Clause
+    - ISC
+    - CC0-1.0
+  
+  # CIS recommends avoiding strong copyleft in commercial software
+  denied:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+  
+  require_license: true
+  action: warn  # Warn but don't block on license issues
+
+# Dependency Policy
+blocked_packages:
+  # Known vulnerable packages that should never be used
+  - "log4j:log4j:1.*"               # End of life, critical vulnerabilities
+  - "commons-collections:commons-collections:3.*"  # CVE-2015-6420
+  - "org.springframework:spring-core:4.*"  # End of life
+
+# Vulnerability Age Policy
+# CIS recommends timely patching
+max_vulnerability_age_days: 90
+
+# Security Recommendations
+recommendations:
+  - "Regularly update all dependencies to latest stable versions"
+  - "Enable automated security scanning in CI/CD pipelines"
+  - "Implement multi-factor authentication for all team members"
+  - "Use least privilege access for all systems and services"
+  - "Maintain comprehensive audit logs for security events"
+  - "Conduct regular security training for development teams"
+  - "Follow secure coding practices (OWASP guidelines)"
+  - "Implement defense-in-depth security architecture"
+
+# Compliance Notes
+compliance_notes:
+  framework: CIS Benchmarks
+  applicable_versions:
+    - CIS Controls v8
+    - CIS Docker Benchmark
+    - CIS Kubernetes Benchmark
+  key_controls:
+    - "Control 7: Continuous Vulnerability Management"
+    - "Control 16: Application Software Security"
+    - "Control 18: Penetration Testing"

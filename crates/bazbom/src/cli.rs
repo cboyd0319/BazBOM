@@ -126,6 +126,11 @@ pub enum Commands {
         #[arg(long, value_name = "FILE")]
         export: Option<String>,
     },
+    /// Team coordination and assignment management
+    Team {
+        #[command(subcommand)]
+        action: TeamCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -229,5 +234,42 @@ pub enum LicenseCmd {
         /// SBOM file to analyze
         #[arg(value_name = "FILE")]
         sbom_file: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum TeamCmd {
+    /// Assign a vulnerability to a team member
+    Assign {
+        /// CVE identifier (e.g., CVE-2021-44228)
+        cve: String,
+        /// Team member email
+        #[arg(long, value_name = "EMAIL")]
+        to: String,
+    },
+    /// List all vulnerability assignments
+    List {},
+    /// Show assignments for current user
+    Mine {},
+    /// Export audit log
+    AuditLog {
+        /// Export format (json or csv)
+        #[arg(long, default_value = "json")]
+        format: String,
+        /// Output file path
+        #[arg(long, value_name = "FILE")]
+        output: Option<String>,
+    },
+    /// Configure team settings
+    Config {
+        /// Team name
+        #[arg(long, value_name = "NAME")]
+        name: Option<String>,
+        /// Add team member email
+        #[arg(long, value_name = "EMAIL")]
+        add_member: Option<String>,
+        /// Remove team member email
+        #[arg(long, value_name = "EMAIL")]
+        remove_member: Option<String>,
     },
 }

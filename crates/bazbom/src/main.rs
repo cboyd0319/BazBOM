@@ -1189,6 +1189,123 @@ fn main() -> Result<()> {
                 start_dashboard(config).await
             })?;
         }
+        Commands::Team { action } => {
+            use bazbom::team::{TeamConfig, TeamCoordinator};
+            use bazbom::cli::TeamCmd;
+
+            let coordinator = TeamCoordinator::new(None);
+
+            match action {
+                TeamCmd::Assign { cve, to } => {
+                    coordinator.assign(&cve, &to)?;
+                    coordinator.log_audit_event(
+                        &format!("Assigned {}", cve),
+                        Some(format!("Assigned to {}", to)),
+                    )?;
+                }
+                TeamCmd::List {} => {
+                    let assignments = coordinator.list_assignments()?;
+                    if assignments.is_empty() {
+                        println!("No assignments found.");
+                    } else {
+                        println!("Vulnerability Assignments:");
+                        for assignment in assignments {
+                            println!(
+                                "  {} → {} (assigned {})",
+                                assignment.cve,
+                                assignment.assignee,
+                                assignment.assigned_at.format("%Y-%m-%d %H:%M")
+                            );
+                        }
+                    }
+                }
+                TeamCmd::Mine {} => {
+                    // Get current user
+                    let user = std::process::Command::new("git")
+                        .args(["config", "user.email"])
+                        .output()
+                        .ok()
+                        .and_then(|output| {
+                            if output.status.success() {
+                                Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
+                            } else {
+                                None
+                            }
+                        })
+                        .unwrap_or_else(|| "unknown".to_string());
+
+                    let assignments = coordinator.get_my_assignments(&user)?;
+                    if assignments.is_empty() {
+                        println!("No assignments for {}", user);
+                    } else {
+                        println!("{} vulnerabilities assigned to you:", assignments.len());
+                        for assignment in assignments {
+                            println!(
+                                "  {} (assigned {})",
+                                assignment.cve,
+                                assignment.assigned_at.format("%Y-%m-%d %H:%M")
+                            );
+                        }
+                    }
+                }
+                TeamCmd::AuditLog { format, output } => {
+                    if format == "csv" {
+                        let output_path = output.unwrap_or_else(|| "audit.csv".to_string());
+                        coordinator.export_audit_log(&output_path)?;
+                    } else {
+                        let entries = coordinator.get_audit_log(Some(50))?;
+                        if entries.is_empty() {
+                            println!("No audit entries found.");
+                        } else {
+                            println!("Recent Audit Log:");
+                            for entry in entries {
+                                println!(
+                                    "  {} | {} | {}",
+                                    entry.timestamp.format("%Y-%m-%d %H:%M:%S"),
+                                    entry.user,
+                                    entry.action
+                                );
+                                if let Some(details) = entry.details {
+                                    println!("    {}", details);
+                                }
+                            }
+                        }
+                    }
+                }
+                TeamCmd::Config {
+                    name,
+                    add_member,
+                    remove_member,
+                } => {
+                    let config_path = ".bazbom/team-config.json";
+                    let mut config = TeamConfig::load(config_path).unwrap_or_else(|_| TeamConfig {
+                        name: "Security Team".to_string(),
+                        members: Vec::new(),
+                        notification_channels: std::collections::HashMap::new(),
+                    });
+
+                    if let Some(team_name) = name {
+                        config.name = team_name;
+                        println!("✅ Set team name to: {}", config.name);
+                    }
+
+                    if let Some(email) = add_member {
+                        config.add_member(email.clone());
+                        println!("✅ Added team member: {}", email);
+                    }
+
+                    if let Some(email) = remove_member {
+                        config.remove_member(&email);
+                        println!("✅ Removed team member: {}", email);
+                    }
+
+                    // Create .bazbom directory if it doesn't exist
+                    std::fs::create_dir_all(".bazbom")?;
+                    config.save(config_path)?;
+                    println!("✅ Team configuration saved to {}", config_path);
+                }
+            }
+        }
     }
     Ok(())
 }
