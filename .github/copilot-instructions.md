@@ -4,6 +4,9 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with BazB
 
 ## Mission & Non‑Negotiables
 
+- **JVM-ONLY TOOL**: BazBOM is exclusively for JVM ecosystems. NEVER add support for Go, Python, Node.js, Rust, or any non-JVM language.
+- **Supported Languages**: Java, Kotlin, Scala (JVM targets only)
+- **Supported Build Systems**: Maven, Gradle, Bazel (with JVM rules: java_*, kotlin_*, scala_*)
 - World‑class JVM SBOM, SCA, and dependency graph across Maven, Gradle, and Bazel.
 - Private-by-default: 100% privacy, zero telemetry. Offline-first operation is required.
 - Memory‑safe distribution: Rust‑first single binary; OPAL (JVM) helper for reachability. Avoid unsafe; no embedded Python in shipped binaries.
@@ -12,6 +15,7 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with BazB
 - Deterministic, reproducible outputs with signed artifacts and SLSA provenance.
 
 CRITICAL Repo Rules (must follow)
+- **JVM ONLY**: Never implement parsers or support for non-JVM ecosystems (Go, Python, Node.js, Rust, C++, etc.)
 - Zero emojis in code, ever. Do not add emojis to source files, generated code, or code comments. Code examples in docs that users might copy/paste must also be emoji‑free.
 - Avoid doc sprawl. Do not create a new doc for every small task. Prefer updating canonical docs under `docs/`. Create new documents only when a clear gap exists, and then link them from `docs/README.md`.
 
