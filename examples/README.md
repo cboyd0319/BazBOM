@@ -31,6 +31,11 @@ Apache Buildr project with Ruby-based DSL.
 - **Detection:** `buildfile` or `Rakefile` with Buildr
 - **Features:** Maven coordinate resolution, Ruby DSL builds
 
+### sbt (`sbt_project/`) ✨ NEW
+sbt (Scala Build Tool) project for Scala applications.
+- **Detection:** `build.sbt` or `project/build.properties`
+- **Features:** Incremental compilation, Ivy/Maven repository support
+
 Each example includes a README with build instructions and BazBOM usage.
 
 ## Policy Configurations

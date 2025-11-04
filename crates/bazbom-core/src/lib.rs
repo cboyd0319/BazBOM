@@ -14,6 +14,7 @@ pub enum BuildSystem {
     Bazel,
     Ant,
     Buildr,
+    Sbt,
     Unknown,
 }
 
@@ -40,6 +41,11 @@ pub fn detect_build_system<P: AsRef<Path>>(root: P) -> BuildSystem {
     // Bazel: MODULE.bazel, WORKSPACE, WORKSPACE.bazel
     if exists("MODULE.bazel") || exists("WORKSPACE") || exists("WORKSPACE.bazel") {
         return BuildSystem::Bazel;
+    }
+    
+    // sbt (Scala Build Tool): build.sbt or project/build.properties
+    if exists("build.sbt") || exists("project/build.properties") {
+        return BuildSystem::Sbt;
     }
     
     // Ant: build.xml
