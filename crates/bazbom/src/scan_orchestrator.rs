@@ -1,4 +1,4 @@
-use crate::analyzers::{CodeqlAnalyzer, ScaAnalyzer, SemgrepAnalyzer, SyftRunner};
+use crate::analyzers::{CodeqlAnalyzer, ScaAnalyzer, SemgrepAnalyzer, SyftRunner, ThreatAnalyzer, ThreatDetectionLevel};
 use crate::cli::{AutofixMode, CodeqlSuite, ContainerStrategy};
 use crate::config::Config;
 use crate::context::Context;
@@ -17,6 +17,7 @@ pub struct ScanOrchestratorOptions {
     pub containers: Option<ContainerStrategy>,
     pub no_upload: bool,
     pub target: Option<String>,
+    pub threat_detection: Option<ThreatDetectionLevel>,
 }
 
 pub struct ScanOrchestrator {
@@ -29,6 +30,7 @@ pub struct ScanOrchestrator {
     containers: Option<ContainerStrategy>,
     no_upload: bool,
     target: Option<String>,
+    threat_detection: Option<ThreatDetectionLevel>,
 }
 
 impl ScanOrchestrator {
@@ -57,6 +59,7 @@ impl ScanOrchestrator {
             containers: options.containers,
             no_upload: options.no_upload,
             target: options.target,
+            threat_detection: options.threat_detection,
         })
     }
 
@@ -117,12 +120,29 @@ impl ScanOrchestrator {
             }
         }
 
-        // 4. Enrichment with deps.dev (if enabled)
+        // 4. Threat Intelligence (if enabled)
+        let threat_level = self
+            .threat_detection
+            .unwrap_or_else(|| ThreatDetectionLevel::Standard);
+        if threat_level != ThreatDetectionLevel::Off {
+            let threat = ThreatAnalyzer::new(threat_level);
+            if threat.enabled(&self.config, self.threat_detection.is_some()) {
+                match threat.run(&self.context) {
+                    Ok(report) => {
+                        println!("[bazbom] Threat intelligence analysis complete");
+                        reports.push(report);
+                    }
+                    Err(e) => eprintln!("[bazbom] Threat intelligence analysis failed: {}", e),
+                }
+            }
+        }
+
+        // 5. Enrichment with deps.dev (if enabled)
         if self.config.enrich.depsdev.unwrap_or(false) {
             self.run_enrichment()?;
         }
 
-        // 5. Container SBOM (if requested)
+        // 6. Container SBOM (if requested)
         if let Some(ref strategy) = self.containers {
             self.run_container_sbom(strategy)?;
         }
@@ -141,12 +161,12 @@ impl ScanOrchestrator {
             );
         }
 
-        // 6. Autofix recipes (if enabled)
+        // 7. Autofix recipes (if enabled)
         if let Some(ref mode) = self.autofix {
             self.run_autofix(mode)?;
         }
 
-        // 7. GitHub upload
+        // 8. GitHub upload
         if !self.no_upload {
             let publisher = GitHubPublisher::new();
             if publisher.is_configured() {
@@ -411,6 +431,7 @@ mod tests {
                 containers: None,
                 no_upload: true,
                 target: None,
+                threat_detection: None,
             },
         )?;
 
@@ -438,6 +459,7 @@ mod tests {
                 containers: None,
                 no_upload: true,
                 target: None,
+                threat_detection: None,
             },
         )?;
 

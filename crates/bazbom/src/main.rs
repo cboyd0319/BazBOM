@@ -82,6 +82,7 @@ fn main() -> Result<()> {
                         containers,
                         no_upload,
                         target,
+                        threat_detection: None, // Use default from config
                     },
                 )?;
 

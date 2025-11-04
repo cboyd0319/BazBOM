@@ -13,6 +13,8 @@ pub struct Config {
     pub containers: ContainersConfig,
     #[serde(default)]
     pub publish: PublishConfig,
+    #[serde(default)]
+    pub threats: Option<ThreatsConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -54,6 +56,12 @@ pub struct ContainersConfig {
 pub struct PublishConfig {
     pub github_code_scanning: Option<bool>,
     pub artifact: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ThreatsConfig {
+    pub enabled: Option<bool>,
+    pub detection_level: Option<String>,
 }
 
 impl Config {
