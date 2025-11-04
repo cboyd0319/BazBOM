@@ -169,7 +169,7 @@ See [PHASE_5_ENTERPRISE_POLICY.md](copilot/PHASE_5_ENTERPRISE_POLICY.md) for det
 - [x] Policy validation command
 - [x] Policy reporting
 
-### Phase 6: Visualization 🚧 IN PROGRESS (70% Complete)
+### Phase 6: Visualization 🚧 IN PROGRESS (85% Complete)
 
 **Web Dashboard, Executive Reports, Dependency Graph UI**
 
@@ -183,29 +183,33 @@ See [PHASE_6_VISUALIZATION.md](copilot/PHASE_6_VISUALIZATION.md), [IMPLEMENTATIO
 - [x] Responsive design (mobile, tablet, desktop)
 - [x] Auto-refresh capability
 - [x] Export SBOM to JSON
-- [ ] Executive summary reports (PDF)
-- [ ] Compliance reports (framework-specific)
-- [ ] Developer reports
-- [ ] Trend reports
+- [x] Executive summary reports (HTML, can convert to PDF)
+- [x] Report generation crate (bazbom-reports)
+- [ ] Framework-specific compliance reports (templates created)
+- [ ] Detailed developer reports with remediation steps
+- [ ] Trend reports with historical analysis
 - [ ] Static HTML export for sharing
 - [ ] Email integration for reports
 
-### Phase 7: Threat Intelligence 📋 PLANNED
+### Phase 7: Threat Intelligence 🚧 IN PROGRESS (40% Complete)
 
 **Supply Chain Attack Detection, Malicious Package Detection**
 
 See [PHASE_7_THREAT_INTELLIGENCE.md](copilot/PHASE_7_THREAT_INTELLIGENCE.md) for details.
 
-- [ ] Malicious package detection
-- [ ] Supply chain attack indicators
+- [x] Threat detection crate (bazbom-threats)
+- [x] Malicious package detection framework
+- [x] Typosquatting detection with string similarity
+- [x] Supply chain attack indicators
+- [x] Continuous monitoring service
+- [x] Threat level classification (Critical/High/Medium/Low)
+- [ ] Integration with malicious package databases (OSV, GHSA)
 - [ ] Dependency confusion detection
-- [ ] Typosquatting detection
 - [ ] Maintainer takeover detection
-- [ ] Suspicious dependency patterns
 - [ ] Integration with OpenSSF Scorecard
 - [ ] Integration with Socket.dev signals
 - [ ] Custom threat intelligence feeds
-- [ ] Threat severity scoring
+- [ ] Notification integrations (Slack, email, Teams)
 
 ### Phase 8: Scale & Performance 📋 PLANNED
 
