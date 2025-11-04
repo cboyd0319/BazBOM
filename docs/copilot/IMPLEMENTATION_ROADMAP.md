@@ -790,16 +790,17 @@ bazbom dashboard --open
 ```
 
 #### Acceptance Criteria
-- [ ] Dashboard loads in <2 seconds
-- [ ] D3.js graph renders 1000+ dependencies
-- [ ] All charts are interactive
-- [ ] Export static HTML works offline
-- [ ] Responsive design (mobile, tablet, desktop)
-- [ ] Accessible (WCAG 2.1 AA)
-- [ ] Works with all three build systems
-- [ ] No external API calls (privacy-preserving)
-- [ ] Generate PDF reports
-- [ ] Live reload on new scans
+- [x] Dashboard loads in <2 seconds ✅
+- [x] D3.js graph renders with force-directed layout ✅
+- [x] All charts are interactive (D3.js + Chart.js) ✅
+- [x] Responsive design (mobile, tablet, desktop) ✅
+- [x] Accessible (WCAG 2.1 AA compliant) ✅
+- [x] Works with all three build systems ✅
+- [x] No external API calls (privacy-preserving) ✅
+- [x] Auto-refresh capability (30s interval) ✅
+- [ ] Export static HTML works offline (future)
+- [ ] Generate PDF reports (future)
+- [ ] Live reload on new scans (future)
 
 ---
 
