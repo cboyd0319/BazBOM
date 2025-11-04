@@ -71,11 +71,13 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 ### Scope
 
-**BazBOM is JVM-focused:**
-- ✅ **Languages:** Java, Kotlin, Scala (JVM targets only)
-- ✅ **Build Systems:** Maven, Gradle, Bazel (with JVM rules)
-- ✅ **Containers:** Java artifact detection in Docker/OCI images
-- ❌ **Out of scope:** Node.js, Python, Go, Rust, or other non-JVM ecosystems
+**BazBOM is exclusively for JVM ecosystems:**
+- ✅ **Languages:** Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
+- ✅ **Build Systems:** Ant, Maven, Gradle, Bazel (with JVM rules), Buildr, sbt
+- ✅ **Containers:** JVM artifact detection in Docker/OCI images
+- ❌ **Out of scope:** Node.js, Python, Go, Rust, C++, or any non-JVM languages
+
+**Philosophy:** World-class depth for JVM ecosystems rather than shallow breadth across many languages.
 
 For detailed language and build system support, see [JVM Language Support](docs/JVM_LANGUAGE_SUPPORT.md).
 

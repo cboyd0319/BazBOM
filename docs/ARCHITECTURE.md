@@ -403,9 +403,9 @@ Multi-source enrichment pipeline that enhances vulnerability findings with actio
 
 **GHSA Enrichment**:
 - **Source**: GitHub Security Advisories
-- **Coverage**: Maven, npm, PyPI, RubyGems, NuGet, Rust, Go
+- **Coverage**: Maven (JVM artifacts) - Note: GHSA supports multiple ecosystems, but BazBOM only queries JVM-related advisories
 - **Output**: Remediation guidance, patched versions, vulnerable ranges
-- **Impact**: Provides actionable fix information
+- **Impact**: Provides actionable fix information for JVM dependencies
 
 **NVD Enrichment**:
 - **Source**: National Vulnerability Database
