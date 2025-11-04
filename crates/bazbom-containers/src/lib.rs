@@ -273,11 +273,14 @@ impl ContainerScanner {
 
     /// Scan container image
     pub fn scan(&self) -> Result<ContainerScanResult> {
-        // Parse image metadata
+        // Parse image metadata using OCI parser
         let image = self.parse_image_metadata()?;
 
+        // Extract layers to temporary directory
+        let layers = self.extract_layers()?;
+
         // Find Java artifacts in layers
-        let artifacts = self.find_java_artifacts(&image)?;
+        let artifacts = self.find_java_artifacts_in_layers(&layers)?;
 
         // Detect build system
         let build_system = self.detect_build_system(&artifacts);
@@ -289,21 +292,190 @@ impl ContainerScanner {
         })
     }
 
+    /// Extract container layers to temporary directory
+    fn extract_layers(&self) -> Result<Vec<PathBuf>> {
+        use crate::oci_parser::OciImageParser;
+
+        log::info!("Extracting container layers from {:?}", self.image_path);
+
+        // Use OCI parser to extract layers
+        let parser = OciImageParser::new(&self.image_path);
+
+        // Create temporary directory for layer extraction
+        let temp_dir = std::env::temp_dir().join(format!(
+            "bazbom-layers-{}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&temp_dir)
+            .context("Failed to create temporary directory for layers")?;
+
+        // Extract all layers
+        let layers = parser.extract_layers(&temp_dir)?;
+
+        log::info!("Extracted {} layers to {:?}", layers.len(), temp_dir);
+
+        Ok(layers)
+    }
+
+    /// Find Java artifacts in extracted layers
+    fn find_java_artifacts_in_layers(&self, layers: &[PathBuf]) -> Result<Vec<JavaArtifact>> {
+        use crate::oci_parser::OciImageParser;
+
+        let parser = OciImageParser::new(&self.image_path);
+        let mut all_artifacts = Vec::new();
+
+        for (idx, layer_path) in layers.iter().enumerate() {
+            log::debug!("Scanning layer {}: {:?}", idx, layer_path);
+
+            // Scan this layer for Java artifacts
+            let candidates = parser.scan_layer_for_artifacts(layer_path)?;
+
+            log::info!("Found {} artifacts in layer {}", candidates.len(), idx);
+
+            // Convert candidates to JavaArtifact with full metadata
+            for candidate in candidates {
+                // Try to extract Maven metadata if it's a JAR
+                let maven_coords = if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
+                    self.extract_maven_metadata(&candidate.path).ok()
+                } else {
+                    None
+                };
+
+                // Calculate SHA-256 hash
+                let sha256 = self.calculate_file_hash(&candidate.path)?;
+
+                all_artifacts.push(JavaArtifact {
+                    path: candidate.path.clone(),
+                    layer: format!("layer-{}", idx),
+                    artifact_type: match candidate.artifact_type {
+                        crate::oci_parser::ArtifactType::Jar => ArtifactType::Jar,
+                        crate::oci_parser::ArtifactType::War => ArtifactType::War,
+                        crate::oci_parser::ArtifactType::Ear => ArtifactType::Ear,
+                        crate::oci_parser::ArtifactType::Class => ArtifactType::Class,
+                        _ => ArtifactType::Unknown,
+                    },
+                    maven_coords,
+                    size: candidate.size,
+                    sha256,
+                });
+            }
+        }
+
+        log::info!("Total artifacts found: {}", all_artifacts.len());
+
+        Ok(all_artifacts)
+    }
+
+    /// Extract Maven metadata from JAR file
+    fn extract_maven_metadata(&self, jar_path: &str) -> Result<MavenCoordinates> {
+        use std::fs::File;
+        use std::io::Read;
+        use zip::ZipArchive;
+
+        let file = File::open(jar_path)?;
+        let mut archive = ZipArchive::new(file)?;
+
+        // Look for pom.properties in META-INF/maven/
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let name = file.name().to_string();
+
+            if name.starts_with("META-INF/maven/") && name.ends_with("/pom.properties") {
+                // Parse pom.properties
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+
+                let mut group_id = None;
+                let mut artifact_id = None;
+                let mut version = None;
+
+                for line in contents.lines() {
+                    let line = line.trim();
+                    if line.starts_with("groupId=") {
+                        group_id = Some(line.trim_start_matches("groupId=").to_string());
+                    } else if line.starts_with("artifactId=") {
+                        artifact_id = Some(line.trim_start_matches("artifactId=").to_string());
+                    } else if line.starts_with("version=") {
+                        version = Some(line.trim_start_matches("version=").to_string());
+                    }
+                }
+
+                if let (Some(g), Some(a), Some(v)) = (group_id, artifact_id, version) {
+                    return Ok(MavenCoordinates {
+                        group_id: g,
+                        artifact_id: a,
+                        version: v,
+                    });
+                }
+            }
+        }
+
+        anyhow::bail!("No Maven metadata found in JAR")
+    }
+
+    /// Calculate SHA-256 hash of a file
+    fn calculate_file_hash(&self, file_path: &str) -> Result<String> {
+        use sha2::{Digest, Sha256};
+        use std::fs::File;
+        use std::io::Read;
+
+        let mut file = File::open(file_path)?;
+        let mut hasher = Sha256::new();
+        let mut buffer = [0u8; 8192];
+
+        loop {
+            let count = file.read(&mut buffer)?;
+            if count == 0 {
+                break;
+            }
+            hasher.update(&buffer[..count]);
+        }
+
+        Ok(format!("{:x}", hasher.finalize()))
+    }
+
     /// Parse container image metadata
     fn parse_image_metadata(&self) -> Result<ContainerImage> {
-        // NOTE: This is a stub implementation
-        // In a real implementation, this would:
-        // 1. Parse manifest.json from the image
-        // 2. Extract layer information
-        // 3. Parse image configuration
+        use crate::oci_parser::OciImageParser;
+
+        log::info!("Parsing container image metadata");
+
+        let parser = OciImageParser::new(&self.image_path);
+
+        // Parse the manifest
+        let manifest = parser.parse_manifest()?;
+
+        // Parse image config
+        let config = parser.parse_config()?;
+
+        // Extract layer information
+        let layers: Vec<ImageLayer> = manifest
+            .layers
+            .iter()
+            .enumerate()
+            .map(|(idx, layer)| ImageLayer {
+                digest: layer.digest.clone(),
+                size: layer.size as u64,
+                created: config.history.get(idx).and_then(|h| h.created.clone()),
+                created_by: config.history.get(idx).map(|h| h.created_by.clone()),
+            })
+            .collect();
+
+        // Extract name and digest from manifest
+        let name = self.image_path.file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+        
+        let digest = manifest.config.digest.clone();
 
         Ok(ContainerImage {
-            name: "placeholder".to_string(),
-            digest: "sha256:placeholder".to_string(),
+            name,
+            digest,
             registry: None,
-            tags: vec![],
-            layers: vec![],
-            base_image: None,
+            tags: vec!["latest".to_string()],
+            layers,
+            base_image: config.config.labels.get("base.image").cloned(),
         })
     }
 

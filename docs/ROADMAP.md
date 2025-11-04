@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~69% toward market leadership (⬆️ +5% this session)
+**Overall Completion:** ~70% toward market leadership (⬆️ +1% this session)
 
 ### ✅ Completed Phases (0-3, 5-6)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -262,7 +262,7 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (55% Complete, ⬆️ +10%)
+### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (60% Complete, ⬆️ +5%)
 
 **Container Support, Multi-Language, Kubernetes**
 
@@ -283,8 +283,8 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
 - [x] Parse pom.properties from META-INF/maven ✨ **NEW 2025-11-04**
 - [x] ZIP archive reading for JAR inspection ✨ **NEW 2025-11-04**
 - [ ] Full HTTP client integration with hyperlocal
-- [ ] Container layer extraction and analysis workflow
-- [ ] Integration with scan command
+- [x] Container layer extraction and analysis workflow ✅ **COMPLETE 2025-11-04**
+- [x] Integration with scan command ✅ **COMPLETE 2025-11-04**
 - [ ] Container image SBOM (`rules_oci` integration)
 - [ ] Kubernetes manifest scanning
 - [ ] Node.js/npm support

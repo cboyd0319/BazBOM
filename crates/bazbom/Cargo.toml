@@ -35,6 +35,7 @@ bazbom-dashboard = { path = "../bazbom-dashboard" }
 bazbom-cache = { path = "../bazbom-cache" }
 bazbom-reports = { path = "../bazbom-reports" }
 bazbom-threats = { path = "../bazbom-threats" }
+bazbom-containers = { path = "../bazbom-containers" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"

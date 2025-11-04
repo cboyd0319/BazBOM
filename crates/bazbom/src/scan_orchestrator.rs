@@ -370,15 +370,162 @@ impl ScanOrchestrator {
             ContainerStrategy::Bazbom => crate::analyzers::ContainerStrategy::Bazbom,
         };
 
-        let _runner = SyftRunner::new(internal_strategy);
+        println!("[bazbom] using container scanning strategy: {:?}", internal_strategy);
 
-        // In a full implementation, this would detect container images
-        // For now, just document what would happen
-        println!(
-            "[bazbom] container SBOM: would scan detected images with {:?}",
-            internal_strategy
+        // For now, use Syft if available, otherwise use BazBOM native scanning
+        match internal_strategy {
+            crate::analyzers::ContainerStrategy::Syft | crate::analyzers::ContainerStrategy::Auto => {
+                // Try Syft first
+                let _runner = SyftRunner::new(internal_strategy);
+                println!("[bazbom] container SBOM: Syft integration (future feature)");
+                println!("[bazbom] for now, use --containers=bazbom for native scanning");
+            }
+            crate::analyzers::ContainerStrategy::Bazbom => {
+                // Use BazBOM native container scanning
+                self.run_native_container_scan()?;
+            }
+        }
+
+        Ok(())
+    }
+
+    fn run_native_container_scan(&self) -> Result<()> {
+        println!("[bazbom] starting native container scan...");
+
+        // Look for Docker images or container tarballs in the workspace
+        let workspace_images = self.find_container_images()?;
+
+        if workspace_images.is_empty() {
+            println!("[bazbom] no container images found in workspace");
+            println!("[bazbom] to scan a container image:");
+            println!("[bazbom]   1. Export image: docker save myapp:latest -o myapp.tar");
+            println!("[bazbom]   2. Place tar file in project directory");
+            println!("[bazbom]   3. Run: bazbom scan --containers=bazbom");
+            return Ok(());
+        }
+
+        println!("[bazbom] found {} container images to scan", workspace_images.len());
+
+        // Scan each image
+        for image_path in workspace_images {
+            self.scan_single_container(&image_path)?;
+        }
+
+        println!("[bazbom] container scanning complete");
+        Ok(())
+    }
+
+    fn find_container_images(&self) -> Result<Vec<std::path::PathBuf>> {
+        use std::fs;
+
+        let mut images = Vec::new();
+
+        // Look for .tar files that might be container images
+        for entry in fs::read_dir(&self.context.workspace)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.extension().and_then(|s| s.to_str()) == Some("tar") {
+                println!("[bazbom] found potential container image: {:?}", path);
+                images.push(path);
+            }
+        }
+
+        Ok(images)
+    }
+
+    fn scan_single_container(&self, image_path: &std::path::Path) -> Result<()> {
+        use bazbom_containers::ContainerScanner;
+
+        println!("[bazbom] scanning container: {:?}", image_path);
+
+        // Create scanner
+        let scanner = ContainerScanner::new(image_path.to_path_buf());
+
+        // Scan the container
+        let scan_result = scanner.scan().context("Container scan failed")?;
+
+        println!("[bazbom] container scan complete:");
+        println!("[bazbom]   image: {}", scan_result.image.name);
+        println!("[bazbom]   layers: {}", scan_result.image.layers.len());
+        println!("[bazbom]   Java artifacts: {}", scan_result.artifacts.len());
+
+        // Generate container SBOM
+        let sbom_path = self.context.out_dir.join(format!(
+            "container-{}.spdx.json",
+            scan_result.image.name.replace(':', "-").replace('/', "-")
+        ));
+
+        self.generate_container_sbom(&scan_result, &sbom_path)?;
+
+        println!("[bazbom] container SBOM written to: {:?}", sbom_path);
+
+        Ok(())
+    }
+
+    fn generate_container_sbom(
+        &self,
+        scan_result: &bazbom_containers::ContainerScanResult,
+        output_path: &std::path::Path,
+    ) -> Result<()> {
+        use bazbom_formats::spdx::{Package, SpdxDocument};
+
+        println!("[bazbom] generating container SBOM...");
+
+        // Create SPDX document for the container
+        let mut doc = SpdxDocument::new(
+            format!("container-{}", scan_result.image.name),
+            format!("Container SBOM for {}", scan_result.image.name),
         );
-        println!("[bazbom] to enable: provide --containers with image path or auto-detect");
+
+        // Add container as a package
+        let container_pkg = Package {
+            spdxid: format!("SPDXRef-Package-{}", scan_result.image.name.replace(':', "-")),
+            name: scan_result.image.name.clone(),
+            version_info: Some("latest".to_string()),
+            download_location: "NOASSERTION".to_string(),
+            files_analyzed: false,
+            license_concluded: None,
+            license_declared: None,
+            external_refs: None,
+        };
+        doc.add_package(container_pkg);
+
+        // Add each Java artifact as a package
+        for (idx, artifact) in scan_result.artifacts.iter().enumerate() {
+            let package = if let Some(ref coords) = artifact.maven_coords {
+                Package {
+                    spdxid: format!(
+                        "SPDXRef-Package-{}-{}",
+                        coords.artifact_id.replace('.', "-"),
+                        idx
+                    ),
+                    name: format!("{}:{}", coords.group_id, coords.artifact_id),
+                    version_info: Some(coords.version.clone()),
+                    download_location: "NOASSERTION".to_string(),
+                    files_analyzed: false,
+                    license_concluded: None,
+                    license_declared: None,
+                    external_refs: None,
+                }
+            } else {
+                Package {
+                    spdxid: format!("SPDXRef-Package-artifact-{}", idx),
+                    name: artifact.path.clone(),
+                    version_info: Some("unknown".to_string()),
+                    download_location: "NOASSERTION".to_string(),
+                    files_analyzed: false,
+                    license_concluded: None,
+                    license_declared: None,
+                    external_refs: None,
+                }
+            };
+            doc.add_package(package);
+        }
+
+        // Write SBOM to file
+        let json = serde_json::to_string_pretty(&doc)?;
+        std::fs::write(output_path, json)?;
 
         Ok(())
     }

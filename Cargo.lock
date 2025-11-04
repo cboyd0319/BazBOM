@@ -264,6 +264,7 @@ dependencies = [
  "assert_cmd",
  "bazbom-advisories",
  "bazbom-cache",
+ "bazbom-containers",
  "bazbom-core",
  "bazbom-dashboard",
  "bazbom-formats",
