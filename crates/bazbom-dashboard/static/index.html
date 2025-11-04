@@ -5,8 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BazBOM Security Dashboard</title>
     <link rel="stylesheet" href="/css/dashboard.css">
-    <script src="https://d3js.org/d3.v7.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <!-- External libraries with SRI for security -->
+    <!-- TODO: Consider bundling D3.js and Chart.js locally for air-gapped deployments -->
+    <script src="https://d3js.org/d3.v7.min.js" 
+            integrity="sha384-VTtiOZTbRg4an54HsoDlR0JVvCvKzfKhxT1PN1QW4SWq3cR6hqVKWgV5HzLxALDP" 
+            crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js" 
+            integrity="sha384-xoTIcBJfVJuECG9NYxB19WZznFpKKMvftQ2rYGzR3F7VhD8bKJ39eFW6fJgFmxW6" 
+            crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="dashboard-container">

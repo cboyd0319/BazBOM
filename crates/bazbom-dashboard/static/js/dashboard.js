@@ -206,7 +206,11 @@ function updateDependencyGraph(graphData) {
     
     function showNodeDetails(event, d) {
         console.log('Node clicked:', d);
-        alert(`Package: ${d.name}\nVulnerabilities: ${d.vulnerabilities || 0}\nSeverity: ${d.severity || 'none'}`);
+        // TODO: Replace with modal dialog or sidebar panel for better UX
+        showNotification(
+            `Package: ${d.name}\nVulnerabilities: ${d.vulnerabilities || 0}\nSeverity: ${d.severity || 'none'}`,
+            'info'
+        );
     }
 }
 
@@ -215,7 +219,8 @@ function updateVulnerabilityTimeline(vulnerabilities) {
     const ctx = document.getElementById('vulnerability-timeline');
     if (!ctx) return;
     
-    // Sample data - in production, this would come from historical scans
+    // NOTE: Sample/placeholder data for demonstration
+    // TODO: Replace with actual historical scan data from .bazbom/cache/history
     const data = {
         labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Current'],
         datasets: [
@@ -373,12 +378,12 @@ function filterSBOMTable() {
 }
 
 function exportDashboard() {
-    alert('Export functionality coming soon! You can use browser print to PDF for now.');
+    showNotification('Export functionality coming soon! You can use browser print to PDF for now.', 'info');
 }
 
 function exportSBOM() {
     if (!currentData.sbom) {
-        alert('No SBOM data available to export');
+        showNotification('No SBOM data available to export', 'warning');
         return;
     }
     
@@ -394,12 +399,41 @@ function exportSBOM() {
 }
 
 function showError(message) {
-    // Simple error display - could be enhanced with a proper notification system
-    const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #fee2e2; color: #991b1b; padding: 1rem; border-radius: 0.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000;';
-    errorDiv.textContent = message;
-    document.body.appendChild(errorDiv);
-    setTimeout(() => errorDiv.remove(), 5000);
+    showNotification(message, 'error');
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element with appropriate styling
+    const notification = document.createElement('div');
+    
+    const styles = {
+        'error': 'background: #fee2e2; color: #991b1b;',
+        'warning': 'background: #fef3c7; color: #92400e;',
+        'success': 'background: #d1fae5; color: #065f46;',
+        'info': 'background: #dbeafe; color: #1e40af;'
+    };
+    
+    notification.style.cssText = `
+        position: fixed; 
+        top: 20px; 
+        right: 20px; 
+        ${styles[type] || styles.info}
+        padding: 1rem; 
+        border-radius: 0.5rem; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        z-index: 1000;
+        max-width: 400px;
+        word-wrap: break-word;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        notification.style.transition = 'opacity 0.3s';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 5000);
 }
 
 // Export for potential external use
