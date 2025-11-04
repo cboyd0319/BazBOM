@@ -6,6 +6,8 @@
 //! - Security vulnerabilities
 //! - SBOM generation for containerized applications
 
+pub mod oci_parser;
+
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

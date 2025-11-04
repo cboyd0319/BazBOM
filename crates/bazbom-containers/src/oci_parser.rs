@@ -1,0 +1,348 @@
+//! OCI image format parser
+//!
+//! Parses OCI/Docker image tarballs and extracts metadata, layers, and configuration
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Read;
+use std::path::{Path, PathBuf};
+use tar::Archive;
+
+/// OCI Image manifest
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OciManifest {
+    #[serde(rename = "schemaVersion")]
+    pub schema_version: u32,
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+    pub config: OciDescriptor,
+    pub layers: Vec<OciDescriptor>,
+    #[serde(default)]
+    pub annotations: HashMap<String, String>,
+}
+
+/// OCI descriptor (references content)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OciDescriptor {
+    #[serde(rename = "mediaType")]
+    pub media_type: String,
+    pub digest: String,
+    pub size: i64,
+    #[serde(default)]
+    pub urls: Vec<String>,
+    #[serde(default)]
+    pub annotations: HashMap<String, String>,
+}
+
+/// OCI Image configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OciImageConfig {
+    pub architecture: String,
+    pub os: String,
+    #[serde(default)]
+    pub config: OciContainerConfig,
+    #[serde(default)]
+    pub rootfs: OciRootFs,
+    #[serde(default)]
+    pub history: Vec<OciHistory>,
+}
+
+/// Container configuration in OCI image
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OciContainerConfig {
+    #[serde(default)]
+    #[serde(rename = "Env")]
+    pub env: Vec<String>,
+    #[serde(default)]
+    #[serde(rename = "Cmd")]
+    pub cmd: Vec<String>,
+    #[serde(default)]
+    #[serde(rename = "Entrypoint")]
+    pub entrypoint: Vec<String>,
+    #[serde(default)]
+    #[serde(rename = "WorkingDir")]
+    pub working_dir: String,
+    #[serde(default)]
+    #[serde(rename = "Labels")]
+    pub labels: HashMap<String, String>,
+}
+
+/// Root filesystem information
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct OciRootFs {
+    #[serde(rename = "type")]
+    pub fs_type: String,
+    #[serde(default)]
+    pub diff_ids: Vec<String>,
+}
+
+/// History entry in OCI image
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OciHistory {
+    pub created: Option<String>,
+    #[serde(default)]
+    pub created_by: String,
+    #[serde(default)]
+    pub empty_layer: bool,
+    #[serde(default)]
+    pub comment: String,
+}
+
+/// OCI image parser
+pub struct OciImageParser {
+    /// Path to the image tarball
+    image_path: PathBuf,
+}
+
+impl OciImageParser {
+    /// Create a new OCI image parser
+    pub fn new(image_path: impl AsRef<Path>) -> Self {
+        Self {
+            image_path: image_path.as_ref().to_path_buf(),
+        }
+    }
+
+    /// Parse the manifest.json from the image tarball
+    pub fn parse_manifest(&self) -> Result<OciManifest> {
+        let file = File::open(&self.image_path)
+            .with_context(|| format!("Failed to open image file: {}", self.image_path.display()))?;
+
+        let mut archive = Archive::new(file);
+
+        for entry_result in archive.entries()? {
+            let mut entry = entry_result?;
+            let path = entry.path()?;
+
+            if path.file_name() == Some(std::ffi::OsStr::new("manifest.json")) {
+                let mut contents = String::new();
+                entry.read_to_string(&mut contents)?;
+
+                // Docker image format uses an array of manifests
+                let manifests: Vec<DockerManifestEntry> = serde_json::from_str(&contents)
+                    .context("Failed to parse manifest.json")?;
+
+                if let Some(manifest) = manifests.first() {
+                    return self.convert_docker_manifest(manifest);
+                }
+            }
+        }
+
+        anyhow::bail!("No manifest.json found in image tarball")
+    }
+
+    /// Parse the image configuration
+    pub fn parse_config(&self, config_digest: &str) -> Result<OciImageConfig> {
+        let file = File::open(&self.image_path)
+            .with_context(|| format!("Failed to open image file: {}", self.image_path.display()))?;
+
+        let mut archive = Archive::new(file);
+
+        // Docker uses blobs/sha256/<hash>.json
+        let config_filename = format!("{}.json", config_digest.replace("sha256:", ""));
+
+        for entry_result in archive.entries()? {
+            let mut entry = entry_result?;
+            let path = entry.path()?;
+
+            if path.to_string_lossy().contains(&config_filename) {
+                let mut contents = String::new();
+                entry.read_to_string(&mut contents)?;
+
+                let config: OciImageConfig = serde_json::from_str(&contents)
+                    .context("Failed to parse image config")?;
+
+                return Ok(config);
+            }
+        }
+
+        anyhow::bail!("Config file not found: {}", config_digest)
+    }
+
+    /// Extract all layers from the image
+    pub fn extract_layers(&self, output_dir: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
+        let file = File::open(&self.image_path)
+            .with_context(|| format!("Failed to open image file: {}", self.image_path.display()))?;
+
+        let mut archive = Archive::new(file);
+        let mut extracted_layers = Vec::new();
+
+        std::fs::create_dir_all(&output_dir).context("Failed to create output directory")?;
+
+        for entry_result in archive.entries()? {
+            let mut entry = entry_result?;
+            let path = entry.path()?;
+
+            // Layer files are typically named like <hash>/layer.tar
+            if path.extension() == Some(std::ffi::OsStr::new("tar"))
+                && !path.to_string_lossy().contains("manifest")
+            {
+                let layer_path = output_dir.as_ref().join(path.file_name().unwrap());
+                let mut output = File::create(&layer_path)
+                    .with_context(|| format!("Failed to create layer file: {}", layer_path.display()))?;
+
+                std::io::copy(&mut entry, &mut output)?;
+                extracted_layers.push(layer_path);
+            }
+        }
+
+        Ok(extracted_layers)
+    }
+
+    /// Get layer digests from the image
+    pub fn get_layer_digests(&self) -> Result<Vec<String>> {
+        let manifest = self.parse_manifest()?;
+        Ok(manifest.layers.iter().map(|l| l.digest.clone()).collect())
+    }
+
+    /// Convert Docker manifest format to OCI format
+    fn convert_docker_manifest(&self, docker_manifest: &DockerManifestEntry) -> Result<OciManifest> {
+        let config = OciDescriptor {
+            media_type: "application/vnd.docker.container.image.v1+json".to_string(),
+            digest: docker_manifest.config.clone(),
+            size: 0, // Not available in Docker manifest
+            urls: vec![],
+            annotations: HashMap::new(),
+        };
+
+        let layers = docker_manifest
+            .layers
+            .iter()
+            .map(|layer| OciDescriptor {
+                media_type: "application/vnd.docker.image.rootfs.diff.tar.gzip".to_string(),
+                digest: layer.clone(),
+                size: 0,
+                urls: vec![],
+                annotations: HashMap::new(),
+            })
+            .collect();
+
+        Ok(OciManifest {
+            schema_version: 2,
+            media_type: "application/vnd.docker.distribution.manifest.v2+json".to_string(),
+            config,
+            layers,
+            annotations: HashMap::new(),
+        })
+    }
+
+    /// Scan a layer for Java artifacts
+    pub fn scan_layer_for_artifacts(&self, layer_path: impl AsRef<Path>) -> Result<Vec<JavaArtifactCandidate>> {
+        let file = File::open(layer_path.as_ref())
+            .with_context(|| format!("Failed to open layer: {}", layer_path.as_ref().display()))?;
+
+        let mut archive = Archive::new(file);
+        let mut artifacts = Vec::new();
+
+        for entry_result in archive.entries()? {
+            let entry = entry_result?;
+            let path = entry.path()?;
+
+            if let Some(ext) = path.extension() {
+                let ext_str = ext.to_string_lossy();
+                if matches!(ext_str.as_ref(), "jar" | "war" | "ear" | "class") {
+                    artifacts.push(JavaArtifactCandidate {
+                        path: path.to_string_lossy().to_string(),
+                        size: entry.size(),
+                        artifact_type: match ext_str.as_ref() {
+                            "jar" => "jar",
+                            "war" => "war",
+                            "ear" => "ear",
+                            "class" => "class",
+                            _ => "unknown",
+                        }
+                        .to_string(),
+                    });
+                }
+            }
+        }
+
+        Ok(artifacts)
+    }
+}
+
+/// Docker manifest entry (Docker image format)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DockerManifestEntry {
+    #[serde(rename = "Config")]
+    pub config: String,
+    #[serde(rename = "RepoTags")]
+    pub repo_tags: Vec<String>,
+    #[serde(rename = "Layers")]
+    pub layers: Vec<String>,
+}
+
+/// Java artifact candidate found in layer
+#[derive(Debug, Clone)]
+pub struct JavaArtifactCandidate {
+    pub path: String,
+    pub size: u64,
+    pub artifact_type: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_oci_descriptor_creation() {
+        let descriptor = OciDescriptor {
+            media_type: "application/vnd.oci.image.layer.v1.tar".to_string(),
+            digest: "sha256:abcd1234".to_string(),
+            size: 1024,
+            urls: vec![],
+            annotations: HashMap::new(),
+        };
+
+        assert_eq!(descriptor.digest, "sha256:abcd1234");
+        assert_eq!(descriptor.size, 1024);
+    }
+
+    #[test]
+    fn test_oci_image_config_creation() {
+        let config = OciImageConfig {
+            architecture: "amd64".to_string(),
+            os: "linux".to_string(),
+            config: OciContainerConfig::default(),
+            rootfs: OciRootFs::default(),
+            history: vec![],
+        };
+
+        assert_eq!(config.architecture, "amd64");
+        assert_eq!(config.os, "linux");
+    }
+
+    #[test]
+    fn test_artifact_type_detection() {
+        let artifact = JavaArtifactCandidate {
+            path: "/app/lib/myapp.jar".to_string(),
+            size: 1024,
+            artifact_type: "jar".to_string(),
+        };
+
+        assert_eq!(artifact.artifact_type, "jar");
+        assert_eq!(artifact.size, 1024);
+    }
+
+    #[test]
+    fn test_oci_manifest_serialization() {
+        let manifest = OciManifest {
+            schema_version: 2,
+            media_type: "application/vnd.oci.image.manifest.v1+json".to_string(),
+            config: OciDescriptor {
+                media_type: "application/vnd.oci.image.config.v1+json".to_string(),
+                digest: "sha256:config".to_string(),
+                size: 512,
+                urls: vec![],
+                annotations: HashMap::new(),
+            },
+            layers: vec![],
+            annotations: HashMap::new(),
+        };
+
+        let json = serde_json::to_string(&manifest).unwrap();
+        assert!(json.contains("schemaVersion"));
+        assert!(json.contains("mediaType"));
+    }
+}
