@@ -12,6 +12,7 @@ members = [
   "crates/bazbom-reports",
   "crates/bazbom-threats",
   "crates/bazbom-cache",
+  "crates/bazbom-containers",
 ]
 resolver = "2"
 
