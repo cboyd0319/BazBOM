@@ -277,6 +277,7 @@ dependencies = [
  "chrono",
  "clap",
  "console",
+ "criterion",
  "dialoguer",
  "hex",
  "indicatif",
