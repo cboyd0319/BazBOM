@@ -364,6 +364,7 @@ dependencies = [
  "axum",
  "bazbom-core",
  "bazbom-formats",
+ "chrono",
  "serde",
  "serde_json",
  "tera",

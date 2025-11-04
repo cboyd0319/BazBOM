@@ -24,6 +24,9 @@ thiserror = "1.0"
 # Templates (optional, for server-side rendering)
 tera = "1.19"
 
+# Date/time for exports
+chrono = "0.4"
+
 # Path resolution
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
