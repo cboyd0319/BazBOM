@@ -319,6 +319,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "hex",
+ "reqwest",
  "serde",
  "serde_json",
  "sha2",
@@ -374,6 +375,16 @@ dependencies = [
  "tokio",
  "tower 0.5.2",
  "tower-http 0.5.2",
+]
+
+[[package]]
+name = "bazbom-ecosystems"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
