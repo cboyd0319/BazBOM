@@ -312,6 +312,7 @@ dependencies = [
  "anyhow",
  "flate2",
  "hex",
+ "log",
  "serde",
  "serde_json",
  "sha2",
