@@ -103,6 +103,16 @@ Target OS: macOS → Linux → Windows.
 
 ## Sanity Checks Before Merge
 
+**Code Quality:**
+- [ ] `cargo check --workspace --all-features --all-targets` passes
+- [ ] `cargo clippy --workspace --all-features --all-targets -- -D warnings` passes
+- [ ] `cargo fmt --all -- --check` passes
+- [ ] `cargo test --workspace --all-features` passes
+- [ ] `cargo doc --workspace --no-deps` produces no warnings
+- [ ] No new unsafe code blocks introduced
+- [ ] All new Cargo.toml files include: name, version, edition, license, repository
+
+**Documentation & Features:**
 - [ ] Capabilities Reference updated and consistent with README
 - [ ] CLI docs updated; examples for Maven/Gradle/Bazel verified
 - [ ] Schema changes versioned; golden tests updated; validators pass
