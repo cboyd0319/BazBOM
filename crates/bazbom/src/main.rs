@@ -82,6 +82,8 @@ fn main() -> Result<()> {
                         containers,
                         no_upload,
                         target,
+                        threat_detection: None, // Use default from config
+                        incremental: false,     // Disabled by default, enable via CLI flag
                     },
                 )?;
 
