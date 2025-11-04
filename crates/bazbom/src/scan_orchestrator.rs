@@ -6,7 +6,9 @@ use crate::enrich::DepsDevClient;
 use crate::fixes::{OpenRewriteRunner, VulnerabilityFinding};
 use crate::pipeline::{merge_sarif_reports, Analyzer};
 use crate::publish::GitHubPublisher;
+use crate::scan_cache::ScanCache;
 use anyhow::{Context as _, Result};
+use bazbom_cache::incremental::IncrementalAnalyzer;
 use std::path::PathBuf;
 
 pub struct ScanOrchestratorOptions {
@@ -18,6 +20,7 @@ pub struct ScanOrchestratorOptions {
     pub no_upload: bool,
     pub target: Option<String>,
     pub threat_detection: Option<ThreatDetectionLevel>,
+    pub incremental: bool,
 }
 
 pub struct ScanOrchestrator {
@@ -31,6 +34,7 @@ pub struct ScanOrchestrator {
     no_upload: bool,
     target: Option<String>,
     threat_detection: Option<ThreatDetectionLevel>,
+    incremental: bool,
 }
 
 impl ScanOrchestrator {
@@ -60,6 +64,7 @@ impl ScanOrchestrator {
             no_upload: options.no_upload,
             target: options.target,
             threat_detection: options.threat_detection,
+            incremental: options.incremental,
         })
     }
 
@@ -74,7 +79,17 @@ impl ScanOrchestrator {
             println!("[bazbom] targeting specific module: {}", target);
         }
 
-        // Step 0: Generate SBOM
+        // Step 0: Check if incremental scan is possible
+        if self.incremental {
+            if let Ok(skip_scan) = self.check_incremental_scan() {
+                if skip_scan {
+                    println!("[bazbom] no significant changes detected, using cached results");
+                    return Ok(());
+                }
+            }
+        }
+
+        // Step 1: Generate SBOM
         self.generate_sbom()?;
 
         // Run analyzers
@@ -184,6 +199,13 @@ impl ScanOrchestrator {
             }
         } else {
             println!("[bazbom] skipping GitHub upload (--no-upload)");
+        }
+
+        // Save current commit for future incremental scans
+        if self.incremental {
+            if let Err(e) = self.save_scan_commit() {
+                eprintln!("[bazbom] warning: failed to save scan commit: {}", e);
+            }
         }
 
         println!("[bazbom] orchestrated scan complete");
@@ -382,6 +404,64 @@ impl ScanOrchestrator {
         Ok(())
     }
 
+    fn check_incremental_scan(&self) -> Result<bool> {
+        println!("[bazbom] checking for incremental scan opportunities...");
+
+        // Check if this is a git repository
+        if !self.context.workspace.join(".git").exists() {
+            println!("[bazbom] not a git repository, full scan required");
+            return Ok(false);
+        }
+
+        // Try to load incremental analyzer
+        let analyzer = IncrementalAnalyzer::new(self.context.workspace.clone())?;
+
+        // Check if we have a cached scan result
+        let cache_dir = self.context.workspace.join(".bazbom").join("cache");
+        let last_scan_file = cache_dir.join("last_scan_commit.txt");
+
+        if !last_scan_file.exists() {
+            println!("[bazbom] no previous scan found, full scan required");
+            return Ok(false);
+        }
+
+        // Read last scan commit
+        let last_commit = std::fs::read_to_string(&last_scan_file)?;
+        let last_commit = last_commit.trim();
+
+        // Get changes since last scan
+        let changes = analyzer.get_changes_since(last_commit)?;
+
+        // Check if rescan is required
+        if changes.requires_rescan() {
+            println!("[bazbom] significant changes detected, full scan required:");
+            if changes.has_build_file_changes() {
+                println!("[bazbom]   - build files changed: {:?}", changes.changed_build_files);
+            }
+            println!("[bazbom]   - total changed files: {}", changes.all_changed_files().len());
+            Ok(false)
+        } else {
+            println!("[bazbom] no significant changes detected");
+            Ok(true)
+        }
+    }
+
+    fn save_scan_commit(&self) -> Result<()> {
+        // Save current commit for future incremental scans
+        if self.context.workspace.join(".git").exists() {
+            let analyzer = IncrementalAnalyzer::new(self.context.workspace.clone())?;
+            let current_commit = analyzer.get_current_commit()?;
+
+            let cache_dir = self.context.workspace.join(".bazbom").join("cache");
+            std::fs::create_dir_all(&cache_dir)?;
+
+            let last_scan_file = cache_dir.join("last_scan_commit.txt");
+            std::fs::write(&last_scan_file, current_commit)?;
+            println!("[bazbom] saved scan commit for incremental analysis");
+        }
+        Ok(())
+    }
+
     fn generate_sbom(&self) -> Result<()> {
         println!("[bazbom] generating SBOM...");
 
@@ -432,6 +512,7 @@ mod tests {
                 no_upload: true,
                 target: None,
                 threat_detection: None,
+            incremental: false,
             },
         )?;
 
@@ -460,6 +541,7 @@ mod tests {
                 no_upload: true,
                 target: None,
                 threat_detection: None,
+            incremental: false,
             },
         )?;
 

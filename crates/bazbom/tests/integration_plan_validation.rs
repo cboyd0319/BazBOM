@@ -48,6 +48,7 @@ artifact = true
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -103,6 +104,7 @@ fn test_sarif_2_1_0_compliance() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -173,6 +175,7 @@ fn test_analyzer_interfaces() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -305,6 +308,7 @@ fn test_output_formats() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -375,6 +379,7 @@ fn test_merged_sarif_deduplication() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -451,6 +456,7 @@ fn test_enrichment_directory() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 

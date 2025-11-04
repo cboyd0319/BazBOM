@@ -30,6 +30,7 @@ fn test_orchestrator_basic_scan() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -92,6 +93,7 @@ github_code_scanning = false
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -122,6 +124,7 @@ fn test_orchestrator_creates_all_directories() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -163,6 +166,7 @@ fn test_orchestrator_no_upload_flag() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
@@ -191,6 +195,7 @@ fn test_orchestrator_merged_sarif_structure() -> Result<()> {
             no_upload: true,
             target: None,
             threat_detection: None,
+            incremental: false,
         },
     )?;
 
