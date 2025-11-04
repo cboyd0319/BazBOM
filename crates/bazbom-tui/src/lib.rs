@@ -422,22 +422,62 @@ fn render_help(f: &mut Frame) {
                 .add_modifier(Modifier::BOLD),
         )]),
         Line::from(""),
-        Line::from("Navigation:"),
-        Line::from("  Up/k       Move up"),
-        Line::from("  Down/j     Move down"),
+        Line::from(vec![Span::styled(
+            "Navigation:",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from("  Up/k       Move selection up"),
+        Line::from("  Down/j     Move selection down"),
         Line::from(""),
-        Line::from("Filtering:"),
+        Line::from(vec![Span::styled(
+            "Filtering:",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )]),
         Line::from("  c          Show only CRITICAL vulnerabilities"),
         Line::from("  h          Show only HIGH vulnerabilities"),
         Line::from("  m          Show only MEDIUM vulnerabilities"),
         Line::from("  l          Show only LOW vulnerabilities"),
-        Line::from("  a          Show ALL dependencies"),
+        Line::from("  a          Show ALL dependencies (clear filter)"),
         Line::from(""),
-        Line::from("Other:"),
+        Line::from(vec![Span::styled(
+            "Display:",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from("  Left       Dependency list"),
+        Line::from("  Right      Vulnerability details"),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "General:",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )]),
         Line::from("  ?/F1       Toggle this help screen"),
         Line::from("  q/Esc      Quit application"),
         Line::from(""),
-        Line::from("Press any key to return..."),
+        Line::from(vec![Span::styled(
+            "Symbols:",
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )]),
+        Line::from(vec![
+            Span::styled("  [X] ", Style::default().fg(Color::Red)),
+            Span::raw("Critical vulnerabilities"),
+        ]),
+        Line::from(vec![
+            Span::styled("  [!] ", Style::default().fg(Color::Yellow)),
+            Span::raw("High vulnerabilities"),
+        ]),
+        Line::from(vec![
+            Span::styled("  [i] ", Style::default().fg(Color::Blue)),
+            Span::raw("Medium/Low vulnerabilities"),
+        ]),
+        Line::from(vec![
+            Span::styled("  [+] ", Style::default().fg(Color::Green)),
+            Span::raw("No vulnerabilities"),
+        ]),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Press any key to return...",
+            Style::default().fg(Color::Cyan),
+        )]),
     ];
 
     let paragraph = Paragraph::new(help_text)

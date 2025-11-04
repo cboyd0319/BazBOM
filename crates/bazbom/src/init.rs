@@ -362,5 +362,33 @@ mod tests {
         
         assert_eq!(result.total_deps, 100);
         assert_eq!(result.direct_deps, 10);
+        assert_eq!(result.transitive_deps, 90);
+    }
+
+    #[test]
+    fn test_get_mock_scan_result() {
+        let result = get_mock_scan_result();
+        assert_eq!(result.total_deps, 127);
+        assert_eq!(result.direct_deps, 15);
+        assert_eq!(result.transitive_deps, 112);
+        assert!(result.critical_vulns > 0 || result.high_vulns > 0);
+    }
+
+    #[test]
+    fn test_scan_result_vulnerability_totals() {
+        let result = ScanResult {
+            total_deps: 50,
+            direct_deps: 5,
+            transitive_deps: 45,
+            critical_vulns: 2,
+            high_vulns: 3,
+            medium_vulns: 4,
+            low_vulns: 1,
+            license_issues: 0,
+        };
+        
+        let total_vulns = result.critical_vulns + result.high_vulns + 
+                         result.medium_vulns + result.low_vulns;
+        assert_eq!(total_vulns, 10);
     }
 }

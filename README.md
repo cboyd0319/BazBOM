@@ -75,25 +75,32 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 - **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
 - **Organizations** with large monorepos (5000+ targets) or multi-repo setups
 
-### What's New
+### What's New (November 2025)
 
-- **IDE Integration** ⭐: IntelliJ IDEA and VS Code plugins with real-time warnings, one-click fixes, and automatic testing
+#### 🎯 Developer Experience (Phase 4 - 95% Complete)
+- **Interactive Init Wizard** ⭐: `bazbom init` with guided setup, 20+ policy templates, and first scan
+- **Smart Batch Fixing** ⭐: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
+- **TUI Dependency Explorer** ⭐: `bazbom explore` for interactive terminal-based dependency browsing
+- **Web Dashboard** ⭐: `bazbom dashboard` with real-time security score and vulnerability visualization
+- **IDE Integration**: IntelliJ IDEA and VS Code plugins with real-time warnings, one-click fixes (code complete, needs marketplace)
 - **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
 - **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
-- **Orchestrated Static Analysis**: Optional integration with Semgrep and CodeQL, merged into single SARIF report
+
+#### ✅ Core Features (Complete)
+- **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
 - **Homebrew Support**: One-command installation via brew tap
 - **Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
 - **SLSA Level 3 Provenance**: Verifiable build integrity
 - **Bytecode Reachability Analysis**: ASM-based call graphs to identify reachable vulnerabilities
 - **Shading Detection**: Automatic detection and attribution of shaded/relocated dependencies
-- **Enterprise Policy Templates**: Pre-built policies for PCI-DSS, HIPAA, FedRAMP, SOC 2 compliance
-- **Policy-as-Code**: YAML + Rego/OPA support with multi-level inheritance and CI gating
+- **Enterprise Policy System**: YAML + Rego/OPA support with multi-level inheritance and CI gating
 - **License Compliance**: 200+ SPDX licenses, compatibility matrix, obligations tracking, copyleft detection
 - **Zero Telemetry**: No background network calls; explicit offline DB sync
 - **GitHub Action**: Automated security scanning in CI/CD pipelines
 - **Vulnerability Intelligence**: OSV, NVD, GHSA integration with CISA KEV and EPSS enrichment
 - **Universal Build System Support**: Works with Maven, Gradle, and Bazel
+- **Orchestrated Static Analysis**: Optional integration with Semgrep and CodeQL
 - **CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
 
 
