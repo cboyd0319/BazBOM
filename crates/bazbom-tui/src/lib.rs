@@ -32,6 +32,8 @@ pub struct App {
     severity_filter: Option<String>,
     /// Whether to show help screen
     show_help: bool,
+    /// Export message to display
+    export_message: Option<String>,
 }
 
 /// Simplified dependency representation for TUI
@@ -66,6 +68,7 @@ impl App {
             search_query: String::new(),
             severity_filter: None,
             show_help: false,
+            export_message: None,
         }
     }
 
@@ -148,6 +151,23 @@ impl App {
     fn toggle_help(&mut self) {
         self.show_help = !self.show_help;
     }
+
+    /// Export filtered dependencies to JSON file
+    fn export_to_json(&mut self, filename: &str) -> Result<()> {
+        let filtered = self.filtered_dependencies();
+        let data: Vec<&Dependency> = filtered.into_iter().collect();
+        
+        let json = serde_json::to_string_pretty(&data)?;
+        std::fs::write(filename, json)?;
+        
+        self.export_message = Some(format!("Exported {} dependencies to {}", data.len(), filename));
+        Ok(())
+    }
+
+    /// Clear export message
+    fn clear_export_message(&mut self) {
+        self.export_message = None;
+    }
 }
 
 /// Run the TUI application
@@ -196,6 +216,11 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut A
 
 /// Handle keyboard events
 fn handle_key_event(key: KeyEvent, app: &mut App) -> Result<bool> {
+    // Clear export message on any key if it's showing
+    if app.export_message.is_some() {
+        app.clear_export_message();
+    }
+
     match key.code {
         KeyCode::Char('q') | KeyCode::Esc => return Ok(true),
         KeyCode::Down | KeyCode::Char('j') => app.next(),
@@ -206,6 +231,20 @@ fn handle_key_event(key: KeyEvent, app: &mut App) -> Result<bool> {
         KeyCode::Char('m') => app.severity_filter = Some("MEDIUM".to_string()),
         KeyCode::Char('l') => app.severity_filter = Some("LOW".to_string()),
         KeyCode::Char('a') => app.severity_filter = None,
+        KeyCode::Char('e') => {
+            // Export filtered dependencies to JSON
+            let filename = "bazbom_filtered_deps.json";
+            if let Err(e) = app.export_to_json(filename) {
+                app.export_message = Some(format!("Export failed: {}", e));
+            }
+        }
+        KeyCode::Char('x') => {
+            // Export all dependencies to JSON
+            let all_deps: Vec<&Dependency> = app.dependencies.iter().collect();
+            let json = serde_json::to_string_pretty(&all_deps)?;
+            std::fs::write("bazbom_all_deps.json", json)?;
+            app.export_message = Some(format!("Exported {} dependencies to bazbom_all_deps.json", all_deps.len()));
+        }
         _ => {}
     }
     Ok(false)
@@ -240,7 +279,7 @@ fn ui(f: &mut Frame, app: &mut App) {
     render_details(f, content_chunks[1], app);
 
     // Footer
-    render_footer(f, chunks[2]);
+    render_footer(f, chunks[2], app);
 }
 
 /// Render header with title and filter info
@@ -393,8 +432,14 @@ fn render_details(f: &mut Frame, area: Rect, app: &App) {
 }
 
 /// Render footer with keyboard shortcuts
-fn render_footer(f: &mut Frame, area: Rect) {
-    let footer = Paragraph::new("[Up/Down/j/k] Navigate [c/h/m/l/a] Filter [?] Help [q] Quit")
+fn render_footer(f: &mut Frame, area: Rect, app: &App) {
+    let footer_text = if let Some(ref msg) = app.export_message {
+        msg.clone()
+    } else {
+        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [e] Export filtered [x] Export all [?] Help [q] Quit".to_string()
+    };
+
+    let footer = Paragraph::new(footer_text)
         .style(Style::default().fg(Color::Gray))
         .block(Block::default().borders(Borders::ALL));
 
@@ -441,6 +486,15 @@ fn render_help(f: &mut Frame) {
         )]),
         Line::from("  Left       Dependency list"),
         Line::from("  Right      Vulnerability details"),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Export:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from("  e          Export filtered dependencies to JSON"),
+        Line::from("  x          Export all dependencies to JSON"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "General:",
