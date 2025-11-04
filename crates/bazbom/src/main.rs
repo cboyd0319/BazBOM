@@ -11,7 +11,7 @@ mod reachability;
 mod reachability_cache;
 mod shading;
 
-use bazbom::cli::{Cli, Commands, DbCmd, LicenseCmd, PolicyCmd};
+use bazbom::cli::{Cli, Commands, DbCmd, LicenseCmd, PolicyCmd, ReportCmd, ComplianceFrameworkArg};
 use bazbom::hooks::{install_hooks, HooksConfig};
 use bazbom::remediation;
 use bazbom::scan_orchestrator::ScanOrchestrator;
@@ -87,6 +87,79 @@ fn main() -> Result<()> {
             // Original scan logic follows
             let root = PathBuf::from(&path);
             let system = detect_build_system(&root);
+
+            // Initialize cache (unless disabled via env var for testing)
+            let cache_enabled = std::env::var("BAZBOM_DISABLE_CACHE").is_err();
+            let cache_dir = root.join(".bazbom").join("cache");
+            let mut scan_cache_opt = if cache_enabled {
+                bazbom::scan_cache::ScanCache::new(cache_dir.clone())
+                    .context("Failed to initialize scan cache")
+                    .ok()
+            } else {
+                None
+            };
+
+            // Build scan parameters for cache key
+            let scan_params = bazbom::scan_cache::ScanParameters {
+                reachability: reachability && !fast,
+                fast,
+                format: format.clone(),
+                bazel_targets: bazel_targets.clone(),
+            };
+
+            // Determine build files for cache key
+            let build_files: Vec<PathBuf> = match system {
+                bazbom_core::BuildSystem::Maven => vec![root.join("pom.xml")],
+                bazbom_core::BuildSystem::Gradle => vec![
+                    root.join("build.gradle"),
+                    root.join("build.gradle.kts"),
+                    root.join("settings.gradle"),
+                    root.join("settings.gradle.kts"),
+                ],
+                bazbom_core::BuildSystem::Bazel => vec![
+                    root.join("BUILD"),
+                    root.join("BUILD.bazel"),
+                    root.join("WORKSPACE"),
+                    root.join("WORKSPACE.bazel"),
+                    root.join("MODULE.bazel"),
+                ],
+                bazbom_core::BuildSystem::Unknown => vec![],
+            };
+
+            // Generate cache key
+            let cache_key = bazbom::scan_cache::ScanCache::generate_cache_key(
+                &root,
+                &build_files,
+                &scan_params,
+            )?;
+
+            // Check cache first (if enabled)
+            if let Some(scan_cache) = scan_cache_opt.as_mut() {
+                if let Some(cached_result) = scan_cache.get_scan_result(&cache_key)? {
+                println!(
+                    "[bazbom] cache hit! using cached scan from {}",
+                    cached_result.scanned_at
+                );
+
+                // Write cached results to disk
+                let out = PathBuf::from(&out_dir);
+                let sbom_path = match format.as_str() {
+                    "cyclonedx" => out.join("sbom.cyclonedx.json"),
+                    _ => out.join("sbom.spdx.json"),
+                };
+                fs::write(&sbom_path, cached_result.sbom_json.as_bytes())
+                    .context("Failed to write cached SBOM")?;
+
+                if let Some(findings) = cached_result.findings_json {
+                    let findings_path = out.join("findings.json");
+                    fs::write(&findings_path, findings.as_bytes())
+                        .context("Failed to write cached findings")?;
+                }
+
+                    println!("[bazbom] scan complete (from cache)");
+                    return Ok(());
+                }
+            }
 
             // Handle Bazel-specific target selection
             let bazel_targets_to_scan = if system == bazbom_core::BuildSystem::Bazel {
@@ -546,6 +619,31 @@ fn main() -> Result<()> {
                     println!("[bazbom] wrote {:?}", policy_violations_path);
                 } else {
                     println!("[bazbom] ✓ all policy checks passed");
+                }
+            }
+
+            // Store results in cache for next time
+            let sbom_json = fs::read_to_string(&sbom_path)
+                .context("Failed to read SBOM for caching")?;
+            let findings_json = if findings_path.exists() {
+                Some(
+                    fs::read_to_string(&findings_path)
+                        .context("Failed to read findings for caching")?,
+                )
+            } else {
+                None
+            };
+
+            // Store in cache if enabled
+            if let Some(scan_cache) = scan_cache_opt.as_mut() {
+                let scan_result =
+                    bazbom::scan_cache::ScanResult::new(sbom_json, findings_json, scan_params);
+                
+                if let Err(e) = scan_cache.put_scan_result(&cache_key, &scan_result) {
+                    eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
+                    // Don't fail the scan if caching fails
+                } else {
+                    println!("[bazbom] scan results cached for future runs");
                 }
             }
         }
@@ -1340,6 +1438,353 @@ fn main() -> Result<()> {
                     std::fs::create_dir_all(".bazbom")?;
                     config.save(config_path)?;
                     println!("✅ Team configuration saved to {}", config_path);
+                }
+            }
+        }
+        Commands::Report { action } => {
+            use bazbom_reports::{
+                ComplianceFramework, PolicyStatus, ReportGenerator, ReportType, SbomData,
+                VulnerabilityDetail, VulnerabilityFindings,
+            };
+            use chrono::Utc;
+            use std::path::Path;
+
+            // Helper function to load findings from JSON
+            fn load_findings_from_file(path: &str) -> Result<VulnerabilityFindings> {
+                let content = fs::read_to_string(path)
+                    .with_context(|| format!("Failed to read findings file: {}", path))?;
+                let findings: serde_json::Value = serde_json::from_str(&content)?;
+
+                // Parse vulnerabilities by severity
+                let critical = extract_vulnerabilities(&findings, "CRITICAL");
+                let high = extract_vulnerabilities(&findings, "HIGH");
+                let medium = extract_vulnerabilities(&findings, "MEDIUM");
+                let low = extract_vulnerabilities(&findings, "LOW");
+
+                Ok(VulnerabilityFindings {
+                    critical,
+                    high,
+                    medium,
+                    low,
+                })
+            }
+
+            fn extract_vulnerabilities(
+                findings: &serde_json::Value,
+                severity: &str,
+            ) -> Vec<VulnerabilityDetail> {
+                findings
+                    .get("vulnerabilities")
+                    .and_then(|v| v.as_array())
+                    .map(|arr| {
+                        arr.iter()
+                            .filter_map(|v| {
+                                if v.get("severity")?.as_str()? == severity {
+                                    Some(VulnerabilityDetail {
+                                        cve: v
+                                            .get("id")
+                                            .or_else(|| v.get("cve"))
+                                            .and_then(|id| id.as_str())
+                                            .unwrap_or("UNKNOWN")
+                                            .to_string(),
+                                        package_name: v
+                                            .get("package")
+                                            .or_else(|| v.get("package_name"))
+                                            .and_then(|p| p.as_str())
+                                            .unwrap_or("unknown")
+                                            .to_string(),
+                                        package_version: v
+                                            .get("version")
+                                            .or_else(|| v.get("package_version"))
+                                            .and_then(|ver| ver.as_str())
+                                            .unwrap_or("unknown")
+                                            .to_string(),
+                                        severity: severity.to_string(),
+                                        cvss_score: v
+                                            .get("cvss")
+                                            .or_else(|| v.get("cvss_score"))
+                                            .and_then(|s| s.as_f64())
+                                            .unwrap_or(0.0),
+                                        description: v
+                                            .get("description")
+                                            .and_then(|d| d.as_str())
+                                            .unwrap_or("No description")
+                                            .to_string(),
+                                        fixed_version: v
+                                            .get("fixed_version")
+                                            .and_then(|f| f.as_str())
+                                            .map(|s| s.to_string()),
+                                        is_reachable: v
+                                            .get("reachable")
+                                            .or_else(|| v.get("is_reachable"))
+                                            .and_then(|r| r.as_bool())
+                                            .unwrap_or(false),
+                                        is_kev: v
+                                            .get("kev")
+                                            .or_else(|| v.get("is_kev"))
+                                            .and_then(|k| k.as_bool())
+                                            .unwrap_or(false),
+                                        epss_score: v
+                                            .get("epss")
+                                            .or_else(|| v.get("epss_score"))
+                                            .and_then(|e| e.as_f64()),
+                                    })
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default()
+            }
+
+            // Helper function to create SBOM data from SBOM file or defaults
+            fn load_sbom_data(sbom_path: Option<&str>) -> Result<SbomData> {
+                if let Some(path) = sbom_path {
+                    // Try to parse SBOM file
+                    let content = fs::read_to_string(path)
+                        .with_context(|| format!("Failed to read SBOM file: {}", path))?;
+                    let sbom: serde_json::Value = serde_json::from_str(&content)?;
+
+                    Ok(SbomData {
+                        project_name: sbom
+                            .get("name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("Unknown Project")
+                            .to_string(),
+                        project_version: sbom
+                            .get("version")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("0.0.0")
+                            .to_string(),
+                        scan_timestamp: Utc::now(),
+                        total_dependencies: sbom
+                            .get("packages")
+                            .and_then(|p| p.as_array())
+                            .map(|arr| arr.len())
+                            .unwrap_or(0),
+                        direct_dependencies: 0, // Would need graph analysis
+                        transitive_dependencies: 0,
+                    })
+                } else {
+                    // Return default data
+                    Ok(SbomData {
+                        project_name: "Unknown Project".to_string(),
+                        project_version: "0.0.0".to_string(),
+                        scan_timestamp: Utc::now(),
+                        total_dependencies: 0,
+                        direct_dependencies: 0,
+                        transitive_dependencies: 0,
+                    })
+                }
+            }
+
+            // Convert CLI framework arg to report framework
+            fn convert_framework(arg: ComplianceFrameworkArg) -> ComplianceFramework {
+                match arg {
+                    ComplianceFrameworkArg::PciDss => ComplianceFramework::PciDss,
+                    ComplianceFrameworkArg::Hipaa => ComplianceFramework::Hipaa,
+                    ComplianceFrameworkArg::FedRampModerate => ComplianceFramework::FedRampModerate,
+                    ComplianceFrameworkArg::Soc2 => ComplianceFramework::Soc2,
+                    ComplianceFrameworkArg::Gdpr => ComplianceFramework::Gdpr,
+                    ComplianceFrameworkArg::Iso27001 => ComplianceFramework::Iso27001,
+                    ComplianceFrameworkArg::NistCsf => ComplianceFramework::NistCsf,
+                }
+            }
+
+            match action {
+                ReportCmd::Executive {
+                    sbom,
+                    findings,
+                    output,
+                } => {
+                    println!("📊 Generating executive summary report...");
+
+                    let sbom_data = load_sbom_data(sbom.as_deref())?;
+                    let vulnerabilities = if let Some(findings_path) = findings {
+                        load_findings_from_file(&findings_path)?
+                    } else {
+                        VulnerabilityFindings {
+                            critical: vec![],
+                            high: vec![],
+                            medium: vec![],
+                            low: vec![],
+                        }
+                    };
+
+                    let policy = PolicyStatus {
+                        policy_violations: 0,
+                        license_issues: 0,
+                        blocked_packages: 0,
+                    };
+
+                    let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
+                    generator.generate(ReportType::Executive, Path::new(&output))?;
+
+                    println!("✅ Executive report generated: {}", output);
+                }
+                ReportCmd::Compliance {
+                    framework,
+                    sbom,
+                    findings,
+                    output,
+                } => {
+                    let framework_name = convert_framework(framework);
+                    println!(
+                        "📊 Generating compliance report for {}...",
+                        framework_name.name()
+                    );
+
+                    let sbom_data = load_sbom_data(sbom.as_deref())?;
+                    let vulnerabilities = if let Some(findings_path) = findings {
+                        load_findings_from_file(&findings_path)?
+                    } else {
+                        VulnerabilityFindings {
+                            critical: vec![],
+                            high: vec![],
+                            medium: vec![],
+                            low: vec![],
+                        }
+                    };
+
+                    let policy = PolicyStatus {
+                        policy_violations: 0,
+                        license_issues: 0,
+                        blocked_packages: 0,
+                    };
+
+                    let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
+                    generator.generate(
+                        ReportType::Compliance(framework_name),
+                        Path::new(&output),
+                    )?;
+
+                    println!("✅ Compliance report generated: {}", output);
+                }
+                ReportCmd::Developer {
+                    sbom,
+                    findings,
+                    output,
+                } => {
+                    println!("📊 Generating developer report...");
+
+                    let sbom_data = load_sbom_data(sbom.as_deref())?;
+                    let vulnerabilities = if let Some(findings_path) = findings {
+                        load_findings_from_file(&findings_path)?
+                    } else {
+                        VulnerabilityFindings {
+                            critical: vec![],
+                            high: vec![],
+                            medium: vec![],
+                            low: vec![],
+                        }
+                    };
+
+                    let policy = PolicyStatus {
+                        policy_violations: 0,
+                        license_issues: 0,
+                        blocked_packages: 0,
+                    };
+
+                    let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
+                    generator.generate(ReportType::Developer, Path::new(&output))?;
+
+                    println!("✅ Developer report generated: {}", output);
+                }
+                ReportCmd::Trend {
+                    sbom,
+                    findings,
+                    output,
+                } => {
+                    println!("📊 Generating trend report...");
+
+                    let sbom_data = load_sbom_data(sbom.as_deref())?;
+                    let vulnerabilities = if let Some(findings_path) = findings {
+                        load_findings_from_file(&findings_path)?
+                    } else {
+                        VulnerabilityFindings {
+                            critical: vec![],
+                            high: vec![],
+                            medium: vec![],
+                            low: vec![],
+                        }
+                    };
+
+                    let policy = PolicyStatus {
+                        policy_violations: 0,
+                        license_issues: 0,
+                        blocked_packages: 0,
+                    };
+
+                    let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
+                    generator.generate(ReportType::Trend, Path::new(&output))?;
+
+                    println!("✅ Trend report generated: {}", output);
+                }
+                ReportCmd::All {
+                    sbom,
+                    findings,
+                    output_dir,
+                } => {
+                    println!("📊 Generating all reports...");
+
+                    // Create output directory
+                    fs::create_dir_all(&output_dir)?;
+
+                    let sbom_data = load_sbom_data(sbom.as_deref())?;
+                    let vulnerabilities = if let Some(findings_path) = findings {
+                        load_findings_from_file(&findings_path)?
+                    } else {
+                        VulnerabilityFindings {
+                            critical: vec![],
+                            high: vec![],
+                            medium: vec![],
+                            low: vec![],
+                        }
+                    };
+
+                    let policy = PolicyStatus {
+                        policy_violations: 0,
+                        license_issues: 0,
+                        blocked_packages: 0,
+                    };
+
+                    let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
+
+                    // Generate all report types
+                    let reports = vec![
+                        (
+                            ReportType::Executive,
+                            format!("{}/executive-report.html", output_dir),
+                        ),
+                        (
+                            ReportType::Developer,
+                            format!("{}/developer-report.html", output_dir),
+                        ),
+                        (
+                            ReportType::Trend,
+                            format!("{}/trend-report.html", output_dir),
+                        ),
+                        (
+                            ReportType::Compliance(ComplianceFramework::PciDss),
+                            format!("{}/compliance-pci-dss.html", output_dir),
+                        ),
+                        (
+                            ReportType::Compliance(ComplianceFramework::Hipaa),
+                            format!("{}/compliance-hipaa.html", output_dir),
+                        ),
+                        (
+                            ReportType::Compliance(ComplianceFramework::Soc2),
+                            format!("{}/compliance-soc2.html", output_dir),
+                        ),
+                    ];
+
+                    for (report_type, output_path) in reports {
+                        generator.generate(report_type, Path::new(&output_path))?;
+                        println!("  ✅ {}", output_path);
+                    }
+
+                    println!("\n✅ All reports generated in: {}", output_dir);
                 }
             }
         }
