@@ -5,8 +5,8 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with BazB
 ## Mission & Non‑Negotiables
 
 - **JVM-ONLY TOOL**: BazBOM is exclusively for JVM ecosystems. NEVER add support for Go, Python, Node.js, Rust, or any non-JVM language.
-- **Supported Languages**: Java, Kotlin, Scala (JVM targets only)
-- **Supported Build Systems**: Maven, Gradle, Bazel (with JVM rules: java_*, kotlin_*, scala_*)
+- **Supported Languages**: Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
+- **Supported Build Systems**: Ant, Maven, Gradle, Bazel (with JVM rules: java_*, kotlin_*, scala_*), Buildr
 - World‑class JVM SBOM, SCA, and dependency graph across Maven, Gradle, and Bazel.
 - Private-by-default: 100% privacy, zero telemetry. Offline-first operation is required.
 - Memory‑safe distribution: Rust‑first single binary; OPAL (JVM) helper for reachability. Avoid unsafe; no embedded Python in shipped binaries.
@@ -86,10 +86,12 @@ Target OS: macOS → Linux → Windows.
 
 ## Build Systems & Examples Checklist
 
-- Cover all three build systems in examples and tests:
+- Cover JVM build systems in examples and tests:
+  - Ant (build.xml)
   - Maven (pom.xml)
   - Gradle (build.gradle / build.gradle.kts; Android variants)
   - Bazel (WORKSPACE / MODULE.bazel; rules_jvm_external; aspects)
+  - Buildr (buildfile, Rakefile)
 - Include: offline mode, VEX flow, GitHub Action, shaded/fat JAR examples.
 
 ## Security & Supply Chain Requirements
@@ -162,7 +164,7 @@ Target OS: macOS → Linux → Windows.
 - Always explain "why fix this" (CVSS, KEV, EPSS context)
 - Always run tests after applying fixes
 - Always rollback on test failure
-- Support all three build systems: Maven, Gradle, Bazel
+- Support all JVM build systems: Ant, Maven, Gradle, Bazel, Buildr
 
 **Safety Requirements:**
 - Never apply fixes without user consent (unless `--apply` flag)

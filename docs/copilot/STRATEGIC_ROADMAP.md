@@ -1,9 +1,10 @@
-# BazBOM Strategic Roadmap: Path to World's Best Open Source Java SCA
+# BazBOM Strategic Roadmap: Path to World's Best Open Source JVM SCA
 
-**Document Version:** 1.0
-**Last Updated:** 2025-11-03
+**Document Version:** 1.1
+**Last Updated:** 2025-11-04
 **Status:** Active Development Roadmap
 **Horizon:** 12-18 Months
+**Scope:** JVM Languages (Java, Kotlin, Scala, Groovy, Clojure) and Build Systems (Ant, Maven, Gradle, Bazel, Buildr)
 
 > **📋 Related Planning Documents:**
 > - **[Master Roadmap (../ROADMAP.md)](../ROADMAP.md)** - Complete feature tracking checklist for all phases
@@ -16,11 +17,13 @@
 
 ## Executive Summary
 
-BazBOM is positioned to become **the world's premier open source Java SCA tool** by focusing on three strategic pillars:
+BazBOM is positioned to become **the world's premier open source JVM SCA tool** by focusing on three strategic pillars:
 
 1. **Unique Technical Advantages** - Build-time accuracy, Bazel-native support, SLSA Level 3 compliance
 2. **Developer-First Experience** - IDE integration, automated remediation, frictionless workflows
 3. **Open Source Sustainability** - Community-driven, vendor-neutral, privacy-preserving
+
+**JVM-ONLY SCOPE:** BazBOM exclusively supports JVM languages (Java, Kotlin, Scala, Groovy, Clojure) and JVM build systems (Ant, Maven, Gradle, Bazel, Buildr). This focused approach enables world-class depth for the JVM ecosystem rather than shallow breadth across many languages.
 
 This roadmap charts the path from current state (~70% feature completeness vs. commercial leaders) to market leadership through 11 phased initiatives over 12-18 months.
 
@@ -48,15 +51,17 @@ This roadmap charts the path from current state (~70% feature completeness vs. c
 | **Automated Remediation** | 🔴 Critical | EndorLabs, Snyk | Developer productivity |
 | **Visualization/UI** | 🔴 Critical | All competitors | Executive buy-in |
 | **License Compliance** | 🟡 Significant | Sonatype | Enterprise adoption |
-| **Container Support** | 🟡 Significant | EndorLabs, Snyk | Cloud-native workloads |
-| **Multi-Language** | 🟡 Strategic | Checkmarx (75+ langs) | Market expansion |
+| **Container Support (JVM artifacts)** | 🟡 Significant | EndorLabs, Snyk | Cloud-native workloads |
+| **Additional JVM Build Systems** | 🟢 Minor | Limited competition | Comprehensive JVM coverage |
 
 ### Market Context
 
 **Commercial Leader:** EndorLabs (2024 analysis)
-- **Advantages:** Advanced reachability, Bazel support, multi-language, enterprise UI
+- **Advantages:** Advanced reachability, Bazel support, multi-language support, enterprise UI
 - **Pricing:** ~$100-300/developer/year (estimated, enterprise-only)
 - **Weakness:** Proprietary, cloud-required, no community ecosystem
+
+**BazBOM's Strategy:** Focus on being the best JVM-specific tool rather than competing on language breadth. Depth over breadth.
 
 **Open Source Gap:** No credible free alternative with Bazel support exists today.
 
@@ -121,7 +126,7 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 | [Phase 6: Visualization](PHASE_6_VISUALIZATION.md) | Months 3-5 | 🟡 P1 | Planned | Web dashboard, executive reports |
 | [Phase 7: Threat Intelligence](PHASE_7_THREAT_INTELLIGENCE.md) | Months 4-6 | 🟡 P1 | Planned | Malicious package detection |
 | [Phase 8: Scale & Performance](PHASE_8_SCALE_PERFORMANCE.md) | Months 5-7 | 🔴 P0 | Planned | Incremental analysis, 50K targets |
-| [Phase 9: Ecosystem Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md) | Months 6-9 | 🟡 P1 | Planned | Containers, Node.js, Python, Go |
+| [Phase 9: Container & JVM Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md) | Months 6-9 | 🟡 P1 | Planned | Containers (JVM artifacts), Ant, Buildr |
 | [Phase 10: AI Intelligence](PHASE_10_AI_INTELLIGENCE.md) | Months 8-12 | 🟢 P2 | Research | ML prioritization, LLM fixes |
 | [Phase 11: Distribution](PHASE_11_DISTRIBUTION.md) | Months 9-12 | 🟡 P1 | Planned | Windows, Kubernetes, air-gapped |
 
@@ -297,7 +302,7 @@ Each phase has a dedicated document with:
 
 - **[Phase 6: Visualization & Observability](PHASE_6_VISUALIZATION.md)** - Web dashboard, reports, integrations
 - **[Phase 7: Supply Chain Threat Intelligence](PHASE_7_THREAT_INTELLIGENCE.md)** - Malicious packages, typosquatting, continuous monitoring
-- **[Phase 9: Ecosystem Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md)** - Containers, Node.js, Python, Go, Rust
+- **[Phase 9: Container & JVM Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md)** - Container support for JVM artifacts, Ant, Buildr, Groovy, Clojure enhancements
 
 ### Innovation Phases (Differentiation)
 

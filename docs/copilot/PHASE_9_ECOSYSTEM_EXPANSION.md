@@ -1,112 +1,117 @@
-# Phase 9: Ecosystem Expansion
+# Phase 9: Container & JVM Ecosystem Expansion
 
 **Status:** Planned
-**Priority:** 🟡 P1 - Strategic Growth
+**Priority:** 🟡 P1 - Strategic Depth
 **Timeline:** Months 6-9 (12 weeks)
-**Team Size:** 2-3 developers (1 per ecosystem)
+**Team Size:** 2-3 developers
 **Dependencies:** Phase 0-3 complete, Phase 4 recommended (IDE integration reusable)
 
 ---
 
 ## Executive Summary
 
-**Goal:** Expand beyond JVM-only to become a multi-language SCA tool.
+**Goal:** Deepen JVM ecosystem coverage with container support and additional build systems.
 
-**Current Limitation:** BazBOM only supports Java/Kotlin/Scala. Competitors support 10-75+ languages.
+**Current Scope:** BazBOM supports Maven, Gradle, Bazel for Java/Kotlin/Scala. This phase expands to:
+1. **Container Support** - Detect and scan JVM artifacts in Docker/OCI images
+2. **Additional JVM Build Systems** - Ant, Buildr support
+3. **Enhanced JVM Language Support** - Groovy, Clojure improvements
+4. **Kotlin Multiplatform** - JVM targets in multiplatform projects
+5. **Additional Scala Tooling** - sbt (Scala Build Tool)
 
-**Target Ecosystems (Priority Order):**
-1. **Node.js/npm** - Largest package ecosystem (2M+ packages)
-2. **Python/pip** - Data science, ML, DevOps tooling
-3. **Go modules** - Cloud-native, Kubernetes ecosystem
-4. **Rust/Cargo** - Growing systems programming adoption
-5. **Containers** - Enhanced support beyond current Syft fallback
+> **⚠️ SCOPE CLARIFICATION:** BazBOM is **JVM-ONLY**. Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE**. This ensures world-class depth for JVM ecosystems rather than shallow breadth across many languages.
 
 **Success Metrics:**
-- ✅ Support top 5 ecosystems with same features as JVM
-- ✅ Universal `bazbom scan` command works for any language
-- ✅ Polyglot projects (e.g., Java backend + Node.js frontend) supported
-- ✅ 50K+ weekly scans across all ecosystems
+- ✅ Comprehensive JVM build system coverage (Ant, Maven, Gradle, Bazel, Buildr)
+- ✅ All JVM languages supported (Java, Kotlin, Scala, Groovy, Clojure)
+- ✅ Container scanning detects JVM artifacts with 99%+ accuracy
+- ✅ Support largest JVM monorepos (5000+ targets)
 
-**Strategic Rationale:** Expand market size from $900M (JVM only) to $2.25B (all languages).
+**Strategic Rationale:** Become the definitive tool for **all** JVM projects, regardless of build system or language variant.
 
 ---
 
-## Architecture: Plugin System
+## Architecture: JVM Build System Integration
 
-### Why Plugins?
+### Modular Build System Support
 
-**Problem:** Hardcoding support for each language makes CLI bloated
+**Problem:** Each JVM build system has unique dependency resolution
 
-**Solution:** Plugin architecture with language-specific modules
+**Solution:** Modular parsers for each JVM build system
 
 **Structure:**
 ```
 crates/
 ├── bazbom/                   # Core CLI
 ├── bazbom-core/              # Shared utilities
-├── bazbom-formats/           # SBOM/SARIF (language-agnostic)
-├── bazbom-advisories/        # Advisory engine (reusable)
-├── bazbom-ecosystems/        # NEW: Plugin framework
-│   ├── mod.rs               # EcosystemPlugin trait
-│   ├── jvm/                 # Java/Kotlin/Scala (existing)
-│   ├── node/                # Node.js/npm
-│   ├── python/              # Python/pip
-│   ├── go/                  # Go modules
-│   └── rust/                # Rust/Cargo
+├── bazbom-formats/           # SBOM/SARIF outputs
+├── bazbom-advisories/        # Advisory engine
+├── bazbom-build-systems/     # Build system integrations
+│   ├── mod.rs               # BuildSystemDetector trait
+│   ├── ant/                 # Ant (build.xml) support
+│   ├── maven/               # Maven (pom.xml) existing
+│   ├── gradle/              # Gradle (build.gradle) existing
+│   ├── bazel/               # Bazel (BUILD.bazel) existing
+│   └── buildr/              # Buildr (buildfile, Rakefile)
+├── bazbom-containers/        # Container scanning (JVM artifacts)
+└── bazbom-languages/         # JVM language enhancements
+    ├── groovy/              # Groovy-specific features
+    └── clojure/             # Clojure-specific features
 ```
 
-### EcosystemPlugin Trait
+### BuildSystemDetector Trait
 
 **Interface:**
 ```rust
-// crates/bazbom-ecosystems/src/lib.rs
-pub trait EcosystemPlugin: Send + Sync {
-    /// Name of the ecosystem (e.g., "node", "python")
+// crates/bazbom-build-systems/src/lib.rs
+pub trait BuildSystemDetector: Send + Sync {
+    /// Name of the build system (e.g., "ant", "maven", "gradle")
     fn name(&self) -> &str;
 
-    /// Detect if project uses this ecosystem
+    /// Detect if project uses this build system
     fn detect(&self, project_root: &Path) -> Result<bool>;
 
-    /// Extract dependency graph from lockfiles/manifests
+    /// Extract dependency graph from build files
     fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph>;
 
-    /// Generate SBOM for this ecosystem
+    /// Generate SBOM for this build system
     fn generate_sbom(&self, graph: &DependencyGraph) -> Result<Sbom>;
 
     /// Scan for vulnerabilities (uses shared advisory engine)
     fn scan_vulnerabilities(&self, graph: &DependencyGraph) -> Result<Vec<Vulnerability>>;
 
-    /// Optional: Reachability analysis (if supported)
+    /// Reachability analysis (JVM-specific via ASM)
     fn analyze_reachability(&self, project_root: &Path) -> Result<Option<ReachabilityResult>> {
-        Ok(None)  // Default: not supported
+        // Default: Use bazbom-reachability.jar for all JVM projects
+        self.run_jvm_reachability(project_root)
     }
 }
 ```
 
-**Plugin Registry:**
+**Build System Registry:**
 ```rust
-// crates/bazbom-ecosystems/src/registry.rs
-pub struct EcosystemRegistry {
-    plugins: Vec<Box<dyn EcosystemPlugin>>,
+// crates/bazbom-build-systems/src/registry.rs
+pub struct BuildSystemRegistry {
+    detectors: Vec<Box<dyn BuildSystemDetector>>,
 }
 
-impl EcosystemRegistry {
+impl BuildSystemRegistry {
     pub fn new() -> Self {
         Self {
-            plugins: vec![
-                Box::new(JvmPlugin::new()),
-                Box::new(NodePlugin::new()),
-                Box::new(PythonPlugin::new()),
-                Box::new(GoPlugin::new()),
-                Box::new(RustPlugin::new()),
+            detectors: vec![
+                Box::new(AntDetector::new()),
+                Box::new(MavenDetector::new()),
+                Box::new(GradleDetector::new()),
+                Box::new(BazelDetector::new()),
+                Box::new(BuildrDetector::new()),
             ],
         }
     }
 
-    pub fn detect_ecosystems(&self, project_root: &Path) -> Result<Vec<&dyn EcosystemPlugin>> {
-        self.plugins
+    pub fn detect_all(&self, project_root: &Path) -> Result<Vec<&dyn BuildSystemDetector>> {
+        self.detectors
             .iter()
-            .filter(|plugin| plugin.detect(project_root).unwrap_or(false))
+            .filter(|detector| detector.detect(project_root).unwrap_or(false))
             .map(|boxed| boxed.as_ref())
             .collect()
     }
@@ -115,289 +120,258 @@ impl EcosystemRegistry {
 
 ---
 
-## 9.1 Node.js/npm Support
+## 9.1 Ant Build System Support
+
+### Overview
+
+**Goal:** Add support for Apache Ant, one of the original Java build tools.
+
+**Target Users:** Legacy Java projects, enterprise systems with Ant builds
 
 ### Detection
 
-**Files:** `package.json`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`
+**Files:** `build.xml` (required), `ivy.xml` (optional for dependency management)
+
+### Implementation Strategy
+
+**Phase 1:** Ant with Ivy dependency management
+- Parse `ivy.xml` for dependencies
+- Resolve via Ivy's dependency resolution
+- Generate dependency graph
+
+**Phase 2:** Ant without Ivy
+- Parse `build.xml` for `<path>` elements
+- Detect manual JAR dependencies in `lib/` directories
+- Limited transitive dependency support
 
 ### Dependency Extraction
 
-**Lockfile Parsing:**
 ```rust
-// crates/bazbom-ecosystems/src/node/mod.rs
-use serde_json::Value;
+// crates/bazbom-build-systems/src/ant/mod.rs
+pub struct AntDetector;
 
-pub struct NodePlugin;
-
-impl EcosystemPlugin for NodePlugin {
-    fn name(&self) -> &str { "node" }
+impl BuildSystemDetector for AntDetector {
+    fn name(&self) -> &str { "ant" }
 
     fn detect(&self, project_root: &Path) -> Result<bool> {
-        Ok(project_root.join("package.json").exists())
+        Ok(project_root.join("build.xml").exists())
     }
 
     fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
-        let package_lock = project_root.join("package-lock.json");
-
-        if package_lock.exists() {
-            self.parse_package_lock(&package_lock)
+        // Check for Ivy first (preferred)
+        if project_root.join("ivy.xml").exists() {
+            self.extract_ivy_dependencies(project_root)
         } else {
-            // Fallback: parse package.json (no version lock)
-            self.parse_package_json(&project_root.join("package.json"))
+            // Fallback: scan build.xml and lib/ directory
+            self.extract_manual_dependencies(project_root)
         }
     }
 
-    fn parse_package_lock(&self, path: &Path) -> Result<DependencyGraph> {
-        let content = fs::read_to_string(path)?;
-        let json: Value = serde_json::from_str(&content)?;
+    fn extract_ivy_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
+        // Parse ivy.xml using XML parser
+        // Resolve dependencies via Ivy resolver
+        // Build dependency graph
+        todo!("Implement Ivy XML parsing")
+    }
 
-        let mut graph = DependencyGraph::new();
-
-        // package-lock.json v2/v3 format
-        if let Some(packages) = json["packages"].as_object() {
-            for (name, pkg) in packages {
-                if name.is_empty() {
-                    continue;  // Skip root
-                }
-
-                let name = name.trim_start_matches("node_modules/");
-                let version = pkg["version"].as_str().unwrap_or("unknown");
-
-                graph.add_component(Component {
-                    name: name.to_string(),
-                    version: version.to_string(),
-                    purl: format!("pkg:npm/{}@{}", name, version),
-                    ecosystem: Ecosystem::Node,
-                });
-            }
-        }
-
-        Ok(graph)
+    fn extract_manual_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
+        // Scan lib/ directory for JARs
+        // Extract metadata from JAR manifests
+        // Limited graph (direct dependencies only)
+        todo!("Implement manual JAR scanning")
     }
 }
 ```
 
 ### PURL Format
 
-**npm:** `pkg:npm/express@4.18.2`
-**Scoped:** `pkg:npm/%40babel/core@7.22.0` (URL-encoded `@`)
+**Maven coordinates:** `pkg:maven/org.apache.commons/commons-lang3@3.12.0`
+
+**Ivy format:** Same as Maven (Ivy uses Maven repos)
+
+### Challenges
+
+- **No standard lock file:** Ant doesn't have equivalent of `pom.xml.lock`
+- **Manual dependency management:** Many Ant projects use checked-in JARs
+- **Limited metadata:** JARs may lack proper manifests
 
 ### Advisory Sources
 
-- **npm Advisory Database** (https://github.com/npm/security-advisories)
-- **OSV.dev** (supports npm)
-- **Snyk Vulnerability Database** (public API)
-
-### Reachability Analysis
-
-**Challenge:** JavaScript is dynamically typed, no bytecode
-
-**Approach:** Static analysis with tree-sitter (parse JS/TS AST)
-
-**Deferred:** Phase 10 (lower priority than JVM reachability)
+- Reuse existing Maven advisory database (same artifacts)
+- OSV.dev (supports Maven coordinates)
 
 ---
 
-## 9.2 Python/pip Support
+## 9.2 Buildr Build System Support
+
+### Overview
+
+**Goal:** Support Buildr, a Ruby-based JVM build tool
+
+**Target Users:** JRuby projects, legacy systems
 
 ### Detection
 
-**Files:** `requirements.txt`, `Pipfile`, `Pipfile.lock`, `poetry.lock`, `pyproject.toml`
+**Files:** `buildfile`, `Rakefile` (with Buildr DSL)
+
+### Implementation Strategy
+
+Buildr uses Ruby DSL but targets JVM:
+- Parse buildfile for Maven-style dependencies
+- Resolve via Maven repositories
+- Support Buildr's artifact() syntax
 
 ### Dependency Extraction
 
-**Lockfile Parsing:**
 ```rust
-// crates/bazbom-ecosystems/src/python/mod.rs
-pub struct PythonPlugin;
+// crates/bazbom-build-systems/src/buildr/mod.rs
+pub struct BuildrDetector;
 
-impl EcosystemPlugin for PythonPlugin {
-    fn name(&self) -> &str { "python" }
+impl BuildSystemDetector for BuildrDetector {
+    fn name(&self) -> &str { "buildr" }
 
     fn detect(&self, project_root: &Path) -> Result<bool> {
-        Ok(project_root.join("requirements.txt").exists() ||
-           project_root.join("Pipfile").exists() ||
-           project_root.join("pyproject.toml").exists())
-    }
-
-    fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
-        // Priority order: poetry.lock > Pipfile.lock > requirements.txt
-        if project_root.join("poetry.lock").exists() {
-            self.parse_poetry_lock(&project_root.join("poetry.lock"))
-        } else if project_root.join("Pipfile.lock").exists() {
-            self.parse_pipfile_lock(&project_root.join("Pipfile.lock"))
+        let buildfile = project_root.join("buildfile");
+        if buildfile.exists() {
+            // Check if it contains Buildr syntax
+            let content = fs::read_to_string(&buildfile)?;
+            Ok(content.contains("Buildr::") || content.contains("artifact("))
         } else {
-            self.parse_requirements_txt(&project_root.join("requirements.txt"))
+            Ok(false)
         }
-    }
-
-    fn parse_requirements_txt(&self, path: &Path) -> Result<DependencyGraph> {
-        let content = fs::read_to_string(path)?;
-        let mut graph = DependencyGraph::new();
-
-        for line in content.lines() {
-            let line = line.trim();
-
-            // Skip comments and empty lines
-            if line.is_empty() || line.starts_with('#') {
-                continue;
-            }
-
-            // Parse package==version format
-            if let Some((name, version)) = line.split_once("==") {
-                graph.add_component(Component {
-                    name: name.to_string(),
-                    version: version.to_string(),
-                    purl: format!("pkg:pypi/{}@{}", name, version),
-                    ecosystem: Ecosystem::Python,
-                });
-            }
-        }
-
-        Ok(graph)
-    }
-}
-```
-
-### PURL Format
-
-**PyPI:** `pkg:pypi/requests@2.28.1`
-**Namespace:** `pkg:pypi/azure/storage@12.0.0`
-
-### Advisory Sources
-
-- **PyPI Advisory Database** (https://github.com/pypa/advisory-database)
-- **OSV.dev** (supports Python)
-- **Safety DB** (requires API key for full access)
-
----
-
-## 9.3 Go Modules Support
-
-### Detection
-
-**Files:** `go.mod`, `go.sum`
-
-### Dependency Extraction
-
-**go.mod Parsing:**
-```rust
-// crates/bazbom-ecosystems/src/go/mod.rs
-pub struct GoPlugin;
-
-impl EcosystemPlugin for GoPlugin {
-    fn name(&self) -> &str { "go" }
-
-    fn detect(&self, project_root: &Path) -> Result<bool> {
-        Ok(project_root.join("go.mod").exists())
     }
 
     fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
-        let go_mod = fs::read_to_string(project_root.join("go.mod"))?;
-        let mut graph = DependencyGraph::new();
-
-        let mut in_require_block = false;
-
-        for line in go_mod.lines() {
-            let line = line.trim();
-
-            if line == "require (" {
-                in_require_block = true;
-                continue;
-            }
-
-            if line == ")" {
-                in_require_block = false;
-                continue;
-            }
-
-            if in_require_block || line.starts_with("require ") {
-                // Parse: require github.com/gin-gonic/gin v1.9.0
-                let parts: Vec<&str> = line.split_whitespace().collect();
-
-                if parts.len() >= 2 {
-                    let name = parts[0].trim_start_matches("require ");
-                    let version = parts[1].trim_start_matches('v');
-
-                    graph.add_component(Component {
-                        name: name.to_string(),
-                        version: version.to_string(),
-                        purl: format!("pkg:golang/{}@{}", name, version),
-                        ecosystem: Ecosystem::Go,
-                    });
-                }
-            }
-        }
-
-        Ok(graph)
+        // Parse buildfile for artifact() declarations
+        // Format: artifact('group:name:jar:version')
+        // Resolve via Maven Central
+        todo!("Implement Buildr DSL parsing")
     }
 }
 ```
 
 ### PURL Format
 
-**Go:** `pkg:golang/github.com/gin-gonic/gin@v1.9.0`
+**Maven coordinates:** `pkg:maven/group/artifact@version`
 
-### Advisory Sources
+### Challenges
 
-- **Go Vulnerability Database** (https://vuln.go.dev/)
-- **OSV.dev** (supports Go)
-- **GitHub Advisory Database** (many Go packages)
+- **Ruby DSL parsing:** Need Ruby parser or regex-based extraction
+- **Dynamic dependencies:** Buildr allows programmatic dependency definition
+- **Legacy tool:** Limited modern usage
 
 ---
 
-## 9.4 Rust/Cargo Support
+## 9.3 Groovy Language Support
+
+### Overview
+
+**Goal:** Enhanced support for Groovy-based JVM projects
+
+**Current State:** Basic support via Maven/Gradle
+
+**Enhancements:**
+- Grape (Groovy dependency manager) support
+- @Grab annotation parsing for inline dependencies
+- GroovyDoc analysis
 
 ### Detection
 
-**Files:** `Cargo.toml`, `Cargo.lock`
+**Files:** `.groovy` files with @Grab annotations, `grape.xml`
 
-### Dependency Extraction
+### Implementation
 
-**Cargo.lock Parsing:**
 ```rust
-// crates/bazbom-ecosystems/src/rust_ecosystem/mod.rs
-use cargo_lock::Lockfile;
+// crates/bazbom-languages/src/groovy/mod.rs
+pub struct GroovyAnalyzer;
 
-pub struct RustPlugin;
-
-impl EcosystemPlugin for RustPlugin {
-    fn name(&self) -> &str { "rust" }
-
-    fn detect(&self, project_root: &Path) -> Result<bool> {
-        Ok(project_root.join("Cargo.toml").exists())
-    }
-
-    fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
-        let lockfile = Lockfile::load(project_root.join("Cargo.lock"))?;
-        let mut graph = DependencyGraph::new();
-
-        for package in &lockfile.packages {
-            graph.add_component(Component {
-                name: package.name.to_string(),
-                version: package.version.to_string(),
-                purl: format!("pkg:cargo/{}@{}", package.name, package.version),
-                ecosystem: Ecosystem::Rust,
-            });
+impl GroovyAnalyzer {
+    pub fn extract_grab_dependencies(&self, project_root: &Path) -> Result<Vec<Dependency>> {
+        // Scan .groovy files for @Grab annotations
+        // Format: @Grab(group='org.springframework', module='spring-core', version='5.3.0')
+        // Convert to Maven coordinates
+        
+        let groovy_files = find_groovy_files(project_root)?;
+        let mut dependencies = Vec::new();
+        
+        for file in groovy_files {
+            let content = fs::read_to_string(&file)?;
+            // Parse @Grab annotations using regex or parser
+            dependencies.extend(parse_grab_annotations(&content)?);
         }
-
-        Ok(graph)
+        
+        Ok(dependencies)
     }
 }
 ```
 
-**Dependency:** `cargo-lock = "9.0"` (official Rust lockfile parser)
+### Features
+
+- Parse @Grab, @GrabResolver, @GrabExclude annotations
+- Support Grape dependency management
+- Groovy script dependency detection
+- Integration with Maven Central
 
 ### PURL Format
 
-**Cargo:** `pkg:cargo/serde@1.0.188`
+**Maven coordinates:** `pkg:maven/org.springframework/spring-core@5.3.0`
 
 ### Advisory Sources
 
-- **RustSec Advisory Database** (https://rustsec.org/)
-- **OSV.dev** (supports Rust)
-- **GitHub Advisory Database**
+- Reuse existing Maven advisory database
+- OSV.dev (supports Maven coordinates)
+
+---
+
+## 9.4 sbt (Scala Build Tool) Support
+
+### Overview
+
+**Goal:** Add support for sbt, the standard Scala build tool
+
+**Target Users:** Scala projects using sbt (most common Scala build tool)
+
+### Detection
+
+**Files:** `build.sbt`, `project/build.properties`
+
+### Implementation
+
+```rust
+// crates/bazbom-build-systems/src/sbt/mod.rs
+pub struct SbtDetector;
+
+impl BuildSystemDetector for SbtDetector {
+    fn name(&self) -> &str { "sbt" }
+
+    fn detect(&self, project_root: &Path) -> Result<bool> {
+        Ok(project_root.join("build.sbt").exists())
+    }
+
+    fn extract_dependencies(&self, project_root: &Path) -> Result<DependencyGraph> {
+        // Parse build.sbt for library dependencies
+        // Format: libraryDependencies += "org.typelevel" %% "cats-core" % "2.9.0"
+        // Run sbt dependencyTree and parse output
+        todo!("Implement sbt dependency extraction")
+    }
+}
+```
+
+### Features
+
+- Parse build.sbt for dependencies
+- Support %% (Scala version suffix) resolution
+- Extract from sbt dependencyTree output
+- Multi-project sbt builds
+
+### PURL Format
+
+**Maven coordinates with Scala version:** `pkg:maven/org.typelevel/cats-core_2.13@2.9.0`
+
+### Advisory Sources
+
+- Maven advisory database (sbt uses Maven repos)
+- OSV.dev
 
 ---
 
@@ -481,47 +455,47 @@ bazbom scan . --with-container
 
 ---
 
-## 9.6 Polyglot Project Support
+## 9.6 Multi-Module JVM Project Support
 
 ### Use Case
 
-**Example:** Monorepo with:
-- Java backend (`pom.xml`)
-- Node.js frontend (`package.json`)
-- Python ML service (`requirements.txt`)
+**Example:** JVM monorepo with:
+- Java backend (`pom.xml` or `build.gradle`)
+- Kotlin services (`build.gradle.kts`)
+- Scala data processing (`build.sbt`)
 
 ### Implementation
 
-**Multi-Ecosystem Scan:**
+**Multi-Build-System Scan:**
 ```rust
 // crates/bazbom/src/scan_orchestrator.rs
 impl ScanOrchestrator {
-    pub fn scan_polyglot(&self, project_root: &Path) -> Result<PolyglotScanResult> {
-        let registry = EcosystemRegistry::new();
-        let detected = registry.detect_ecosystems(project_root)?;
+    pub fn scan_multi_module(&self, project_root: &Path) -> Result<MultiModuleScanResult> {
+        let registry = BuildSystemRegistry::new();
+        let detected = registry.detect_all(project_root)?;
 
-        println!("Detected ecosystems:");
-        for ecosystem in &detected {
-            println!("  - {}", ecosystem.name());
+        println!("Detected JVM build systems:");
+        for build_system in &detected {
+            println!("  - {}", build_system.name());
         }
 
         let mut results = Vec::new();
 
-        for ecosystem in detected {
-            println!("\nScanning {} dependencies...", ecosystem.name());
+        for build_system in detected {
+            println!("\nScanning {} dependencies...", build_system.name());
 
-            let graph = ecosystem.extract_dependencies(project_root)?;
-            let sbom = ecosystem.generate_sbom(&graph)?;
-            let vulns = ecosystem.scan_vulnerabilities(&graph)?;
+            let graph = build_system.extract_dependencies(project_root)?;
+            let sbom = build_system.generate_sbom(&graph)?;
+            let vulns = build_system.scan_vulnerabilities(&graph)?;
 
-            results.push(EcosystemResult {
-                ecosystem: ecosystem.name().to_string(),
+            results.push(ModuleResult {
+                build_system: build_system.name().to_string(),
                 sbom,
                 vulnerabilities: vulns,
             });
         }
 
-        Ok(PolyglotScanResult { results })
+        Ok(MultiModuleScanResult { results })
     }
 }
 ```
@@ -529,28 +503,32 @@ impl ScanOrchestrator {
 **Merged Output:**
 ```json
 {
-  "ecosystems": [
+  "build_systems": [
     {
-      "name": "jvm",
+      "name": "maven",
+      "modules": ["backend-api", "common-lib"],
       "dependencies": 247,
       "vulnerabilities": 3
     },
     {
-      "name": "node",
-      "dependencies": 512,
-      "vulnerabilities": 12
+      "name": "gradle",
+      "modules": ["kotlin-service"],
+      "dependencies": 189,
+      "vulnerabilities": 2
     },
     {
-      "name": "python",
-      "dependencies": 68,
+      "name": "bazel",
+      "modules": ["//java/processing/..."],
+      "dependencies": 156,
       "vulnerabilities": 1
     }
   ],
-  "total_vulnerabilities": 16,
-  "critical": 2,
-  "high": 7,
-  "medium": 5,
-  "low": 2
+  "total_dependencies": 592,
+  "total_vulnerabilities": 6,
+  "critical": 1,
+  "high": 2,
+  "medium": 2,
+  "low": 1
 }
 ```
 
@@ -560,16 +538,18 @@ impl ScanOrchestrator {
 
 ### Phase 9 Completion Checklist
 
-- [ ] Node.js/npm support with package-lock.json parsing
-- [ ] Python/pip support with poetry.lock and requirements.txt
-- [ ] Go modules support with go.mod/go.sum parsing
-- [ ] Rust/Cargo support with Cargo.lock parsing
-- [ ] Enhanced container support with Dockerfile analysis
-- [ ] Polyglot project detection and scanning
-- [ ] Advisory engine works for all ecosystems (OSV integration)
-- [ ] SBOM generation for each ecosystem (SPDX + CycloneDX)
-- [ ] Universal CLI: `bazbom scan` works for any language
-- [ ] Documentation for each ecosystem
+- [ ] Ant build system support with Ivy dependency management
+- [ ] Buildr build system support with Maven coordinate resolution
+- [ ] Groovy language enhancements (@Grab annotation parsing)
+- [ ] Clojure language enhancements (tools.deps, deps.edn parsing)
+- [ ] sbt (Scala Build Tool) support
+- [ ] Kotlin Multiplatform support (JVM targets)
+- [ ] Enhanced container support for JVM artifacts (JAR/WAR detection in images)
+- [ ] Multi-module JVM project detection and scanning
+- [ ] Advisory engine works for all JVM artifacts (Maven Central, OSV integration)
+- [ ] SBOM generation for all JVM build systems (SPDX + CycloneDX)
+- [ ] Universal CLI: `bazbom scan` works for all JVM build systems
+- [ ] Documentation for each build system and language variant
 
 ### Competitive Benchmark
 
@@ -577,28 +557,31 @@ impl ScanOrchestrator {
 
 | Feature | Checkmarx | Snyk | BazBOM |
 |---------|-----------|------|--------|
-| **Java/JVM** | ✅ | ✅ | ✅ |
-| **Node.js** | ✅ | ✅ | ✅ |
-| **Python** | ✅ | ✅ | ✅ |
-| **Go** | ✅ | ✅ | ✅ |
-| **Rust** | ✅ | ✅ | ✅ |
-| **Containers** | ✅ | ✅ | ✅ |
-| **Polyglot Projects** | ✅ | ✅ | ✅ |
-| **Total Languages** | 75+ | 10+ | 6 |
+| **Maven** | ✅ | ✅ | ✅ |
+| **Gradle** | ✅ | ✅ | ✅ |
+| **Bazel (JVM)** | ❌ | ⚠️ | ✅ |
+| **Ant + Ivy** | ⚠️ | ❌ | ✅ |
+| **Buildr** | ❌ | ❌ | ✅ |
+| **sbt (Scala)** | ✅ | ✅ | ✅ |
+| **Groovy (@Grab)** | ⚠️ | ⚠️ | ✅ |
+| **Clojure (tools.deps)** | ⚠️ | ⚠️ | ✅ |
+| **Containers (JVM artifacts)** | ✅ | ✅ | ✅ |
+| **JVM Language Coverage** | Partial | Good | **Complete** |
+| **JVM Build Systems** | 3-4 | 3-4 | **8+** |
 | **Cost** | $200+/dev/year | $99+/dev/year | **FREE** |
 
-**Gap:** Still fewer languages than Checkmarx, but covers 90% of use cases.
+**Advantage:** Best-in-class JVM coverage. Depth over breadth strategy.
 
 ---
 
 ## Resource Requirements
 
 **Team:** 2-3 developers for 12 weeks
-- 1x Node.js/Python specialist (6 weeks)
-- 1x Go/Rust specialist (6 weeks)
-- 1x Container specialist (part-time, 4 weeks)
+- 1x JVM build systems specialist (Ant, Buildr, sbt) (6 weeks)
+- 1x JVM languages specialist (Groovy, Clojure, Kotlin Multiplatform) (6 weeks)
+- 1x Container specialist (JVM artifact detection) (part-time, 4 weeks)
 
-**Skills:** Multi-language expertise, lockfile parsing, advisory integration
+**Skills:** JVM ecosystem expertise, build tool internals, XML/EDN/TOML parsing, Maven repository integration
 
 **Budget:** $48K-72K (contractors)
 
