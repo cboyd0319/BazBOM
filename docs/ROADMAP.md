@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~55% toward market leadership (⬆️ +3% this session)
+**Overall Completion:** ~58% toward market leadership (⬆️ +3% this session)
 
 ### ✅ Completed Phases (0-3 + 5)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -32,9 +32,9 @@
 
 ### 🚧 In Progress
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
-- **Phase 6:** Visualization (95% complete - dashboard, reports complete ⬆️ +10%)
+- **Phase 6:** Visualization (98% complete - CLI report integration ⬆️ +3%)
 - **Phase 7:** Threat intelligence (80% complete - OSV/GHSA APIs fully implemented)
-- **Phase 8:** Scale & performance (30% complete - caching integrated)
+- **Phase 8:** Scale & performance (45% complete - cache integration complete ⬆️ +15%)
 - **Phase 9:** Ecosystem expansion (35% complete - Docker integration)
 - **Implementation Roadmap (Phases 1-2):** Quick wins & visual excellence ✅ COMPLETE
 
@@ -170,7 +170,7 @@ See [PHASE_5_ENTERPRISE_POLICY.md](copilot/PHASE_5_ENTERPRISE_POLICY.md) for det
 - [x] Policy validation command
 - [x] Policy reporting
 
-### Phase 6: Visualization 🚧 IN PROGRESS (95% Complete, ⬆️ +10%)
+### Phase 6: Visualization 🚧 IN PROGRESS (98% Complete, ⬆️ +3%)
 
 **Web Dashboard, Executive Reports, Dependency Graph UI**
 
@@ -186,12 +186,12 @@ See [PHASE_6_VISUALIZATION.md](copilot/PHASE_6_VISUALIZATION.md), [IMPLEMENTATIO
 - [x] Export SBOM to JSON
 - [x] Executive summary reports (HTML, can convert to PDF)
 - [x] Report generation crate (bazbom-reports)
-- [x] Framework-specific compliance reports (7 frameworks: PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST CSF) (NEW 2025-11-04)
-- [x] Detailed developer reports with remediation steps and code examples (NEW 2025-11-04)
-- [x] Trend reports with security metrics and insights (NEW 2025-11-04)
+- [x] Framework-specific compliance reports (7 frameworks: PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST CSF)
+- [x] Detailed developer reports with remediation steps and code examples
+- [x] Trend reports with security metrics and insights
+- [x] CLI integration for report generation (`bazbom report` command) (NEW 2025-11-04)
 - [ ] Static HTML export for sharing (reports already in HTML)
 - [ ] Email integration for reports
-- [ ] CLI integration for report generation
 
 ### Phase 7: Threat Intelligence 🚧 IN PROGRESS (80% Complete, ⬆️ +20%)
 
@@ -218,19 +218,21 @@ See [PHASE_7_THREAT_INTELLIGENCE.md](copilot/PHASE_7_THREAT_INTELLIGENCE.md) for
 - [ ] Custom threat intelligence feeds
 - [ ] Notification integrations (Slack, email, Teams)
 
-### Phase 8: Scale & Performance 🚧 IN PROGRESS (30% Complete, ⬆️ +15%)
+### Phase 8: Scale & Performance 🚧 IN PROGRESS (45% Complete, ⬆️ +15%)
 
 **Incremental Analysis, Large Monorepo Optimization**
 
 See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for details.
 
-- [x] Intelligent caching framework (bazbom-cache) (NEW 2025-11-04)
-- [x] LRU eviction policy (NEW 2025-11-04)
-- [x] TTL-based expiration (NEW 2025-11-04)
-- [x] SHA-256 content hashing (NEW 2025-11-04)
-- [x] Scan cache module with cache key generation (NEW 2025-11-04)
-- [x] ScanResult caching infrastructure (NEW 2025-11-04)
-- [ ] Active integration with scan command execution
+- [x] Intelligent caching framework (bazbom-cache)
+- [x] LRU eviction policy
+- [x] TTL-based expiration (1-hour default)
+- [x] SHA-256 content hashing
+- [x] Scan cache module with cache key generation
+- [x] ScanResult caching infrastructure
+- [x] Active integration with scan command execution (NEW 2025-11-04)
+- [x] Cache hit/miss detection and logging (NEW 2025-11-04)
+- [x] Environment variable to disable cache for testing (NEW 2025-11-04)
 - [ ] Incremental analysis (git-based change detection)
 - [ ] Bazel query optimization
 - [ ] Parallel processing improvements
