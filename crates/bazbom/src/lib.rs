@@ -5,6 +5,7 @@ pub mod batch_fixer;
 pub mod cli;
 pub mod config;
 pub mod context;
+pub mod ecosystems;
 pub mod enrich;
 pub mod explore;
 pub mod fixes;
