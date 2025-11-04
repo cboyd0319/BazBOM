@@ -3,6 +3,7 @@
 //! Provides caching mechanisms to speed up repeated scans and enable incremental analysis
 
 pub mod incremental;
+pub mod remote;
 
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
