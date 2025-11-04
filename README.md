@@ -86,6 +86,21 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 - **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
 - **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
 
+#### 🔒 Threat Intelligence (Phase 7 - 95% Complete)
+- **Supply Chain Attack Detection** ⭐: Proactive detection of malicious packages and typosquatting
+- **Typosquatting Detection**: Identifies packages with names similar to popular libraries (e.g., log4jj vs log4j)
+- **Dependency Confusion**: Detects potential internal namespace hijacking
+- **Threat Intelligence Feeds**: OSV, GHSA, and curated threat database integration
+- **Team Notifications**: Alert via Slack, email, Teams, or GitHub Issues on threat detection
+- **[Full Documentation](docs/THREAT_DETECTION.md)**: Complete guide to threat detection features
+
+#### 📦 Container Scanning (Phase 9 - 60% Complete)
+- **OCI Image Analysis** ⭐: Scan Docker/OCI container images for Java dependencies
+- **Layer-by-Layer Scanning**: Analyze each container layer independently
+- **Maven Metadata Extraction**: Extract groupId:artifactId:version from JARs
+- **Container SBOM Generation**: Create SBOMs for containerized applications
+- **[Full Documentation](docs/CONTAINER_SCANNING.md)**: Complete guide to container scanning
+
 #### ✅ Core Features (Complete)
 - **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
@@ -1230,6 +1245,8 @@ If something doesn't work as documented:
 
 ### Advanced Features
 - **[Performance](docs/PERFORMANCE.md)** - Large monorepo optimization
+- **[Threat Detection](docs/THREAT_DETECTION.md)** - Supply chain attack detection
+- **[Container Scanning](docs/CONTAINER_SCANNING.md)** - Docker/OCI image analysis
 - **[Provenance](docs/PROVENANCE.md)** - SLSA Level 3 attestation
 - **[VEX](docs/VEX.md)** - False positive management
 - **[Dependency Graphs](docs/GRAPH_ANALYSIS.md)** - Visualization and queries
