@@ -121,6 +121,10 @@ pub enum Priority {
 }
 
 /// Merge multiple vulnerability sources into a canonical vulnerability
+///
+/// # Panics
+///
+/// Panics if the `vulns` vector is empty.
 pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
     if vulns.is_empty() {
         panic!("Cannot merge empty vulnerability list");
