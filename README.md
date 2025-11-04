@@ -12,6 +12,7 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/PROVENANCE.md)
 [![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
+[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/copilot/JVM_FOCUSED_PRIORITIES.md)
 
 [Quickstart](#quickstart) •
 [Features](#features) •
@@ -68,12 +69,22 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 **The solution:** BazBOM uses build system-native dependency resolution for accuracy. For Bazel, it uses aspects to traverse the build graph. For Maven and Gradle, it leverages their dependency trees. Every scan produces an accurate SBOM with zero manual maintenance.
 
+### Scope
+
+**BazBOM is JVM-focused:**
+- ✅ **Languages:** Java, Kotlin, Scala (JVM targets only)
+- ✅ **Build Systems:** Maven, Gradle, Bazel (with JVM rules)
+- ✅ **Containers:** Java artifact detection in Docker/OCI images
+- ❌ **Out of scope:** Node.js, Python, Go, Rust, or other non-JVM ecosystems
+
+For multi-language SBOM generation, use specialized tools for each ecosystem.
+
 ### Who is this for?
 
-- **Security teams** enforcing supply chain policies (SBOM + VEX + SLSA)
-- **DevSecOps engineers** automating vulnerability scanning in CI/CD
+- **Security teams** enforcing supply chain policies (SBOM + VEX + SLSA) for JVM applications
+- **DevSecOps engineers** automating vulnerability scanning in CI/CD for Java/Kotlin/Scala projects
 - **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
-- **Organizations** with large monorepos (5000+ targets) or multi-repo setups
+- **Organizations** with large JVM monorepos (5000+ targets) or multi-repo setups
 
 ### What's New (November 2025)
 
