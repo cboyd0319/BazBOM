@@ -16,6 +16,7 @@ pub mod publish;
 pub mod reachability;
 pub mod reachability_cache;
 pub mod remediation;
+pub mod scan_cache;
 pub mod scan_orchestrator;
 pub mod shading;
 pub mod team;
