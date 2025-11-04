@@ -59,6 +59,12 @@ pub enum Commands {
         /// Limit analysis to one module (for PR/changed-path speedups)
         #[arg(long, value_name = "MODULE")]
         target: Option<String>,
+        /// Enable incremental analysis (scan only changed code)
+        #[arg(long)]
+        incremental: bool,
+        /// Git base reference for incremental analysis (e.g., main, HEAD~1)
+        #[arg(long, value_name = "REF", default_value = "main")]
+        base: String,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
