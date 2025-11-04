@@ -2,8 +2,11 @@
 //!
 //! Provides concurrent scanning of multiple targets to improve performance
 //! on multi-core systems and large monorepos.
+//!
+//! Uses rayon for efficient work-stealing parallelism.
 
 use anyhow::Result;
+use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 use std::thread;
 
@@ -252,6 +255,80 @@ pub fn should_parallelize(item_count: usize, thread_count: usize) -> bool {
     items_per_thread >= 2 && thread_count > 1
 }
 
+/// Process items in parallel using rayon (work-stealing thread pool)
+///
+/// This is more efficient than the manual thread pool for most workloads
+/// as it uses a work-stealing scheduler that automatically balances load.
+pub fn process_parallel<T, R, F>(items: Vec<T>, f: F) -> Vec<Result<R>>
+where
+    T: Send,
+    R: Send,
+    F: Fn(T) -> Result<R> + Send + Sync,
+{
+    items.into_par_iter().map(f).collect()
+}
+
+/// Process items in parallel with a progress callback
+pub fn process_parallel_with_progress<T, R, F, P>(
+    items: Vec<T>,
+    f: F,
+    progress_fn: P,
+) -> Vec<Result<R>>
+where
+    T: Send,
+    R: Send,
+    F: Fn(T) -> Result<R> + Send + Sync,
+    P: Fn(usize, usize) + Send + Sync,
+{
+    let total = items.len();
+    let completed = Arc::new(Mutex::new(0usize));
+    
+    let results: Vec<Result<R>> = items
+        .into_par_iter()
+        .map(|item| {
+            let result = f(item);
+            
+            // Update progress
+            let count = {
+                let mut c = completed.lock().unwrap();
+                *c += 1;
+                *c
+            };
+            
+            progress_fn(count, total);
+            result
+        })
+        .collect();
+    
+    results
+}
+
+/// Batch process items with configurable chunk size
+///
+/// Splits items into chunks and processes each chunk in parallel.
+/// Useful when processing small items with high overhead.
+pub fn process_batched<T, R, F>(
+    items: Vec<T>,
+    chunk_size: usize,
+    f: F,
+) -> Vec<Result<R>>
+where
+    T: Send + Clone,
+    R: Send,
+    F: Fn(Vec<T>) -> Vec<Result<R>> + Send + Sync,
+{
+    // Convert to Vec of Vecs for parallel iteration
+    let chunks: Vec<Vec<T>> = items
+        .chunks(chunk_size)
+        .map(|chunk| chunk.to_vec())
+        .collect();
+    
+    chunks
+        .into_par_iter()
+        .flat_map(f)
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -390,5 +467,107 @@ mod tests {
         assert_eq!(results[0].as_ref().unwrap(), &2);
         assert_eq!(results[1].as_ref().unwrap(), &4);
         assert_eq!(results[2].as_ref().unwrap(), &6);
+    }
+
+    #[test]
+    fn test_process_parallel_basic() {
+        let items = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let results = process_parallel(items, |x| Ok(x * 2));
+
+        assert_eq!(results.len(), 8);
+        for result in &results {
+            assert!(result.is_ok());
+        }
+
+        // Collect and sort (parallel order not guaranteed)
+        let mut values: Vec<i32> = results.into_iter().map(|r| r.unwrap()).collect();
+        values.sort();
+        assert_eq!(values, vec![2, 4, 6, 8, 10, 12, 14, 16]);
+    }
+
+    #[test]
+    fn test_process_parallel_with_errors() {
+        let items = vec![1, 2, 3, 4, 5];
+        let results = process_parallel(items, |x| {
+            if x == 3 {
+                Err(anyhow::anyhow!("Error on 3"))
+            } else {
+                Ok(x * 2)
+            }
+        });
+
+        assert_eq!(results.len(), 5);
+
+        let successes = results.iter().filter(|r| r.is_ok()).count();
+        let failures = results.iter().filter(|r| r.is_err()).count();
+
+        assert_eq!(successes, 4);
+        assert_eq!(failures, 1);
+    }
+
+    #[test]
+    fn test_process_parallel_with_progress() {
+        let items = vec![1, 2, 3, 4, 5, 6, 7, 8];
+        let progress_updates = Arc::new(Mutex::new(Vec::new()));
+        let progress_clone = Arc::clone(&progress_updates);
+
+        let results = process_parallel_with_progress(
+            items,
+            |x| {
+                thread::sleep(std::time::Duration::from_millis(5));
+                Ok(x * 2)
+            },
+            move |completed, total| {
+                progress_clone.lock().unwrap().push((completed, total));
+            },
+        );
+
+        assert_eq!(results.len(), 8);
+
+        let updates = progress_updates.lock().unwrap();
+        assert!(!updates.is_empty());
+
+        // Verify all progress updates have correct total
+        for (_completed, total) in updates.iter() {
+            assert_eq!(*total, 8);
+        }
+    }
+
+    #[test]
+    fn test_process_batched() {
+        let items = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+        let chunk_size = 3;
+
+        let results = process_batched(items, chunk_size, |chunk| {
+            // Process each chunk
+            chunk.into_iter().map(|x| Ok(x * 2)).collect()
+        });
+
+        assert_eq!(results.len(), 10);
+        
+        let mut values: Vec<i32> = results.into_iter().map(|r| r.unwrap()).collect();
+        values.sort();
+        assert_eq!(values, vec![2, 4, 6, 8, 10, 12, 14, 16, 18, 20]);
+    }
+
+    #[test]
+    fn test_process_parallel_empty() {
+        let items: Vec<i32> = vec![];
+        let results = process_parallel(items, |x| Ok(x * 2));
+        assert_eq!(results.len(), 0);
+    }
+
+    #[test]
+    fn test_process_parallel_large_dataset() {
+        // Test with a larger dataset to ensure parallelism works
+        let items: Vec<i32> = (1..=1000).collect();
+        let results = process_parallel(items, |x| Ok(x * 2));
+
+        assert_eq!(results.len(), 1000);
+        assert!(results.iter().all(|r| r.is_ok()));
+
+        let sum: i32 = results.into_iter().map(|r| r.unwrap()).sum();
+        // Sum of 2*1 + 2*2 + ... + 2*1000 = 2 * (1+2+...+1000) = 2 * 500500 = 1001000
+        assert_eq!(sum, 1001000);
     }
 }
