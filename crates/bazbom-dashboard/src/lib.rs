@@ -22,8 +22,10 @@ use tower_http::services::ServeDir;
 
 mod models;
 mod routes;
+pub mod export;
 
 pub use models::*;
+pub use export::{export_to_html, Vulnerability};
 
 /// Dashboard application state
 #[derive(Clone)]

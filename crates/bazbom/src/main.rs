@@ -1333,12 +1333,87 @@ fn main() -> Result<()> {
             use std::path::PathBuf;
 
             if let Some(export_path) = export {
+                use bazbom_dashboard::{export_to_html, DashboardSummary, DependencyGraph, VulnerabilityCounts, Vulnerability};
+                use std::fs;
+                
                 println!(
                     "[bazbom] Exporting static HTML dashboard to: {}",
                     export_path
                 );
-                println!("[bazbom] Static export not yet implemented");
-                println!("[bazbom] Use --port to start interactive server instead");
+                
+                // Load findings from cache
+                let cache_dir = PathBuf::from(".bazbom/cache");
+                let findings_path = cache_dir.join("sca_findings.json");
+                
+                let (summary, graph_data, vulnerabilities) = if findings_path.exists() {
+                    let findings_content = fs::read_to_string(&findings_path)
+                        .context("Failed to read findings file")?;
+                    let findings: serde_json::Value = serde_json::from_str(&findings_content)
+                        .context("Failed to parse findings JSON")?;
+                    
+                    // Extract summary
+                    let summary = DashboardSummary {
+                        security_score: findings["summary"]["security_score"].as_u64().unwrap_or(0) as u8,
+                        total_dependencies: findings["summary"]["total_dependencies"].as_u64().unwrap_or(0) as usize,
+                        vulnerabilities: VulnerabilityCounts {
+                            critical: findings["summary"]["vulnerabilities"]["critical"].as_u64().unwrap_or(0) as usize,
+                            high: findings["summary"]["vulnerabilities"]["high"].as_u64().unwrap_or(0) as usize,
+                            medium: findings["summary"]["vulnerabilities"]["medium"].as_u64().unwrap_or(0) as usize,
+                            low: findings["summary"]["vulnerabilities"]["low"].as_u64().unwrap_or(0) as usize,
+                        },
+                        license_issues: 0,
+                        policy_violations: 0,
+                    };
+                    
+                    // Extract vulnerabilities
+                    let vulns: Vec<_> = findings["vulnerabilities"]
+                        .as_array()
+                        .unwrap_or(&vec![])
+                        .iter()
+                        .map(|v| Vulnerability {
+                            cve: v["cve"].as_str().unwrap_or("").to_string(),
+                            package_name: v["package"]["name"].as_str().unwrap_or("").to_string(),
+                            package_version: v["package"]["version"].as_str().unwrap_or("").to_string(),
+                            severity: v["severity"].as_str().unwrap_or("").to_string(),
+                            cvss: v["cvss"].as_f64().unwrap_or(0.0) as f32,
+                            description: v["description"].as_str().map(|s| s.to_string()),
+                            fixed_version: v["fixed_version"].as_str().map(|s| s.to_string()),
+                        })
+                        .collect();
+                    
+                    let graph_data = DependencyGraph {
+                        nodes: vec![],
+                        edges: vec![],
+                    };
+                    
+                    (summary, graph_data, vulns)
+                } else {
+                    println!("[bazbom] No findings file found, generating empty report");
+                    let summary = DashboardSummary {
+                        security_score: 100,
+                        total_dependencies: 0,
+                        vulnerabilities: VulnerabilityCounts {
+                            critical: 0,
+                            high: 0,
+                            medium: 0,
+                            low: 0,
+                        },
+                        license_issues: 0,
+                        policy_violations: 0,
+                    };
+                    (summary, DependencyGraph { nodes: vec![], edges: vec![] }, vec![])
+                };
+                
+                // Export to HTML
+                export_to_html(
+                    &PathBuf::from(&export_path),
+                    &summary,
+                    &graph_data,
+                    &vulnerabilities,
+                )?;
+                
+                println!("[bazbom] Successfully exported to: {}", export_path);
+                println!("[bazbom] Open the file in your browser to view the report");
                 return Ok(());
             }
 
