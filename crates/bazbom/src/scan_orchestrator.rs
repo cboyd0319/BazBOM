@@ -6,7 +6,7 @@ use crate::enrich::DepsDevClient;
 use crate::fixes::{OpenRewriteRunner, VulnerabilityFinding};
 use crate::pipeline::{merge_sarif_reports, Analyzer};
 use crate::publish::GitHubPublisher;
-use crate::scan_cache::ScanCache;
+use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
 use anyhow::{Context as _, Result};
 use bazbom_cache::incremental::IncrementalAnalyzer;
 use std::path::PathBuf;
@@ -87,6 +87,20 @@ impl ScanOrchestrator {
                     return Ok(());
                 }
             }
+        }
+
+        // Step 0.5: Check cache (unless disabled)
+        let cache_disabled = std::env::var("BAZBOM_DISABLE_CACHE").is_ok();
+        if !cache_disabled {
+            if let Ok(cached_result) = self.try_use_cache() {
+                if cached_result {
+                    println!("[bazbom] using cached scan results (cache hit)");
+                    println!("[bazbom] set BAZBOM_DISABLE_CACHE=1 to disable caching");
+                    return Ok(());
+                }
+            }
+        } else {
+            println!("[bazbom] cache disabled via BAZBOM_DISABLE_CACHE");
         }
 
         // Step 1: Generate SBOM
@@ -205,6 +219,14 @@ impl ScanOrchestrator {
         if self.incremental {
             if let Err(e) = self.save_scan_commit() {
                 eprintln!("[bazbom] warning: failed to save scan commit: {}", e);
+            }
+        }
+
+        // Store scan results in cache (unless disabled)
+        let cache_disabled = std::env::var("BAZBOM_DISABLE_CACHE").is_ok();
+        if !cache_disabled {
+            if let Err(e) = self.store_in_cache() {
+                eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
             }
         }
 
@@ -459,6 +481,133 @@ impl ScanOrchestrator {
             std::fs::write(&last_scan_file, current_commit)?;
             println!("[bazbom] saved scan commit for incremental analysis");
         }
+        Ok(())
+    }
+
+    /// Try to use cached scan results
+    fn try_use_cache(&self) -> Result<bool> {
+        let cache_dir = self.context.workspace.join(".bazbom").join("cache");
+        let mut cache = ScanCache::new(cache_dir)?;
+
+        // Build scan parameters for cache key
+        let scan_params = ScanParameters {
+            reachability: false, // TODO: pass from options
+            fast: false,         // TODO: pass from options
+            format: "spdx".to_string(),
+            bazel_targets: None, // TODO: pass from options
+        };
+
+        // Find build files
+        let build_files = self.find_build_files()?;
+
+        // Generate cache key
+        let cache_key = ScanCache::generate_cache_key(
+            &self.context.workspace,
+            &build_files,
+            &scan_params,
+        )?;
+
+        // Try to get cached result
+        if let Some(cached) = cache.get_scan_result(&cache_key)? {
+            println!("[bazbom] cache hit for key: {}", &cache_key[..16]);
+
+            // Restore cached outputs
+            let sbom_path = self.context.sbom_dir.join("spdx.json");
+            std::fs::create_dir_all(&self.context.sbom_dir)?;
+            std::fs::write(&sbom_path, &cached.sbom_json)?;
+
+            if let Some(findings_json) = &cached.findings_json {
+                let findings_path = self.context.findings_dir.join("sca_findings.json");
+                std::fs::create_dir_all(&self.context.findings_dir)?;
+                std::fs::write(&findings_path, findings_json)?;
+            }
+
+            println!("[bazbom] restored cached SBOM and findings");
+            return Ok(true);
+        }
+
+        println!("[bazbom] cache miss for key: {}", &cache_key[..16]);
+        Ok(false)
+    }
+
+    /// Find build files for cache key generation
+    fn find_build_files(&self) -> Result<Vec<PathBuf>> {
+        let mut files = Vec::new();
+
+        // Maven
+        let pom = self.context.workspace.join("pom.xml");
+        if pom.exists() {
+            files.push(pom);
+        }
+
+        // Gradle
+        let gradle = self.context.workspace.join("build.gradle");
+        if gradle.exists() {
+            files.push(gradle);
+        }
+        let gradle_kts = self.context.workspace.join("build.gradle.kts");
+        if gradle_kts.exists() {
+            files.push(gradle_kts);
+        }
+
+        // Bazel
+        let build_bazel = self.context.workspace.join("BUILD.bazel");
+        if build_bazel.exists() {
+            files.push(build_bazel);
+        }
+        let build = self.context.workspace.join("BUILD");
+        if build.exists() {
+            files.push(build);
+        }
+
+        Ok(files)
+    }
+
+    /// Store scan results in cache
+    fn store_in_cache(&self) -> Result<()> {
+        let cache_dir = self.context.workspace.join(".bazbom").join("cache");
+        let mut cache = ScanCache::new(cache_dir)?;
+
+        // Build scan parameters for cache key
+        let scan_params = ScanParameters {
+            reachability: false,
+            fast: false,
+            format: "spdx".to_string(),
+            bazel_targets: None,
+        };
+
+        // Find build files
+        let build_files = self.find_build_files()?;
+
+        // Generate cache key
+        let cache_key = ScanCache::generate_cache_key(
+            &self.context.workspace,
+            &build_files,
+            &scan_params,
+        )?;
+
+        // Read scan outputs
+        let sbom_path = self.context.sbom_dir.join("spdx.json");
+        let findings_path = self.context.findings_dir.join("sca_findings.json");
+
+        if sbom_path.exists() {
+            let sbom_json = std::fs::read_to_string(&sbom_path)?;
+            let findings_json = if findings_path.exists() {
+                Some(std::fs::read_to_string(&findings_path)?)
+            } else {
+                None
+            };
+
+            let cached_result = CachedScanResult::new(
+                sbom_json,
+                findings_json,
+                scan_params,
+            );
+
+            cache.put_scan_result(&cache_key, &cached_result)?;
+            println!("[bazbom] cached scan results (key: {})", &cache_key[..16]);
+        }
+
         Ok(())
     }
 
