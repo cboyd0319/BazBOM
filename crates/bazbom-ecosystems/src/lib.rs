@@ -4,6 +4,7 @@
 //! beyond the JVM (Node.js, Python, Go, Rust, etc.)
 
 pub mod node;
+pub mod python;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -105,6 +106,7 @@ impl EcosystemRegistry {
         Self {
             plugins: vec![
                 Box::new(node::NodePlugin::new()),
+                Box::new(python::PythonPlugin::new()),
             ],
         }
     }
