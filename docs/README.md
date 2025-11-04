@@ -46,6 +46,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Developer & Maintainer Guides
 
+- **[Local Development Environment](developer/LOCAL_ENVIRONMENT_SETUP.md)** - Platform setup, linting, and verification steps
 - **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
 - **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
 - **[Release Checklist](RELEASE_CHECKLIST.md)** - Pre-release verification steps

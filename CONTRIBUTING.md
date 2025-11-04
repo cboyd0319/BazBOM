@@ -6,9 +6,12 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
 
 ### Prerequisites
 
-- Rust 1.70 or later (for core BazBOM CLI)
-- [Bazelisk](https://github.com/bazelbuild/bazelisk) (recommended) or Bazel 7.0.0
-- Java 11 or later (for Maven/Gradle plugins and examples)
+- Follow [Local Development Environment](docs/developer/LOCAL_ENVIRONMENT_SETUP.md) for complete setup instructions
+- Rust (stable) via `rustup`, including `rustfmt`, `clippy`, and `llvm-tools-preview`
+- [Bazelisk](https://github.com/bazelbuild/bazelisk) (recommended Bazel wrapper) with Bazel-compatible JDK 17
+- Java build tooling: OpenJDK 17, Maven, and Gradle
+- Node.js (LTS) and npm for IDE integrations
+- Pre-commit dependencies: `pre-commit`, `trufflehog`, `gitleaks`, `markdownlint`, `buildifier`, and `vale`
 
 ### Setup
 
@@ -19,25 +22,33 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
    cd BazBOM
    ```
 
-2. Build Rust workspace:
+2. Build the Rust workspace to pull dependencies:
 
    ```bash
-   cargo build --all
+   cargo build --all --locked
    ```
 
-3. Install pre-commit hooks:
+3. Install git hooks:
 
    ```bash
    pre-commit install
    ```
 
-4. Run tests:
+4. Run linters and formatters:
 
    ```bash
-   cargo test --all
+   cargo fmt --all -- --check
+   cargo clippy --all-targets --all-features -- -D warnings
+   pre-commit run --all-files
    ```
 
-5. Build with Bazel (optional, for examples):
+5. Run tests:
+
+   ```bash
+   cargo test --all --locked
+   ```
+
+6. Build with Bazel (for Bazel integrations and examples):
 
    ```bash
    bazel build //...
