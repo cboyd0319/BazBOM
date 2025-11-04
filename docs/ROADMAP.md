@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~48% toward market leadership (⬆️ +8% this session)
+**Overall Completion:** ~52% toward market leadership (⬆️ +12% this session)
 
 ### ✅ Completed Phases (0-3 + 5)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -33,9 +33,9 @@
 ### 🚧 In Progress
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
 - **Phase 6:** Visualization (85% complete - dashboard, reports)
-- **Phase 7:** Threat intelligence (70% complete - detection + API clients ⬆️)
-- **Phase 8:** Scale & performance (30% complete - caching integrated ⬆️)
-- **Phase 9:** Ecosystem expansion (20% complete - Docker integration ⬆️)
+- **Phase 7:** Threat intelligence (80% complete - detection + API clients ⬆️ +10%)
+- **Phase 8:** Scale & performance (30% complete - caching integrated)
+- **Phase 9:** Ecosystem expansion (35% complete - Docker integration ⬆️ +15%)
 - **Implementation Roadmap (Phases 1-2):** Quick wins & visual excellence ✅ COMPLETE
 
 ### 📋 Planned
@@ -192,7 +192,7 @@ See [PHASE_6_VISUALIZATION.md](copilot/PHASE_6_VISUALIZATION.md), [IMPLEMENTATIO
 - [ ] Static HTML export for sharing
 - [ ] Email integration for reports
 
-### Phase 7: Threat Intelligence 🚧 IN PROGRESS (70% Complete, ⬆️ +10%)
+### Phase 7: Threat Intelligence 🚧 IN PROGRESS (80% Complete, ⬆️ +20%)
 
 **Supply Chain Attack Detection, Malicious Package Detection**
 
@@ -204,11 +204,13 @@ See [PHASE_7_THREAT_INTELLIGENCE.md](copilot/PHASE_7_THREAT_INTELLIGENCE.md) for
 - [x] Supply chain attack indicators
 - [x] Continuous monitoring service
 - [x] Threat level classification (Critical/High/Medium/Low)
-- [x] Dependency confusion detection (NEW 2025-11-04)
-- [x] OSV/GHSA database integration framework (NEW 2025-11-04)
-- [x] OSV API client data structures (NEW 2025-11-04)
-- [x] GHSA GraphQL API client structures (NEW 2025-11-04)
-- [ ] HTTP/GraphQL API implementation for OSV/GHSA (stub methods ready)
+- [x] Dependency confusion detection
+- [x] OSV/GHSA database integration framework
+- [x] OSV API client with HTTP implementation (NEW 2025-11-04)
+- [x] GHSA GraphQL API client with authentication (NEW 2025-11-04)
+- [x] Malicious keyword filtering for vulnerabilities (NEW 2025-11-04)
+- [x] Fallback to curated data for offline operation (NEW 2025-11-04)
+- [ ] Integration tests for threat database APIs
 - [ ] Maintainer takeover detection
 - [ ] Integration with OpenSSF Scorecard
 - [ ] Integration with Socket.dev signals
@@ -238,19 +240,22 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (20% Complete, ⬆️ +10%)
+### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (35% Complete, ⬆️ +25%)
 
 **Container Support, Multi-Language, Kubernetes**
 
 See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for details.
 
-- [x] Container scanning crate (bazbom-containers) (NEW 2025-11-04)
-- [x] Java artifact detection in containers (NEW 2025-11-04)
-- [x] Container SBOM generation framework (NEW 2025-11-04)
-- [x] Docker daemon integration (DockerClient) (NEW 2025-11-04)
-- [x] Docker pull, export, list, inspect operations (stubs) (NEW 2025-11-04)
-- [ ] Full HTTP implementation for Docker API
+- [x] Container scanning crate (bazbom-containers)
+- [x] Java artifact detection in containers
+- [x] Container SBOM generation framework
+- [x] Docker daemon integration (DockerClient)
+- [x] Docker API client architecture with Unix socket support (NEW 2025-11-04)
+- [x] Pull, export, list, inspect operations with real/stub modes (NEW 2025-11-04)
+- [x] Hyperlocal dependency for Unix socket HTTP (NEW 2025-11-04)
+- [ ] Full HTTP client integration with hyperlocal
 - [ ] OCI image parsing implementation
+- [ ] Container layer extraction and analysis
 - [ ] Container image SBOM (`rules_oci` integration)
 - [ ] Kubernetes manifest scanning
 - [ ] Node.js/npm support
