@@ -623,12 +623,8 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
             && line.contains(artifact)
             && line.contains("</artifactId>")
         {
-            // Look ahead for a <version> tag
-            for version_line in lines
-                .iter()
-                .take((i + 5).min(lines.len()))
-                .skip((i + 1).min(lines.len()))
-            {
+            // Look ahead for a <version> tag (check next 4 lines)
+            for version_line in lines.iter().skip(i + 1).take(4) {
                 if version_line.contains("<version>")
                     && version_line.contains(&suggestion.current_version)
                 {
