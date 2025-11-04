@@ -365,6 +365,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bazbom-reports"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "bazbom-tui"
 version = "0.5.1"
 dependencies = [
