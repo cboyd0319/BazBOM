@@ -33,6 +33,7 @@ bazbom-graph = { path = "../bazbom-graph" }
 bazbom-tui = { path = "../bazbom-tui" }
 bazbom-dashboard = { path = "../bazbom-dashboard" }
 bazbom-cache = { path = "../bazbom-cache" }
+bazbom-reports = { path = "../bazbom-reports" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"

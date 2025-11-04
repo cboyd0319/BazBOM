@@ -254,6 +254,7 @@ dependencies = [
  "bazbom-formats",
  "bazbom-graph",
  "bazbom-policy",
+ "bazbom-reports",
  "bazbom-tui",
  "blake3",
  "chrono",

@@ -131,6 +131,11 @@ pub enum Commands {
         #[command(subcommand)]
         action: TeamCmd,
     },
+    /// Generate security and compliance reports
+    Report {
+        #[command(subcommand)]
+        action: ReportCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -272,4 +277,82 @@ pub enum TeamCmd {
         #[arg(long, value_name = "EMAIL")]
         remove_member: Option<String>,
     },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ReportCmd {
+    /// Generate executive summary report (1-page)
+    Executive {
+        /// SBOM file to analyze (SPDX or CycloneDX)
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Output file path
+        #[arg(long, value_name = "FILE", default_value = "executive-report.html")]
+        output: String,
+    },
+    /// Generate compliance report for specific framework
+    Compliance {
+        /// Compliance framework
+        #[arg(value_enum)]
+        framework: ComplianceFrameworkArg,
+        /// SBOM file to analyze
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Output file path
+        #[arg(long, value_name = "FILE", default_value = "compliance-report.html")]
+        output: String,
+    },
+    /// Generate detailed developer report
+    Developer {
+        /// SBOM file to analyze
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Output file path
+        #[arg(long, value_name = "FILE", default_value = "developer-report.html")]
+        output: String,
+    },
+    /// Generate historical trend report
+    Trend {
+        /// SBOM file to analyze
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Output file path
+        #[arg(long, value_name = "FILE", default_value = "trend-report.html")]
+        output: String,
+    },
+    /// Generate all report types
+    All {
+        /// SBOM file to analyze
+        #[arg(long, value_name = "FILE")]
+        sbom: Option<String>,
+        /// Findings JSON file
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Output directory
+        #[arg(long, value_name = "DIR", default_value = "reports")]
+        output_dir: String,
+    },
+}
+
+#[derive(Copy, Clone, Debug, ValueEnum)]
+pub enum ComplianceFrameworkArg {
+    PciDss,
+    Hipaa,
+    FedRampModerate,
+    Soc2,
+    Gdpr,
+    Iso27001,
+    NistCsf,
 }
