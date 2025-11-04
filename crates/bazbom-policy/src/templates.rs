@@ -214,24 +214,44 @@ impl PolicyTemplateLibrary {
             "gdpr" => Some(include_str!("../../../examples/policies/gdpr.yml").to_string()),
             "iso27001" => Some(include_str!("../../../examples/policies/iso27001.yml").to_string()),
             "nist-csf" => Some(include_str!("../../../examples/policies/nist-csf.yml").to_string()),
-            "cis-benchmarks" => Some(include_str!("../../../examples/policies/cis-benchmarks.yml").to_string()),
+            "cis-benchmarks" => {
+                Some(include_str!("../../../examples/policies/cis-benchmarks.yml").to_string())
+            }
             // Industry
-            "financial-services" => Some(include_str!("../../../examples/policies/financial-services.yml").to_string()),
-            "healthcare-provider" => Some(include_str!("../../../examples/policies/healthcare-provider.yml").to_string()),
-            "government" => Some(include_str!("../../../examples/policies/government.yml").to_string()),
-            "saas-cloud" => Some(include_str!("../../../examples/policies/saas-cloud.yml").to_string()),
-            "ecommerce" => Some(include_str!("../../../examples/policies/ecommerce.yml").to_string()),
+            "financial-services" => {
+                Some(include_str!("../../../examples/policies/financial-services.yml").to_string())
+            }
+            "healthcare-provider" => {
+                Some(include_str!("../../../examples/policies/healthcare-provider.yml").to_string())
+            }
+            "government" => {
+                Some(include_str!("../../../examples/policies/government.yml").to_string())
+            }
+            "saas-cloud" => {
+                Some(include_str!("../../../examples/policies/saas-cloud.yml").to_string())
+            }
+            "ecommerce" => {
+                Some(include_str!("../../../examples/policies/ecommerce.yml").to_string())
+            }
             // Framework
-            "spring-boot" => Some(include_str!("../../../examples/policies/spring-boot.yml").to_string()),
+            "spring-boot" => {
+                Some(include_str!("../../../examples/policies/spring-boot.yml").to_string())
+            }
             "android" => Some(include_str!("../../../examples/policies/android.yml").to_string()),
-            "microservices" => Some(include_str!("../../../examples/policies/microservices.yml").to_string()),
-            "kubernetes" => Some(include_str!("../../../examples/policies/kubernetes.yml").to_string()),
+            "microservices" => {
+                Some(include_str!("../../../examples/policies/microservices.yml").to_string())
+            }
+            "kubernetes" => {
+                Some(include_str!("../../../examples/policies/kubernetes.yml").to_string())
+            }
             // Stage
             "corporate-permissive" => Some(
                 include_str!("../../../examples/policies/corporate-permissive.yml").to_string(),
             ),
             "staging" => Some(include_str!("../../../examples/policies/staging.yml").to_string()),
-            "production" => Some(include_str!("../../../examples/policies/production.yml").to_string()),
+            "production" => {
+                Some(include_str!("../../../examples/policies/production.yml").to_string())
+            }
             _ => None,
         }
     }
@@ -312,10 +332,7 @@ mod tests {
             .collect();
         assert_eq!(framework.len(), 4, "Should have 4 framework templates");
 
-        let stage: Vec<_> = templates
-            .iter()
-            .filter(|t| t.category == "Stage")
-            .collect();
+        let stage: Vec<_> = templates.iter().filter(|t| t.category == "Stage").collect();
         assert_eq!(stage.len(), 3, "Should have 3 stage templates");
     }
 

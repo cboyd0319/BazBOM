@@ -12,9 +12,9 @@ use crate::remediation::{parse_semantic_version, RemediationSuggestion};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RiskLevel {
-    Low,       // Independent updates, no conflicts
-    Moderate,  // Breaking changes (major version bumps)
-    High,      // Dependency conflicts detected
+    Low,      // Independent updates, no conflicts
+    Moderate, // Breaking changes (major version bumps)
+    High,     // Dependency conflicts detected
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -276,12 +276,7 @@ fn estimate_test_count(updates: &[Update]) -> u32 {
 mod tests {
     use super::*;
 
-    fn create_test_update(
-        package: &str,
-        current: &str,
-        target: &str,
-        severity: &str,
-    ) -> Update {
+    fn create_test_update(package: &str, current: &str, target: &str, severity: &str) -> Update {
         let is_breaking = is_breaking_change(current, target);
         Update {
             package: package.to_string(),
@@ -374,9 +369,7 @@ mod tests {
 
     #[test]
     fn test_commonly_conflicting_packages() {
-        let fixer = BatchFixer {
-            updates: vec![],
-        };
+        let fixer = BatchFixer { updates: vec![] };
 
         assert!(fixer.is_commonly_conflicting("io.netty:netty-codec"));
         assert!(fixer.is_commonly_conflicting("com.fasterxml.jackson.core:jackson-databind"));

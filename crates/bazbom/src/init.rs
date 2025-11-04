@@ -28,11 +28,12 @@ static ROCKET: Emoji = Emoji("🚀", "");
 /// Interactive setup wizard
 pub fn run_init(path: &str) -> Result<()> {
     let project_path = PathBuf::from(path);
-    
+
     // Welcome message
-    println!("\n{} {} {}", 
-        SPARKLE, 
-        style("Welcome to BazBOM!").bold().cyan(), 
+    println!(
+        "\n{} {} {}",
+        SPARKLE,
+        style("Welcome to BazBOM!").bold().cyan(),
         SPARKLE
     );
     println!("Let's get your project secured.\n");
@@ -40,8 +41,12 @@ pub fn run_init(path: &str) -> Result<()> {
     // Step 1: Detect build system
     println!("{} Detecting build system...", SEARCH);
     let build_system = detect_build_system(&project_path);
-    
-    println!("{} Found: {} project", CHECK, style(format!("{:?}", build_system)).bold().green());
+
+    println!(
+        "{} Found: {} project",
+        CHECK,
+        style(format!("{:?}", build_system)).bold().green()
+    );
     println!();
 
     // Step 2: Select policy template
@@ -50,20 +55,24 @@ pub fn run_init(path: &str) -> Result<()> {
     println!();
 
     // Step 3: Create bazbom.yml
-    println!("{} Creating bazbom.yml with {} policy", CHECK, style(&template.name).bold());
+    println!(
+        "{} Creating bazbom.yml with {} policy",
+        CHECK,
+        style(&template.name).bold()
+    );
     create_config_file(&project_path, &template)?;
     println!();
 
     // Step 4: Run first scan
     println!("{} Running first scan...", SEARCH);
     println!("{} This may take a minute...", INFO);
-    
+
     let scan_result = run_first_scan(&project_path)?;
     println!();
 
     // Step 5: Display summary
     display_summary(&scan_result)?;
-    
+
     // Step 6: Show next steps
     show_next_steps();
 
@@ -73,16 +82,19 @@ pub fn run_init(path: &str) -> Result<()> {
 /// Select policy template interactively
 fn select_policy_template() -> Result<PolicyTemplate> {
     let templates = PolicyTemplateLibrary::list_templates();
-    
+
     // Dynamically build selection items from templates
     let mut items: Vec<String> = templates
         .iter()
         .enumerate()
         .map(|(i, t)| format!("{}. {} - {}", i + 1, t.name, t.description))
         .collect();
-    
+
     // Add custom option
-    items.push(format!("{}. Custom (manual configuration) - Full control", items.len() + 1));
+    items.push(format!(
+        "{}. Custom (manual configuration) - Full control",
+        items.len() + 1
+    ));
 
     let selection = Select::with_theme(&ColorfulTheme::default())
         .with_prompt("Your choice")
@@ -108,7 +120,7 @@ fn select_policy_template() -> Result<PolicyTemplate> {
 /// Create bazbom.yml configuration file
 fn create_config_file(project_path: &Path, template: &PolicyTemplate) -> Result<()> {
     let config_path = project_path.join("bazbom.yml");
-    
+
     // Check if file already exists
     if config_path.exists() {
         println!("{} bazbom.yml already exists, skipping creation", WARNING);
@@ -121,7 +133,7 @@ fn create_config_file(project_path: &Path, template: &PolicyTemplate) -> Result<
     } else {
         "HIGH" // Stricter for compliance/production
     };
-    
+
     // For now, create a simple config based on template
     // In the future, this should use the actual template content
     let config_content = format!(
@@ -150,13 +162,10 @@ policy:
     - GPL-3.0
     - AGPL-3.0
 "#,
-        template.name,
-        template.description,
-        severity_threshold
+        template.name, template.description, severity_threshold
     );
 
-    fs::write(&config_path, config_content)
-        .context("Failed to write bazbom.yml")?;
+    fs::write(&config_path, config_content).context("Failed to write bazbom.yml")?;
 
     Ok(())
 }
@@ -188,7 +197,7 @@ fn run_first_scan(project_path: &Path) -> Result<ScanResult> {
 
     // Run a fast scan to get quick results
     let scan_result = run_quick_scan(project_path);
-    
+
     pb.finish_with_message("Scan complete!");
 
     scan_result
@@ -197,7 +206,7 @@ fn run_first_scan(project_path: &Path) -> Result<ScanResult> {
 /// Run a quick scan without reachability analysis
 fn run_quick_scan(project_path: &Path) -> Result<ScanResult> {
     use std::process::Command;
-    
+
     // Create temporary directory for scan output
     let temp_dir = std::env::temp_dir().join(format!("bazbom-init-{}", std::process::id()));
     fs::create_dir_all(&temp_dir)?;
@@ -239,7 +248,7 @@ fn run_quick_scan(project_path: &Path) -> Result<ScanResult> {
 /// Parse scan findings JSON to extract summary
 fn parse_scan_findings(findings_path: &Path) -> Result<ScanResult> {
     use serde_json::Value;
-    
+
     let content = fs::read_to_string(findings_path)?;
     let findings: Value = serde_json::from_str(&content)?;
 
@@ -270,8 +279,16 @@ fn parse_scan_findings(findings_path: &Path) -> Result<ScanResult> {
         .unwrap_or(0) as usize;
 
     Ok(ScanResult {
-        total_deps: if total_deps > 0 { total_deps } else { critical + high + medium + low },
-        direct_deps: if direct_deps > 0 { direct_deps } else { (total_deps as f32 * 0.15) as usize },
+        total_deps: if total_deps > 0 {
+            total_deps
+        } else {
+            critical + high + medium + low
+        },
+        direct_deps: if direct_deps > 0 {
+            direct_deps
+        } else {
+            (total_deps as f32 * 0.15) as usize
+        },
         transitive_deps: total_deps - direct_deps,
         critical_vulns: critical,
         high_vulns: high,
@@ -302,13 +319,21 @@ fn display_summary(result: &ScanResult) -> Result<()> {
     println!("  Direct: {}", result.direct_deps);
     println!("  Transitive: {}", result.transitive_deps);
     println!();
-    
-    let total_vulns = result.critical_vulns + result.high_vulns + result.medium_vulns + result.low_vulns;
-    
+
+    let total_vulns =
+        result.critical_vulns + result.high_vulns + result.medium_vulns + result.low_vulns;
+
     if total_vulns > 0 {
-        println!("  {} Vulnerabilities: {}", WARNING, style(total_vulns).bold().red());
+        println!(
+            "  {} Vulnerabilities: {}",
+            WARNING,
+            style(total_vulns).bold().red()
+        );
         if result.critical_vulns > 0 {
-            println!("    CRITICAL: {}", style(result.critical_vulns).bold().red());
+            println!(
+                "    CRITICAL: {}",
+                style(result.critical_vulns).bold().red()
+            );
         }
         if result.high_vulns > 0 {
             println!("    HIGH: {}", style(result.high_vulns).bold().yellow());
@@ -322,7 +347,7 @@ fn display_summary(result: &ScanResult) -> Result<()> {
     } else {
         println!("  {} No vulnerabilities detected!", CHECK);
     }
-    
+
     println!("  License issues: {}", result.license_issues);
     println!();
 
@@ -332,12 +357,25 @@ fn display_summary(result: &ScanResult) -> Result<()> {
 /// Show next steps
 fn show_next_steps() {
     println!("{} {}", INFO, style("Next steps:").bold());
-    println!("  1. Review findings: {}", style("bazbom scan . --format json").cyan());
-    println!("  2. Fix vulnerabilities: {}", style("bazbom fix --suggest").cyan());
-    println!("  3. Add to git hooks: {}", style("bazbom install-hooks").cyan());
+    println!(
+        "  1. Review findings: {}",
+        style("bazbom scan . --format json").cyan()
+    );
+    println!(
+        "  2. Fix vulnerabilities: {}",
+        style("bazbom fix --suggest").cyan()
+    );
+    println!(
+        "  3. Add to git hooks: {}",
+        style("bazbom install-hooks").cyan()
+    );
     println!();
-    println!("📖 Full documentation: {}", 
-        style("https://github.com/cboyd0319/BazBOM").cyan().underlined());
+    println!(
+        "📖 Full documentation: {}",
+        style("https://github.com/cboyd0319/BazBOM")
+            .cyan()
+            .underlined()
+    );
     println!();
     println!("{} {}", ROCKET, style("Happy securing!").bold().green());
     println!();
@@ -359,7 +397,7 @@ mod tests {
             low_vulns: 4,
             license_issues: 0,
         };
-        
+
         assert_eq!(result.total_deps, 100);
         assert_eq!(result.direct_deps, 10);
         assert_eq!(result.transitive_deps, 90);
@@ -386,9 +424,9 @@ mod tests {
             low_vulns: 1,
             license_issues: 0,
         };
-        
-        let total_vulns = result.critical_vulns + result.high_vulns + 
-                         result.medium_vulns + result.low_vulns;
+
+        let total_vulns =
+            result.critical_vulns + result.high_vulns + result.medium_vulns + result.low_vulns;
         assert_eq!(total_vulns, 10);
     }
 }

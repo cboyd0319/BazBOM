@@ -7,7 +7,10 @@ use std::collections::HashSet;
 use strsim::{levenshtein, normalized_levenshtein};
 
 /// Check if a package might be a typosquatting attempt
-pub fn check_typosquatting(package_name: &str, known_packages: &HashSet<String>) -> Option<ThreatIndicator> {
+pub fn check_typosquatting(
+    package_name: &str,
+    known_packages: &HashSet<String>,
+) -> Option<ThreatIndicator> {
     // Find similar package names
     for known_pkg in known_packages {
         let similarity = normalized_levenshtein(package_name, known_pkg);
@@ -25,7 +28,10 @@ pub fn check_typosquatting(package_name: &str, known_packages: &HashSet<String>)
                     package_name, known_pkg
                 ),
                 evidence: vec![
-                    format!("Similar to popular package '{}' (similarity: {:.2})", known_pkg, similarity),
+                    format!(
+                        "Similar to popular package '{}' (similarity: {:.2})",
+                        known_pkg, similarity
+                    ),
                     format!("Edit distance: {} characters", distance),
                     "Common typosquatting patterns detected".to_string(),
                 ],

@@ -1,0 +1,6 @@
+# Ignore examples and Java tools - these require Java configuration
+# Use the Rust CLI for actual functionality
+# Core Rust functionality is built via Cargo, not Bazel
+examples
+tools/reachability
+benchmarks

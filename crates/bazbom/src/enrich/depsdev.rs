@@ -283,9 +283,10 @@ impl DepsDevClient {
 
     /// Generate a summary of version changes based on semantic versioning
     fn generate_version_change_summary(from_version: &str, to_version: &str) -> String {
-        if let (Some((from_maj, from_min, _)), Some((to_maj, to_min, _))) =
-            (parse_semantic_version(from_version), parse_semantic_version(to_version))
-        {
+        if let (Some((from_maj, from_min, _)), Some((to_maj, to_min, _))) = (
+            parse_semantic_version(from_version),
+            parse_semantic_version(to_version),
+        ) {
             if to_maj > from_maj {
                 return format!(
                     "Major version upgrade ({} → {}) - expect breaking changes. \
@@ -404,7 +405,8 @@ mod tests {
 
     #[test]
     fn test_version_change_summary_with_suffix() {
-        let summary = DepsDevClient::generate_version_change_summary("1.0.0-SNAPSHOT", "2.0.0-RELEASE");
+        let summary =
+            DepsDevClient::generate_version_change_summary("1.0.0-SNAPSHOT", "2.0.0-RELEASE");
         assert!(summary.contains("Major version upgrade"));
     }
 }

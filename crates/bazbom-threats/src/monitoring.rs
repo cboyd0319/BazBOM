@@ -2,7 +2,7 @@
 //!
 //! Monitors packages for new threats over time
 
-use crate::{ThreatIndicator, ThreatAnalyzer};
+use crate::{ThreatAnalyzer, ThreatIndicator};
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -58,7 +58,9 @@ impl MonitoringService {
         let mut resolved_threats = Vec::new();
 
         for package in &self.config.watched_packages {
-            let current_threats = self.analyzer.analyze_package(&package.name, &package.version)?;
+            let current_threats = self
+                .analyzer
+                .analyze_package(&package.name, &package.version)?;
 
             // Check for new threats
             let previous = self.previous_threats.get(&package.name);
@@ -75,14 +77,18 @@ impl MonitoringService {
             // Check for resolved threats
             if let Some(prev) = previous {
                 for old_threat in prev {
-                    if !current_threats.iter().any(|t| t.description == old_threat.description) {
+                    if !current_threats
+                        .iter()
+                        .any(|t| t.description == old_threat.description)
+                    {
                         resolved_threats.push(old_threat.description.clone());
                     }
                 }
             }
 
             // Update stored threats
-            self.previous_threats.insert(package.name.clone(), current_threats);
+            self.previous_threats
+                .insert(package.name.clone(), current_threats);
         }
 
         Ok(MonitoringResult {
@@ -117,13 +123,11 @@ mod tests {
     fn create_test_config() -> MonitoringConfig {
         MonitoringConfig {
             check_interval: 60,
-            watched_packages: vec![
-                WatchedPackage {
-                    name: "test-package".to_string(),
-                    version: "1.0.0".to_string(),
-                    last_checked: Utc::now(),
-                },
-            ],
+            watched_packages: vec![WatchedPackage {
+                name: "test-package".to_string(),
+                version: "1.0.0".to_string(),
+                last_checked: Utc::now(),
+            }],
             alert_threshold: crate::ThreatLevel::High,
         }
     }

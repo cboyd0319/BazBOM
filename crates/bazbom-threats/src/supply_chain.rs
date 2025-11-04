@@ -5,7 +5,10 @@
 use crate::{ThreatIndicator, ThreatLevel, ThreatType};
 
 /// Check for supply chain attack indicators
-pub fn check_supply_chain_indicators(package_name: &str, package_version: &str) -> Vec<ThreatIndicator> {
+pub fn check_supply_chain_indicators(
+    package_name: &str,
+    package_version: &str,
+) -> Vec<ThreatIndicator> {
     let mut threats = Vec::new();
 
     // Check for suspicious version patterns
@@ -56,7 +59,10 @@ fn is_suspicious_version(version: &str) -> bool {
     }
 
     // Non-standard version formats
-    if !version.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '+') {
+    if !version
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '+')
+    {
         return true;
     }
 
@@ -66,8 +72,15 @@ fn is_suspicious_version(version: &str) -> bool {
 /// Check if package name is suspicious
 fn is_suspicious_name(name: &str) -> bool {
     let suspicious_patterns = [
-        "test-", "tmp-", "temp-", "fake-", "malicious-",
-        "-backdoor", "-exploit", "-hack", "-pwn",
+        "test-",
+        "tmp-",
+        "temp-",
+        "fake-",
+        "malicious-",
+        "-backdoor",
+        "-exploit",
+        "-hack",
+        "-pwn",
     ];
 
     for pattern in &suspicious_patterns {
@@ -81,7 +94,7 @@ fn is_suspicious_name(name: &str) -> bool {
 
 /// Indicators of compromised maintainer accounts
 pub fn check_compromised_account_indicators(
-    package_name: &str,
+    _package_name: &str,
     _maintainer_email: &str,
     _recent_changes: &[String],
 ) -> Option<ThreatIndicator> {
@@ -92,7 +105,7 @@ pub fn check_compromised_account_indicators(
 
 /// Check for backdoor patterns in package metadata
 pub fn check_backdoor_indicators(
-    package_name: &str,
+    _package_name: &str,
     _dependencies: &[String],
 ) -> Option<ThreatIndicator> {
     // TODO: Implement backdoor detection

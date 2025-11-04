@@ -19,17 +19,18 @@ pub fn generate_executive_report(generator: &ReportGenerator, output_path: &Path
 
     let score_color = match score {
         90..=100 => "#10b981", // green
-        75..=89 => "#3b82f6", // blue
-        60..=74 => "#f59e0b", // yellow
-        40..=59 => "#ef4444", // orange
-        _ => "#dc2626", // red
+        75..=89 => "#3b82f6",  // blue
+        60..=74 => "#f59e0b",  // yellow
+        40..=59 => "#ef4444",  // orange
+        _ => "#dc2626",        // red
     };
 
     let vulns = generator.vulnerabilities();
     let policy = generator.policy();
     let recommendations = generate_recommendations(generator);
 
-    let html = format!(r#"<!DOCTYPE html>
+    let html = format!(
+        r#"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -269,7 +270,10 @@ pub fn generate_executive_report(generator: &ReportGenerator, output_path: &Path
 </html>"#,
         generator.sbom().project_name,
         generator.sbom().project_version,
-        generator.sbom().scan_timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
+        generator
+            .sbom()
+            .scan_timestamp
+            .format("%Y-%m-%d %H:%M:%S UTC"),
         score,
         score_label,
         vulns.critical.len(),
@@ -281,7 +285,11 @@ pub fn generate_executive_report(generator: &ReportGenerator, output_path: &Path
         generator.sbom().transitive_dependencies,
         policy.policy_violations,
         generate_top_risks_html(vulns),
-        recommendations.iter().map(|r| format!("<li>{}</li>", r)).collect::<Vec<_>>().join("\n                ")
+        recommendations
+            .iter()
+            .map(|r| format!("<li>{}</li>", r))
+            .collect::<Vec<_>>()
+            .join("\n                ")
     );
 
     write_html_file(output_path, &html)?;
@@ -294,10 +302,12 @@ fn generate_top_risks_html(vulns: &crate::VulnerabilityFindings) -> String {
         return String::new();
     }
 
-    let mut html = String::from(r#"<div class="section">
+    let mut html = String::from(
+        r#"<div class="section">
             <h2 class="section-title">Top Risks Requiring Immediate Attention</h2>
             <ul class="risk-list">
-"#);
+"#,
+    );
 
     let mut count = 0;
     for vuln in vulns.critical.iter().take(3) {

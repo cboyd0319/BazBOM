@@ -10,12 +10,12 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-pub mod malicious;
-pub mod typosquatting;
-pub mod supply_chain;
-pub mod monitoring;
-pub mod dependency_confusion;
 pub mod database_integration;
+pub mod dependency_confusion;
+pub mod malicious;
+pub mod monitoring;
+pub mod supply_chain;
+pub mod typosquatting;
 
 /// Threat level classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -94,7 +94,11 @@ impl ThreatAnalyzer {
     }
 
     /// Analyze a package for threats
-    pub fn analyze_package(&self, package_name: &str, package_version: &str) -> Result<Vec<ThreatIndicator>> {
+    pub fn analyze_package(
+        &self,
+        package_name: &str,
+        package_version: &str,
+    ) -> Result<Vec<ThreatIndicator>> {
         let mut threats = Vec::new();
 
         // Check for malicious packages
@@ -103,12 +107,16 @@ impl ThreatAnalyzer {
         }
 
         // Check for typosquatting
-        if let Some(threat) = typosquatting::check_typosquatting(package_name, &self.known_packages) {
+        if let Some(threat) = typosquatting::check_typosquatting(package_name, &self.known_packages)
+        {
             threats.push(threat);
         }
 
         // Check for supply chain attack indicators
-        threats.extend(supply_chain::check_supply_chain_indicators(package_name, package_version));
+        threats.extend(supply_chain::check_supply_chain_indicators(
+            package_name,
+            package_version,
+        ));
 
         Ok(threats)
     }

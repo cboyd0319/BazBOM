@@ -4,7 +4,10 @@ use crate::{ThreatIndicator, ThreatLevel, ThreatType};
 use std::collections::HashSet;
 
 /// Check if a package is known to be malicious
-pub fn check_malicious(package_name: &str, malicious_db: &HashSet<String>) -> Option<ThreatIndicator> {
+pub fn check_malicious(
+    package_name: &str,
+    malicious_db: &HashSet<String>,
+) -> Option<ThreatIndicator> {
     if malicious_db.contains(package_name) {
         Some(ThreatIndicator {
             package_name: package_name.to_string(),
@@ -16,7 +19,8 @@ pub fn check_malicious(package_name: &str, malicious_db: &HashSet<String>) -> Op
                 "Listed in malicious package database".to_string(),
                 "Reported by security researchers".to_string(),
             ],
-            recommendation: "Remove this package immediately and scan for indicators of compromise".to_string(),
+            recommendation: "Remove this package immediately and scan for indicators of compromise"
+                .to_string(),
         })
     } else {
         None

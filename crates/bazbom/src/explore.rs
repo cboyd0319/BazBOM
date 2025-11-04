@@ -10,7 +10,10 @@ use std::fs;
 use std::path::Path;
 
 /// Load dependencies from SBOM file or findings JSON
-pub fn load_dependencies(sbom_path: Option<&str>, findings_path: Option<&str>) -> Result<Vec<Dependency>> {
+pub fn load_dependencies(
+    sbom_path: Option<&str>,
+    findings_path: Option<&str>,
+) -> Result<Vec<Dependency>> {
     // Try findings first if provided
     if let Some(path) = findings_path {
         return load_from_findings(path);
@@ -34,7 +37,7 @@ pub fn load_dependencies(sbom_path: Option<&str>, findings_path: Option<&str>) -
 fn load_from_findings(path: &str) -> Result<Vec<Dependency>> {
     let content = fs::read_to_string(path)
         .with_context(|| format!("Failed to read findings file: {}", path))?;
-    
+
     let findings: Value = serde_json::from_str(&content)
         .with_context(|| format!("Failed to parse findings JSON: {}", path))?;
 
@@ -53,25 +56,15 @@ fn load_from_findings(path: &str) -> Result<Vec<Dependency>> {
                 .to_string();
 
             // Find or create dependency entry
-            let dep = deps.iter_mut().find(|d: &&mut Dependency| {
-                d.name == package_name && d.version == package_version
-            });
+            let dep = deps
+                .iter_mut()
+                .find(|d: &&mut Dependency| d.name == package_name && d.version == package_version);
 
             let vulnerability = Vulnerability {
-                cve: vuln["cve"]
-                    .as_str()
-                    .unwrap_or("UNKNOWN")
-                    .to_string(),
-                severity: vuln["severity"]
-                    .as_str()
-                    .unwrap_or("UNKNOWN")
-                    .to_string(),
-                cvss: vuln["cvss"]
-                    .as_f64()
-                    .unwrap_or(0.0) as f32,
-                fixed_version: vuln["fixed_version"]
-                    .as_str()
-                    .map(|s| s.to_string()),
+                cve: vuln["cve"].as_str().unwrap_or("UNKNOWN").to_string(),
+                severity: vuln["severity"].as_str().unwrap_or("UNKNOWN").to_string(),
+                cvss: vuln["cvss"].as_f64().unwrap_or(0.0) as f32,
+                fixed_version: vuln["fixed_version"].as_str().map(|s| s.to_string()),
             };
 
             if let Some(d) = dep {
@@ -80,10 +73,7 @@ fn load_from_findings(path: &str) -> Result<Vec<Dependency>> {
                 deps.push(Dependency {
                     name: package_name,
                     version: package_version,
-                    scope: vuln["scope"]
-                        .as_str()
-                        .unwrap_or("compile")
-                        .to_string(),
+                    scope: vuln["scope"].as_str().unwrap_or("compile").to_string(),
                     vulnerabilities: vec![vulnerability],
                 });
             }
@@ -101,10 +91,7 @@ fn load_from_findings(path: &str) -> Result<Vec<Dependency>> {
                 deps.push(Dependency {
                     name,
                     version,
-                    scope: dep["scope"]
-                        .as_str()
-                        .unwrap_or("compile")
-                        .to_string(),
+                    scope: dep["scope"].as_str().unwrap_or("compile").to_string(),
                     vulnerabilities: vec![],
                 });
             }
@@ -116,9 +103,9 @@ fn load_from_findings(path: &str) -> Result<Vec<Dependency>> {
 
 /// Load dependencies from SBOM file (SPDX or CycloneDX)
 fn load_from_sbom(path: &str) -> Result<Vec<Dependency>> {
-    let content = fs::read_to_string(path)
-        .with_context(|| format!("Failed to read SBOM file: {}", path))?;
-    
+    let content =
+        fs::read_to_string(path).with_context(|| format!("Failed to read SBOM file: {}", path))?;
+
     let sbom: Value = serde_json::from_str(&content)
         .with_context(|| format!("Failed to parse SBOM JSON: {}", path))?;
 
@@ -127,14 +114,8 @@ fn load_from_sbom(path: &str) -> Result<Vec<Dependency>> {
     // Try SPDX format
     if let Some(packages) = sbom["packages"].as_array() {
         for pkg in packages {
-            let name = pkg["name"]
-                .as_str()
-                .unwrap_or("unknown")
-                .to_string();
-            let version = pkg["versionInfo"]
-                .as_str()
-                .unwrap_or("unknown")
-                .to_string();
+            let name = pkg["name"].as_str().unwrap_or("unknown").to_string();
+            let version = pkg["versionInfo"].as_str().unwrap_or("unknown").to_string();
 
             deps.push(Dependency {
                 name,
@@ -147,14 +128,8 @@ fn load_from_sbom(path: &str) -> Result<Vec<Dependency>> {
     // Try CycloneDX format
     else if let Some(components) = sbom["components"].as_array() {
         for comp in components {
-            let name = comp["name"]
-                .as_str()
-                .unwrap_or("unknown")
-                .to_string();
-            let version = comp["version"]
-                .as_str()
-                .unwrap_or("unknown")
-                .to_string();
+            let name = comp["name"].as_str().unwrap_or("unknown").to_string();
+            let version = comp["version"].as_str().unwrap_or("unknown").to_string();
 
             deps.push(Dependency {
                 name,
@@ -202,27 +177,23 @@ pub fn get_mock_dependencies() -> Vec<Dependency> {
             name: "org.springframework:spring-web".to_string(),
             version: "5.3.20".to_string(),
             scope: "compile".to_string(),
-            vulnerabilities: vec![
-                Vulnerability {
-                    cve: "CVE-2024-22243".to_string(),
-                    severity: "HIGH".to_string(),
-                    cvss: 7.5,
-                    fixed_version: Some("5.3.31".to_string()),
-                },
-            ],
+            vulnerabilities: vec![Vulnerability {
+                cve: "CVE-2024-22243".to_string(),
+                severity: "HIGH".to_string(),
+                cvss: 7.5,
+                fixed_version: Some("5.3.31".to_string()),
+            }],
         },
         Dependency {
             name: "org.apache.logging.log4j:log4j-core".to_string(),
             version: "2.14.1".to_string(),
             scope: "compile".to_string(),
-            vulnerabilities: vec![
-                Vulnerability {
-                    cve: "CVE-2021-44228".to_string(),
-                    severity: "CRITICAL".to_string(),
-                    cvss: 10.0,
-                    fixed_version: Some("2.21.1".to_string()),
-                },
-            ],
+            vulnerabilities: vec![Vulnerability {
+                cve: "CVE-2021-44228".to_string(),
+                severity: "CRITICAL".to_string(),
+                cvss: 10.0,
+                fixed_version: Some("2.21.1".to_string()),
+            }],
         },
         Dependency {
             name: "com.google.guava:guava".to_string(),
@@ -234,27 +205,23 @@ pub fn get_mock_dependencies() -> Vec<Dependency> {
             name: "com.fasterxml.jackson.core:jackson-databind".to_string(),
             version: "2.13.0".to_string(),
             scope: "compile".to_string(),
-            vulnerabilities: vec![
-                Vulnerability {
-                    cve: "CVE-2024-12345".to_string(),
-                    severity: "HIGH".to_string(),
-                    cvss: 8.1,
-                    fixed_version: Some("2.16.0".to_string()),
-                },
-            ],
+            vulnerabilities: vec![Vulnerability {
+                cve: "CVE-2024-12345".to_string(),
+                severity: "HIGH".to_string(),
+                cvss: 8.1,
+                fixed_version: Some("2.16.0".to_string()),
+            }],
         },
         Dependency {
             name: "commons-io:commons-io".to_string(),
             version: "2.7".to_string(),
             scope: "compile".to_string(),
-            vulnerabilities: vec![
-                Vulnerability {
-                    cve: "CVE-2024-23456".to_string(),
-                    severity: "MEDIUM".to_string(),
-                    cvss: 5.3,
-                    fixed_version: Some("2.15.0".to_string()),
-                },
-            ],
+            vulnerabilities: vec![Vulnerability {
+                cve: "CVE-2024-23456".to_string(),
+                severity: "MEDIUM".to_string(),
+                cvss: 5.3,
+                fixed_version: Some("2.15.0".to_string()),
+            }],
         },
         Dependency {
             name: "org.apache.commons:commons-lang3".to_string(),

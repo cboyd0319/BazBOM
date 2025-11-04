@@ -358,7 +358,7 @@ mod tests {
             priority: None,
         };
 
-        cache_vulnerabilities(cache_dir, "maven:test-pkg", &[vuln.clone()])?;
+        cache_vulnerabilities(cache_dir, "maven:test-pkg", std::slice::from_ref(&vuln))?;
 
         let loaded = load_cached_vulnerabilities(cache_dir)?;
         assert_eq!(loaded.len(), 1);

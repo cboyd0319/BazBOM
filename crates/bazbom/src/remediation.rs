@@ -20,11 +20,11 @@ use crate::test_runner::{has_tests, run_tests};
 pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
     let clean_version = version.split('-').next()?;
     let parts: Vec<&str> = clean_version.split('.').collect();
-    
+
     if parts.len() < 3 {
         return None;
     }
-    
+
     let parse_part = |s: &str| -> Option<u32> {
         if s.chars().all(|c| c.is_ascii_digit()) {
             s.parse().ok()
@@ -32,11 +32,11 @@ pub(crate) fn parse_semantic_version(version: &str) -> Option<(u32, u32, u32)> {
             None
         }
     };
-    
+
     let major = parse_part(parts[0])?;
     let minor = parse_part(parts[1])?;
     let patch = parse_part(parts[2])?;
-    
+
     Some((major, minor, patch))
 }
 
@@ -169,14 +169,14 @@ pub fn enrich_with_depsdev(
                     if let Some(breaking_changes) = package_info.breaking_changes {
                         suggestion.breaking_changes =
                             Some(format_breaking_changes(&breaking_changes));
-                        
+
                         // Add changelog URL to references if available
                         if let Some(url) = breaking_changes.changelog_url {
                             if !suggestion.references.contains(&url) {
                                 suggestion.references.push(url);
                             }
                         }
-                        
+
                         // Add migration guide URL to references if available
                         if let Some(url) = breaking_changes.migration_guide_url {
                             if !suggestion.references.contains(&url) {
@@ -242,7 +242,10 @@ fn construct_purl(package_name: &str, version: &str) -> Option<String> {
     } else if package_name.starts_with('@') {
         // Likely scoped npm package
         Some(format!("pkg:npm/{}@{}", package_name, version))
-    } else if package_name.chars().all(|c| c.is_ascii_lowercase() || c == '-' || c == '_') {
+    } else if package_name
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c == '-' || c == '_')
+    {
         // Likely npm or PyPI package
         // Default to npm for now
         Some(format!("pkg:npm/{}@{}", package_name, version))
@@ -406,7 +409,7 @@ fn generate_breaking_changes_warning(
             ));
         }
     };
-    
+
     let (fixed_major, fixed_minor, _) = match parse_semantic_version(fixed) {
         Some(v) => v,
         None => {

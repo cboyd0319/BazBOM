@@ -17,7 +17,7 @@ fn build_developer_html(generator: &ReportGenerator) -> String {
     let sbom = generator.sbom();
     let vulns = generator.vulnerabilities();
     let policy = generator.policy();
-    
+
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -95,7 +95,8 @@ fn build_developer_html(generator: &ReportGenerator) -> String {
 </body>
 </html>"#,
         sbom.project_name,
-        sbom.project_name, sbom.project_version,
+        sbom.project_name,
+        sbom.project_version,
         sbom.scan_timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
         sbom.total_dependencies,
         vulns.total_count(),
@@ -113,54 +114,84 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
             <h2>No Vulnerabilities Detected!</h2>
             <p>Your project is free of known vulnerabilities. Great job!</p>
             <p>Continue to scan regularly to maintain security.</p>
-        </div>"#.to_string();
+        </div>"#
+            .to_string();
     }
 
     let mut sections = Vec::new();
-    
+
     if !vulns.critical.is_empty() {
         sections.push(format!(
             "<h2>🚨 Critical Vulnerabilities ({}) - IMMEDIATE ACTION REQUIRED</h2>\n{}",
             vulns.critical.len(),
-            vulns.critical.iter().map(|v| build_vulnerability_html(v, "critical")).collect::<Vec<_>>().join("\n")
+            vulns
+                .critical
+                .iter()
+                .map(|v| build_vulnerability_html(v, "critical"))
+                .collect::<Vec<_>>()
+                .join("\n")
         ));
     }
-    
+
     if !vulns.high.is_empty() {
         sections.push(format!(
             "<h2>⚠️ High Severity Vulnerabilities ({}) - FIX WITHIN 30 DAYS</h2>\n{}",
             vulns.high.len(),
-            vulns.high.iter().map(|v| build_vulnerability_html(v, "high")).collect::<Vec<_>>().join("\n")
+            vulns
+                .high
+                .iter()
+                .map(|v| build_vulnerability_html(v, "high"))
+                .collect::<Vec<_>>()
+                .join("\n")
         ));
     }
-    
+
     if !vulns.medium.is_empty() {
         sections.push(format!(
             "<h2>📋 Medium Severity Vulnerabilities ({})</h2>\n{}",
             vulns.medium.len(),
-            vulns.medium.iter().map(|v| build_vulnerability_html(v, "medium")).collect::<Vec<_>>().join("\n")
+            vulns
+                .medium
+                .iter()
+                .map(|v| build_vulnerability_html(v, "medium"))
+                .collect::<Vec<_>>()
+                .join("\n")
         ));
     }
-    
+
     if !vulns.low.is_empty() {
         sections.push(format!(
             "<h2>ℹ️ Low Severity Vulnerabilities ({})</h2>\n{}",
             vulns.low.len(),
-            vulns.low.iter().map(|v| build_vulnerability_html(v, "low")).collect::<Vec<_>>().join("\n")
+            vulns
+                .low
+                .iter()
+                .map(|v| build_vulnerability_html(v, "low"))
+                .collect::<Vec<_>>()
+                .join("\n")
         ));
     }
-    
+
     sections.join("\n")
 }
 
 /// Build HTML for a single vulnerability
 fn build_vulnerability_html(vuln: &VulnerabilityDetail, severity_class: &str) -> String {
-    let kev_badge = if vuln.is_kev { r#"<span class="badge kev">CISA KEV</span>"# } else { "" };
-    let reachable_badge = if vuln.is_reachable { r#"<span class="badge reachable">REACHABLE</span>"# } else { "" };
-    let epss_text = vuln.epss_score
+    let kev_badge = if vuln.is_kev {
+        r#"<span class="badge kev">CISA KEV</span>"#
+    } else {
+        ""
+    };
+    let reachable_badge = if vuln.is_reachable {
+        r#"<span class="badge reachable">REACHABLE</span>"#
+    } else {
+        ""
+    };
+    let epss_text = vuln
+        .epss_score
         .map(|score| format!("EPSS: {:.1}%", score * 100.0))
         .unwrap_or_default();
-    
+
     let fix_section = if let Some(ref fixed_version) = vuln.fixed_version {
         format!(
             r#"<div class="fix-instruction">
@@ -191,7 +222,8 @@ bazbom fix --apply
                 <li>Implementing mitigating controls</li>
                 <li>Monitoring for updates</li>
             </ul>
-        </div>"#.to_string()
+        </div>"#
+            .to_string()
     };
 
     format!(
@@ -223,15 +255,20 @@ bazbom fix --apply
         </div>
     </div>"#,
         severity_class,
-        vuln.cve, vuln.package_name,
-        vuln.package_name, vuln.package_version,
+        vuln.cve,
+        vuln.package_name,
+        vuln.package_name,
+        vuln.package_version,
         vuln.cvss_score,
         epss_text,
-        severity_class, vuln.severity,
+        severity_class,
+        vuln.severity,
         vuln.description,
-        kev_badge, reachable_badge,
+        kev_badge,
+        reachable_badge,
         fix_section,
-        vuln.cve, vuln.cve
+        vuln.cve,
+        vuln.cve
     )
 }
 

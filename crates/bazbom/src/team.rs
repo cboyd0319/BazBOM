@@ -6,10 +6,10 @@
 //! - Audit trail for security actions
 
 use anyhow::{Context, Result};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::process::Command;
-use chrono::{DateTime, Utc};
 
 /// Assignment metadata stored in git notes
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,7 +84,9 @@ impl TeamCoordinator {
         // Store assignment in git notes
         // Note: git notes requires a commit to attach to, using HEAD
         let output = Command::new("git")
-            .args(["notes", "--ref", &notes_ref, "add", "-f", "-m", &json, "HEAD"])
+            .args([
+                "notes", "--ref", &notes_ref, "add", "-f", "-m", &json, "HEAD",
+            ])
             .current_dir(&self.repo_path)
             .output()
             .context("Failed to create git note")?;
@@ -150,8 +152,10 @@ impl TeamCoordinator {
 
     /// Log an audit event
     pub fn log_audit_event(&self, action: &str, details: Option<String>) -> Result<()> {
-        let user = self.get_current_user().unwrap_or_else(|| "unknown".to_string());
-        
+        let user = self
+            .get_current_user()
+            .unwrap_or_else(|| "unknown".to_string());
+
         let entry = AuditEntry {
             timestamp: Utc::now(),
             user,
@@ -162,7 +166,7 @@ impl TeamCoordinator {
         // Store audit entry in .bazbom/audit.json
         let audit_dir = std::path::Path::new(&self.repo_path).join(".bazbom");
         std::fs::create_dir_all(&audit_dir)?;
-        
+
         let audit_file = audit_dir.join("audit.json");
         let mut entries: Vec<AuditEntry> = if audit_file.exists() {
             let content = std::fs::read_to_string(&audit_file)?;
@@ -240,10 +244,9 @@ pub struct TeamConfig {
 impl TeamConfig {
     /// Load team configuration
     pub fn load(path: &str) -> Result<Self> {
-        let content = std::fs::read_to_string(path)
-            .context("Failed to read team configuration")?;
-        let config: TeamConfig = serde_json::from_str(&content)
-            .context("Failed to parse team configuration")?;
+        let content = std::fs::read_to_string(path).context("Failed to read team configuration")?;
+        let config: TeamConfig =
+            serde_json::from_str(&content).context("Failed to parse team configuration")?;
         Ok(config)
     }
 

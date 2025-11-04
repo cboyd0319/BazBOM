@@ -139,7 +139,11 @@ impl DependencyConfusionDetector {
     }
 
     /// Detect suspicious version patterns that may indicate confusion attacks
-    pub fn detect_suspicious_version(&self, package_name: &str, version: &str) -> Option<Vec<String>> {
+    pub fn detect_suspicious_version(
+        &self,
+        _package_name: &str,
+        version: &str,
+    ) -> Option<Vec<String>> {
         let mut evidence = Vec::new();
 
         // Extremely high version numbers (999.x.x) are suspicious
@@ -156,7 +160,8 @@ impl DependencyConfusionDetector {
 
         // Check for unusual version patterns
         if version.contains("999") || version.contains("9999") {
-            evidence.push("Version contains multiple 9's (common in confusion attacks)".to_string());
+            evidence
+                .push("Version contains multiple 9's (common in confusion attacks)".to_string());
         }
 
         if evidence.is_empty() {
@@ -201,13 +206,15 @@ pub fn analyze_dependency_config(
     // General recommendations
     if !internal_packages.is_empty() {
         recommendations.push(
-            "Configure dependency resolution to prioritize internal registries over public ones.".to_string()
+            "Configure dependency resolution to prioritize internal registries over public ones."
+                .to_string(),
         );
         recommendations.push(
-            "Use explicit registry URLs in dependency declarations where possible.".to_string()
+            "Use explicit registry URLs in dependency declarations where possible.".to_string(),
         );
         recommendations.push(
-            "Consider using package scoping (npm @scope, Maven groupId) for internal packages.".to_string()
+            "Consider using package scoping (npm @scope, Maven groupId) for internal packages."
+                .to_string(),
         );
     }
 
@@ -227,7 +234,10 @@ mod tests {
     #[test]
     fn test_load_internal_packages() {
         let mut detector = DependencyConfusionDetector::new();
-        detector.load_internal_packages(vec!["internal-api".to_string(), "internal-utils".to_string()]);
+        detector.load_internal_packages(vec![
+            "internal-api".to_string(),
+            "internal-utils".to_string(),
+        ]);
         assert_eq!(detector.internal_packages.len(), 2);
     }
 
@@ -268,11 +278,11 @@ mod tests {
     #[test]
     fn test_suspicious_version_detection() {
         let detector = DependencyConfusionDetector::new();
-        
+
         // High version number
         let evidence = detector.detect_suspicious_version("test-package", "999.0.0");
         assert!(evidence.is_some());
-        
+
         // Normal version
         let evidence = detector.detect_suspicious_version("test-package", "1.2.3");
         assert!(evidence.is_none());
@@ -282,7 +292,9 @@ mod tests {
     fn test_is_public_registry() {
         assert!(is_public_registry(&PackageRegistry::MavenCentral));
         assert!(is_public_registry(&PackageRegistry::NpmRegistry));
-        assert!(!is_public_registry(&PackageRegistry::PrivateMaven("https://example.com".to_string())));
+        assert!(!is_public_registry(&PackageRegistry::PrivateMaven(
+            "https://example.com".to_string()
+        )));
     }
 
     #[test]

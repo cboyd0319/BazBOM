@@ -708,8 +708,16 @@ fn main() -> Result<()> {
                 }
             }
         },
-        Commands::Fix { suggest, apply, pr, interactive } => {
-            println!("[bazbom] fix suggest={} apply={} pr={} interactive={}", suggest, apply, pr, interactive);
+        Commands::Fix {
+            suggest,
+            apply,
+            pr,
+            interactive,
+        } => {
+            println!(
+                "[bazbom] fix suggest={} apply={} pr={} interactive={}",
+                suggest, apply, pr, interactive
+            );
 
             // Detect build system
             let root = PathBuf::from(".");
@@ -809,7 +817,10 @@ fn main() -> Result<()> {
                 use bazbom::batch_fixer::BatchFixer;
                 use dialoguer::{theme::ColorfulTheme, Confirm};
 
-                println!("\n🔍 Found {} fixable vulnerabilities", report.suggestions.len());
+                println!(
+                    "\n🔍 Found {} fixable vulnerabilities",
+                    report.suggestions.len()
+                );
                 println!("📊 Grouping by impact analysis...\n");
 
                 let batch_fixer = BatchFixer::new(&report.suggestions);
@@ -821,78 +832,99 @@ fn main() -> Result<()> {
                     // Display batch header
                     println!("┌─ Batch {}: {} ─", batch_num + 1, batch.description());
                     println!("│");
-                    
+
                     // List updates in this batch
                     for (i, update) in batch.updates.iter().enumerate() {
-                        println!("│  {}. {}: {} → {} ({})", 
-                            i + 1, 
+                        println!(
+                            "│  {}. {}: {} → {} ({})",
+                            i + 1,
                             update.package,
                             update.current_version,
                             update.target_version,
                             update.severity
                         );
-                        
+
                         if let Some(reason) = &update.breaking_reason {
                             println!("│     ⚠️  {}", reason);
                         }
                     }
-                    
+
                     println!("│");
-                    println!("│ Estimated time: ~{} seconds", batch.estimated_time_seconds);
+                    println!(
+                        "│ Estimated time: ~{} seconds",
+                        batch.estimated_time_seconds
+                    );
                     if batch.test_count > 0 {
                         println!("│ Test coverage: {} tests will run", batch.test_count);
                     }
                     println!("│");
-                    
+
                     // Display conflicts if any
                     if !batch.conflicts.is_empty() {
                         println!("│ ⚠️  Conflicts detected:");
                         for conflict in &batch.conflicts {
-                            println!("│   - {}: requested {}", conflict.package, conflict.requested_version);
+                            println!(
+                                "│   - {}: requested {}",
+                                conflict.package, conflict.requested_version
+                            );
                             for dep in &conflict.conflicts_with {
-                                println!("│     requires {} {}", dep.package, dep.required_version_range);
+                                println!(
+                                    "│     requires {} {}",
+                                    dep.package, dep.required_version_range
+                                );
                             }
                         }
                         println!("│");
                     }
-                    
+
                     println!("└─────────────────────────────────────────────────────");
                     println!();
-                    
+
                     // Ask user if they want to apply this batch
                     let apply_batch = Confirm::with_theme(&ColorfulTheme::default())
                         .with_prompt(format!("Apply Batch {}?", batch_num + 1))
                         .default(matches!(batch.risk, bazbom::batch_fixer::RiskLevel::Low))
                         .interact()
                         .unwrap_or(false);
-                    
+
                     if apply_batch {
                         println!("\n⏳ Applying {} updates...", batch.updates.len());
-                        
+
                         // Convert batch updates back to suggestions for remediation
-                        let batch_suggestions: Vec<_> = report.suggestions
+                        let batch_suggestions: Vec<_> = report
+                            .suggestions
                             .iter()
-                            .filter(|s| batch.updates.iter().any(|u| {
-                                u.package == s.affected_package && 
-                                u.current_version == s.current_version
-                            }))
+                            .filter(|s| {
+                                batch.updates.iter().any(|u| {
+                                    u.package == s.affected_package
+                                        && u.current_version == s.current_version
+                                })
+                            })
                             .cloned()
                             .collect();
-                        
+
                         match remediation::apply_fixes(&batch_suggestions, system, &root) {
                             Ok(result) => {
                                 if result.applied == batch_suggestions.len() {
-                                    println!("✅ All {} updates applied successfully!", result.applied);
+                                    println!(
+                                        "✅ All {} updates applied successfully!",
+                                        result.applied
+                                    );
                                 } else {
-                                    println!("⚠️  Applied: {}, Failed: {}, Skipped: {}", 
-                                        result.applied, result.failed, result.skipped);
+                                    println!(
+                                        "⚠️  Applied: {}, Failed: {}, Skipped: {}",
+                                        result.applied, result.failed, result.skipped
+                                    );
                                 }
-                                
+
                                 // Run tests if available
                                 use bazbom::test_runner::run_tests;
                                 if let Ok(test_result) = run_tests(system, &root) {
                                     if test_result.success {
-                                        println!("✅ All tests passed! ({:.1}s)", test_result.duration.as_secs_f64());
+                                        println!(
+                                            "✅ All tests passed! ({:.1}s)",
+                                            test_result.duration.as_secs_f64()
+                                        );
                                     } else {
                                         println!("⚠️  Tests failed! Rolling back changes...");
                                         println!("{}", test_result.output);
@@ -908,12 +940,14 @@ fn main() -> Result<()> {
                         println!("⏭️  Skipped Batch {}\n", batch_num + 1);
                     }
                 }
-                
+
                 println!("\n📊 Summary:");
                 println!("  Batches processed: {}", batches.len());
                 println!("\n💡 Next steps:");
                 println!("  1. Review changes: git diff");
-                println!("  2. Commit changes: git commit -m 'fix: upgrade vulnerable dependencies'");
+                println!(
+                    "  2. Commit changes: git commit -m 'fix: upgrade vulnerable dependencies'"
+                );
                 println!("  3. Create PR: bazbom fix --pr (or push manually)");
                 println!("\n🎉 Great job! Your project is more secure.");
             }
@@ -1141,10 +1175,7 @@ fn main() -> Result<()> {
             use bazbom::explore;
 
             // Load dependencies from SBOM/findings or use mock data
-            let dependencies = explore::load_dependencies(
-                sbom.as_deref(),
-                findings.as_deref(),
-            )?;
+            let dependencies = explore::load_dependencies(sbom.as_deref(), findings.as_deref())?;
 
             if sbom.is_some() || findings.is_some() {
                 println!("[bazbom] Loaded {} dependencies", dependencies.len());
@@ -1158,9 +1189,12 @@ fn main() -> Result<()> {
         Commands::Dashboard { port, open, export } => {
             use bazbom_dashboard::{start_dashboard, DashboardConfig};
             use std::path::PathBuf;
-            
+
             if let Some(export_path) = export {
-                println!("[bazbom] Exporting static HTML dashboard to: {}", export_path);
+                println!(
+                    "[bazbom] Exporting static HTML dashboard to: {}",
+                    export_path
+                );
                 println!("[bazbom] Static export not yet implemented");
                 println!("[bazbom] Use --port to start interactive server instead");
                 return Ok(());
@@ -1178,20 +1212,21 @@ fn main() -> Result<()> {
                 let url = format!("http://localhost:{}", port);
                 println!("[bazbom] Opening browser at {}", url);
                 if let Err(e) = webbrowser::open(&url) {
-                    eprintln!("[bazbom] warning: failed to open browser automatically: {}", e);
+                    eprintln!(
+                        "[bazbom] warning: failed to open browser automatically: {}",
+                        e
+                    );
                     eprintln!("[bazbom] Please open {} manually in your browser", url);
                 }
             }
 
             // Start dashboard with tokio runtime
             let rt = tokio::runtime::Runtime::new()?;
-            rt.block_on(async {
-                start_dashboard(config).await
-            })?;
+            rt.block_on(async { start_dashboard(config).await })?;
         }
         Commands::Team { action } => {
-            use bazbom::team::{TeamConfig, TeamCoordinator};
             use bazbom::cli::TeamCmd;
+            use bazbom::team::{TeamConfig, TeamCoordinator};
 
             let coordinator = TeamCoordinator::new(None);
 

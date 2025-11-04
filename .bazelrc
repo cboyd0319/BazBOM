@@ -1,5 +1,8 @@
 # Common Bazel configuration
 
+# Disable Bzlmod (using WORKSPACE instead)
+common --noenable_bzlmod
+
 # Build configuration
 build --enable_platform_specific_config
 build --incompatible_strict_action_env

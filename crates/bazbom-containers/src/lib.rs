@@ -76,10 +76,9 @@ pub struct MavenCoordinates {
     pub version: String,
 }
 
-impl MavenCoordinates {
-    /// Format as Maven coordinate string
-    pub fn to_string(&self) -> String {
-        format!("{}:{}:{}", self.group_id, self.artifact_id, self.version)
+impl std::fmt::Display for MavenCoordinates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}:{}", self.group_id, self.artifact_id, self.version)
     }
 }
 
@@ -96,11 +95,11 @@ impl DockerClient {
     pub fn new() -> Self {
         #[cfg(unix)]
         let socket_path = "/var/run/docker.sock".to_string();
-        
+
         #[cfg(windows)]
         let socket_path = "//./pipe/docker_engine".to_string();
-        
-        Self { 
+
+        Self {
             socket_path,
             use_real_api: true, // Enable real API by default
         }
@@ -108,7 +107,7 @@ impl DockerClient {
 
     /// Create a Docker client with custom socket path
     pub fn with_socket(socket_path: String) -> Self {
-        Self { 
+        Self {
             socket_path,
             use_real_api: true,
         }
@@ -123,6 +122,7 @@ impl DockerClient {
     }
 
     /// Build HTTP URL for Docker API endpoint
+    #[allow(dead_code)]
     fn build_url(&self, endpoint: &str) -> String {
         // For Unix sockets, use http+unix:// scheme
         #[cfg(unix)]
@@ -130,10 +130,10 @@ impl DockerClient {
             let encoded_socket = self.socket_path.replace('/', "%2F");
             format!("http+unix://{}{}", encoded_socket, endpoint)
         }
-        
+
         #[cfg(windows)]
         {
-            // For Windows named pipes, use npipe:// scheme  
+            // For Windows named pipes, use npipe:// scheme
             format!("npipe://{}{}", self.socket_path, endpoint)
         }
     }
@@ -147,28 +147,40 @@ impl DockerClient {
 
         // Real implementation: POST /images/create?fromImage={name}
         log::info!("Pulling image: {} (may take a while...)", image_name);
-        
+
         // Note: Real implementation would use hyperlocal or similar for Unix socket
         // For now, log and return success to avoid external dependencies
         log::warn!("Docker API integration requires Unix socket HTTP client - using fallback");
-        log::debug!("Would pull image {} via socket: {}", image_name, self.socket_path);
+        log::debug!(
+            "Would pull image {} via socket: {}",
+            image_name,
+            self.socket_path
+        );
         Ok(())
     }
 
     /// Export image to tar file
     pub fn export_image(&self, image_name: &str, output_path: &Path) -> Result<()> {
         if !self.use_real_api {
-            log::debug!("Stub: Would export image {} to {:?}", image_name, output_path);
+            log::debug!(
+                "Stub: Would export image {} to {:?}",
+                image_name,
+                output_path
+            );
             return Ok(());
         }
 
         // Real implementation: GET /images/{name}/get
         // Returns tar stream
         log::info!("Exporting image: {} to {:?}", image_name, output_path);
-        
+
         log::warn!("Docker API integration requires Unix socket HTTP client - using fallback");
-        log::debug!("Would export image {} to {:?} via socket: {}", 
-                   image_name, output_path, self.socket_path);
+        log::debug!(
+            "Would export image {} to {:?} via socket: {}",
+            image_name,
+            output_path,
+            self.socket_path
+        );
         Ok(())
     }
 
@@ -181,7 +193,7 @@ impl DockerClient {
 
         // Real implementation: GET /images/json
         log::debug!("Listing Docker images via socket: {}", self.socket_path);
-        
+
         log::warn!("Docker API integration requires Unix socket HTTP client - using fallback");
         Ok(vec![])
     }
@@ -202,10 +214,14 @@ impl DockerClient {
 
         // Real implementation: GET /images/{name}/json
         log::info!("Inspecting image: {}", image_name);
-        
+
         log::warn!("Docker API integration requires Unix socket HTTP client - using fallback");
-        log::debug!("Would inspect image: {} via socket: {}", image_name, self.socket_path);
-        
+        log::debug!(
+            "Would inspect image: {} via socket: {}",
+            image_name,
+            self.socket_path
+        );
+
         // Return a placeholder image
         Ok(ContainerImage {
             name: image_name.to_string(),
@@ -227,6 +243,7 @@ impl Default for DockerClient {
 /// Container scanner
 pub struct ContainerScanner {
     /// Path to container image (tar file or directory)
+    #[allow(dead_code)]
     image_path: PathBuf,
 }
 
@@ -235,18 +252,18 @@ impl ContainerScanner {
     pub fn new(image_path: PathBuf) -> Self {
         Self { image_path }
     }
-    
+
     /// Create a scanner from a Docker image name
     pub fn from_docker_image(docker_client: &DockerClient, image_name: &str) -> Result<Self> {
         use tempfile::NamedTempFile;
-        
+
         // Export image to temporary tar file
-        let temp_file = NamedTempFile::new()
-            .context("Failed to create temporary file for image export")?;
+        let temp_file =
+            NamedTempFile::new().context("Failed to create temporary file for image export")?;
         let temp_path = temp_file.path();
-        
+
         docker_client.export_image(image_name, temp_path)?;
-        
+
         Ok(Self {
             image_path: temp_path.to_path_buf(),
         })
@@ -256,13 +273,13 @@ impl ContainerScanner {
     pub fn scan(&self) -> Result<ContainerScanResult> {
         // Parse image metadata
         let image = self.parse_image_metadata()?;
-        
+
         // Find Java artifacts in layers
         let artifacts = self.find_java_artifacts(&image)?;
-        
+
         // Detect build system
         let build_system = self.detect_build_system(&artifacts);
-        
+
         Ok(ContainerScanResult {
             image,
             artifacts,
@@ -277,7 +294,7 @@ impl ContainerScanner {
         // 1. Parse manifest.json from the image
         // 2. Extract layer information
         // 3. Parse image configuration
-        
+
         Ok(ContainerImage {
             name: "placeholder".to_string(),
             digest: "sha256:placeholder".to_string(),
@@ -296,7 +313,7 @@ impl ContainerScanner {
         // 2. Recursively search for .jar, .war, .ear files
         // 3. Extract Maven metadata from JAR manifests
         // 4. Calculate file hashes
-        
+
         Ok(Vec::new())
     }
 
@@ -397,14 +414,14 @@ pub struct SbomPackage {
 }
 
 /// Helper to extract JAR metadata
-pub fn extract_jar_metadata(jar_path: &Path) -> Result<Option<MavenCoordinates>> {
+pub fn extract_jar_metadata(_jar_path: &Path) -> Result<Option<MavenCoordinates>> {
     // NOTE: This is a stub implementation
     // In a real implementation, this would:
     // 1. Open the JAR file
     // 2. Read META-INF/MANIFEST.MF
     // 3. Extract Maven metadata from pom.properties
     // 4. Parse groupId, artifactId, version
-    
+
     Ok(None)
 }
 
@@ -460,7 +477,7 @@ mod tests {
     #[test]
     fn test_docker_client_pull_image() -> Result<()> {
         let client = DockerClient::stub(); // Use stub mode for tests
-        // Should not fail (stub implementation)
+                                           // Should not fail (stub implementation)
         client.pull_image("test:latest")?;
         Ok(())
     }
@@ -488,7 +505,7 @@ mod tests {
             artifact_id: "spring-core".to_string(),
             version: "5.3.20".to_string(),
         };
-        
+
         assert_eq!(coords.to_string(), "org.springframework:spring-core:5.3.20");
     }
 
@@ -632,17 +649,15 @@ mod tests {
     #[test]
     fn test_build_system_detection() {
         let scanner = ContainerScanner::new(PathBuf::from("/tmp/test"));
-        
-        let artifacts = vec![
-            JavaArtifact {
-                path: "/root/.m2/repository/test.jar".to_string(),
-                layer: "layer1".to_string(),
-                artifact_type: ArtifactType::Jar,
-                maven_coords: None,
-                size: 1024,
-                sha256: "test".to_string(),
-            },
-        ];
+
+        let artifacts = vec![JavaArtifact {
+            path: "/root/.m2/repository/test.jar".to_string(),
+            layer: "layer1".to_string(),
+            artifact_type: ArtifactType::Jar,
+            maven_coords: None,
+            size: 1024,
+            sha256: "test".to_string(),
+        }];
 
         let build_system = scanner.detect_build_system(&artifacts);
         assert_eq!(build_system, Some(BuildSystem::Maven));

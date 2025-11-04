@@ -1,18 +1,11 @@
 //! API route handlers
 
 use anyhow::Context;
-use axum::{
-    extract::State,
-    http::StatusCode,
-    response::Json,
-};
+use axum::{extract::State, http::StatusCode, response::Json};
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use crate::{
-    models::*,
-    AppState,
-};
+use crate::{models::*, AppState};
 
 /// Get dashboard summary
 pub async fn get_dashboard_summary(
@@ -45,32 +38,32 @@ fn find_findings_file(state: &AppState) -> anyhow::Result<PathBuf> {
     if findings_path.exists() {
         return Ok(findings_path);
     }
-    
+
     // Try alternate location
     let alt_path = state.project_root.join("sca_findings.json");
     if alt_path.exists() {
         return Ok(alt_path);
     }
-    
+
     anyhow::bail!("No findings file found. Please run 'bazbom scan' first.")
 }
 
 /// Load dashboard summary from findings file
 async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSummary> {
-    use std::fs;
     use serde_json::Value;
-    
+    use std::fs;
+
     let path_to_use = find_findings_file(state)?;
     let content = fs::read_to_string(&path_to_use)
         .with_context(|| format!("Failed to read findings file: {:?}", path_to_use))?;
     let findings: Value = serde_json::from_str(&content)?;
-    
+
     // Count vulnerabilities by severity
     let mut critical = 0;
     let mut high = 0;
     let mut medium = 0;
     let mut low = 0;
-    
+
     if let Some(vulns) = findings["vulnerabilities"].as_array() {
         for vuln in vulns {
             match vuln["severity"].as_str() {
@@ -82,20 +75,20 @@ async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSum
             }
         }
     }
-    
+
     let total_deps = findings["summary"]["total_dependencies"]
         .as_u64()
         .unwrap_or(0) as usize;
-    
+
     // Calculate security score (simple formula: 100 - weighted vulns)
     let score = if total_deps > 0 {
         let weight = (critical * 10 + high * 5 + medium * 2 + low) as f32;
         let ratio = weight / total_deps as f32;
-        ((100.0 - ratio * 20.0).max(0.0).min(100.0)) as u8
+        ((100.0 - ratio * 20.0).clamp(0.0, 100.0)) as u8
     } else {
         100
     };
-    
+
     Ok(DashboardSummary {
         security_score: score,
         total_dependencies: total_deps,
@@ -105,9 +98,7 @@ async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSum
             medium,
             low,
         },
-        license_issues: findings["summary"]["license_issues"]
-            .as_u64()
-            .unwrap_or(0) as usize,
+        license_issues: findings["summary"]["license_issues"].as_u64().unwrap_or(0) as usize,
         policy_violations: findings["summary"]["policy_violations"]
             .as_u64()
             .unwrap_or(0) as usize,
@@ -137,13 +128,11 @@ pub async fn get_dependency_graph(
                 vuln_count: 1,
             },
         ],
-        edges: vec![
-            DependencyEdge {
-                source: "spring-boot".to_string(),
-                target: "spring-web".to_string(),
-                relationship: "depends".to_string(),
-            },
-        ],
+        edges: vec![DependencyEdge {
+            source: "spring-boot".to_string(),
+            target: "spring-web".to_string(),
+            relationship: "depends".to_string(),
+        }],
     }))
 }
 
@@ -157,19 +146,17 @@ pub async fn get_vulnerabilities(
         Err(_) => {
             // Return mock data as fallback
             Ok(Json(VulnerabilitiesList {
-                vulnerabilities: vec![
-                    VulnerabilityDetails {
-                        cve: "CVE-2021-44228".to_string(),
-                        package: "log4j-core".to_string(),
-                        version: "2.14.1".to_string(),
-                        severity: "CRITICAL".to_string(),
-                        cvss: 10.0,
-                        fixed_version: Some("2.21.1".to_string()),
-                        reachable: Some(true),
-                        kev: true,
-                        epss: Some(0.98),
-                    },
-                ],
+                vulnerabilities: vec![VulnerabilityDetails {
+                    cve: "CVE-2021-44228".to_string(),
+                    package: "log4j-core".to_string(),
+                    version: "2.14.1".to_string(),
+                    severity: "CRITICAL".to_string(),
+                    cvss: 10.0,
+                    fixed_version: Some("2.21.1".to_string()),
+                    reachable: Some(true),
+                    kev: true,
+                    epss: Some(0.98),
+                }],
                 total: 1,
             }))
         }
@@ -178,16 +165,16 @@ pub async fn get_vulnerabilities(
 
 /// Load vulnerabilities from findings file
 async fn load_vulnerabilities(state: &AppState) -> anyhow::Result<VulnerabilitiesList> {
-    use std::fs;
     use serde_json::Value;
-    
+    use std::fs;
+
     let path_to_use = find_findings_file(state)?;
     let content = fs::read_to_string(&path_to_use)
         .with_context(|| format!("Failed to read findings file: {:?}", path_to_use))?;
     let findings: Value = serde_json::from_str(&content)?;
-    
+
     let mut vulnerabilities = Vec::new();
-    
+
     if let Some(vulns) = findings["vulnerabilities"].as_array() {
         for vuln in vulns {
             vulnerabilities.push(VulnerabilityDetails {
@@ -202,18 +189,16 @@ async fn load_vulnerabilities(state: &AppState) -> anyhow::Result<Vulnerabilitie
                     .to_string(),
                 severity: vuln["severity"].as_str().unwrap_or("UNKNOWN").to_string(),
                 cvss: vuln["cvss"].as_f64().unwrap_or(0.0) as f32,
-                fixed_version: vuln["fixed_version"]
-                    .as_str()
-                    .map(|s| s.to_string()),
+                fixed_version: vuln["fixed_version"].as_str().map(|s| s.to_string()),
                 reachable: vuln["reachable"].as_bool(),
                 kev: vuln["kev"].as_bool().unwrap_or(false),
                 epss: vuln["epss"].as_f64().map(|e| e as f32),
             });
         }
     }
-    
+
     let total = vulnerabilities.len();
-    
+
     Ok(VulnerabilitiesList {
         vulnerabilities,
         total,

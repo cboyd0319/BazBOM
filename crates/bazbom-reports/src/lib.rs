@@ -11,9 +11,9 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-pub mod executive;
 pub mod compliance;
 pub mod developer;
+pub mod executive;
 pub mod trend;
 
 /// Types of reports that can be generated
@@ -89,7 +89,8 @@ impl VulnerabilityFindings {
         let medium_deduction = self.medium.len() * 5;
         let low_deduction = self.low.len() * 2;
 
-        let total_deduction = critical_deduction + high_deduction + medium_deduction + low_deduction;
+        let total_deduction =
+            critical_deduction + high_deduction + medium_deduction + low_deduction;
         base_score.saturating_sub(total_deduction as u32)
     }
 }
@@ -153,7 +154,11 @@ impl ReportGenerator {
     }
 
     /// Generate compliance report
-    fn generate_compliance(&self, framework: ComplianceFramework, output_path: &Path) -> Result<()> {
+    fn generate_compliance(
+        &self,
+        framework: ComplianceFramework,
+        output_path: &Path,
+    ) -> Result<()> {
         compliance::generate_compliance_report(self, framework, output_path)
     }
 
@@ -206,20 +211,18 @@ mod tests {
 
     fn create_test_vulnerabilities() -> VulnerabilityFindings {
         VulnerabilityFindings {
-            critical: vec![
-                VulnerabilityDetail {
-                    cve: "CVE-2021-44228".to_string(),
-                    package_name: "log4j-core".to_string(),
-                    package_version: "2.14.1".to_string(),
-                    severity: "CRITICAL".to_string(),
-                    cvss_score: 10.0,
-                    description: "Log4Shell RCE vulnerability".to_string(),
-                    fixed_version: Some("2.21.1".to_string()),
-                    is_reachable: true,
-                    is_kev: true,
-                    epss_score: Some(0.975),
-                }
-            ],
+            critical: vec![VulnerabilityDetail {
+                cve: "CVE-2021-44228".to_string(),
+                package_name: "log4j-core".to_string(),
+                package_version: "2.14.1".to_string(),
+                severity: "CRITICAL".to_string(),
+                cvss_score: 10.0,
+                description: "Log4Shell RCE vulnerability".to_string(),
+                fixed_version: Some("2.21.1".to_string()),
+                is_reachable: true,
+                is_kev: true,
+                epss_score: Some(0.975),
+            }],
             high: vec![],
             medium: vec![],
             low: vec![],

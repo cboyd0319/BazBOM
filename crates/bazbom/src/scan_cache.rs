@@ -22,7 +22,7 @@ impl ScanCache {
     }
 
     /// Generate cache key for a scan
-    /// 
+    ///
     /// Cache key is based on:
     /// - Project path
     /// - Build files content hash (pom.xml, build.gradle, etc.)
@@ -33,12 +33,12 @@ impl ScanCache {
         scan_params: &ScanParameters,
     ) -> Result<String> {
         use sha2::{Digest, Sha256};
-        
+
         let mut hasher = Sha256::new();
-        
+
         // Hash project path
         hasher.update(project_path.to_string_lossy().as_bytes());
-        
+
         // Hash build file contents
         for build_file in build_files {
             if build_file.exists() {
@@ -47,10 +47,10 @@ impl ScanCache {
                 hasher.update(&content);
             }
         }
-        
+
         // Hash scan parameters
         hasher.update(format!("{:?}", scan_params).as_bytes());
-        
+
         let hash = hasher.finalize();
         Ok(hex::encode(hash))
     }
@@ -68,13 +68,12 @@ impl ScanCache {
 
     /// Store scan result in cache
     pub fn put_scan_result(&mut self, cache_key: &str, result: &ScanResult) -> Result<()> {
-        let data = serde_json::to_vec(result)
-            .context("Failed to serialize scan result")?;
-        
+        let data = serde_json::to_vec(result).context("Failed to serialize scan result")?;
+
         // Cache for 1 hour by default
         let ttl = chrono::Duration::hours(1);
         self.cache_manager.put(cache_key, &data, Some(ttl))?;
-        
+
         Ok(())
     }
 
@@ -130,7 +129,7 @@ mod tests {
     #[test]
     fn test_scan_cache_creation() -> Result<()> {
         let temp_dir = TempDir::new()?;
-        let cache = ScanCache::new(temp_dir.path().to_path_buf())?;
+        let _cache = ScanCache::new(temp_dir.path().to_path_buf())?;
         assert!(temp_dir.path().exists());
         Ok(())
     }
@@ -145,11 +144,11 @@ mod tests {
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
+
         let key = ScanCache::generate_cache_key(project_path, &build_files, &params)?;
         assert!(!key.is_empty());
         assert_eq!(key.len(), 64); // SHA-256 hex = 64 chars
-        
+
         Ok(())
     }
 
@@ -163,12 +162,12 @@ mod tests {
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
+
         let key1 = ScanCache::generate_cache_key(project_path, &build_files, &params)?;
         let key2 = ScanCache::generate_cache_key(project_path, &build_files, &params)?;
-        
+
         assert_eq!(key1, key2);
-        
+
         Ok(())
     }
 
@@ -176,26 +175,26 @@ mod tests {
     fn test_cache_key_differs_with_params() -> Result<()> {
         let project_path = Path::new("/tmp/test-project");
         let build_files = vec![];
-        
+
         let params1 = ScanParameters {
             reachability: false,
             fast: true,
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
+
         let params2 = ScanParameters {
             reachability: true, // Different
             fast: true,
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
+
         let key1 = ScanCache::generate_cache_key(project_path, &build_files, &params1)?;
         let key2 = ScanCache::generate_cache_key(project_path, &build_files, &params2)?;
-        
+
         assert_ne!(key1, key2);
-        
+
         Ok(())
     }
 
@@ -207,13 +206,9 @@ mod tests {
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
-        let result = ScanResult::new(
-            "{}".to_string(),
-            Some("[]".to_string()),
-            params.clone(),
-        );
-        
+
+        let result = ScanResult::new("{}".to_string(), Some("[]".to_string()), params.clone());
+
         assert_eq!(result.sbom_json, "{}");
         assert_eq!(result.findings_json, Some("[]".to_string()));
         assert_eq!(result.parameters.fast, true);
@@ -223,31 +218,27 @@ mod tests {
     fn test_cache_put_and_get() -> Result<()> {
         let temp_dir = TempDir::new()?;
         let mut cache = ScanCache::new(temp_dir.path().to_path_buf())?;
-        
+
         let params = ScanParameters {
             reachability: false,
             fast: true,
             format: "spdx".to_string(),
             bazel_targets: None,
         };
-        
-        let result = ScanResult::new(
-            "{}".to_string(),
-            Some("[]".to_string()),
-            params.clone(),
-        );
-        
+
+        let result = ScanResult::new("{}".to_string(), Some("[]".to_string()), params.clone());
+
         // Put in cache
         cache.put_scan_result("test-key", &result)?;
-        
+
         // Get from cache
         let cached = cache.get_scan_result("test-key")?;
         assert!(cached.is_some());
-        
+
         let cached = cached.unwrap();
         assert_eq!(cached.sbom_json, "{}");
         assert_eq!(cached.findings_json, Some("[]".to_string()));
-        
+
         Ok(())
     }
 
@@ -255,10 +246,10 @@ mod tests {
     fn test_cache_miss() -> Result<()> {
         let temp_dir = TempDir::new()?;
         let mut cache = ScanCache::new(temp_dir.path().to_path_buf())?;
-        
+
         let result = cache.get_scan_result("nonexistent-key")?;
         assert!(result.is_none());
-        
+
         Ok(())
     }
 }

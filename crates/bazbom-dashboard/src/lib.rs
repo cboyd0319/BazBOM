@@ -1,7 +1,7 @@
 //! BazBOM Web Dashboard
 //!
 //! Self-hosted web dashboard for interactive SBOM and vulnerability visualization.
-//! 
+//!
 //! Features:
 //! - Security score dashboard
 //! - Interactive dependency graph (D3.js)
@@ -76,7 +76,7 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
     // Start server
     let addr = format!("127.0.0.1:{}", config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
-    
+
     println!("🚀 BazBOM Dashboard running at http://{}", addr);
     println!("📊 Security Score: Loading...");
     println!("⚠️  Vulnerabilities: Analyzing...");
@@ -111,13 +111,19 @@ mod tests {
     fn test_static_files_exist() {
         // Verify that the static dashboard files exist
         let static_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("static");
-        
-        assert!(static_dir.join("index.html").exists(), 
-            "index.html should exist in static directory");
-        assert!(static_dir.join("css/dashboard.css").exists(), 
-            "dashboard.css should exist in static/css directory");
-        assert!(static_dir.join("js/dashboard.js").exists(), 
-            "dashboard.js should exist in static/js directory");
+
+        assert!(
+            static_dir.join("index.html").exists(),
+            "index.html should exist in static directory"
+        );
+        assert!(
+            static_dir.join("css/dashboard.css").exists(),
+            "dashboard.css should exist in static/css directory"
+        );
+        assert!(
+            static_dir.join("js/dashboard.js").exists(),
+            "dashboard.js should exist in static/js directory"
+        );
     }
 
     #[test]
@@ -126,7 +132,7 @@ mod tests {
             cache_dir: PathBuf::from(".bazbom/cache"),
             project_root: PathBuf::from("."),
         };
-        
+
         assert_eq!(state.cache_dir, PathBuf::from(".bazbom/cache"));
         assert_eq!(state.project_root, PathBuf::from("."));
     }

@@ -44,7 +44,8 @@ fn get_pci_dss_requirements() -> Vec<ComplianceRequirement> {
         ComplianceRequirement {
             requirement_id: "6.2.4",
             title: "Software Engineering Techniques",
-            description: "All software components are kept up to date and free of known vulnerabilities",
+            description:
+                "All software components are kept up to date and free of known vulnerabilities",
             controls: vec![
                 "Maintain inventory of software components",
                 "Monitor for security vulnerabilities",
@@ -100,7 +101,8 @@ fn get_hipaa_requirements() -> Vec<ComplianceRequirement> {
         ComplianceRequirement {
             requirement_id: "164.312(e)(2)(i)",
             title: "Integrity Controls",
-            description: "Implement electronic mechanisms to corroborate that ePHI has not been altered",
+            description:
+                "Implement electronic mechanisms to corroborate that ePHI has not been altered",
             controls: vec![
                 "Verify software integrity (SBOM)",
                 "Monitor for unauthorized changes",
@@ -174,18 +176,16 @@ fn get_soc2_requirements() -> Vec<ComplianceRequirement> {
 
 /// GDPR requirements
 fn get_gdpr_requirements() -> Vec<ComplianceRequirement> {
-    vec![
-        ComplianceRequirement {
-            requirement_id: "Article 32",
-            title: "Security of Processing",
-            description: "Implement appropriate technical and organizational measures",
-            controls: vec![
-                "Regular security assessments",
-                "Vulnerability management",
-                "Incident response procedures",
-            ],
-        },
-    ]
+    vec![ComplianceRequirement {
+        requirement_id: "Article 32",
+        title: "Security of Processing",
+        description: "Implement appropriate technical and organizational measures",
+        controls: vec![
+            "Regular security assessments",
+            "Vulnerability management",
+            "Incident response procedures",
+        ],
+    }]
 }
 
 /// ISO 27001 requirements
@@ -249,10 +249,10 @@ fn build_compliance_html(
     let sbom = generator.sbom();
     let vulns = generator.vulnerabilities();
     let policy = generator.policy();
-    
+
     let security_score = vulns.security_score();
     let compliance_status = determine_compliance_status(security_score, vulns.total_count());
-    
+
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -353,22 +353,43 @@ fn build_compliance_html(
     </div>
 </body>
 </html>"#,
-        framework.name(), sbom.project_name,
-        framework.name(), sbom.project_name, sbom.project_version,
+        framework.name(),
+        sbom.project_name,
+        framework.name(),
+        sbom.project_name,
+        sbom.project_version,
         sbom.scan_timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
         framework.name(),
-        if compliance_status == "PASS" { "status-pass" } else if compliance_status == "FAIL" { "status-fail" } else { "status-warning" },
+        if compliance_status == "PASS" {
+            "status-pass"
+        } else if compliance_status == "FAIL" {
+            "status-fail"
+        } else {
+            "status-warning"
+        },
         compliance_status,
         security_score,
         sbom.total_dependencies,
         vulns.total_count(),
         policy.policy_violations,
         vulns.critical.len(),
-        if vulns.critical.is_empty() { "✅ PASS" } else { "❌ FAIL" },
+        if vulns.critical.is_empty() {
+            "✅ PASS"
+        } else {
+            "❌ FAIL"
+        },
         vulns.high.len(),
-        if vulns.high.is_empty() { "✅ PASS" } else { "⚠️ WARNING" },
+        if vulns.high.is_empty() {
+            "✅ PASS"
+        } else {
+            "⚠️ WARNING"
+        },
         vulns.medium.len(),
-        if vulns.medium.len() <= 5 { "✅ PASS" } else { "⚠️ WARNING" },
+        if vulns.medium.len() <= 5 {
+            "✅ PASS"
+        } else {
+            "⚠️ WARNING"
+        },
         vulns.low.len(),
         "✅ PASS",
         framework.name(),
@@ -392,51 +413,61 @@ fn determine_compliance_status(security_score: u32, vuln_count: usize) -> &'stat
 
 /// Build HTML for requirements section
 fn build_requirements_html(requirements: &[ComplianceRequirement]) -> String {
-    requirements.iter().map(|req| {
-        let controls_html = req.controls.iter()
-            .map(|c| format!("<div class=\"control\">• {}</div>", c))
-            .collect::<Vec<_>>()
-            .join("\n");
-        
-        format!(
-            r#"<div class="requirement">
+    requirements
+        .iter()
+        .map(|req| {
+            let controls_html = req
+                .controls
+                .iter()
+                .map(|c| format!("<div class=\"control\">• {}</div>", c))
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            format!(
+                r#"<div class="requirement">
         <h3>{} - {}</h3>
         <p>{}</p>
         <p><strong>Required Controls:</strong></p>
         {}
     </div>"#,
-            req.requirement_id, req.title, req.description, controls_html
-        )
-    }).collect::<Vec<_>>().join("\n")
+                req.requirement_id, req.title, req.description, controls_html
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 /// Build recommendations based on findings
-fn build_recommendations_html(vulns: &crate::VulnerabilityFindings, policy: &crate::PolicyStatus) -> String {
+fn build_recommendations_html(
+    vulns: &crate::VulnerabilityFindings,
+    policy: &crate::PolicyStatus,
+) -> String {
     let mut recommendations = Vec::new();
-    
+
     if !vulns.critical.is_empty() {
         recommendations.push("<li><strong>URGENT:</strong> Remediate CRITICAL vulnerabilities immediately. These pose significant security risks.</li>");
     }
-    
+
     if !vulns.high.is_empty() {
         recommendations.push("<li>Address HIGH severity vulnerabilities within 30 days per compliance requirements.</li>");
     }
-    
+
     if vulns.medium.len() > 5 {
         recommendations.push("<li>Review and remediate MEDIUM severity vulnerabilities to improve security posture.</li>");
     }
-    
+
     if policy.policy_violations > 0 {
         recommendations.push("<li>Resolve policy violations to maintain compliance.</li>");
     }
-    
+
     if vulns.total_count() == 0 {
         recommendations.push("<li>✅ Excellent! No vulnerabilities detected. Maintain regular scanning schedule.</li>");
     }
-    
-    recommendations.push("<li>Schedule regular SBOM scans (at least quarterly) to maintain compliance.</li>");
+
+    recommendations
+        .push("<li>Schedule regular SBOM scans (at least quarterly) to maintain compliance.</li>");
     recommendations.push("<li>Document all remediation actions for audit purposes.</li>");
-    
+
     recommendations.join("\n        ")
 }
 

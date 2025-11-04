@@ -266,7 +266,7 @@ mod tests {
         ];
 
         let warnings = LicenseCompatibility::check_contamination(&deps);
-        assert!(warnings.len() >= 1);
+        assert!(!warnings.is_empty());
         let agpl_warning = warnings.iter().find(|w| w.risk == LicenseRisk::Critical);
         assert!(agpl_warning.is_some());
         assert!(agpl_warning.unwrap().message.contains("AGPL"));

@@ -169,12 +169,12 @@ mod tests {
             ],
         );
 
-        assert!(is_version_affected("1.5.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("1.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("1.99.99", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("2.0.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("0.9.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("2.1.0", &[range]).unwrap());
+        assert!(is_version_affected("1.5.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("1.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("1.99.99", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("2.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("0.9.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("2.1.0", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]
@@ -191,11 +191,11 @@ mod tests {
             ],
         );
 
-        assert!(is_version_affected("0.1.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("1.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("1.4.9", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("1.5.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("2.0.0", &[range]).unwrap());
+        assert!(is_version_affected("0.1.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("1.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("1.4.9", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("1.5.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("2.0.0", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]
@@ -212,11 +212,11 @@ mod tests {
             ],
         );
 
-        assert!(is_version_affected("1.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("2.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("2.5.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("2.5.1", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("0.9.0", &[range]).unwrap());
+        assert!(is_version_affected("1.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("2.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("2.5.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("2.5.1", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("0.9.0", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]
@@ -228,10 +228,10 @@ mod tests {
             }],
         );
 
-        assert!(is_version_affected("1.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("2.0.0", &[range.clone()]).unwrap());
-        assert!(is_version_affected("99.0.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("0.9.0", &[range]).unwrap());
+        assert!(is_version_affected("1.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("2.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(is_version_affected("99.0.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("0.9.0", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]
@@ -287,8 +287,8 @@ mod tests {
             ],
         );
 
-        assert!(is_version_affected("1.5.0", &[range.clone()]).unwrap());
-        assert!(!is_version_affected("2.0.0", &[range]).unwrap());
+        assert!(is_version_affected("1.5.0", std::slice::from_ref(&range)).unwrap());
+        assert!(!is_version_affected("2.0.0", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]
@@ -306,7 +306,7 @@ mod tests {
         );
 
         // Invalid version should return error
-        assert!(is_version_affected("invalid", &[range]).is_err());
+        assert!(is_version_affected("invalid", std::slice::from_ref(&range)).is_err());
     }
 
     #[test]
@@ -324,7 +324,7 @@ mod tests {
         );
 
         // For GIT ranges, we do conservative string matching
-        assert!(is_version_affected("cde345", &[range]).unwrap());
+        assert!(is_version_affected("cde345", std::slice::from_ref(&range)).unwrap());
     }
 
     #[test]

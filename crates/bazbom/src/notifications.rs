@@ -53,7 +53,10 @@ impl Notifier {
 
         for channel in &self.channels {
             if let Err(e) = self.send_to_channel(channel, notification) {
-                eprintln!("[bazbom] Warning: Failed to send notification via {:?}: {}", channel, e);
+                eprintln!(
+                    "[bazbom] Warning: Failed to send notification via {:?}: {}",
+                    channel, e
+                );
                 errors.push(e);
             }
         }
@@ -75,9 +78,7 @@ impl Notifier {
             NotificationChannel::Slack { webhook_url } => {
                 self.send_slack(webhook_url, notification)
             }
-            NotificationChannel::Email { smtp_url } => {
-                self.send_email(smtp_url, notification)
-            }
+            NotificationChannel::Email { smtp_url } => self.send_email(smtp_url, notification),
             NotificationChannel::MicrosoftTeams { webhook_url } => {
                 self.send_teams(webhook_url, notification)
             }
@@ -87,8 +88,8 @@ impl Notifier {
     /// Send notification to Slack
     fn send_slack(&self, webhook_url: &str, notification: &Notification) -> Result<()> {
         let color = match notification.severity {
-            NotificationSeverity::Info => "#36a64f", // Green
-            NotificationSeverity::Warning => "#ff9900", // Orange
+            NotificationSeverity::Info => "#36a64f",     // Green
+            NotificationSeverity::Warning => "#ff9900",  // Orange
             NotificationSeverity::Critical => "#ff0000", // Red
         };
 
@@ -140,8 +141,8 @@ impl Notifier {
     /// Send notification to Microsoft Teams
     fn send_teams(&self, webhook_url: &str, notification: &Notification) -> Result<()> {
         let color = match notification.severity {
-            NotificationSeverity::Info => "0078D4", // Blue
-            NotificationSeverity::Warning => "FFB900", // Yellow
+            NotificationSeverity::Info => "0078D4",     // Blue
+            NotificationSeverity::Warning => "FFB900",  // Yellow
             NotificationSeverity::Critical => "D13438", // Red
         };
 
@@ -192,10 +193,10 @@ pub struct NotificationConfig {
 impl NotificationConfig {
     /// Load notification configuration from file
     pub fn load(path: &str) -> Result<Self> {
-        let content = std::fs::read_to_string(path)
-            .context("Failed to read notification configuration")?;
-        let config: NotificationConfig = serde_json::from_str(&content)
-            .context("Failed to parse notification configuration")?;
+        let content =
+            std::fs::read_to_string(path).context("Failed to read notification configuration")?;
+        let config: NotificationConfig =
+            serde_json::from_str(&content).context("Failed to parse notification configuration")?;
         Ok(config)
     }
 
@@ -271,7 +272,10 @@ pub fn notify_vulnerability_fixed(
     let mut details = HashMap::new();
     details.insert("CVE".to_string(), cve.to_string());
     details.insert("Package".to_string(), package.to_string());
-    details.insert("Upgraded".to_string(), format!("{} → {}", old_version, new_version));
+    details.insert(
+        "Upgraded".to_string(),
+        format!("{} → {}", old_version, new_version),
+    );
     details.insert("Fixed By".to_string(), fixed_by.to_string());
 
     let notification = Notification {

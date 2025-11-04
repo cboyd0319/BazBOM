@@ -60,11 +60,12 @@ impl CacheManager {
     /// Create a new cache manager
     pub fn new(cache_dir: PathBuf, max_size_bytes: usize) -> Result<Self> {
         // Create cache directory if it doesn't exist
-        std::fs::create_dir_all(&cache_dir)
-            .with_context(|| format!("Failed to create cache directory: {}", cache_dir.display()))?;
+        std::fs::create_dir_all(&cache_dir).with_context(|| {
+            format!("Failed to create cache directory: {}", cache_dir.display())
+        })?;
 
         let index_path = cache_dir.join("index.json");
-        
+
         // Load existing index or create new one
         let index = if index_path.exists() {
             Self::load_index(&index_path)?
@@ -84,21 +85,21 @@ impl CacheManager {
     fn load_index(path: &Path) -> Result<HashMap<String, CacheEntry>> {
         let content = std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read index from {}", path.display()))?;
-        
-        let index: HashMap<String, CacheEntry> = serde_json::from_str(&content)
-            .context("Failed to parse index JSON")?;
-        
+
+        let index: HashMap<String, CacheEntry> =
+            serde_json::from_str(&content).context("Failed to parse index JSON")?;
+
         Ok(index)
     }
 
     /// Save cache index to file
     fn save_index(&self) -> Result<()> {
-        let content = serde_json::to_string_pretty(&self.index)
-            .context("Failed to serialize index")?;
-        
+        let content =
+            serde_json::to_string_pretty(&self.index).context("Failed to serialize index")?;
+
         std::fs::write(&self.index_path, content)
             .with_context(|| format!("Failed to write index to {}", self.index_path.display()))?;
-        
+
         Ok(())
     }
 
@@ -113,7 +114,7 @@ impl CacheManager {
     pub fn get(&mut self, key: &str) -> Result<Option<Vec<u8>>> {
         // Check if entry exists and is not expired
         let is_expired = self.index.get(key).map(|e| e.is_expired()).unwrap_or(false);
-        
+
         if is_expired {
             self.remove(key)?;
             return Ok(None);
@@ -122,7 +123,7 @@ impl CacheManager {
         // Get entry (now we know it exists and is not expired)
         if let Some(entry) = self.index.get(key) {
             let file_path = entry.file_path.clone();
-            
+
             // Update last accessed time
             if let Some(entry) = self.index.get_mut(key) {
                 entry.last_accessed = Utc::now();
@@ -130,9 +131,10 @@ impl CacheManager {
             self.save_index()?;
 
             // Read cached data
-            let data = std::fs::read(&file_path)
-                .with_context(|| format!("Failed to read cached data from {}", file_path.display()))?;
-            
+            let data = std::fs::read(&file_path).with_context(|| {
+                format!("Failed to read cached data from {}", file_path.display())
+            })?;
+
             Ok(Some(data))
         } else {
             Ok(None)
@@ -167,12 +169,12 @@ impl CacheManager {
         }
 
         self.index.insert(key.to_string(), entry);
-        
+
         // Check cache size and evict if necessary
         self.evict_if_needed()?;
-        
+
         self.save_index()?;
-        
+
         Ok(())
     }
 
@@ -210,13 +212,17 @@ impl CacheManager {
     /// Evict entries if cache is over size limit
     fn evict_if_needed(&mut self) -> Result<()> {
         let mut total_size: usize = self.index.values().map(|e| e.size_bytes).sum();
-        
+
         if total_size <= self.max_size_bytes {
             return Ok(());
         }
 
         // Collect entries with keys for sorting
-        let mut entries: Vec<_> = self.index.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
+        let mut entries: Vec<_> = self
+            .index
+            .iter()
+            .map(|(k, v)| (k.clone(), v.clone()))
+            .collect();
         entries.sort_by_key(|(_, e)| e.last_accessed);
 
         // Evict oldest entries until we're under the limit
@@ -302,19 +308,19 @@ mod tests {
     fn test_put_and_get() {
         let (mut cache, _temp) = create_test_cache();
         let data = b"test data";
-        
+
         cache.put("test-key", data, None).unwrap();
         let retrieved = cache.get("test-key").unwrap().unwrap();
-        
+
         assert_eq!(retrieved, data);
     }
 
     #[test]
     fn test_contains() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         assert!(!cache.contains("test-key"));
-        
+
         cache.put("test-key", b"data", None).unwrap();
         assert!(cache.contains("test-key"));
     }
@@ -322,10 +328,10 @@ mod tests {
     #[test]
     fn test_remove() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         cache.put("test-key", b"data", None).unwrap();
         assert!(cache.contains("test-key"));
-        
+
         cache.remove("test-key").unwrap();
         assert!(!cache.contains("test-key"));
     }
@@ -333,10 +339,10 @@ mod tests {
     #[test]
     fn test_cache_stats() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         cache.put("key1", b"data1", None).unwrap();
         cache.put("key2", b"data2", None).unwrap();
-        
+
         let stats = cache.stats();
         assert_eq!(stats.total_entries, 2);
         assert!(stats.total_size_bytes > 0);
@@ -345,11 +351,11 @@ mod tests {
     #[test]
     fn test_expiration() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         // Put with very short TTL
         let ttl = chrono::Duration::milliseconds(-1); // Already expired
         cache.put("test-key", b"data", Some(ttl)).unwrap();
-        
+
         // Should be expired
         let result = cache.get("test-key").unwrap();
         assert!(result.is_none());
@@ -358,10 +364,10 @@ mod tests {
     #[test]
     fn test_clear() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         cache.put("key1", b"data1", None).unwrap();
         cache.put("key2", b"data2", None).unwrap();
-        
+
         cache.clear().unwrap();
         assert_eq!(cache.index.len(), 0);
     }
@@ -376,14 +382,14 @@ mod tests {
     #[test]
     fn test_prune_expired() {
         let (mut cache, _temp) = create_test_cache();
-        
+
         // Add expired entry
         let ttl = chrono::Duration::milliseconds(-1);
         cache.put("expired", b"data", Some(ttl)).unwrap();
-        
+
         // Add non-expired entry
         cache.put("valid", b"data", None).unwrap();
-        
+
         let pruned = cache.prune_expired().unwrap();
         assert_eq!(pruned, 1);
         assert_eq!(cache.index.len(), 1);

@@ -1,340 +1,38 @@
 # Supply chain security tooling
+#
+# NOTE: This project has migrated from Python to Rust.
+# The Python scripts previously referenced here have been replaced by the
+# Rust-based bazbom CLI. Use `cargo build --release` to build the CLI.
+#
+# The Bazel aspects (aspects.bzl, defs.bzl) remain for JVM dependency analysis.
 
 package(default_visibility = ["//visibility:public"])
 
-# Export Python scripts as executable files
-exports_files(
-    [
-        "write_sbom.py",
-        "osv_query.py",
-        "sarif_adapter.py",
-        "extract_maven_deps.py",
-        "purl_generator.py",
-        "conflict_detector.py",
-        "license_analyzer.py",
-        "metrics_aggregator.py",
-        "supply_chain_risk.py",
-        "incremental_analyzer.py",
-        "vex_processor.py",
-        "license_extractor.py",
-        "policy_check.py",
-        "kev_enrichment.py",
-        "epss_enrichment.py",
-        "ghsa_enrichment.py",
-        "vulncheck_enrichment.py",
-        "vulnerability_enrichment.py",
-        "sbom_signing.py",
-        "rekor_integration.py",
-        "intoto_attestation.py",
-        "verify_sbom.py",
-        "compliance_report.py",
-        "sbom_diff.py",
-        "drift_detector.py",
-        "changelog_generator.py",
-        "osv_contributor.py",
-        "contribution_tracker.py",
-        "ai_query_engine.py",
-        "upgrade_recommender.py",
-        "csv_exporter.py",
-        "badge_generator.py",
-        "build_system.py",
-        "bazbom_config.py",
-        "bazbom_cli.py",
-        "scan_container.py",
-        "interactive_fix.py",
-        "dependency_scanner.py",
-        "license_scanner.py",
-        "container_scanner.py",
-        "dependency_verifier.py",
-        "cve_tracker.py",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-# Shell wrapper for write_sbom
-sh_binary(
-    name = "write_sbom",
-    srcs = ["write_sbom.py"],
-)
-
-# Shell wrapper for osv_query
-sh_binary(
-    name = "osv_query",
-    srcs = ["osv_query.py"],
-)
-
-# Shell wrapper for sarif_adapter
-sh_binary(
-    name = "sarif_adapter",
-    srcs = ["sarif_adapter.py"],
-)
-
-# Shell wrapper for extract_maven_deps
-sh_binary(
-    name = "extract_maven_deps",
-    srcs = ["extract_maven_deps.py"],
-)
-
-# Shell wrapper for graph_generator
-sh_binary(
-    name = "graph_generator",
-    srcs = ["graph_generator.py"],
-)
-
-# Shell wrapper for provenance_builder
-sh_binary(
-    name = "provenance_builder",
-    srcs = ["provenance_builder.py"],
-)
-
-# Shell wrapper for purl_generator
-sh_binary(
-    name = "purl_generator",
-    srcs = ["purl_generator.py"],
-)
-
-# Shell wrapper for conflict_detector
-sh_binary(
-    name = "conflict_detector",
-    srcs = ["conflict_detector.py"],
-)
-
-# Shell wrapper for license_analyzer
-sh_binary(
-    name = "license_analyzer",
-    srcs = ["license_analyzer.py"],
-)
-
-# Shell wrapper for metrics_aggregator
-sh_binary(
-    name = "metrics_aggregator",
-    srcs = ["metrics_aggregator.py"],
-)
-
-# Shell wrapper for supply_chain_risk
-sh_binary(
-    name = "supply_chain_risk",
-    srcs = ["supply_chain_risk.py"],
-)
-
-# Shell wrapper for incremental_analyzer
-sh_binary(
-    name = "incremental_analyzer",
-    srcs = ["incremental_analyzer.py"],
-)
-
-# Shell wrapper for vex_processor
-sh_binary(
-    name = "vex_processor",
-    srcs = ["vex_processor.py"],
-)
-
-# Shell wrapper for license_extractor
-sh_binary(
-    name = "license_extractor",
-    srcs = ["license_extractor.py"],
-)
-
-# Shell wrapper for policy_check
-sh_binary(
-    name = "policy_check",
-    srcs = ["policy_check.py"],
-)
-
-# Shell wrapper for kev_enrichment
-sh_binary(
-    name = "kev_enrichment",
-    srcs = ["kev_enrichment.py"],
-)
-
-# Shell wrapper for epss_enrichment
-sh_binary(
-    name = "epss_enrichment",
-    srcs = ["epss_enrichment.py"],
-)
-
-# Shell wrapper for ghsa_enrichment
-sh_binary(
-    name = "ghsa_enrichment",
-    srcs = ["ghsa_enrichment.py"],
-)
-
-# Shell wrapper for vulncheck_enrichment
-sh_binary(
-    name = "vulncheck_enrichment",
-    srcs = ["vulncheck_enrichment.py"],
-)
-
-# Shell wrapper for vulnerability_enrichment
-sh_binary(
-    name = "vulnerability_enrichment",
-    srcs = ["vulnerability_enrichment.py"],
-)
-
-# Shell wrapper for sbom_signing
-sh_binary(
-    name = "sbom_signing",
-    srcs = ["sbom_signing.py"],
-)
-
-# Shell wrapper for rekor_integration
-sh_binary(
-    name = "rekor_integration",
-    srcs = ["rekor_integration.py"],
-)
-
-# Shell wrapper for intoto_attestation
-sh_binary(
-    name = "intoto_attestation",
-    srcs = ["intoto_attestation.py"],
-)
-
-# Shell wrapper for verify_sbom
-sh_binary(
-    name = "verify_sbom",
-    srcs = ["verify_sbom.py"],
-)
-
-# Shell wrapper for compliance_report
-sh_binary(
-    name = "compliance_report",
-    srcs = ["compliance_report.py"],
-    data = glob(["templates/compliance/*.html"]),
-)
-
-# Shell wrapper for sbom_diff
-sh_binary(
-    name = "sbom_diff",
-    srcs = ["sbom_diff.py"],
-)
-
-# Shell wrapper for drift_detector
-sh_binary(
-    name = "drift_detector",
-    srcs = ["drift_detector.py"],
-)
-
-# Shell wrapper for changelog_generator
-sh_binary(
-    name = "changelog_generator",
-    srcs = ["changelog_generator.py"],
-)
-
-# Shell wrapper for osv_contributor
-sh_binary(
-    name = "osv_contributor",
-    srcs = ["osv_contributor.py"],
-)
-
-# Shell wrapper for contribution_tracker
-sh_binary(
-    name = "contribution_tracker",
-    srcs = ["contribution_tracker.py"],
-)
-
-# Shell wrapper for ai_query_engine
-sh_binary(
-    name = "ai_query_engine",
-    srcs = ["ai_query_engine.py"],
-)
-
-# Shell wrapper for upgrade_recommender
-sh_binary(
-    name = "upgrade_recommender",
-    srcs = ["upgrade_recommender.py"],
-)
-
-# Shell wrapper for csv_exporter
-sh_binary(
-    name = "csv_exporter",
-    srcs = ["csv_exporter.py"],
-)
-
-# Shell wrapper for badge_generator
-sh_binary(
-    name = "badge_generator",
-    srcs = ["badge_generator.py"],
-)
-
-# Shell wrapper for build_system
-sh_binary(
-    name = "build_system",
-    srcs = ["build_system.py"],
-)
-
-# Shell wrapper for bazbom_config
-sh_binary(
-    name = "bazbom_config",
-    srcs = ["bazbom_config.py"],
-)
-
-# Shell wrapper for bazbom_cli (main CLI entry point)
-sh_binary(
-    name = "bazbom_cli",
-    srcs = ["bazbom_cli.py"],
-    data = [
-        ":build_system.py",
-        ":bazbom_config.py",
-    ],
-)
-
-# Shell wrapper for scan_container (container image SBOM scanner)
-sh_binary(
-    name = "scan_container",
-    srcs = ["scan_container.py"],
-)
-
-# Shell wrapper for interactive_fix (interactive vulnerability fixer)
-sh_binary(
-    name = "interactive_fix",
-    srcs = ["interactive_fix.py"],
-)
-
-# Shell wrapper for dependency_scanner (RipGrep-accelerated dependency discovery)
-sh_binary(
-    name = "dependency_scanner",
-    srcs = ["dependency_scanner.py"],
-)
-
-# Shell wrapper for license_scanner (RipGrep-accelerated license scanning)
-sh_binary(
-    name = "license_scanner",
-    srcs = ["license_scanner.py"],
-)
-
-# Shell wrapper for container_scanner (RipGrep-accelerated container scanning)
-sh_binary(
-    name = "container_scanner",
-    srcs = ["container_scanner.py"],
-)
-
-# Shell wrapper for dependency_verifier (unused dependency detection)
-sh_binary(
-    name = "dependency_verifier",
-    srcs = ["dependency_verifier.py"],
-)
-
-# Shell wrapper for cve_tracker (CVE reference tracking)
-sh_binary(
-    name = "cve_tracker",
-    srcs = ["cve_tracker.py"],
-)
-
-# Export aspect and macro definitions
+# Export aspect and macro definitions (these still work)
 exports_files([
     "aspects.bzl",
     "defs.bzl",
+    "enrichment_config.yaml",
 ])
 
-# Export compliance report templates
-exports_files(
-    glob(["templates/compliance/*.html"]),
+# Export SBOM schemas
+filegroup(
+    name = "sbom_schemas",
+    srcs = glob(["sbom_schemas/**/*.json"]),
     visibility = ["//visibility:public"],
 )
 
-# Filegroup for compliance templates
+# Export compliance report templates
 filegroup(
     name = "compliance_templates",
     srcs = glob(["templates/compliance/*.html"]),
     visibility = ["//visibility:public"],
 )
+
+# To use BazBOM functionality, build and use the Rust CLI:
+#   cargo build --release -p bazbom
+#   ./target/release/bazbom scan .
+#
+# Or install via Homebrew:
+#   brew tap cboyd0319/bazbom
+#   brew install bazbom

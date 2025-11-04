@@ -16,7 +16,7 @@ pub fn generate_trend_report(generator: &ReportGenerator, output_path: &Path) ->
 fn build_trend_html(generator: &ReportGenerator) -> String {
     let sbom = generator.sbom();
     let vulns = generator.vulnerabilities();
-    
+
     format!(
         r#"<!DOCTYPE html>
 <html lang="en">
@@ -116,13 +116,16 @@ fn build_trend_html(generator: &ReportGenerator) -> String {
 </body>
 </html>"#,
         sbom.project_name,
-        sbom.project_name, sbom.project_version,
+        sbom.project_name,
+        sbom.project_version,
         sbom.scan_timestamp.format("%Y-%m-%d %H:%M:%S UTC"),
         vulns.security_score(),
         vulns.total_count(),
-        vulns.critical.len(), vulns.high.len(),
+        vulns.critical.len(),
+        vulns.high.len(),
         sbom.total_dependencies,
-        sbom.direct_dependencies, sbom.transitive_dependencies,
+        sbom.direct_dependencies,
+        sbom.transitive_dependencies,
         calculate_risk_level(vulns),
         build_current_state_analysis(vulns),
         build_recommendations_list(vulns),
@@ -150,99 +153,107 @@ fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String 
     }
 
     let mut analysis = Vec::new();
-    
+
     if !vulns.critical.is_empty() {
         analysis.push(format!(
             "<p>🚨 <strong>Critical Alert:</strong> {} CRITICAL vulnerabilities require immediate attention. These pose severe security risks and should be addressed within 24 hours.</p>",
             vulns.critical.len()
         ));
     }
-    
+
     if !vulns.high.is_empty() {
         analysis.push(format!(
             "<p>⚠️ <strong>High Priority:</strong> {} HIGH severity vulnerabilities detected. Industry best practice recommends remediation within 30 days.</p>",
             vulns.high.len()
         ));
     }
-    
+
     if !vulns.medium.is_empty() {
         analysis.push(format!(
             "<p>📋 <strong>Medium Priority:</strong> {} MEDIUM severity vulnerabilities found. Plan remediation within 90 days as part of regular maintenance.</p>",
             vulns.medium.len()
         ));
     }
-    
-    let kev_count = vulns.critical.iter()
+
+    let kev_count = vulns
+        .critical
+        .iter()
         .chain(vulns.high.iter())
         .chain(vulns.medium.iter())
         .chain(vulns.low.iter())
         .filter(|v| v.is_kev)
         .count();
-    
+
     if kev_count > 0 {
         analysis.push(format!(
             "<p>🎯 <strong>CISA KEV Alert:</strong> {} vulnerabilities are listed in CISA's Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.</p>",
             kev_count
         ));
     }
-    
-    let reachable_count = vulns.critical.iter()
+
+    let reachable_count = vulns
+        .critical
+        .iter()
         .chain(vulns.high.iter())
         .chain(vulns.medium.iter())
         .chain(vulns.low.iter())
         .filter(|v| v.is_reachable)
         .count();
-    
+
     if reachable_count > 0 {
         analysis.push(format!(
             "<p>🔍 <strong>Reachability Analysis:</strong> {} vulnerabilities have reachable code paths in your application, increasing actual risk.</p>",
             reachable_count
         ));
     }
-    
+
     analysis.join("\n")
 }
 
 /// Build recommendations list
 fn build_recommendations_list(vulns: &crate::VulnerabilityFindings) -> String {
     let mut recommendations = Vec::new();
-    
+
     if !vulns.critical.is_empty() {
-        recommendations.push(r#"<div class="recommendation">
+        recommendations.push(
+            r#"<div class="recommendation">
             <strong>Address Critical Vulnerabilities Immediately</strong><br>
             Run <code>bazbom fix --apply</code> to automatically upgrade affected dependencies.
-        </div>"#);
+        </div>"#,
+        );
     }
-    
+
     if !vulns.high.is_empty() {
         recommendations.push(r#"<div class="recommendation">
             <strong>Schedule High-Priority Remediation</strong><br>
             Create a remediation plan with <code>bazbom fix --suggest</code> to see detailed fix instructions.
         </div>"#);
     }
-    
+
     recommendations.push(r#"<div class="recommendation">
         <strong>Enable Pre-Commit Hooks</strong><br>
         Run <code>bazbom install-hooks</code> to catch vulnerabilities before they enter your codebase.
     </div>"#);
-    
+
     recommendations.push(r#"<div class="recommendation">
         <strong>Schedule Regular Scans</strong><br>
         Set up weekly or monthly automated scans to track trends and catch new vulnerabilities early.
     </div>"#);
-    
+
     recommendations.push(r#"<div class="recommendation">
         <strong>Integrate with CI/CD</strong><br>
         Add BazBOM to your CI/CD pipeline to automatically scan on every pull request and deployment.
     </div>"#);
-    
+
     if vulns.total_count() == 0 {
-        recommendations.push(r#"<div class="recommendation">
+        recommendations.push(
+            r#"<div class="recommendation">
             <strong>Maintain Your Security Posture</strong><br>
             Continue regular scanning and stay updated with the latest security advisories.
-        </div>"#);
+        </div>"#,
+        );
     }
-    
+
     recommendations.join("\n")
 }
 

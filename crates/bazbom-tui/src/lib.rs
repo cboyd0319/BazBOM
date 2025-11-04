@@ -85,9 +85,7 @@ impl App {
 
                 // Severity filter
                 let matches_severity = if let Some(ref severity) = self.severity_filter {
-                    dep.vulnerabilities
-                        .iter()
-                        .any(|v| v.severity == *severity)
+                    dep.vulnerabilities.iter().any(|v| v.severity == *severity)
                 } else {
                     true
                 };
@@ -184,10 +182,7 @@ pub fn run(dependencies: Vec<Dependency>) -> Result<()> {
 }
 
 /// Main application loop
-fn run_app<B: ratatui::backend::Backend>(
-    terminal: &mut Terminal<B>,
-    app: &mut App,
-) -> Result<()> {
+fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>, app: &mut App) -> Result<()> {
     loop {
         terminal.draw(|f| ui(f, app))?;
 
@@ -261,7 +256,11 @@ fn render_header(f: &mut Frame, area: Rect, app: &App) {
         app.dependencies.len(),
         filter_text
     ))
-    .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+    .style(
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    )
     .block(Block::default().borders(Borders::ALL));
 
     f.render_widget(header, area);
@@ -317,11 +316,7 @@ fn render_dependency_list(f: &mut Frame, area: Rect, app: &mut App) {
         .collect();
 
     let list = List::new(items)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Dependencies"),
-        )
+        .block(Block::default().borders(Borders::ALL).title("Dependencies"))
         .highlight_style(
             Style::default()
                 .bg(Color::DarkGray)
@@ -391,22 +386,17 @@ fn render_details(f: &mut Frame, area: Rect, app: &App) {
         vec![Line::from("No dependency selected")]
     };
 
-    let paragraph = Paragraph::new(content).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .title("Details"),
-    );
+    let paragraph =
+        Paragraph::new(content).block(Block::default().borders(Borders::ALL).title("Details"));
 
     f.render_widget(paragraph, area);
 }
 
 /// Render footer with keyboard shortcuts
 fn render_footer(f: &mut Frame, area: Rect) {
-    let footer = Paragraph::new(
-        "[Up/Down/j/k] Navigate [c/h/m/l/a] Filter [?] Help [q] Quit"
-    )
-    .style(Style::default().fg(Color::Gray))
-    .block(Block::default().borders(Borders::ALL));
+    let footer = Paragraph::new("[Up/Down/j/k] Navigate [c/h/m/l/a] Filter [?] Help [q] Quit")
+        .style(Style::default().fg(Color::Gray))
+        .block(Block::default().borders(Borders::ALL));
 
     f.render_widget(footer, area);
 }
@@ -424,14 +414,18 @@ fn render_help(f: &mut Frame) {
         Line::from(""),
         Line::from(vec![Span::styled(
             "Navigation:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from("  Up/k       Move selection up"),
         Line::from("  Down/j     Move selection down"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "Filtering:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from("  c          Show only CRITICAL vulnerabilities"),
         Line::from("  h          Show only HIGH vulnerabilities"),
@@ -441,21 +435,27 @@ fn render_help(f: &mut Frame) {
         Line::from(""),
         Line::from(vec![Span::styled(
             "Display:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from("  Left       Dependency list"),
         Line::from("  Right      Vulnerability details"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "General:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from("  ?/F1       Toggle this help screen"),
         Line::from("  q/Esc      Quit application"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "Symbols:",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
         )]),
         Line::from(vec![
             Span::styled("  [X] ", Style::default().fg(Color::Red)),
