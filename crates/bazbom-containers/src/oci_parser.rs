@@ -132,21 +132,32 @@ impl OciImageParser {
         anyhow::bail!("No manifest.json found in image tarball")
     }
 
-    /// Parse the image configuration
-    pub fn parse_config(&self, config_digest: &str) -> Result<OciImageConfig> {
+    /// Parse the image configuration (auto-detect from manifest)
+    pub fn parse_config(&self) -> Result<OciImageConfig> {
+        // First get the manifest to find the config digest
+        let manifest = self.parse_manifest()?;
+        let config_digest = &manifest.config.digest;
+        
+        self.parse_config_with_digest(config_digest)
+    }
+
+    /// Parse the image configuration with explicit digest
+    pub fn parse_config_with_digest(&self, config_digest: &str) -> Result<OciImageConfig> {
         let file = File::open(&self.image_path)
             .with_context(|| format!("Failed to open image file: {}", self.image_path.display()))?;
 
         let mut archive = Archive::new(file);
 
-        // Docker uses blobs/sha256/<hash>.json
-        let config_filename = format!("{}.json", config_digest.replace("sha256:", ""));
+        // Docker uses blobs/sha256/<hash>.json or just <hash>.json
+        let config_filename = config_digest.replace("sha256:", "");
 
         for entry_result in archive.entries()? {
             let mut entry = entry_result?;
             let path = entry.path()?;
+            let path_str = path.to_string_lossy();
 
-            if path.to_string_lossy().contains(&config_filename) {
+            // Match both <hash>.json and blobs/sha256/<hash>.json
+            if path_str.contains(&config_filename) && path_str.ends_with(".json") {
                 let mut contents = String::new();
                 entry.read_to_string(&mut contents)?;
 
@@ -246,13 +257,12 @@ impl OciImageParser {
                         path: path.to_string_lossy().to_string(),
                         size: entry.size(),
                         artifact_type: match ext_str.as_ref() {
-                            "jar" => "jar",
-                            "war" => "war",
-                            "ear" => "ear",
-                            "class" => "class",
-                            _ => "unknown",
-                        }
-                        .to_string(),
+                            "jar" => ArtifactType::Jar,
+                            "war" => ArtifactType::War,
+                            "ear" => ArtifactType::Ear,
+                            "class" => ArtifactType::Class,
+                            _ => ArtifactType::Unknown,
+                        },
                     });
                 }
             }
@@ -354,12 +364,22 @@ struct DockerManifestEntry {
     pub layers: Vec<String>,
 }
 
+/// Type of Java artifact
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ArtifactType {
+    Jar,
+    War,
+    Ear,
+    Class,
+    Unknown,
+}
+
 /// Java artifact candidate found in layer
 #[derive(Debug, Clone)]
 pub struct JavaArtifactCandidate {
     pub path: String,
     pub size: u64,
-    pub artifact_type: String,
+    pub artifact_type: ArtifactType,
 }
 
 /// Maven metadata extracted from pom.properties
@@ -407,10 +427,10 @@ mod tests {
         let artifact = JavaArtifactCandidate {
             path: "/app/lib/myapp.jar".to_string(),
             size: 1024,
-            artifact_type: "jar".to_string(),
+            artifact_type: ArtifactType::Jar,
         };
 
-        assert_eq!(artifact.artifact_type, "jar");
+        assert_eq!(artifact.artifact_type, ArtifactType::Jar);
         assert_eq!(artifact.size, 1024);
     }
 

@@ -394,6 +394,116 @@ pub fn extract_bazel_dependencies_for_targets(
     Ok(full_graph)
 }
 
+/// Optimized Bazel query execution with caching and batching
+pub struct BazelQueryOptimizer {
+    workspace_path: std::path::PathBuf,
+    cache: std::collections::HashMap<String, Vec<String>>,
+}
+
+impl BazelQueryOptimizer {
+    /// Create a new Bazel query optimizer
+    pub fn new(workspace_path: std::path::PathBuf) -> Self {
+        Self {
+            workspace_path,
+            cache: std::collections::HashMap::new(),
+        }
+    }
+
+    /// Execute an optimized query with caching
+    pub fn query(&mut self, query_expr: &str) -> Result<Vec<String>> {
+        // Check cache first
+        if let Some(cached) = self.cache.get(query_expr) {
+            println!("[bazbom] using cached query result");
+            return Ok(cached.clone());
+        }
+
+        // Execute query
+        let result = query_bazel_targets(
+            &self.workspace_path,
+            Some(query_expr),
+            None,
+            None,
+            "//...",
+        )?;
+
+        // Cache the result
+        self.cache.insert(query_expr.to_string(), result.clone());
+
+        Ok(result)
+    }
+
+    /// Batch multiple queries for efficiency
+    pub fn batch_query(&mut self, queries: &[String]) -> Result<Vec<Vec<String>>> {
+        let mut results = Vec::new();
+
+        for query in queries {
+            let result = self.query(query)?;
+            results.push(result);
+        }
+
+        Ok(results)
+    }
+
+    /// Query dependencies with optimized filtering
+    pub fn query_deps(&mut self, target: &str, max_depth: Option<usize>) -> Result<Vec<String>> {
+        let depth_suffix = if let Some(d) = max_depth {
+            format!(", {}", d)
+        } else {
+            String::new()
+        };
+
+        let query = format!("deps({}{})", target, depth_suffix);
+        self.query(&query)
+    }
+
+    /// Query reverse dependencies efficiently
+    pub fn query_rdeps(&mut self, target: &str, universe: &str) -> Result<Vec<String>> {
+        let query = format!("rdeps({}, {})", universe, target);
+        self.query(&query)
+    }
+
+    /// Clear query cache
+    pub fn clear_cache(&mut self) {
+        self.cache.clear();
+    }
+}
+
+/// Performance metrics for Bazel operations
+#[derive(Debug, Clone)]
+pub struct BazelPerformanceMetrics {
+    pub query_count: usize,
+    pub cache_hits: usize,
+    pub cache_misses: usize,
+    pub total_targets: usize,
+    pub query_time_ms: u64,
+}
+
+impl BazelPerformanceMetrics {
+    pub fn new() -> Self {
+        Self {
+            query_count: 0,
+            cache_hits: 0,
+            cache_misses: 0,
+            total_targets: 0,
+            query_time_ms: 0,
+        }
+    }
+
+    pub fn cache_hit_rate(&self) -> f64 {
+        if self.query_count == 0 {
+            0.0
+        } else {
+            (self.cache_hits as f64) / (self.query_count as f64) * 100.0
+        }
+    }
+}
+
+impl Default for BazelPerformanceMetrics {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
