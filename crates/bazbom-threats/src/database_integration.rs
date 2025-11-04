@@ -127,6 +127,13 @@ pub struct DatabaseStats {
     pub last_updated: String,
 }
 
+/// OSV API query response
+#[derive(Debug, Clone, Deserialize)]
+struct OsvQueryResponse {
+    #[serde(default)]
+    vulns: Vec<OsvVulnerability>,
+}
+
 /// OSV API response for vulnerability query
 #[derive(Debug, Clone, Deserialize)]
 struct OsvVulnerability {
@@ -139,6 +146,7 @@ struct OsvVulnerability {
     published: Option<String>,
     #[serde(default)]
     references: Vec<OsvReference>,
+    #[serde(default)]
     affected: Vec<OsvAffected>,
 }
 
@@ -180,24 +188,33 @@ impl OsvClient {
     /// This implementation queries the OSV API for vulnerabilities and filters
     /// for those marked as malicious code/packages.
     pub fn query_malicious_packages(&self, ecosystem: &str) -> Result<Vec<MaliciousPackageEntry>> {
-        // NOTE: This is a simplified implementation that returns known malicious patterns
-        // In production, this would:
-        // 1. Make HTTP POST to /v1/query with ecosystem filter
-        // 2. Parse all vulnerabilities
-        // 3. Filter for malicious indicators (malware, backdoor, trojan keywords)
-        // 4. Convert to MaliciousPackageEntry
-        
-        // For now, we use a curated list approach to avoid external dependencies
+        self.query_malicious_packages_impl(ecosystem, false)
+    }
+
+    /// Query OSV with optional fallback to example data
+    fn query_malicious_packages_impl(&self, ecosystem: &str, use_fallback: bool) -> Result<Vec<MaliciousPackageEntry>> {
         let mut entries = Vec::new();
-        
-        // Example: Known malicious Maven packages (from historical incidents)
+
+        // Try real API call first
+        if !use_fallback {
+            match self.query_osv_api(ecosystem) {
+                Ok(api_entries) => {
+                    log::info!("OSV API query for {} returned {} entries", ecosystem, api_entries.len());
+                    return Ok(api_entries);
+                }
+                Err(e) => {
+                    log::warn!("OSV API query failed: {}. Using fallback data.", e);
+                }
+            }
+        }
+
+        // Fallback to example data (for offline mode or API failures)
         if ecosystem == "maven" {
-            // These are examples based on real incidents - in production would fetch from OSV
             entries.extend(vec![
                 MaliciousPackageEntry {
                     name: "org.webjars:bootstrap".to_string(),
                     ecosystem: "maven".to_string(),
-                    versions: vec!["3.7.0-malicious".to_string()], // Example of a typosquat version
+                    versions: vec!["3.7.0-malicious".to_string()],
                     source: "OSV".to_string(),
                     reported_date: chrono::Utc::now().to_rfc3339(),
                     description: "Example malicious package entry for demonstration".to_string(),
@@ -208,7 +225,48 @@ impl OsvClient {
             ]);
         }
         
-        log::debug!("OSV query for {} returned {} malicious packages", ecosystem, entries.len());
+        log::debug!("OSV query for {} returned {} malicious packages (fallback mode)", ecosystem, entries.len());
+        Ok(entries)
+    }
+
+    /// Query OSV API for vulnerabilities with malicious indicators
+    fn query_osv_api(&self, ecosystem: &str) -> Result<Vec<MaliciousPackageEntry>> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .context("Failed to create HTTP client")?;
+
+        // OSV query request body
+        let query_body = serde_json::json!({
+            "package": {
+                "ecosystem": ecosystem.to_uppercase()
+            }
+        });
+
+        let response = client
+            .post(format!("{}/v1/query", self.base_url))
+            .json(&query_body)
+            .send()
+            .context("Failed to send OSV API request")?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("OSV API returned error status: {}", response.status());
+        }
+
+        let osv_response: OsvQueryResponse = response
+            .json()
+            .context("Failed to parse OSV API response")?;
+
+        // Filter for vulnerabilities with malicious indicators
+        let mut entries = Vec::new();
+        for vuln in osv_response.vulns {
+            if is_malicious_vulnerability(&vuln) {
+                if let Some(entry) = convert_osv_to_malicious(&vuln, ecosystem) {
+                    entries.push(entry);
+                }
+            }
+        }
+
         Ok(entries)
     }
     
@@ -224,6 +282,23 @@ impl Default for OsvClient {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// GHSA GraphQL top-level response
+#[derive(Debug, Clone, Deserialize)]
+struct GhsaGraphQLResponse {
+    data: Option<GhsaData>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct GhsaData {
+    #[serde(rename = "securityAdvisories")]
+    security_advisories: GhsaSecurityAdvisories,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct GhsaSecurityAdvisories {
+    nodes: Vec<GhsaAdvisory>,
 }
 
 /// GHSA GraphQL response types
@@ -279,26 +354,40 @@ impl GhsaClient {
 
     /// Query GHSA for malicious packages
     /// 
-    /// This implementation would use GitHub's GraphQL API to query security advisories.
-    /// Filters for advisories with malicious code indicators.
+    /// This implementation uses GitHub's GraphQL API to query security advisories
+    /// and filters for advisories with malicious code indicators.
     pub fn query_malicious_packages(&self, ecosystem: &str) -> Result<Vec<MaliciousPackageEntry>> {
-        // NOTE: This is a simplified implementation
-        // In production, this would:
-        // 1. Make GraphQL query to GitHub API with ecosystem filter
-        // 2. Use query like: securityAdvisories(ecosystem: MAVEN, first: 100)
-        // 3. Filter for malicious code indicators in summary/description
-        // 4. Parse into MaliciousPackageEntry
-        
+        self.query_malicious_packages_impl(ecosystem, false)
+    }
+
+    /// Query GHSA with optional fallback to example data
+    fn query_malicious_packages_impl(&self, ecosystem: &str, use_fallback: bool) -> Result<Vec<MaliciousPackageEntry>> {
         let mut entries = Vec::new();
-        
-        // Example: Known malicious packages from GHSA (historical examples)
+
+        // Try real API call first (requires GITHUB_TOKEN)
+        if !use_fallback {
+            if let Ok(token) = std::env::var("GITHUB_TOKEN") {
+                match self.query_ghsa_api(ecosystem, &token) {
+                    Ok(api_entries) => {
+                        log::info!("GHSA API query for {} returned {} entries", ecosystem, api_entries.len());
+                        return Ok(api_entries);
+                    }
+                    Err(e) => {
+                        log::warn!("GHSA API query failed: {}. Using fallback data.", e);
+                    }
+                }
+            } else {
+                log::debug!("GITHUB_TOKEN not set, using fallback data for GHSA");
+            }
+        }
+
+        // Fallback to example data
         if ecosystem == "maven" {
-            // These are examples - in production would fetch from GitHub API
             entries.extend(vec![
                 MaliciousPackageEntry {
                     name: "org.apache.logging.log4j:log4j-core".to_string(),
                     ecosystem: "maven".to_string(),
-                    versions: vec![], // Empty means check all versions against CVEs
+                    versions: vec![],
                     source: "GHSA".to_string(),
                     reported_date: chrono::Utc::now().to_rfc3339(),
                     description: "Known vulnerable package (example for demonstration)".to_string(),
@@ -309,7 +398,92 @@ impl GhsaClient {
             ]);
         }
         
-        log::debug!("GHSA query for {} returned {} entries", ecosystem, entries.len());
+        log::debug!("GHSA query for {} returned {} entries (fallback mode)", ecosystem, entries.len());
+        Ok(entries)
+    }
+
+    /// Query GHSA API using GraphQL
+    fn query_ghsa_api(&self, ecosystem: &str, token: &str) -> Result<Vec<MaliciousPackageEntry>> {
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(30))
+            .build()
+            .context("Failed to create HTTP client")?;
+
+        // Convert ecosystem to GHSA format (e.g., "maven" -> "MAVEN")
+        let ghsa_ecosystem = match ecosystem.to_lowercase().as_str() {
+            "maven" => "MAVEN",
+            "npm" => "NPM",
+            "pypi" => "PIP",
+            "rubygems" => "RUBYGEMS",
+            "go" => "GO",
+            "nuget" => "NUGET",
+            "composer" => "COMPOSER",
+            "cargo" => "RUST",
+            _ => ecosystem,
+        };
+
+        // GraphQL query for security advisories
+        let graphql_query = format!(
+            r#"
+            query {{
+              securityAdvisories(first: 100, ecosystem: {}) {{
+                nodes {{
+                  ghsaId
+                  summary
+                  description
+                  publishedAt
+                  severity
+                  references {{
+                    url
+                  }}
+                  vulnerabilities(first: 10) {{
+                    nodes {{
+                      package {{
+                        ecosystem
+                        name
+                      }}
+                      vulnerableVersionRange
+                    }}
+                  }}
+                }}
+              }}
+            }}
+            "#,
+            ghsa_ecosystem
+        );
+
+        let query_body = serde_json::json!({
+            "query": graphql_query
+        });
+
+        let response = client
+            .post(format!("{}/graphql", self.base_url))
+            .header("Authorization", format!("Bearer {}", token))
+            .header("User-Agent", "BazBOM-Threats/1.0")
+            .json(&query_body)
+            .send()
+            .context("Failed to send GHSA GraphQL request")?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("GHSA API returned error status: {}", response.status());
+        }
+
+        let ghsa_response: GhsaGraphQLResponse = response
+            .json()
+            .context("Failed to parse GHSA API response")?;
+
+        // Filter for malicious advisories
+        let mut entries = Vec::new();
+        if let Some(data) = ghsa_response.data {
+            for advisory in data.security_advisories.nodes {
+                if is_malicious_advisory(&advisory) {
+                    if let Some(entry) = convert_ghsa_to_malicious(&advisory, ecosystem) {
+                        entries.push(entry);
+                    }
+                }
+            }
+        }
+
         Ok(entries)
     }
     
@@ -397,6 +571,71 @@ impl Default for ThreatDatabaseSync {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Malicious indicator keywords
+const MALICIOUS_KEYWORDS: &[&str] = &[
+    "malicious", "backdoor", "trojan", "malware", 
+    "cryptocurrency miner", "cryptominer", "ransomware",
+    "supply chain attack", "compromised", "typosquat",
+    "dependency confusion", "package takeover"
+];
+
+/// Check if a vulnerability indicates malicious behavior
+fn is_malicious_vulnerability(vuln: &OsvVulnerability) -> bool {
+    let text_to_check = format!(
+        "{} {} {}",
+        vuln.summary.as_deref().unwrap_or(""),
+        vuln.details.as_deref().unwrap_or(""),
+        vuln.id
+    ).to_lowercase();
+
+    MALICIOUS_KEYWORDS.iter().any(|keyword| text_to_check.contains(keyword))
+}
+
+/// Check if a GHSA advisory indicates malicious behavior
+fn is_malicious_advisory(advisory: &GhsaAdvisory) -> bool {
+    let text_to_check = format!(
+        "{} {} {}",
+        advisory.summary,
+        advisory.description,
+        advisory.ghsa_id
+    ).to_lowercase();
+
+    MALICIOUS_KEYWORDS.iter().any(|keyword| text_to_check.contains(keyword))
+}
+
+/// Convert GHSA advisory to malicious package entry
+fn convert_ghsa_to_malicious(advisory: &GhsaAdvisory, ecosystem: &str) -> Option<MaliciousPackageEntry> {
+    let vuln = advisory.vulnerabilities.nodes.first()?;
+    
+    Some(MaliciousPackageEntry {
+        name: vuln.package.name.clone(),
+        ecosystem: ecosystem.to_string(),
+        versions: vec![vuln.vulnerable_version_range.clone()],
+        source: "GHSA".to_string(),
+        reported_date: advisory.published_at.clone(),
+        description: advisory.summary.clone(),
+        references: advisory.references.iter().map(|r| r.url.clone()).collect(),
+    })
+}
+
+/// Convert OSV vulnerability to malicious package entry
+fn convert_osv_to_malicious(vuln: &OsvVulnerability, ecosystem: &str) -> Option<MaliciousPackageEntry> {
+    // Extract affected packages
+    let affected = vuln.affected.first()?;
+    
+    Some(MaliciousPackageEntry {
+        name: affected.package.name.clone(),
+        ecosystem: ecosystem.to_string(),
+        versions: affected.versions.clone(),
+        source: "OSV".to_string(),
+        reported_date: vuln.published.clone().unwrap_or_else(|| vuln.modified.clone()),
+        description: vuln.summary.clone()
+            .or_else(|| vuln.details.clone())
+            .unwrap_or_else(|| format!("Malicious package: {}", vuln.id)),
+        references: vuln.references.iter().map(|r| r.url.clone()).collect(),
+    })
 }
 
 /// Create threat indicator from malicious package entry
