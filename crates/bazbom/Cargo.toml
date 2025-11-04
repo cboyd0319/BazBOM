@@ -47,6 +47,7 @@ indicatif = "0.17"
 tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 webbrowser = "1.0"
 num_cpus = "1.16"
+rayon = "1.10"
 
 [dev-dependencies]
 assert_cmd = "2"

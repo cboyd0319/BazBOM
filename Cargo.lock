@@ -284,6 +284,7 @@ dependencies = [
  "num_cpus",
  "predicates",
  "quick-xml",
+ "rayon",
  "serde",
  "serde_json",
  "serde_yaml",
