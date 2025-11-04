@@ -17,5 +17,6 @@ pub mod reachability_cache;
 pub mod remediation;
 pub mod scan_orchestrator;
 pub mod shading;
+pub mod team;
 pub mod test_runner;
 pub mod toolchain;

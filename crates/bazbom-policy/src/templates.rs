@@ -66,6 +66,13 @@ impl PolicyTemplateLibrary {
                 category: "Regulatory".to_string(),
                 path: "examples/policies/nist-csf.yml".to_string(),
             },
+            PolicyTemplate {
+                id: "cis-benchmarks".to_string(),
+                name: "CIS Benchmarks".to_string(),
+                description: "Center for Internet Security consensus-based security guidelines".to_string(),
+                category: "Regulatory".to_string(),
+                path: "examples/policies/cis-benchmarks.yml".to_string(),
+            },
             // Industry-Specific
             PolicyTemplate {
                 id: "financial-services".to_string(),
@@ -207,6 +214,7 @@ impl PolicyTemplateLibrary {
             "gdpr" => Some(include_str!("../../../examples/policies/gdpr.yml").to_string()),
             "iso27001" => Some(include_str!("../../../examples/policies/iso27001.yml").to_string()),
             "nist-csf" => Some(include_str!("../../../examples/policies/nist-csf.yml").to_string()),
+            "cis-benchmarks" => Some(include_str!("../../../examples/policies/cis-benchmarks.yml").to_string()),
             // Industry
             "financial-services" => Some(include_str!("../../../examples/policies/financial-services.yml").to_string()),
             "healthcare-provider" => Some(include_str!("../../../examples/policies/healthcare-provider.yml").to_string()),
@@ -236,7 +244,7 @@ mod tests {
     #[test]
     fn test_list_templates() {
         let templates = PolicyTemplateLibrary::list_templates();
-        assert_eq!(templates.len(), 19, "Should have 19 policy templates");
+        assert_eq!(templates.len(), 20, "Should have 20 policy templates");
 
         let template_ids: Vec<&str> = templates.iter().map(|t| t.id.as_str()).collect();
         // Regulatory
@@ -247,6 +255,7 @@ mod tests {
         assert!(template_ids.contains(&"gdpr"));
         assert!(template_ids.contains(&"iso27001"));
         assert!(template_ids.contains(&"nist-csf"));
+        assert!(template_ids.contains(&"cis-benchmarks"));
         // Industry
         assert!(template_ids.contains(&"financial-services"));
         assert!(template_ids.contains(&"healthcare-provider"));
@@ -289,7 +298,7 @@ mod tests {
             .iter()
             .filter(|t| t.category == "Regulatory")
             .collect();
-        assert_eq!(regulatory.len(), 7, "Should have 7 regulatory templates");
+        assert_eq!(regulatory.len(), 8, "Should have 8 regulatory templates");
 
         let industry: Vec<_> = templates
             .iter()
@@ -321,6 +330,7 @@ mod tests {
             "gdpr",
             "iso27001",
             "nist-csf",
+            "cis-benchmarks",
             // Industry
             "financial-services",
             "healthcare-provider",
