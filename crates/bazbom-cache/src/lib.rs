@@ -2,6 +2,8 @@
 //!
 //! Provides caching mechanisms to speed up repeated scans and enable incremental analysis
 
+pub mod incremental;
+
 use anyhow::{Context, Result};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
