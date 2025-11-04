@@ -14,6 +14,8 @@ pub mod malicious;
 pub mod typosquatting;
 pub mod supply_chain;
 pub mod monitoring;
+pub mod dependency_confusion;
+pub mod database_integration;
 
 /// Threat level classification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

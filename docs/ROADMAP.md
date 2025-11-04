@@ -191,7 +191,7 @@ See [PHASE_6_VISUALIZATION.md](copilot/PHASE_6_VISUALIZATION.md), [IMPLEMENTATIO
 - [ ] Static HTML export for sharing
 - [ ] Email integration for reports
 
-### Phase 7: Threat Intelligence 🚧 IN PROGRESS (40% Complete)
+### Phase 7: Threat Intelligence 🚧 IN PROGRESS (60% Complete)
 
 **Supply Chain Attack Detection, Malicious Package Detection**
 
@@ -203,23 +203,28 @@ See [PHASE_7_THREAT_INTELLIGENCE.md](copilot/PHASE_7_THREAT_INTELLIGENCE.md) for
 - [x] Supply chain attack indicators
 - [x] Continuous monitoring service
 - [x] Threat level classification (Critical/High/Medium/Low)
-- [ ] Integration with malicious package databases (OSV, GHSA)
-- [ ] Dependency confusion detection
+- [x] Dependency confusion detection (NEW 2025-11-04)
+- [x] OSV/GHSA database integration framework (NEW 2025-11-04)
+- [ ] HTTP/GraphQL API implementation for OSV/GHSA
 - [ ] Maintainer takeover detection
 - [ ] Integration with OpenSSF Scorecard
 - [ ] Integration with Socket.dev signals
 - [ ] Custom threat intelligence feeds
 - [ ] Notification integrations (Slack, email, Teams)
 
-### Phase 8: Scale & Performance 📋 PLANNED
+### Phase 8: Scale & Performance 🚧 IN PROGRESS (15% Complete)
 
 **Incremental Analysis, Large Monorepo Optimization**
 
 See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for details.
 
+- [x] Intelligent caching framework (bazbom-cache) (NEW 2025-11-04)
+- [x] LRU eviction policy (NEW 2025-11-04)
+- [x] TTL-based expiration (NEW 2025-11-04)
+- [x] SHA-256 content hashing (NEW 2025-11-04)
+- [ ] Integration with scan command
 - [ ] Incremental analysis (git-based change detection)
 - [ ] Bazel query optimization
-- [ ] Result caching and incremental updates
 - [ ] Parallel processing improvements
 - [ ] Memory optimization for large projects
 - [ ] Remote caching support
@@ -228,14 +233,18 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Ecosystem Expansion 📋 PLANNED
+### Phase 9: Ecosystem Expansion 🚧 IN PROGRESS (10% Complete)
 
 **Container Support, Multi-Language, Kubernetes**
 
 See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for details.
 
+- [x] Container scanning crate (bazbom-containers) (NEW 2025-11-04)
+- [x] Java artifact detection in containers (NEW 2025-11-04)
+- [x] Container SBOM generation framework (NEW 2025-11-04)
+- [ ] Docker daemon integration
+- [ ] OCI image parsing implementation
 - [ ] Container image SBOM (`rules_oci` integration)
-- [ ] Docker image scanning
 - [ ] Kubernetes manifest scanning
 - [ ] Node.js/npm support
 - [ ] Python/pip support

@@ -6,7 +6,13 @@ members = [
   "crates/bazbom-advisories",
   "crates/bazbom-policy",
   "crates/bazbom-graph",
-  "crates/bazbom-lsp", "crates/bazbom-tui", "crates/bazbom-dashboard", "crates/bazbom-reports", "crates/bazbom-threats",
+  "crates/bazbom-lsp",
+  "crates/bazbom-tui",
+  "crates/bazbom-dashboard",
+  "crates/bazbom-reports",
+  "crates/bazbom-threats",
+  "crates/bazbom-cache",
+  "crates/bazbom-containers",
 ]
 resolver = "2"
 
