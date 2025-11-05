@@ -210,9 +210,20 @@ impl LlmClient {
             }
             LlmProvider::Mock => {
                 // Mock response for testing
+                let prompt_tokens = request.messages.iter()
+                    .map(|m| m.content.split_whitespace().count())
+                    .sum::<usize>();
+                let completion_tokens = 20; // Mock completion
+                
+                // Update usage tracking even for Mock
+                self.usage.prompt_tokens += prompt_tokens;
+                self.usage.completion_tokens += completion_tokens;
+                self.usage.total_tokens += prompt_tokens + completion_tokens;
+                self.usage.estimated_cost_usd = 0.0; // Mock is free
+                
                 Ok(LlmResponse {
                     content: "Mock LLM response".to_string(),
-                    tokens_used: 100,
+                    tokens_used: prompt_tokens + completion_tokens,
                     model: "mock".to_string(),
                 })
             }
@@ -225,28 +236,62 @@ impl LlmClient {
     /// Only use if you have explicitly opted in via OPENAI_API_KEY environment variable.
     fn openai_chat_completion(
         &mut self,
-        _api_key: &str,
+        api_key: &str,
         model: &str,
         request: LlmRequest,
     ) -> Result<LlmResponse> {
-        // NOTE: This is a stub implementation
-        // Real implementation would use HTTP client to call OpenAI API
-        // For now, return mock response to unblock development
-        // 
-        // PRIVACY: When implemented, must warn user that data is being sent externally
+        // PRIVACY: Warn user that data is being sent externally
+        eprintln!("⚠ Sending data to OpenAI API (external service)");
         
-        let prompt_tokens = request.messages.iter()
-            .map(|m| m.content.split_whitespace().count())
-            .sum::<usize>();
+        // Build OpenAI API request
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.config.timeout_seconds))
+            .build()?;
         
-        let response_content = format!(
-            "Mock OpenAI {} response for request with {} messages",
-            model,
-            request.messages.len()
-        );
+        // Convert messages to OpenAI format
+        let messages: Vec<serde_json::Value> = request.messages.iter()
+            .map(|m| serde_json::json!({
+                "role": m.role,
+                "content": m.content,
+            }))
+            .collect();
         
-        let completion_tokens = response_content.split_whitespace().count();
+        let body = serde_json::json!({
+            "model": model,
+            "messages": messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+        });
         
+        // Call OpenAI API
+        let response = client
+            .post("https://api.openai.com/v1/chat/completions")
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()?;
+        
+        if !response.status().is_success() {
+            anyhow::bail!("OpenAI API error: {}", response.status());
+        }
+        
+        let response_json: serde_json::Value = response.json()?;
+        
+        // Extract response content
+        let content = response_json["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        
+        // Extract token usage
+        let prompt_tokens = response_json["usage"]["prompt_tokens"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        let completion_tokens = response_json["usage"]["completion_tokens"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        
+        // Update usage tracking
         self.usage.prompt_tokens += prompt_tokens;
         self.usage.completion_tokens += completion_tokens;
         self.usage.total_tokens += prompt_tokens + completion_tokens;
@@ -257,7 +302,7 @@ impl LlmClient {
         };
         
         Ok(LlmResponse {
-            content: response_content,
+            content,
             tokens_used: prompt_tokens + completion_tokens,
             model: model.to_string(),
         })
@@ -269,28 +314,75 @@ impl LlmClient {
     /// Only use if you have explicitly opted in via ANTHROPIC_API_KEY environment variable.
     fn anthropic_chat_completion(
         &mut self,
-        _api_key: &str,
+        api_key: &str,
         model: &str,
         request: LlmRequest,
     ) -> Result<LlmResponse> {
-        // NOTE: This is a stub implementation
-        // Real implementation would use HTTP client to call Anthropic API
-        // For now, return mock response to unblock development
-        // 
-        // PRIVACY: When implemented, must warn user that data is being sent externally
+        // PRIVACY: Warn user that data is being sent externally
+        eprintln!("⚠ Sending data to Anthropic API (external service)");
         
-        let prompt_tokens = request.messages.iter()
-            .map(|m| m.content.split_whitespace().count())
-            .sum::<usize>();
+        // Build Anthropic API request
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.config.timeout_seconds))
+            .build()?;
         
-        let response_content = format!(
-            "Mock Anthropic Claude {} response for request with {} messages",
-            model,
-            request.messages.len()
-        );
+        // Convert messages to Anthropic format
+        // Anthropic expects system message separate from conversation
+        let mut system_content = String::new();
+        let mut conversation_messages = Vec::new();
         
-        let completion_tokens = response_content.split_whitespace().count();
+        for msg in &request.messages {
+            if msg.role == "system" {
+                system_content = msg.content.clone();
+            } else {
+                conversation_messages.push(serde_json::json!({
+                    "role": msg.role,
+                    "content": msg.content,
+                }));
+            }
+        }
         
+        let mut body = serde_json::json!({
+            "model": model,
+            "messages": conversation_messages,
+            "max_tokens": request.max_tokens,
+            "temperature": request.temperature,
+        });
+        
+        if !system_content.is_empty() {
+            body["system"] = serde_json::json!(system_content);
+        }
+        
+        // Call Anthropic API
+        let response = client
+            .post("https://api.anthropic.com/v1/messages")
+            .header("x-api-key", api_key)
+            .header("anthropic-version", "2023-06-01")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()?;
+        
+        if !response.status().is_success() {
+            anyhow::bail!("Anthropic API error: {}", response.status());
+        }
+        
+        let response_json: serde_json::Value = response.json()?;
+        
+        // Extract response content
+        let content = response_json["content"][0]["text"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        
+        // Extract token usage
+        let prompt_tokens = response_json["usage"]["input_tokens"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        let completion_tokens = response_json["usage"]["output_tokens"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        
+        // Update usage tracking
         self.usage.prompt_tokens += prompt_tokens;
         self.usage.completion_tokens += completion_tokens;
         self.usage.total_tokens += prompt_tokens + completion_tokens;
@@ -303,7 +395,7 @@ impl LlmClient {
         };
         
         Ok(LlmResponse {
-            content: response_content,
+            content,
             tokens_used: prompt_tokens + completion_tokens,
             model: model.to_string(),
         })
@@ -315,28 +407,65 @@ impl LlmClient {
     /// This is the RECOMMENDED provider for BazBOM's privacy-first approach.
     fn ollama_chat_completion(
         &mut self,
-        _base_url: &str,
+        base_url: &str,
         model: &str,
         request: LlmRequest,
     ) -> Result<LlmResponse> {
-        // NOTE: This is a stub implementation
-        // Real implementation would use HTTP client to call Ollama API
-        // For now, return mock response to unblock development
-        // 
         // PRIVACY: Ollama runs locally - no external data transmission
+        eprintln!("✓ Using local Ollama (privacy-preserving)");
         
-        let prompt_tokens = request.messages.iter()
-            .map(|m| m.content.split_whitespace().count())
-            .sum::<usize>();
+        // Build Ollama API request
+        let client = reqwest::blocking::Client::builder()
+            .timeout(std::time::Duration::from_secs(self.config.timeout_seconds))
+            .build()?;
         
-        let response_content = format!(
-            "Mock Ollama {} response for request with {} messages",
-            model,
-            request.messages.len()
-        );
+        // Convert messages to Ollama format
+        let messages: Vec<serde_json::Value> = request.messages.iter()
+            .map(|m| serde_json::json!({
+                "role": m.role,
+                "content": m.content,
+            }))
+            .collect();
         
-        let completion_tokens = response_content.split_whitespace().count();
+        let body = serde_json::json!({
+            "model": model,
+            "messages": messages,
+            "stream": false,
+            "options": {
+                "temperature": request.temperature,
+                "num_predict": request.max_tokens,
+            }
+        });
         
+        // Call Ollama API
+        let url = format!("{}/api/chat", base_url.trim_end_matches('/'));
+        let response = client
+            .post(&url)
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()?;
+        
+        if !response.status().is_success() {
+            anyhow::bail!("Ollama API error: {} (Is Ollama running at {}?)", response.status(), base_url);
+        }
+        
+        let response_json: serde_json::Value = response.json()?;
+        
+        // Extract response content
+        let content = response_json["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        
+        // Extract token usage (Ollama provides these in eval metrics)
+        let prompt_tokens = response_json["prompt_eval_count"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        let completion_tokens = response_json["eval_count"]
+            .as_u64()
+            .unwrap_or(0) as usize;
+        
+        // Update usage tracking
         self.usage.prompt_tokens += prompt_tokens;
         self.usage.completion_tokens += completion_tokens;
         self.usage.total_tokens += prompt_tokens + completion_tokens;
@@ -344,7 +473,7 @@ impl LlmClient {
         self.usage.estimated_cost_usd = 0.0;
         
         Ok(LlmResponse {
-            content: response_content,
+            content,
             tokens_used: prompt_tokens + completion_tokens,
             model: model.to_string(),
         })
@@ -568,12 +697,9 @@ mod tests {
 
     #[test]
     fn test_token_usage_tracking() {
-        // Use OpenAI provider for token usage tracking (Mock doesn't track)
+        // Use Mock provider for testing since we don't have real API access
         let config = LlmConfig {
-            provider: LlmProvider::OpenAI {
-                api_key: "test".to_string(),
-                model: "gpt-4".to_string(),
-            },
+            provider: LlmProvider::Mock,
             ..Default::default()
         };
         let mut client = LlmClient::new(config);
@@ -597,7 +723,8 @@ mod tests {
     }
 
     #[test]
-    fn test_openai_provider() {
+    fn test_openai_provider_structure() {
+        // Test that OpenAI provider can be created with correct structure
         let config = LlmConfig {
             provider: LlmProvider::OpenAI {
                 api_key: "test_key".to_string(),
@@ -605,25 +732,19 @@ mod tests {
             },
             ..Default::default()
         };
-        let mut client = LlmClient::new(config);
+        let client = LlmClient::new(config);
         
-        let request = LlmRequest {
-            messages: vec![
-                LlmMessage {
-                    role: "user".to_string(),
-                    content: "Test".to_string(),
-                },
-            ],
-            max_tokens: 100,
-            temperature: 0.7,
-        };
-
-        let response = client.chat_completion(request).unwrap();
-        assert!(response.content.contains("OpenAI"));
+        // Verify provider is external
+        assert!(client.is_external());
+        assert!(!client.is_privacy_safe());
+        
+        // Note: Actual API calls require valid credentials
+        // Integration tests should be run separately with OPENAI_API_KEY env var
     }
 
     #[test]
-    fn test_anthropic_provider() {
+    fn test_anthropic_provider_structure() {
+        // Test that Anthropic provider can be created with correct structure
         let config = LlmConfig {
             provider: LlmProvider::Anthropic {
                 api_key: "test_key".to_string(),
@@ -631,26 +752,19 @@ mod tests {
             },
             ..Default::default()
         };
-        let mut client = LlmClient::new(config);
+        let client = LlmClient::new(config);
         
-        let request = LlmRequest {
-            messages: vec![
-                LlmMessage {
-                    role: "user".to_string(),
-                    content: "Test".to_string(),
-                },
-            ],
-            max_tokens: 100,
-            temperature: 0.7,
-        };
-
-        let response = client.chat_completion(request).unwrap();
-        assert!(response.content.contains("Anthropic"));
-        assert!(response.content.contains("Claude"));
+        // Verify provider is external
+        assert!(client.is_external());
+        assert!(!client.is_privacy_safe());
+        
+        // Note: Actual API calls require valid credentials
+        // Integration tests should be run separately with ANTHROPIC_API_KEY env var
     }
 
     #[test]
-    fn test_ollama_provider() {
+    fn test_ollama_provider_structure() {
+        // Test that Ollama provider can be created with correct structure
         let config = LlmConfig {
             provider: LlmProvider::Ollama {
                 base_url: "http://localhost:11434".to_string(),
@@ -658,21 +772,14 @@ mod tests {
             },
             ..Default::default()
         };
-        let mut client = LlmClient::new(config);
+        let client = LlmClient::new(config);
         
-        let request = LlmRequest {
-            messages: vec![
-                LlmMessage {
-                    role: "user".to_string(),
-                    content: "Test".to_string(),
-                },
-            ],
-            max_tokens: 100,
-            temperature: 0.7,
-        };
-
-        let response = client.chat_completion(request).unwrap();
-        assert!(response.content.contains("Ollama"));
+        // Verify provider is local and privacy-safe
+        assert!(!client.is_external());
+        assert!(client.is_privacy_safe());
+        
+        // Note: Actual API calls require Ollama to be running
+        // Integration tests should be run separately with Ollama installed
     }
 
     #[test]
