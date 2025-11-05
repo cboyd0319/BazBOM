@@ -195,6 +195,7 @@ impl Notifier {
     }
 
     /// Send email notification (SMTP)
+    #[allow(clippy::too_many_arguments)]
     fn send_email(
         &self,
         smtp_server: &str,
