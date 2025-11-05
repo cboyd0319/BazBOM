@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::enrich::DepsDevClient;
 use crate::fixes::{OpenRewriteRunner, VulnerabilityFinding};
+use crate::performance::PerformanceMonitor;
 use crate::pipeline::{merge_sarif_reports, Analyzer};
 use crate::publish::GitHubPublisher;
 use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
@@ -21,6 +22,7 @@ pub struct ScanOrchestratorOptions {
     pub target: Option<String>,
     pub threat_detection: Option<ThreatDetectionLevel>,
     pub incremental: bool,
+    pub benchmark: bool,
 }
 
 pub struct ScanOrchestrator {
@@ -35,6 +37,7 @@ pub struct ScanOrchestrator {
     target: Option<String>,
     threat_detection: Option<ThreatDetectionLevel>,
     incremental: bool,
+    benchmark: bool,
 }
 
 impl ScanOrchestrator {
@@ -65,11 +68,19 @@ impl ScanOrchestrator {
             target: options.target,
             threat_detection: options.threat_detection,
             incremental: options.incremental,
+            benchmark: options.benchmark,
         })
     }
 
     pub fn run(&self) -> Result<()> {
         println!("[bazbom] orchestrated scan starting...");
+
+        // Initialize performance monitor if benchmarking enabled
+        let mut perf_monitor = if self.benchmark {
+            Some(PerformanceMonitor::new("scan".to_string()))
+        } else {
+            None
+        };
 
         if self.cyclonedx {
             println!("[bazbom] CycloneDX output enabled");
@@ -104,12 +115,21 @@ impl ScanOrchestrator {
         }
 
         // Step 1: Generate SBOM
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.start_phase("sbom_generation");
+        }
         self.generate_sbom()?;
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.end_phase();
+        }
 
         // Run analyzers
         let mut reports = Vec::new();
 
         // 1. SCA (always runs)
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.start_phase("vulnerability_scan");
+        }
         let sca = ScaAnalyzer::new();
         if sca.enabled(&self.config, true) {
             match sca.run(&self.context) {
@@ -119,6 +139,9 @@ impl ScanOrchestrator {
                 }
                 Err(e) => eprintln!("[bazbom] SCA analysis failed: {}", e),
             }
+        }
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.end_phase();
         }
 
         // 2. Semgrep (optional)
@@ -150,6 +173,9 @@ impl ScanOrchestrator {
         }
 
         // 4. Threat Intelligence (if enabled)
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.start_phase("threat_intelligence");
+        }
         let threat_level = self
             .threat_detection
             .unwrap_or_else(|| ThreatDetectionLevel::Standard);
@@ -164,6 +190,9 @@ impl ScanOrchestrator {
                     Err(e) => eprintln!("[bazbom] Threat intelligence analysis failed: {}", e),
                 }
             }
+        }
+        if let Some(ref mut monitor) = perf_monitor {
+            monitor.end_phase();
         }
 
         // 5. Enrichment with deps.dev (if enabled)
@@ -227,6 +256,82 @@ impl ScanOrchestrator {
         if !cache_disabled {
             if let Err(e) = self.store_in_cache() {
                 eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
+            }
+        }
+
+        // Finalize performance monitoring and display metrics
+        if let Some(monitor) = perf_monitor {
+            let metrics = monitor.finalize();
+            println!("[bazbom]");
+            println!("[bazbom] ╔══════════════════════════════════════════════════════════╗");
+            println!("[bazbom] ║            Performance Metrics                           ║");
+            println!("[bazbom] ╠══════════════════════════════════════════════════════════╣");
+            println!(
+                "[bazbom] ║  Total Duration: {:<40} ║",
+                crate::performance::format_duration(metrics.total_duration)
+            );
+            
+            // Display individual phase timings
+            if let Some(duration) = metrics.sbom_generation_duration {
+                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                println!(
+                    "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
+                    "SBOM Generation",
+                    crate::performance::format_duration(duration),
+                    percentage
+                );
+            }
+            
+            if let Some(duration) = metrics.vulnerability_scan_duration {
+                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                println!(
+                    "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
+                    "Vulnerability Scan",
+                    crate::performance::format_duration(duration),
+                    percentage
+                );
+            }
+            
+            if let Some(duration) = metrics.threat_detection_duration {
+                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                println!(
+                    "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
+                    "Threat Detection",
+                    crate::performance::format_duration(duration),
+                    percentage
+                );
+            }
+            
+            if let Some(duration) = metrics.reachability_duration {
+                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                println!(
+                    "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
+                    "Reachability",
+                    crate::performance::format_duration(duration),
+                    percentage
+                );
+            }
+            
+            println!("[bazbom] ╠══════════════════════════════════════════════════════════╣");
+            println!(
+                "[bazbom] ║  Dependencies: {:<44} ║",
+                metrics.dependencies_count
+            );
+            println!(
+                "[bazbom] ║  Vulnerabilities: {:<41} ║",
+                metrics.vulnerabilities_count
+            );
+            println!(
+                "[bazbom] ║  Build System: {:<44} ║",
+                metrics.build_system
+            );
+            println!("[bazbom] ╚══════════════════════════════════════════════════════════╝");
+            
+            // Save metrics to file
+            let metrics_path = self.context.out_dir.join("performance.json");
+            if let Ok(json) = serde_json::to_string_pretty(&metrics) {
+                let _ = std::fs::write(&metrics_path, json);
+                println!("[bazbom] Performance metrics saved to: {:?}", metrics_path);
             }
         }
 
@@ -808,7 +913,8 @@ mod tests {
                 no_upload: true,
                 target: None,
                 threat_detection: None,
-            incremental: false,
+                incremental: false,
+                benchmark: false,
             },
         )?;
 
@@ -837,7 +943,8 @@ mod tests {
                 no_upload: true,
                 target: None,
                 threat_detection: None,
-            incremental: false,
+                incremental: false,
+                benchmark: false,
             },
         )?;
 

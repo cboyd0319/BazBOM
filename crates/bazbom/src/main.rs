@@ -37,6 +37,7 @@ fn main() -> Result<()> {
         target: None,
         incremental: false,
         base: "main".into(),
+        benchmark: false,
     }) {
         Commands::Scan {
             path,
@@ -57,6 +58,7 @@ fn main() -> Result<()> {
             target,
             incremental,
             base,
+            benchmark,
         } => {
             // Check if any orchestration flags are set
             let use_orchestrator = cyclonedx
@@ -84,6 +86,7 @@ fn main() -> Result<()> {
                         target,
                         threat_detection: None, // Use default from config
                         incremental: false,     // Disabled by default, enable via CLI flag
+                        benchmark,
                     },
                 )?;
 

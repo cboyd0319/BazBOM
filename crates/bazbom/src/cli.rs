@@ -65,6 +65,9 @@ pub enum Commands {
         /// Git base reference for incremental analysis (e.g., main, HEAD~1)
         #[arg(long, value_name = "REF", default_value = "main")]
         base: String,
+        /// Enable performance benchmarking and metrics reporting
+        #[arg(long)]
+        benchmark: bool,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {

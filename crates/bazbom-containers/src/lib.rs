@@ -480,6 +480,7 @@ impl ContainerScanner {
     }
 
     /// Find Java artifacts in container layers
+    #[allow(dead_code)]
     fn find_java_artifacts(&self, _image: &ContainerImage) -> Result<Vec<JavaArtifact>> {
         // NOTE: This is a stub implementation
         // In a real implementation, this would:
