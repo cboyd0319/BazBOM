@@ -137,7 +137,8 @@ fn bench_parallel_processing(c: &mut Criterion) {
                         handle.join().unwrap();
                     }
                     
-                    results.lock().unwrap().len()
+                    let len = results.lock().unwrap().len();
+                    len
                 });
             },
         );

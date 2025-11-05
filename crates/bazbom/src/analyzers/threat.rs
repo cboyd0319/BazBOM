@@ -6,13 +6,13 @@ use bazbom_formats::sarif::{
     ArtifactLocation, Location, Message, MessageString, PhysicalLocation,
     Result as SarifResult, Rule, SarifReport,
 };
+use std::collections::HashMap;
 use std::fmt;
 use bazbom_threats::{
-    database_integration::{MaliciousPackageDatabase, MaliciousPackageEntry},
+    database_integration::MaliciousPackageDatabase,
     dependency_confusion::DependencyConfusionDetector,
     typosquatting, ThreatIndicator, ThreatLevel, ThreatType,
 };
-use std::collections::HashMap;
 
 /// Threat intelligence analyzer
 pub struct ThreatAnalyzer {
@@ -130,7 +130,7 @@ impl ThreatAnalyzer {
 
         // 1. Query malicious package database (basic level)
         if self.level >= ThreatDetectionLevel::Basic {
-            let db = MaliciousPackageDatabase::new();
+            let _db = MaliciousPackageDatabase::new();
             // In a real implementation, we would load actual malicious package data
             // For now, we'll check against known patterns
 
@@ -324,6 +324,7 @@ impl Analyzer for ThreatAnalyzer {
 struct Component {
     name: String,
     version: String,
+    #[allow(dead_code)]
     purl: Option<String>,
 }
 
