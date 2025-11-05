@@ -568,11 +568,11 @@ See [PHASE_11_DISTRIBUTION.md](copilot/PHASE_11_DISTRIBUTION.md) for details.
 
 See [IMPLEMENTATION_ROADMAP.md](copilot/IMPLEMENTATION_ROADMAP.md) for detailed 8-week plan.
 
-#### Weeks 1-2: Quick Wins ✅ COMPLETE (2025-11-04)
+#### Weeks 1-2: Quick Wins ✅ COMPLETE (2025-11-05)
 - [x] Interactive `bazbom init` command ✅
 - [x] Expanded policy template library (21 templates) ✅
-- [ ] Terminal-based dependency graph (TUI)
-- [ ] Enhanced `bazbom fix --interactive` with batch processing
+- [x] Terminal-based dependency graph (TUI) ✅
+- [x] Enhanced `bazbom fix --interactive` with batch processing ✅
 
 #### Weeks 3-4: Visual Excellence ✅ COMPLETE
 - [x] Embedded web dashboard MVP ✅
