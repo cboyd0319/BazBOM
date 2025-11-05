@@ -3,7 +3,7 @@
 //! Integrates with OpenSSF Scorecard to assess repository security health.
 //! Scorecard checks various security best practices and provides a score.
 //!
-//! See: https://github.com/ossf/scorecard
+//! See: <https://github.com/ossf/scorecard>
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -125,11 +125,11 @@ impl ScorecardClient {
         }
 
         // Parse JSON output
-        let json = String::from_utf8(output.stdout)
-            .context("Scorecard output is not valid UTF-8")?;
-        
-        let scorecard_output: ScorecardJsonOutput = serde_json::from_str(&json)
-            .context("Failed to parse scorecard JSON output")?;
+        let json =
+            String::from_utf8(output.stdout).context("Scorecard output is not valid UTF-8")?;
+
+        let scorecard_output: ScorecardJsonOutput =
+            serde_json::from_str(&json).context("Failed to parse scorecard JSON output")?;
 
         // Convert to our format
         Ok(self.convert_result(repo_url, scorecard_output))
@@ -137,10 +137,7 @@ impl ScorecardClient {
 
     /// Check multiple repositories
     pub fn check_repos(&self, repo_urls: &[String]) -> Vec<Result<ScorecardResult>> {
-        repo_urls
-            .iter()
-            .map(|url| self.check_repo(url))
-            .collect()
+        repo_urls.iter().map(|url| self.check_repo(url)).collect()
     }
 
     /// Convert scorecard JSON output to our format
@@ -234,15 +231,15 @@ struct ScorecardCheckJson {
 pub fn extract_repo_url(purl: &str) -> Option<String> {
     // Parse PURL to extract repository information
     // Format: pkg:maven/groupId/artifactId@version
-    
+
     // For Maven Central packages, we try to find the repo from:
     // 1. PURL metadata
     // 2. Maven metadata
     // 3. Known mappings
-    
+
     // This is a simplified version - in production we'd query Maven Central
     // or use the package's POM file to find the SCM URL
-    
+
     if purl.starts_with("pkg:maven/") {
         // Example heuristic: many Apache projects follow a pattern
         if purl.contains("/org.apache.") {
@@ -251,30 +248,45 @@ pub fn extract_repo_url(purl: &str) -> Option<String> {
             return None;
         }
     }
-    
+
     None
 }
 
 /// Get repository from dependency metadata
-pub fn get_dependency_repo(
-    group_id: &str,
-    artifact_id: &str,
-) -> Option<String> {
+pub fn get_dependency_repo(group_id: &str, artifact_id: &str) -> Option<String> {
     // Known repository mappings for common packages
     let known_repos: HashMap<(&str, &str), &str> = [
-        (("org.springframework", "spring-core"), "spring-projects/spring-framework"),
-        (("org.springframework.boot", "spring-boot"), "spring-projects/spring-boot"),
+        (
+            ("org.springframework", "spring-core"),
+            "spring-projects/spring-framework",
+        ),
+        (
+            ("org.springframework.boot", "spring-boot"),
+            "spring-projects/spring-boot",
+        ),
         (("com.google.guava", "guava"), "google/guava"),
-        (("org.apache.logging.log4j", "log4j-core"), "apache/logging-log4j2"),
-        (("com.fasterxml.jackson.core", "jackson-core"), "FasterXML/jackson-core"),
+        (
+            ("org.apache.logging.log4j", "log4j-core"),
+            "apache/logging-log4j2",
+        ),
+        (
+            ("com.fasterxml.jackson.core", "jackson-core"),
+            "FasterXML/jackson-core",
+        ),
         (("junit", "junit"), "junit-team/junit4"),
         (("org.junit.jupiter", "junit-jupiter"), "junit-team/junit5"),
         (("org.slf4j", "slf4j-api"), "qos-ch/slf4j"),
         (("ch.qos.logback", "logback-classic"), "qos-ch/logback"),
         (("com.google.code.gson", "gson"), "google/gson"),
-        (("org.apache.commons", "commons-lang3"), "apache/commons-lang"),
+        (
+            ("org.apache.commons", "commons-lang3"),
+            "apache/commons-lang",
+        ),
         (("commons-io", "commons-io"), "apache/commons-io"),
-        (("org.apache.httpcomponents", "httpclient"), "apache/httpcomponents-client"),
+        (
+            ("org.apache.httpcomponents", "httpclient"),
+            "apache/httpcomponents-client",
+        ),
     ]
     .iter()
     .cloned()
@@ -338,17 +350,15 @@ mod tests {
             repo: "github.com/owner/repo".to_string(),
             score: 7.5,
             date: "2025-11-05".to_string(),
-            checks: vec![
-                ScorecardCheck {
-                    name: "Code-Review".to_string(),
-                    score: 8,
-                    reason: "Found code review".to_string(),
-                    documentation: Some("https://...".to_string()),
-                },
-            ],
+            checks: vec![ScorecardCheck {
+                name: "Code-Review".to_string(),
+                score: 8,
+                reason: "Found code review".to_string(),
+                documentation: Some("https://...".to_string()),
+            }],
             commit: Some("abc123".to_string()),
         };
-        
+
         assert_eq!(result.repo, "github.com/owner/repo");
         assert_eq!(result.score, 7.5);
         assert_eq!(result.checks.len(), 1);

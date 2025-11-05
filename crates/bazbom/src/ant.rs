@@ -60,9 +60,9 @@ impl AntProject {
         let mut dependencies = Vec::new();
         let mut reader = quick_xml::Reader::from_str(&content);
         reader.trim_text(true);
-        
+
         let mut buf = Vec::new();
-        
+
         loop {
             match reader.read_event_into(&mut buf) {
                 Ok(quick_xml::events::Event::Start(e)) | Ok(quick_xml::events::Event::Empty(e)) => {
@@ -71,11 +71,11 @@ impl AntProject {
                         let mut name = String::new();
                         let mut rev = String::new();
                         let mut conf = String::from("compile");
-                        
+
                         for attr in e.attributes().flatten() {
                             let key = attr.key.as_ref();
                             let value = String::from_utf8_lossy(&attr.value).to_string();
-                            
+
                             match key {
                                 b"org" => org = value,
                                 b"name" => name = value,
@@ -84,7 +84,7 @@ impl AntProject {
                                 _ => {}
                             }
                         }
-                        
+
                         if !org.is_empty() && !name.is_empty() && !rev.is_empty() {
                             dependencies.push(AntDependency {
                                 group_id: org,
@@ -97,7 +97,13 @@ impl AntProject {
                     }
                 }
                 Ok(quick_xml::events::Event::Eof) => break,
-                Err(e) => return Err(anyhow::anyhow!("Error parsing ivy.xml at position {}: {}", reader.buffer_position(), e)),
+                Err(e) => {
+                    return Err(anyhow::anyhow!(
+                        "Error parsing ivy.xml at position {}: {}",
+                        reader.buffer_position(),
+                        e
+                    ))
+                }
                 _ => {}
             }
             buf.clear();
@@ -109,7 +115,7 @@ impl AntProject {
     /// Detect manual JAR files in lib directories
     fn detect_manual_jars(&self) -> Result<Vec<AntDependency>> {
         let mut dependencies = Vec::new();
-        
+
         // Common lib directories
         let lib_dirs = vec![
             self.root.join("lib"),
@@ -134,7 +140,7 @@ impl AntProject {
         for entry in fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-            
+
             if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("jar") {
                 if let Some(dep) = self.parse_jar_filename(&path) {
                     dependencies.push(dep);
@@ -146,17 +152,17 @@ impl AntProject {
     }
 
     /// Parse JAR filename to extract dependency info
-    /// 
+    ///
     /// Attempts to parse common naming patterns:
     /// - groupId-artifactId-version.jar
     /// - artifactId-version.jar
     /// - artifactId.jar
     fn parse_jar_filename(&self, jar_path: &Path) -> Option<AntDependency> {
         let filename = jar_path.file_stem()?.to_str()?;
-        
+
         // Try to split by '-' and identify version pattern
         let parts: Vec<&str> = filename.split('-').collect();
-        
+
         if parts.len() >= 2 {
             // Check if last part looks like a version (contains digit)
             let last_part = parts[parts.len() - 1];
@@ -164,14 +170,14 @@ impl AntProject {
                 let version = last_part.to_string();
                 let artifact_parts = &parts[0..parts.len() - 1];
                 let artifact_id = artifact_parts.join("-");
-                
+
                 // Try to infer group_id from common patterns
                 let group_id = if artifact_parts.len() > 1 {
                     artifact_parts[0].to_string()
                 } else {
                     "unknown".to_string()
                 };
-                
+
                 return Some(AntDependency {
                     group_id,
                     artifact_id,
@@ -181,7 +187,7 @@ impl AntProject {
                 });
             }
         }
-        
+
         // Fallback: just use filename as artifact_id with unknown version
         Some(AntDependency {
             group_id: "unknown".to_string(),
@@ -206,7 +212,7 @@ impl AntProject {
     /// Extract project name from build.xml
     fn get_project_name(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Simple regex-like parsing for project name attribute
         if let Some(start) = content.find("<project") {
             let project_tag = &content[start..];
@@ -217,7 +223,7 @@ impl AntProject {
                 }
             }
         }
-        
+
         Ok("unknown-ant-project".to_string())
     }
 
@@ -237,7 +243,7 @@ impl AntProject {
                 }
             }
         }
-        
+
         Ok("1.0.0".to_string())
     }
 }
@@ -309,12 +315,12 @@ mod tests {
     fn test_ant_project_detect_with_build_xml() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         fs::write(root.join("build.xml"), "<project name=\"test\"/>").unwrap();
-        
+
         let project = AntProject::detect(root).unwrap();
         assert!(project.is_some());
-        
+
         let project = project.unwrap();
         assert_eq!(project.build_file, root.join("build.xml"));
         assert!(project.ivy_file.is_none());
@@ -324,13 +330,13 @@ mod tests {
     fn test_ant_project_detect_with_ivy() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         fs::write(root.join("build.xml"), "<project name=\"test\"/>").unwrap();
         fs::write(root.join("ivy.xml"), "<ivy-module version=\"2.0\"/>").unwrap();
-        
+
         let project = AntProject::detect(root).unwrap();
         assert!(project.is_some());
-        
+
         let project = project.unwrap();
         assert!(project.ivy_file.is_some());
     }
@@ -339,7 +345,7 @@ mod tests {
     fn test_ant_project_not_detected() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         let project = AntProject::detect(root).unwrap();
         assert!(project.is_none());
     }
@@ -352,10 +358,10 @@ mod tests {
             ivy_file: None,
             build_file: temp_dir.path().join("build.xml"),
         };
-        
+
         let jar_path = PathBuf::from("commons-lang3-3.12.0.jar");
         let dep = project.parse_jar_filename(&jar_path).unwrap();
-        
+
         assert_eq!(dep.group_id, "commons");
         assert_eq!(dep.artifact_id, "commons-lang3");
         assert_eq!(dep.version, "3.12.0");
@@ -370,10 +376,10 @@ mod tests {
             ivy_file: None,
             build_file: temp_dir.path().join("build.xml"),
         };
-        
+
         let jar_path = PathBuf::from("simple-1.0.jar");
         let dep = project.parse_jar_filename(&jar_path).unwrap();
-        
+
         assert_eq!(dep.artifact_id, "simple");
         assert_eq!(dep.version, "1.0");
     }
@@ -387,7 +393,7 @@ mod tests {
             scope: "compile".to_string(),
             source: DependencySource::Ivy,
         };
-        
+
         let coords = ant_to_maven_coordinates(&dep);
         assert_eq!(coords, "org.apache.commons:commons-lang3:3.12.0");
     }
@@ -407,7 +413,7 @@ mod tests {
             ivy_file: None,
             dependencies: vec![],
         };
-        
+
         assert_eq!(sbom.project_name, "test-project");
         assert_eq!(sbom.project_version, "1.0.0");
         assert_eq!(sbom.dependencies.len(), 0);

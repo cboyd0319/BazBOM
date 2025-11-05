@@ -128,7 +128,9 @@ impl MaintainerTakeoverDetector {
         let mut signals = Vec::new();
 
         // Check for email domain changes
-        if let Some((old_email, new_email)) = self.detect_email_domain_change(&package_info.maintainer_history) {
+        if let Some((old_email, new_email)) =
+            self.detect_email_domain_change(&package_info.maintainer_history)
+        {
             signals.push(TakeoverSignal::MaintainerEmailChange {
                 old: old_email,
                 new: new_email,
@@ -136,7 +138,9 @@ impl MaintainerTakeoverDetector {
         }
 
         // Check for new unknown maintainers
-        if let Some(new_maintainer) = self.detect_new_unknown_maintainer(&package_info.maintainer_history) {
+        if let Some(new_maintainer) =
+            self.detect_new_unknown_maintainer(&package_info.maintainer_history)
+        {
             signals.push(TakeoverSignal::NewUnknownMaintainer {
                 maintainer: new_maintainer,
             });
@@ -258,10 +262,7 @@ impl MaintainerTakeoverDetector {
     }
 
     /// Detect email domain changes in maintainer history
-    fn detect_email_domain_change(
-        &self,
-        history: &[MaintainerInfo],
-    ) -> Option<(String, String)> {
+    fn detect_email_domain_change(&self, history: &[MaintainerInfo]) -> Option<(String, String)> {
         if history.len() < 2 {
             return None;
         }
@@ -291,7 +292,7 @@ impl MaintainerTakeoverDetector {
         }
 
         let latest = &history[0];
-        
+
         // If account is very new (< 30 days), it's suspicious
         if latest.account_age_days < 30 && history.len() > 1 {
             Some(latest.name.clone())
@@ -425,9 +426,15 @@ mod tests {
 
     #[test]
     fn test_risk_level_ordering() {
-        assert!(matches!(TakeoverRiskLevel::Critical, TakeoverRiskLevel::Critical));
+        assert!(matches!(
+            TakeoverRiskLevel::Critical,
+            TakeoverRiskLevel::Critical
+        ));
         assert!(matches!(TakeoverRiskLevel::High, TakeoverRiskLevel::High));
-        assert!(matches!(TakeoverRiskLevel::Medium, TakeoverRiskLevel::Medium));
+        assert!(matches!(
+            TakeoverRiskLevel::Medium,
+            TakeoverRiskLevel::Medium
+        ));
         assert!(matches!(TakeoverRiskLevel::Low, TakeoverRiskLevel::Low));
     }
 
@@ -437,10 +444,16 @@ mod tests {
             old: "old@example.com".to_string(),
             new: "new@example.com".to_string(),
         };
-        assert!(matches!(signal, TakeoverSignal::MaintainerEmailChange { .. }));
+        assert!(matches!(
+            signal,
+            TakeoverSignal::MaintainerEmailChange { .. }
+        ));
 
         let signal2 = TakeoverSignal::UnusualReleaseCadence { releases_in_24h: 5 };
-        assert!(matches!(signal2, TakeoverSignal::UnusualReleaseCadence { .. }));
+        assert!(matches!(
+            signal2,
+            TakeoverSignal::UnusualReleaseCadence { .. }
+        ));
     }
 
     #[test]
@@ -453,7 +466,7 @@ mod tests {
             new_binary_files: 0,
             suspicious_dependencies: 0,
         };
-        
+
         assert_eq!(package_info.name, "test-package");
         assert_eq!(package_info.current_version, "2.0.0");
     }

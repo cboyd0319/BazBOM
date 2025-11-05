@@ -156,11 +156,15 @@ impl App {
     fn export_to_json(&mut self, filename: &str) -> Result<()> {
         let filtered = self.filtered_dependencies();
         let data: Vec<&Dependency> = filtered.into_iter().collect();
-        
+
         let json = serde_json::to_string_pretty(&data)?;
         std::fs::write(filename, json)?;
-        
-        self.export_message = Some(format!("Exported {} dependencies to {}", data.len(), filename));
+
+        self.export_message = Some(format!(
+            "Exported {} dependencies to {}",
+            data.len(),
+            filename
+        ));
         Ok(())
     }
 
@@ -243,7 +247,10 @@ fn handle_key_event(key: KeyEvent, app: &mut App) -> Result<bool> {
             let all_deps: Vec<&Dependency> = app.dependencies.iter().collect();
             let json = serde_json::to_string_pretty(&all_deps)?;
             std::fs::write("bazbom_all_deps.json", json)?;
-            app.export_message = Some(format!("Exported {} dependencies to bazbom_all_deps.json", all_deps.len()));
+            app.export_message = Some(format!(
+                "Exported {} dependencies to bazbom_all_deps.json",
+                all_deps.len()
+            ));
         }
         _ => {}
     }
@@ -436,7 +443,8 @@ fn render_footer(f: &mut Frame, area: Rect, app: &App) {
     let footer_text = if let Some(ref msg) = app.export_message {
         msg.clone()
     } else {
-        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [e] Export filtered [x] Export all [?] Help [q] Quit".to_string()
+        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [e] Export filtered [x] Export all [?] Help [q] Quit"
+            .to_string()
     };
 
     let footer = Paragraph::new(footer_text)

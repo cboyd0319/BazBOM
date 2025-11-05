@@ -344,10 +344,7 @@ async fn load_team_dashboard(state: &AppState) -> anyhow::Result<TeamDashboard> 
     // Create top contributors list
     let mut top_contributors: Vec<TopContributor> = fix_counts
         .into_iter()
-        .map(|(email, fixes_count)| TopContributor {
-            email,
-            fixes_count,
-        })
+        .map(|(email, fixes_count)| TopContributor { email, fixes_count })
         .collect();
     top_contributors.sort_by(|a, b| b.fixes_count.cmp(&a.fixes_count));
     top_contributors.truncate(5); // Top 5 contributors

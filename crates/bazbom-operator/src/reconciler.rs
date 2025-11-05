@@ -1,6 +1,10 @@
 //! Reconciliation logic for BazBOMScan resources
 
-use crate::{crd::*, error::{OperatorError, Result}, Context};
+use crate::{
+    crd::*,
+    error::{OperatorError, Result},
+    Context,
+};
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
     core::v1::{Container, PodSpec, PodTemplateSpec},
@@ -18,17 +22,27 @@ use tracing::{error, info};
 
 /// Reconcile a BazBOMScan resource
 pub async fn reconcile(scan: Arc<BazBOMScan>, ctx: Arc<Context>) -> Result<Action> {
-    let namespace = scan
-        .namespace()
-        .ok_or_else(|| OperatorError::InvalidConfig("BazBOMScan must have a namespace".to_string()))?;
+    let namespace = scan.namespace().ok_or_else(|| {
+        OperatorError::InvalidConfig("BazBOMScan must have a namespace".to_string())
+    })?;
     let name = scan.name_any();
 
     info!("Reconciling BazBOMScan {}/{}", namespace, name);
 
     // Create scan job
     if let Err(e) = create_scan_job(&scan, &namespace, &ctx.client).await {
-        error!("Failed to create scan job for {}/{}: {}", namespace, name, e);
-        update_scan_status(&scan, &namespace, &ctx.client, "Failed", Some(&e.to_string())).await?;
+        error!(
+            "Failed to create scan job for {}/{}: {}",
+            namespace, name, e
+        );
+        update_scan_status(
+            &scan,
+            &namespace,
+            &ctx.client,
+            "Failed",
+            Some(&e.to_string()),
+        )
+        .await?;
         return Ok(Action::requeue(Duration::from_secs(300)));
     }
 
@@ -46,11 +60,7 @@ pub fn error_policy(_scan: Arc<BazBOMScan>, _error: &OperatorError, _ctx: Arc<Co
 }
 
 /// Create a Kubernetes Job to run the scan
-async fn create_scan_job(
-    scan: &BazBOMScan,
-    namespace: &str,
-    client: &kube::Client,
-) -> Result<()> {
+async fn create_scan_job(scan: &BazBOMScan, namespace: &str, client: &kube::Client) -> Result<()> {
     let name = scan.name_any();
     let job_name = format!("bazbom-scan-{}", name);
 
@@ -168,11 +178,7 @@ async fn update_scan_status(
     });
 
     scans
-        .patch_status(
-            &name,
-            &PatchParams::default(),
-            &Patch::Merge(&patch),
-        )
+        .patch_status(&name, &PatchParams::default(), &Patch::Merge(&patch))
         .await
         .map_err(|e| OperatorError::StatusUpdateFailed(e.to_string()))?;
 

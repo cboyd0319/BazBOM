@@ -57,10 +57,10 @@ impl SbtProject {
         // libraryDependencies += "org.scala-lang" % "scala-library" % "2.13.0"
         // libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.6.0"
         // libraryDependencies ++= Seq(...)
-        
+
         for line in content.lines() {
             let line = line.trim();
-            
+
             // Skip comments
             if line.starts_with("//") {
                 continue;
@@ -80,7 +80,7 @@ impl SbtProject {
         // Match patterns like:
         // libraryDependencies += "group" % "artifact" % "version"
         // libraryDependencies += "group" %% "artifact" % "version"
-        
+
         if !line.contains("libraryDependencies") {
             return None;
         }
@@ -88,7 +88,7 @@ impl SbtProject {
         // Extract the dependency specification
         // Look for patterns: "group" % "artifact" % "version"
         let parts: Vec<&str> = line.split('"').collect();
-        
+
         if parts.len() >= 6 {
             let group_id = parts[1].to_string();
             let artifact_id = parts[3].to_string();
@@ -131,7 +131,7 @@ impl SbtProject {
     /// Extract project name from build.sbt
     fn get_project_name(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Look for name := "project-name" pattern
         for line in content.lines() {
             let line = line.trim();
@@ -144,14 +144,14 @@ impl SbtProject {
                 }
             }
         }
-        
+
         Ok("unknown-sbt-project".to_string())
     }
 
     /// Extract project version from build.sbt
     fn get_project_version(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Look for version := "1.0.0" pattern
         for line in content.lines() {
             let line = line.trim();
@@ -164,14 +164,14 @@ impl SbtProject {
                 }
             }
         }
-        
+
         Ok("1.0.0".to_string())
     }
 
     /// Extract Scala version from build.sbt
     fn get_scala_version(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Look for scalaVersion := "2.13.0" pattern
         for line in content.lines() {
             let line = line.trim();
@@ -184,7 +184,7 @@ impl SbtProject {
                 }
             }
         }
-        
+
         Ok("2.13.0".to_string())
     }
 }
@@ -232,7 +232,11 @@ pub struct SbtSbom {
 pub fn sbt_to_maven_coordinates(dep: &SbtDependency, scala_version: &str) -> String {
     let artifact = if dep.scala_cross_version {
         // Append Scala binary version (e.g., 2.13 from 2.13.0)
-        let scala_binary = scala_version.split('.').take(2).collect::<Vec<_>>().join(".");
+        let scala_binary = scala_version
+            .split('.')
+            .take(2)
+            .collect::<Vec<_>>()
+            .join(".");
         format!("{}_{}", dep.artifact_id, scala_binary)
     } else {
         dep.artifact_id.clone()
@@ -263,12 +267,12 @@ mod tests {
     fn test_sbt_project_detect_with_build_sbt() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         fs::write(root.join("build.sbt"), "name := \"my-project\"").unwrap();
-        
+
         let project = SbtProject::detect(root).unwrap();
         assert!(project.is_some());
-        
+
         let project = project.unwrap();
         assert_eq!(project.build_file, root.join("build.sbt"));
     }
@@ -277,10 +281,10 @@ mod tests {
     fn test_sbt_project_detect_with_project_dir() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         fs::create_dir_all(root.join("project")).unwrap();
         fs::write(root.join("project/build.properties"), "sbt.version=1.9.0").unwrap();
-        
+
         let project = SbtProject::detect(root).unwrap();
         assert!(project.is_some());
     }
@@ -289,7 +293,7 @@ mod tests {
     fn test_sbt_project_not_detected() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         let project = SbtProject::detect(root).unwrap();
         assert!(project.is_none());
     }
@@ -302,11 +306,13 @@ mod tests {
             build_file: temp_dir.path().join("build.sbt"),
             project_dir: None,
         };
-        
-        let dep = project.parse_dependency_line(
-            r#"libraryDependencies += "org.scala-lang" % "scala-library" % "2.13.0""#
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_dependency_line(
+                r#"libraryDependencies += "org.scala-lang" % "scala-library" % "2.13.0""#,
+            )
+            .unwrap();
+
         assert_eq!(dep.group_id, "org.scala-lang");
         assert_eq!(dep.artifact_id, "scala-library");
         assert_eq!(dep.version, "2.13.0");
@@ -321,11 +327,13 @@ mod tests {
             build_file: temp_dir.path().join("build.sbt"),
             project_dir: None,
         };
-        
-        let dep = project.parse_dependency_line(
-            r#"libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.6.0""#
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_dependency_line(
+                r#"libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.6.0""#,
+            )
+            .unwrap();
+
         assert_eq!(dep.group_id, "com.typesafe.akka");
         assert_eq!(dep.artifact_id, "akka-actor");
         assert_eq!(dep.version, "2.6.0");
@@ -342,7 +350,7 @@ mod tests {
             scala_cross_version: false,
             source: DependencySource::BuildSbt,
         };
-        
+
         let coords = sbt_to_maven_coordinates(&dep, "2.13.0");
         assert_eq!(coords, "org.scala-lang:scala-library:2.13.0");
     }
@@ -357,7 +365,7 @@ mod tests {
             scala_cross_version: true,
             source: DependencySource::BuildSbt,
         };
-        
+
         let coords = sbt_to_maven_coordinates(&dep, "2.13.5");
         assert_eq!(coords, "com.typesafe.akka:akka-actor_2.13:2.6.0");
     }
@@ -376,7 +384,7 @@ mod tests {
             build_file: PathBuf::from("build.sbt"),
             dependencies: vec![],
         };
-        
+
         assert_eq!(sbom.project_name, "test-project");
         assert_eq!(sbom.project_version, "1.0.0");
         assert_eq!(sbom.scala_version, "2.13.0");

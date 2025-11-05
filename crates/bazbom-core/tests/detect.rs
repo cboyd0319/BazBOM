@@ -42,8 +42,9 @@ fn detect_buildr_rakefile() {
     let dir = tempdir().unwrap();
     fs::write(
         dir.path().join("Rakefile"),
-        "require 'buildr'\n\nBuildr.application"
-    ).unwrap();
+        "require 'buildr'\n\nBuildr.application",
+    )
+    .unwrap();
     assert_eq!(detect_build_system(dir.path()), BuildSystem::Buildr);
 }
 
@@ -52,8 +53,9 @@ fn detect_buildr_rakefile_double_quotes() {
     let dir = tempdir().unwrap();
     fs::write(
         dir.path().join("Rakefile"),
-        "require \"buildr\"\n\ntask :build"
-    ).unwrap();
+        "require \"buildr\"\n\ntask :build",
+    )
+    .unwrap();
     assert_eq!(detect_build_system(dir.path()), BuildSystem::Buildr);
 }
 
@@ -78,8 +80,9 @@ fn detect_rakefile_without_buildr() {
     let dir = tempdir().unwrap();
     fs::write(
         dir.path().join("Rakefile"),
-        "task :default do\n  puts 'Hello'\nend"
-    ).unwrap();
+        "task :default do\n  puts 'Hello'\nend",
+    )
+    .unwrap();
     assert_eq!(detect_build_system(dir.path()), BuildSystem::Unknown);
 }
 

@@ -411,7 +411,7 @@ mod tests {
     fn test_vulnerability_severity_levels() {
         // Test that we recognize different severity levels
         let severities = vec!["Critical", "High", "Medium", "Low", "Info"];
-        
+
         for severity in severities {
             let vuln = Vulnerability {
                 id: "CVE-TEST".to_string(),
@@ -421,7 +421,7 @@ mod tests {
                 fixed_version: Some("2.0".to_string()),
                 summary: "Test vulnerability".to_string(),
             };
-            
+
             // Just verify the vulnerability can be created and serialized
             let json = serde_json::to_string(&vuln).unwrap();
             assert!(json.contains(severity));
@@ -439,10 +439,10 @@ mod tests {
             fixed_version: Some("2.21.1".to_string()),
             summary: "Remote code execution".to_string(),
         };
-        
+
         assert!(vuln_with_fix.fixed_version.is_some());
         assert_eq!(vuln_with_fix.fixed_version.as_ref().unwrap(), "2.21.1");
-        
+
         // Test vulnerability without fix
         let vuln_no_fix = Vulnerability {
             id: "CVE-2024-NEW".to_string(),
@@ -452,26 +452,24 @@ mod tests {
             fixed_version: None,
             summary: "Unpatched vulnerability".to_string(),
         };
-        
+
         assert!(vuln_no_fix.fixed_version.is_none());
     }
 
     #[test]
     fn test_scan_result_serialization() {
         let result = ScanResult {
-            vulnerabilities: vec![
-                Vulnerability {
-                    id: "CVE-001".to_string(),
-                    severity: "High".to_string(),
-                    package_name: "test:lib".to_string(),
-                    current_version: "1.0".to_string(),
-                    fixed_version: Some("2.0".to_string()),
-                    summary: "Test vulnerability".to_string(),
-                }
-            ],
+            vulnerabilities: vec![Vulnerability {
+                id: "CVE-001".to_string(),
+                severity: "High".to_string(),
+                package_name: "test:lib".to_string(),
+                current_version: "1.0".to_string(),
+                fixed_version: Some("2.0".to_string()),
+                summary: "Test vulnerability".to_string(),
+            }],
             timestamp: "2025-11-05T10:00:00Z".to_string(),
         };
-        
+
         let json = serde_json::to_string(&result).unwrap();
         assert!(json.contains("CVE-001"));
         assert!(json.contains("vulnerabilities"));
@@ -481,23 +479,31 @@ mod tests {
     #[test]
     fn test_various_path_formats() {
         // Test that we handle various path formats correctly
-        assert!(BazBomLanguageServer::is_build_file("/usr/local/project/pom.xml"));
-        assert!(BazBomLanguageServer::is_build_file("C:\\Users\\dev\\project\\build.gradle"));
-        assert!(BazBomLanguageServer::is_build_file("/home/user/project/BUILD.bazel"));
-        
+        assert!(BazBomLanguageServer::is_build_file(
+            "/usr/local/project/pom.xml"
+        ));
+        assert!(BazBomLanguageServer::is_build_file(
+            "C:\\Users\\dev\\project\\build.gradle"
+        ));
+        assert!(BazBomLanguageServer::is_build_file(
+            "/home/user/project/BUILD.bazel"
+        ));
+
         // Ensure we don't match files with extensions after valid build files
         assert!(!BazBomLanguageServer::is_build_file("/path/to/pom.xml.bak"));
         assert!(!BazBomLanguageServer::is_build_file("/path/to/BUILD.txt"));
         assert!(!BazBomLanguageServer::is_build_file("/path/to/pom.xml.old"));
-        
+
         // Test case sensitivity (build files are case-sensitive)
         assert!(!BazBomLanguageServer::is_build_file("/path/to/POM.XML"));
         assert!(BazBomLanguageServer::is_build_file("/path/to/pom.xml"));
-        
+
         // Verify all supported build files work
         assert!(BazBomLanguageServer::is_build_file("/project/pom.xml"));
         assert!(BazBomLanguageServer::is_build_file("/project/build.gradle"));
-        assert!(BazBomLanguageServer::is_build_file("/project/build.gradle.kts"));
+        assert!(BazBomLanguageServer::is_build_file(
+            "/project/build.gradle.kts"
+        ));
         assert!(BazBomLanguageServer::is_build_file("/project/BUILD"));
         assert!(BazBomLanguageServer::is_build_file("/project/BUILD.bazel"));
     }

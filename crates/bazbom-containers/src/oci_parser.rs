@@ -120,8 +120,8 @@ impl OciImageParser {
                 entry.read_to_string(&mut contents)?;
 
                 // Docker image format uses an array of manifests
-                let manifests: Vec<DockerManifestEntry> = serde_json::from_str(&contents)
-                    .context("Failed to parse manifest.json")?;
+                let manifests: Vec<DockerManifestEntry> =
+                    serde_json::from_str(&contents).context("Failed to parse manifest.json")?;
 
                 if let Some(manifest) = manifests.first() {
                     return self.convert_docker_manifest(manifest);
@@ -137,7 +137,7 @@ impl OciImageParser {
         // First get the manifest to find the config digest
         let manifest = self.parse_manifest()?;
         let config_digest = &manifest.config.digest;
-        
+
         self.parse_config_with_digest(config_digest)
     }
 
@@ -161,8 +161,8 @@ impl OciImageParser {
                 let mut contents = String::new();
                 entry.read_to_string(&mut contents)?;
 
-                let config: OciImageConfig = serde_json::from_str(&contents)
-                    .context("Failed to parse image config")?;
+                let config: OciImageConfig =
+                    serde_json::from_str(&contents).context("Failed to parse image config")?;
 
                 return Ok(config);
             }
@@ -190,8 +190,9 @@ impl OciImageParser {
                 && !path.to_string_lossy().contains("manifest")
             {
                 let layer_path = output_dir.as_ref().join(path.file_name().unwrap());
-                let mut output = File::create(&layer_path)
-                    .with_context(|| format!("Failed to create layer file: {}", layer_path.display()))?;
+                let mut output = File::create(&layer_path).with_context(|| {
+                    format!("Failed to create layer file: {}", layer_path.display())
+                })?;
 
                 std::io::copy(&mut entry, &mut output)?;
                 extracted_layers.push(layer_path);
@@ -208,7 +209,10 @@ impl OciImageParser {
     }
 
     /// Convert Docker manifest format to OCI format
-    fn convert_docker_manifest(&self, docker_manifest: &DockerManifestEntry) -> Result<OciManifest> {
+    fn convert_docker_manifest(
+        &self,
+        docker_manifest: &DockerManifestEntry,
+    ) -> Result<OciManifest> {
         let config = OciDescriptor {
             media_type: "application/vnd.docker.container.image.v1+json".to_string(),
             digest: docker_manifest.config.clone(),
@@ -239,7 +243,10 @@ impl OciImageParser {
     }
 
     /// Scan a layer for Java artifacts
-    pub fn scan_layer_for_artifacts(&self, layer_path: impl AsRef<Path>) -> Result<Vec<JavaArtifactCandidate>> {
+    pub fn scan_layer_for_artifacts(
+        &self,
+        layer_path: impl AsRef<Path>,
+    ) -> Result<Vec<JavaArtifactCandidate>> {
         let file = File::open(layer_path.as_ref())
             .with_context(|| format!("Failed to open layer: {}", layer_path.as_ref().display()))?;
 
@@ -272,7 +279,11 @@ impl OciImageParser {
     }
 
     /// Extract Maven metadata from a JAR file in a layer
-    pub fn extract_maven_metadata(&self, layer_path: impl AsRef<Path>, jar_path: &str) -> Result<Option<MavenMetadata>> {
+    pub fn extract_maven_metadata(
+        &self,
+        layer_path: impl AsRef<Path>,
+        jar_path: &str,
+    ) -> Result<Option<MavenMetadata>> {
         let file = File::open(layer_path.as_ref())
             .with_context(|| format!("Failed to open layer: {}", layer_path.as_ref().display()))?;
 
@@ -299,10 +310,10 @@ impl OciImageParser {
     /// Parse JAR file (as ZIP) to extract Maven metadata
     fn parse_jar_for_maven_metadata(&self, jar_contents: &[u8]) -> Result<Option<MavenMetadata>> {
         use std::io::Cursor;
-        
+
         let cursor = Cursor::new(jar_contents);
-        let mut archive = zip::ZipArchive::new(cursor)
-            .context("Failed to read JAR as ZIP archive")?;
+        let mut archive =
+            zip::ZipArchive::new(cursor).context("Failed to read JAR as ZIP archive")?;
 
         // Look for META-INF/maven/*/*/pom.properties
         for i in 0..archive.len() {

@@ -57,12 +57,10 @@ pub async fn run() -> Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn test_context_creation() {
         // Context creation requires async runtime and K8s cluster
         // Real tests would use integration test with kind/minikube
-        assert!(true);
+        // This is a placeholder for integration tests
     }
 }

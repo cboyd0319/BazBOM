@@ -54,7 +54,7 @@ pub fn is_android_project(project_root: &Path) -> bool {
     // Check for build.gradle or build.gradle.kts with Android plugin
     let build_gradle = project_root.join("build.gradle");
     let build_gradle_kts = project_root.join("build.gradle.kts");
-    
+
     let build_file = if build_gradle_kts.exists() {
         Some(build_gradle_kts)
     } else if build_gradle.exists() {
@@ -62,7 +62,7 @@ pub fn is_android_project(project_root: &Path) -> bool {
     } else {
         None
     };
-    
+
     if let Some(build_file) = build_file {
         if let Ok(content) = fs::read_to_string(build_file) {
             // Look for Android Gradle plugins
@@ -74,7 +74,7 @@ pub fn is_android_project(project_root: &Path) -> bool {
                 || content.contains("apply plugin: 'com.android.library'");
         }
     }
-    
+
     // Also check for AndroidManifest.xml
     let manifest = project_root.join("src/main/AndroidManifest.xml");
     manifest.exists()
@@ -85,10 +85,10 @@ pub fn detect_android_project(project_root: &Path) -> Option<AndroidProject> {
     if !is_android_project(project_root) {
         return None;
     }
-    
+
     let build_gradle_kts = project_root.join("build.gradle.kts");
     let build_gradle = project_root.join("build.gradle");
-    
+
     let build_file = if build_gradle_kts.exists() {
         build_gradle_kts
     } else if build_gradle.exists() {
@@ -96,22 +96,23 @@ pub fn detect_android_project(project_root: &Path) -> Option<AndroidProject> {
     } else {
         return None;
     };
-    
+
     let content = fs::read_to_string(&build_file).ok()?;
-    
+
     // Determine project type
-    let project_type = if content.contains("com.android.application") ||
-                          content.contains("id(\"com.android.application\")") {
+    let project_type = if content.contains("com.android.application")
+        || content.contains("id(\"com.android.application\")")
+    {
         AndroidProjectType::Application
     } else {
         AndroidProjectType::Library
     };
-    
+
     // Extract Android configuration
     let package_name = extract_package_name(project_root);
     let min_sdk_version = extract_min_sdk(&content);
     let target_sdk_version = extract_target_sdk(&content);
-    
+
     Some(AndroidProject {
         root: project_root.to_path_buf(),
         build_file,
@@ -124,33 +125,32 @@ pub fn detect_android_project(project_root: &Path) -> Option<AndroidProject> {
 
 /// Extract Android SBOM
 pub fn extract_android_sbom(project: &AndroidProject) -> Result<AndroidSbom> {
-    let content = fs::read_to_string(&project.build_file)
-        .context("Failed to read build file")?;
-    
+    let content = fs::read_to_string(&project.build_file).context("Failed to read build file")?;
+
     // Extract project metadata
     let project_name = extract_project_name(&project.root);
     let project_version = extract_version(&content);
-    
+
     // Parse dependencies
     let mut all_dependencies = parse_dependencies(&content);
-    
+
     // Separate Android-specific dependencies
     let android_dependencies: Vec<_> = all_dependencies
         .iter()
         .filter(|d| d.is_android_specific)
         .cloned()
         .collect();
-    
+
     // Mark Android-specific status
     for dep in &mut all_dependencies {
         dep.is_android_specific = is_android_specific_artifact(dep);
     }
-    
+
     let project_type_str = match project.project_type {
         AndroidProjectType::Application => "application",
         AndroidProjectType::Library => "library",
     };
-    
+
     Ok(AndroidSbom {
         project_name,
         project_version,
@@ -169,9 +169,9 @@ fn extract_package_name(project_root: &Path) -> Option<String> {
     if !manifest.exists() {
         return None;
     }
-    
+
     let content = fs::read_to_string(manifest).ok()?;
-    
+
     // Look for package="..." in manifest tag
     for line in content.lines() {
         if line.contains("package=") {
@@ -183,7 +183,7 @@ fn extract_package_name(project_root: &Path) -> Option<String> {
             }
         }
     }
-    
+
     None
 }
 
@@ -221,7 +221,7 @@ fn extract_target_sdk(content: &str) -> Option<u32> {
 fn extract_number(line: &str) -> Option<u32> {
     // Handle both = and () syntax
     // Examples: minSdkVersion = 21, minSdk(21), minSdk = 21
-    
+
     let parts: Vec<&str> = if line.contains('=') {
         line.split('=').collect()
     } else if line.contains('(') {
@@ -229,16 +229,14 @@ fn extract_number(line: &str) -> Option<u32> {
     } else {
         return None;
     };
-    
+
     if parts.len() < 2 {
         return None;
     }
-    
+
     // Get the number part and clean it
-    let num_str = parts[1]
-        .trim()
-        .trim_matches(|c: char| !c.is_numeric());
-    
+    let num_str = parts[1].trim().trim_matches(|c: char| !c.is_numeric());
+
     num_str.parse::<u32>().ok()
 }
 
@@ -262,7 +260,7 @@ fn extract_project_name(project_root: &Path) -> String {
             }
         }
     }
-    
+
     // Fallback to directory name
     project_root
         .file_name()
@@ -276,7 +274,9 @@ fn extract_version(content: &str) -> String {
     // Look for versionName or version
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.starts_with("versionName") || (trimmed.starts_with("version") && !trimmed.starts_with("versionCode")) {
+        if trimmed.starts_with("versionName")
+            || (trimmed.starts_with("version") && !trimmed.starts_with("versionCode"))
+        {
             // Extract version from quotes
             if let Some(start) = trimmed.find('"') {
                 if let Some(end) = trimmed.rfind('"') {
@@ -295,34 +295,34 @@ fn parse_dependencies(content: &str) -> Vec<AndroidDependency> {
     let mut dependencies = Vec::new();
     let mut in_dependencies_block = false;
     let mut brace_count = 0;
-    
+
     for line in content.lines() {
         let trimmed = line.trim();
-        
+
         // Check if we're in dependencies block
         if trimmed == "dependencies {" || trimmed.starts_with("dependencies {") {
             in_dependencies_block = true;
             brace_count = 1;
             continue;
         }
-        
+
         if in_dependencies_block {
             // Track braces
             brace_count += trimmed.matches('{').count() as i32;
             brace_count -= trimmed.matches('}').count() as i32;
-            
+
             // Parse dependency lines
             if let Some(dep) = parse_dependency_line(trimmed) {
                 dependencies.push(dep);
             }
-            
+
             // Exit when braces are balanced
             if brace_count <= 0 {
                 break;
             }
         }
     }
-    
+
     dependencies
 }
 
@@ -332,7 +332,7 @@ fn parse_dependency_line(line: &str) -> Option<AndroidDependency> {
     // implementation("androidx.core:core-ktx:1.12.0")
     // implementation 'com.google.android.material:material:1.10.0'
     // debugImplementation("androidx.test:runner:1.5.0")
-    
+
     let scope = if line.starts_with("implementation") {
         "implementation"
     } else if line.starts_with("api") {
@@ -348,7 +348,7 @@ fn parse_dependency_line(line: &str) -> Option<AndroidDependency> {
     } else {
         return None;
     };
-    
+
     // Extract dependency string between quotes or parentheses
     let dep_string = if let Some(start) = line.find('"') {
         let end = line.rfind('"')?;
@@ -365,13 +365,13 @@ fn parse_dependency_line(line: &str) -> Option<AndroidDependency> {
     } else {
         return None;
     };
-    
+
     // Parse group:artifact:version
     let parts: Vec<&str> = dep_string.split(':').collect();
     if parts.len() < 2 {
         return None;
     }
-    
+
     let group = parts[0].to_string();
     let artifact = parts[1].to_string();
     let version = if parts.len() >= 3 {
@@ -379,7 +379,7 @@ fn parse_dependency_line(line: &str) -> Option<AndroidDependency> {
     } else {
         "unspecified".to_string()
     };
-    
+
     let dep = AndroidDependency {
         group: group.clone(),
         artifact: artifact.clone(),
@@ -387,7 +387,7 @@ fn parse_dependency_line(line: &str) -> Option<AndroidDependency> {
         scope: scope.to_string(),
         is_android_specific: false, // Will be set later
     };
-    
+
     Some(dep)
 }
 
@@ -415,13 +415,17 @@ mod tests {
     fn test_android_project_detection() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 id("com.android.application")
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         assert!(is_android_project(temp_dir.path()));
     }
 
@@ -429,13 +433,17 @@ mod tests {
     fn test_android_project_not_detected() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 id("java")
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         assert!(!is_android_project(temp_dir.path()));
     }
 
@@ -443,8 +451,10 @@ mod tests {
     fn test_detect_android_application() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 id("com.android.application")
             }
@@ -453,8 +463,10 @@ mod tests {
                 minSdk = 21
                 targetSdk = 34
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         let project = detect_android_project(temp_dir.path()).unwrap();
         assert_eq!(project.project_type, AndroidProjectType::Application);
         assert_eq!(project.min_sdk_version, Some(21));
@@ -465,7 +477,7 @@ mod tests {
     fn test_parse_dependency_line() {
         let line = r#"implementation("androidx.core:core-ktx:1.12.0")"#;
         let dep = parse_dependency_line(line).unwrap();
-        
+
         assert_eq!(dep.group, "androidx.core");
         assert_eq!(dep.artifact, "core-ktx");
         assert_eq!(dep.version, "1.12.0");
@@ -482,7 +494,7 @@ mod tests {
             is_android_specific: false,
         };
         assert!(is_android_specific_artifact(&androidx_dep));
-        
+
         let regular_dep = AndroidDependency {
             group: "com.squareup.okhttp3".to_string(),
             artifact: "okhttp".to_string(),
@@ -502,7 +514,7 @@ mod tests {
             scope: "implementation".to_string(),
             is_android_specific: true,
         };
-        
+
         let coords = android_to_maven_coordinates(&dep);
         assert_eq!(coords, "androidx.appcompat:appcompat:1.6.1");
     }
@@ -523,7 +535,7 @@ mod tests {
                 testImplementation("junit:junit:4.13.2")
             }
         "#;
-        
+
         let deps = parse_dependencies(content);
         assert_eq!(deps.len(), 3);
         assert_eq!(deps[0].group, "androidx.core");
@@ -535,8 +547,10 @@ mod tests {
     fn test_android_sbom_structure() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 id("com.android.application")
             }
@@ -556,17 +570,23 @@ mod tests {
                 implementation("androidx.core:core-ktx:1.12.0")
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         // Create settings.gradle.kts
         let settings_file = temp_dir.path().join("settings.gradle.kts");
-        fs::write(&settings_file, r#"
+        fs::write(
+            &settings_file,
+            r#"
             rootProject.name = "MyAndroidApp"
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         let project = detect_android_project(temp_dir.path()).unwrap();
         let sbom = extract_android_sbom(&project).unwrap();
-        
+
         assert_eq!(sbom.project_name, "MyAndroidApp");
         assert_eq!(sbom.project_version, "1.0.0");
         assert_eq!(sbom.project_type, "application");

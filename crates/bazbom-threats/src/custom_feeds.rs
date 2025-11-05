@@ -44,7 +44,7 @@ pub enum FeedSource {
 pub enum FeedFormat {
     /// JSON format (custom schema)
     Json,
-    /// OSV format (https://ossf.github.io/osv-schema/)
+    /// OSV format (<https://ossf.github.io/osv-schema/>)
     Osv,
     /// CSV format
     Csv,
@@ -110,10 +110,10 @@ impl CustomFeedManager {
     pub fn load_from_config<P: AsRef<Path>>(path: P) -> Result<Self> {
         let content = fs::read_to_string(path.as_ref())
             .context("Failed to read custom feeds configuration")?;
-        
-        let config: CustomFeedConfig = serde_yaml::from_str(&content)
-            .context("Failed to parse custom feeds configuration")?;
-        
+
+        let config: CustomFeedConfig =
+            serde_yaml::from_str(&content).context("Failed to parse custom feeds configuration")?;
+
         Ok(Self {
             feeds: config.feeds,
             cache: HashMap::new(),
@@ -159,7 +159,7 @@ impl CustomFeedManager {
     /// Update all enabled feeds
     pub fn update_all(&mut self) -> Result<HashMap<String, usize>> {
         let mut results = HashMap::new();
-        
+
         // Collect feed names to avoid borrowing self while iterating
         let feed_names: Vec<String> = self
             .feeds
@@ -167,7 +167,7 @@ impl CustomFeedManager {
             .filter(|f| f.enabled)
             .map(|f| f.name.clone())
             .collect();
-        
+
         for name in feed_names {
             match self.update_feed(&name) {
                 Ok(count) => {
@@ -179,7 +179,7 @@ impl CustomFeedManager {
                 }
             }
         }
-        
+
         Ok(results)
     }
 
@@ -190,28 +190,28 @@ impl CustomFeedManager {
             .iter()
             .find(|f| f.name == name)
             .ok_or_else(|| anyhow::anyhow!("Feed '{}' not found", name))?;
-        
+
         if !feed.enabled {
             anyhow::bail!("Feed '{}' is disabled", name);
         }
-        
+
         // Fetch data from source
         let data = self.fetch_feed_data(feed)?;
-        
+
         // Parse based on format
         let entries = self.parse_feed_data(feed, &data)?;
-        
+
         // Cache the entries
         let count = entries.len();
         self.cache.insert(name.to_string(), entries);
-        
+
         Ok(count)
     }
 
     /// Query threats for a package
     pub fn query_threats(&self, package: &str) -> Vec<ThreatEntry> {
         let mut threats = Vec::new();
-        
+
         for entries in self.cache.values() {
             for entry in entries {
                 if entry.package == package || self.package_matches(&entry.package, package) {
@@ -219,7 +219,7 @@ impl CustomFeedManager {
                 }
             }
         }
-        
+
         threats
     }
 
@@ -228,7 +228,7 @@ impl CustomFeedManager {
         if pattern == package {
             return true;
         }
-        
+
         // Simple wildcard matching
         if pattern.contains('*') {
             let parts: Vec<&str> = pattern.split('*').collect();
@@ -236,24 +236,26 @@ impl CustomFeedManager {
                 return package.starts_with(parts[0]) && package.ends_with(parts[1]);
             }
         }
-        
+
         false
     }
 
     /// Fetch feed data from source
     fn fetch_feed_data(&self, feed: &ThreatFeed) -> Result<String> {
         match &feed.source {
-            FeedSource::File { path } => {
-                fs::read_to_string(path)
-                    .with_context(|| format!("Failed to read feed file: {}", path))
-            }
+            FeedSource::File { path } => fs::read_to_string(path)
+                .with_context(|| format!("Failed to read feed file: {}", path)),
             FeedSource::Url { url } => {
                 // In production, would use reqwest or similar
                 anyhow::bail!("URL feeds not yet implemented: {}", url)
             }
             FeedSource::Git { repo, branch } => {
                 // In production, would clone/pull git repo
-                anyhow::bail!("Git feeds not yet implemented: {} (branch: {})", repo, branch)
+                anyhow::bail!(
+                    "Git feeds not yet implemented: {} (branch: {})",
+                    repo,
+                    branch
+                )
             }
         }
     }
@@ -270,8 +272,8 @@ impl CustomFeedManager {
 
     /// Parse JSON format feed
     fn parse_json_feed(&self, data: &str) -> Result<Vec<ThreatEntry>> {
-        let entries: Vec<ThreatEntry> = serde_json::from_str(data)
-            .context("Failed to parse JSON feed")?;
+        let entries: Vec<ThreatEntry> =
+            serde_json::from_str(data).context("Failed to parse JSON feed")?;
         Ok(entries)
     }
 
@@ -293,8 +295,8 @@ impl CustomFeedManager {
 
     /// Parse YAML format feed
     fn parse_yaml_feed(&self, data: &str) -> Result<Vec<ThreatEntry>> {
-        let entries: Vec<ThreatEntry> = serde_yaml::from_str(data)
-            .context("Failed to parse YAML feed")?;
+        let entries: Vec<ThreatEntry> =
+            serde_yaml::from_str(data).context("Failed to parse YAML feed")?;
         Ok(entries)
     }
 
@@ -311,9 +313,9 @@ impl CustomFeedManager {
         let total_feeds = self.feeds.len();
         let enabled_feeds = self.feeds.iter().filter(|f| f.enabled).count();
         let total_threats = self.get_all_threats().len();
-        
+
         let threats_by_severity = self.count_by_severity();
-        
+
         FeedStats {
             total_feeds,
             enabled_feeds,
@@ -325,11 +327,11 @@ impl CustomFeedManager {
     /// Count threats by severity
     fn count_by_severity(&self) -> HashMap<Severity, usize> {
         let mut counts = HashMap::new();
-        
+
         for threat in self.get_all_threats() {
             *counts.entry(threat.severity).or_insert(0) += 1;
         }
-        
+
         counts
     }
 }
@@ -374,7 +376,7 @@ mod tests {
             last_updated: None,
             enabled: true,
         };
-        
+
         manager.add_feed(feed);
         assert_eq!(manager.feeds.len(), 1);
     }
@@ -382,7 +384,7 @@ mod tests {
     #[test]
     fn test_enable_disable_feed() {
         let mut manager = CustomFeedManager::new();
-        let mut feed = ThreatFeed {
+        let feed = ThreatFeed {
             name: "test-feed".to_string(),
             description: "Test feed".to_string(),
             source: FeedSource::File {
@@ -393,15 +395,15 @@ mod tests {
             last_updated: None,
             enabled: true,
         };
-        
+
         manager.add_feed(feed.clone());
-        
+
         assert!(manager.disable_feed("test-feed"));
         assert!(!manager.feeds[0].enabled);
-        
+
         assert!(manager.enable_feed("test-feed"));
         assert!(manager.feeds[0].enabled);
-        
+
         assert!(!manager.disable_feed("non-existent"));
     }
 
@@ -419,27 +421,27 @@ mod tests {
             last_updated: None,
             enabled: true,
         };
-        
+
         manager.add_feed(feed);
         assert_eq!(manager.feeds.len(), 1);
-        
+
         assert!(manager.remove_feed("test-feed"));
         assert_eq!(manager.feeds.len(), 0);
-        
+
         assert!(!manager.remove_feed("non-existent"));
     }
 
     #[test]
     fn test_package_matching() {
         let manager = CustomFeedManager::new();
-        
+
         // Exact match
         assert!(manager.package_matches("log4j-core", "log4j-core"));
-        
+
         // Wildcard matching
         assert!(manager.package_matches("log4j-*", "log4j-core"));
         assert!(manager.package_matches("*-core", "log4j-core"));
-        
+
         // No match
         assert!(!manager.package_matches("spring-*", "log4j-core"));
     }
@@ -473,7 +475,7 @@ mod tests {
             references: vec!["https://example.com".to_string()],
             discovered: "2025-11-05".to_string(),
         };
-        
+
         assert_eq!(entry.id, "CUSTOM-2025-001");
         assert_eq!(entry.severity, Severity::High);
         assert_eq!(entry.affected_versions.len(), 2);

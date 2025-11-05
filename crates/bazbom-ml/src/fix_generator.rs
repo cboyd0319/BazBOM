@@ -2,9 +2,9 @@
 //
 // Generates migration guides and code change suggestions using LLMs
 
+use crate::llm::{FixPromptBuilder, LlmClient};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use crate::llm::{LlmClient, FixPromptBuilder};
 
 /// Vulnerability fix context
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,7 +90,9 @@ impl FixGenerator {
         let request = prompt_builder.build();
 
         // Get LLM response
-        let response = self.llm_client.chat_completion(request)
+        let response = self
+            .llm_client
+            .chat_completion(request)
             .context("Failed to get LLM response for fix guide")?;
 
         // Parse response into structured guide
@@ -103,7 +105,7 @@ impl FixGenerator {
     fn parse_fix_guide_response(&self, context: &FixContext, content: &str) -> Result<FixGuide> {
         // NOTE: This is a simplified parser
         // Real implementation would use more sophisticated NLP or structured output
-        
+
         let lines: Vec<&str> = content.lines().collect();
         let mut upgrade_steps = Vec::new();
         let mut code_changes = Vec::new();
@@ -183,22 +185,26 @@ impl FixGenerator {
         }
 
         // Group by breaking severity
-        let no_breaking: Vec<_> = guides.iter()
+        let no_breaking: Vec<_> = guides
+            .iter()
             .filter(|g| g.breaking_change_severity == BreakingSeverity::None)
             .cloned()
             .collect();
 
-        let minor_breaking: Vec<_> = guides.iter()
+        let minor_breaking: Vec<_> = guides
+            .iter()
             .filter(|g| g.breaking_change_severity == BreakingSeverity::Minor)
             .cloned()
             .collect();
 
-        let moderate_breaking: Vec<_> = guides.iter()
+        let moderate_breaking: Vec<_> = guides
+            .iter()
             .filter(|g| g.breaking_change_severity == BreakingSeverity::Moderate)
             .cloned()
             .collect();
 
-        let major_breaking: Vec<_> = guides.iter()
+        let major_breaking: Vec<_> = guides
+            .iter()
             .filter(|g| g.breaking_change_severity == BreakingSeverity::Major)
             .cloned()
             .collect();
@@ -415,7 +421,14 @@ mod tests {
             {
                 let mut ctx = create_test_context();
                 ctx.cve = "CVE-MAJOR".to_string();
-                ctx.breaking_changes = vec!["1".to_string(), "2".to_string(), "3".to_string(), "4".to_string(), "5".to_string(), "6".to_string()];
+                ctx.breaking_changes = vec![
+                    "1".to_string(),
+                    "2".to_string(),
+                    "3".to_string(),
+                    "4".to_string(),
+                    "5".to_string(),
+                    "6".to_string(),
+                ];
                 ctx
             },
             create_test_context(), // No breaking
@@ -433,7 +446,7 @@ mod tests {
         // Should be ordered: none, minor, moderate, major
         assert_eq!(ordered.len(), 3);
         assert_eq!(ordered[0].cve, "CVE-2021-44228"); // No breaking
-        assert_eq!(ordered[1].cve, "CVE-MODERATE");   // Moderate
-        assert_eq!(ordered[2].cve, "CVE-MAJOR");      // Major
+        assert_eq!(ordered[1].cve, "CVE-MODERATE"); // Moderate
+        assert_eq!(ordered[2].cve, "CVE-MAJOR"); // Major
     }
 }

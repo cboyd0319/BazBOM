@@ -11,7 +11,7 @@ mod reachability;
 mod reachability_cache;
 mod shading;
 
-use bazbom::cli::{Cli, Commands, DbCmd, LicenseCmd, PolicyCmd, ReportCmd, ComplianceFrameworkArg};
+use bazbom::cli::{Cli, Commands, ComplianceFrameworkArg, DbCmd, LicenseCmd, PolicyCmd, ReportCmd};
 use bazbom::hooks::{install_hooks, HooksConfig};
 use bazbom::remediation;
 use bazbom::scan_orchestrator::ScanOrchestrator;
@@ -113,8 +113,13 @@ fn main() -> Result<()> {
                     match analyzer.find_affected_targets() {
                         Ok(affected_targets) => {
                             if affected_targets.is_empty() {
-                                println!("[bazbom] no changes detected since {}. Using cached results.", base);
-                                println!("[bazbom] tip: run without --incremental to force a full scan");
+                                println!(
+                                    "[bazbom] no changes detected since {}. Using cached results.",
+                                    base
+                                );
+                                println!(
+                                    "[bazbom] tip: run without --incremental to force a full scan"
+                                );
                                 return Ok(());
                             }
 
@@ -175,10 +180,9 @@ fn main() -> Result<()> {
                     root.join("project/build.properties"),
                 ],
                 bazbom_core::BuildSystem::Ant => vec![root.join("build.xml")],
-                bazbom_core::BuildSystem::Buildr => vec![
-                    root.join("buildfile"),
-                    root.join("Rakefile"),
-                ],
+                bazbom_core::BuildSystem::Buildr => {
+                    vec![root.join("buildfile"), root.join("Rakefile")]
+                }
                 bazbom_core::BuildSystem::Unknown => vec![],
             };
 
@@ -192,25 +196,25 @@ fn main() -> Result<()> {
             // Check cache first (if enabled)
             if let Some(scan_cache) = scan_cache_opt.as_mut() {
                 if let Some(cached_result) = scan_cache.get_scan_result(&cache_key)? {
-                println!(
-                    "[bazbom] cache hit! using cached scan from {}",
-                    cached_result.scanned_at
-                );
+                    println!(
+                        "[bazbom] cache hit! using cached scan from {}",
+                        cached_result.scanned_at
+                    );
 
-                // Write cached results to disk
-                let out = PathBuf::from(&out_dir);
-                let sbom_path = match format.as_str() {
-                    "cyclonedx" => out.join("sbom.cyclonedx.json"),
-                    _ => out.join("sbom.spdx.json"),
-                };
-                fs::write(&sbom_path, cached_result.sbom_json.as_bytes())
-                    .context("Failed to write cached SBOM")?;
+                    // Write cached results to disk
+                    let out = PathBuf::from(&out_dir);
+                    let sbom_path = match format.as_str() {
+                        "cyclonedx" => out.join("sbom.cyclonedx.json"),
+                        _ => out.join("sbom.spdx.json"),
+                    };
+                    fs::write(&sbom_path, cached_result.sbom_json.as_bytes())
+                        .context("Failed to write cached SBOM")?;
 
-                if let Some(findings) = cached_result.findings_json {
-                    let findings_path = out.join("findings.json");
-                    fs::write(&findings_path, findings.as_bytes())
-                        .context("Failed to write cached findings")?;
-                }
+                    if let Some(findings) = cached_result.findings_json {
+                        let findings_path = out.join("findings.json");
+                        fs::write(&findings_path, findings.as_bytes())
+                            .context("Failed to write cached findings")?;
+                    }
 
                     println!("[bazbom] scan complete (from cache)");
                     return Ok(());
@@ -534,75 +538,83 @@ fn main() -> Result<()> {
             // Apply ML-enhanced risk scoring if requested
             let vulnerabilities_with_ml = if ml_risk {
                 use bazbom_ml::{RiskScorer, VulnerabilityFeatures};
-                
+
                 println!("[bazbom] applying ML-enhanced risk scoring...");
                 let scorer = RiskScorer::new();
-                
+
                 // Enhance each vulnerability with ML risk score
-                let enhanced_vulns: Vec<_> = vulnerabilities.iter().map(|vuln| {
-                    // Extract features from vulnerability
-                    let cvss_score = vuln.severity.as_ref()
-                        .and_then(|s| s.cvss_v3.or(s.cvss_v4))
-                        .unwrap_or(0.0);
-                    
-                    // Extract EPSS score (it's a struct with score and percentile fields)
-                    let epss = vuln.epss.as_ref()
-                        .map(|e| e.score)
-                        .unwrap_or(0.0);
-                    
-                    let in_kev = vuln.kev.is_some();
-                    
-                    // Check if vulnerability is reachable (if reachability analysis was run)
-                    let is_reachable = if let Some(ref reach) = reachability_result {
-                        // Simple heuristic: check if any reachable classes/packages match the vulnerability
-                        // In a real implementation, this would be more sophisticated
-                        !reach.reachable_classes.is_empty()
-                    } else {
-                        false // Unknown reachability
-                    };
-                    
-                    // Map severity level to numeric value (0=UNKNOWN/LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL)
-                    let severity_level = vuln.severity.as_ref()
-                        .map(|s| match s.level {
-                            bazbom_advisories::SeverityLevel::Unknown => 0,
-                            bazbom_advisories::SeverityLevel::Low => 0,
-                            bazbom_advisories::SeverityLevel::Medium => 1,
-                            bazbom_advisories::SeverityLevel::High => 2,
-                            bazbom_advisories::SeverityLevel::Critical => 3,
-                        })
-                        .unwrap_or(0);
-                    
-                    // Create features
-                    let features = VulnerabilityFeatures {
-                        cvss_score,
-                        age_days: 0, // TODO: Calculate from published date
-                        has_exploit: false, // TODO: Check exploit database
-                        epss,
-                        in_kev,
-                        severity_level,
-                        vuln_type: 0, // TODO: Map vulnerability type to numeric
-                        is_reachable,
-                    };
-                    
-                    // Calculate enhanced risk score
-                    let risk_score = scorer.score(&features);
-                    
-                    // Return enhanced vulnerability data
-                    let mut vuln_json = serde_json::to_value(vuln).unwrap();
-                    vuln_json["ml_risk"] = serde_json::json!({
-                        "overall_score": risk_score.overall_score,
-                        "risk_level": format!("{:?}", risk_score.risk_level),
-                        "components": risk_score.components,
-                        "explanation": risk_score.explanation,
-                    });
-                    vuln_json
-                }).collect();
-                
+                let enhanced_vulns: Vec<_> = vulnerabilities
+                    .iter()
+                    .map(|vuln| {
+                        // Extract features from vulnerability
+                        let cvss_score = vuln
+                            .severity
+                            .as_ref()
+                            .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                            .unwrap_or(0.0);
+
+                        // Extract EPSS score (it's a struct with score and percentile fields)
+                        let epss = vuln.epss.as_ref().map(|e| e.score).unwrap_or(0.0);
+
+                        let in_kev = vuln.kev.is_some();
+
+                        // Check if vulnerability is reachable (if reachability analysis was run)
+                        let is_reachable = if let Some(ref reach) = reachability_result {
+                            // Simple heuristic: check if any reachable classes/packages match the vulnerability
+                            // In a real implementation, this would be more sophisticated
+                            !reach.reachable_classes.is_empty()
+                        } else {
+                            false // Unknown reachability
+                        };
+
+                        // Map severity level to numeric value (0=UNKNOWN/LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL)
+                        let severity_level = vuln
+                            .severity
+                            .as_ref()
+                            .map(|s| match s.level {
+                                bazbom_advisories::SeverityLevel::Unknown => 0,
+                                bazbom_advisories::SeverityLevel::Low => 0,
+                                bazbom_advisories::SeverityLevel::Medium => 1,
+                                bazbom_advisories::SeverityLevel::High => 2,
+                                bazbom_advisories::SeverityLevel::Critical => 3,
+                            })
+                            .unwrap_or(0);
+
+                        // Create features
+                        let features = VulnerabilityFeatures {
+                            cvss_score,
+                            age_days: 0,        // TODO: Calculate from published date
+                            has_exploit: false, // TODO: Check exploit database
+                            epss,
+                            in_kev,
+                            severity_level,
+                            vuln_type: 0, // TODO: Map vulnerability type to numeric
+                            is_reachable,
+                        };
+
+                        // Calculate enhanced risk score
+                        let risk_score = scorer.score(&features);
+
+                        // Return enhanced vulnerability data
+                        let mut vuln_json = serde_json::to_value(vuln).unwrap();
+                        vuln_json["ml_risk"] = serde_json::json!({
+                            "overall_score": risk_score.overall_score,
+                            "risk_level": format!("{:?}", risk_score.risk_level),
+                            "components": risk_score.components,
+                            "explanation": risk_score.explanation,
+                        });
+                        vuln_json
+                    })
+                    .collect();
+
                 println!("[bazbom] ML risk scoring complete");
                 enhanced_vulns
             } else {
                 // No ML enhancement, use original vulnerabilities
-                vulnerabilities.iter().map(|v| serde_json::to_value(v).unwrap()).collect()
+                vulnerabilities
+                    .iter()
+                    .map(|v| serde_json::to_value(v).unwrap())
+                    .collect()
             };
 
             // Create findings file with vulnerability data, including reachability and shading info
@@ -754,8 +766,8 @@ fn main() -> Result<()> {
             }
 
             // Store results in cache for next time
-            let sbom_json = fs::read_to_string(&sbom_path)
-                .context("Failed to read SBOM for caching")?;
+            let sbom_json =
+                fs::read_to_string(&sbom_path).context("Failed to read SBOM for caching")?;
             let findings_json = if findings_path.exists() {
                 Some(
                     fs::read_to_string(&findings_path)
@@ -769,7 +781,7 @@ fn main() -> Result<()> {
             if let Some(scan_cache) = scan_cache_opt.as_mut() {
                 let scan_result =
                     bazbom::scan_cache::ScanResult::new(sbom_json, findings_json, scan_params);
-                
+
                 if let Err(e) = scan_cache.put_scan_result(&cache_key, &scan_result) {
                     eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
                     // Don't fail the scan if caching fails
@@ -984,71 +996,96 @@ fn main() -> Result<()> {
 
             // Apply ML-enhanced prioritization if requested
             let prioritized_vulnerabilities = if ml_prioritize {
-                use bazbom_ml::{VulnerabilityPrioritizer, VulnerabilityFeatures};
-                
+                use bazbom_ml::{VulnerabilityFeatures, VulnerabilityPrioritizer};
+
                 println!("[bazbom] applying ML-enhanced vulnerability prioritization...");
-                
+
                 // Create prioritizer
                 let prioritizer = VulnerabilityPrioritizer::new();
-                
+
                 // Convert vulnerabilities to prioritizer input format
-                let vuln_features: Vec<_> = vulnerabilities.iter().map(|vuln| {
-                    // Extract features (similar to scan command)
-                    let cvss_score = vuln.severity.as_ref()
-                        .and_then(|s| s.cvss_v3.or(s.cvss_v4))
-                        .unwrap_or(0.0);
-                    let epss = vuln.epss.as_ref()
-                        .map(|e| e.score)
-                        .unwrap_or(0.0);
-                    let in_kev = vuln.kev.is_some();
-                    let severity_level = vuln.severity.as_ref()
-                        .map(|s| match s.level {
-                            bazbom_advisories::SeverityLevel::Unknown => 0,
-                            bazbom_advisories::SeverityLevel::Low => 0,
-                            bazbom_advisories::SeverityLevel::Medium => 1,
-                            bazbom_advisories::SeverityLevel::High => 2,
-                            bazbom_advisories::SeverityLevel::Critical => 3,
-                        })
-                        .unwrap_or(0);
-                    
-                    let features = VulnerabilityFeatures {
-                        cvss_score,
-                        age_days: 0,
-                        has_exploit: false,
-                        epss,
-                        in_kev,
-                        severity_level,
-                        vuln_type: 0,
-                        is_reachable: false, // TODO: Load from scan results
-                    };
-                    
-                    let cve = vuln.id.clone();
-                    let package = vuln.affected.first()
-                        .map(|a| a.package.clone())
-                        .unwrap_or_else(|| "unknown".to_string());
-                    let version = "unknown".to_string(); // TODO: Extract from affected
-                    
-                    (features, cve, package, version)
-                }).collect();
-                
+                let vuln_features: Vec<_> = vulnerabilities
+                    .iter()
+                    .map(|vuln| {
+                        // Extract features (similar to scan command)
+                        let cvss_score = vuln
+                            .severity
+                            .as_ref()
+                            .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                            .unwrap_or(0.0);
+                        let epss = vuln.epss.as_ref().map(|e| e.score).unwrap_or(0.0);
+                        let in_kev = vuln.kev.is_some();
+                        let severity_level = vuln
+                            .severity
+                            .as_ref()
+                            .map(|s| match s.level {
+                                bazbom_advisories::SeverityLevel::Unknown => 0,
+                                bazbom_advisories::SeverityLevel::Low => 0,
+                                bazbom_advisories::SeverityLevel::Medium => 1,
+                                bazbom_advisories::SeverityLevel::High => 2,
+                                bazbom_advisories::SeverityLevel::Critical => 3,
+                            })
+                            .unwrap_or(0);
+
+                        let features = VulnerabilityFeatures {
+                            cvss_score,
+                            age_days: 0,
+                            has_exploit: false,
+                            epss,
+                            in_kev,
+                            severity_level,
+                            vuln_type: 0,
+                            is_reachable: false, // TODO: Load from scan results
+                        };
+
+                        let cve = vuln.id.clone();
+                        let package = vuln
+                            .affected
+                            .first()
+                            .map(|a| a.package.clone())
+                            .unwrap_or_else(|| "unknown".to_string());
+                        let version = "unknown".to_string(); // TODO: Extract from affected
+
+                        (features, cve, package, version)
+                    })
+                    .collect();
+
                 // Prioritize
                 let prioritized = prioritizer.prioritize(vuln_features);
-                
+
                 // Print prioritization summary
                 println!("[bazbom] ML prioritization complete:");
-                println!("  Critical risk: {}", prioritized.iter().filter(|v| {
-                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Critical)
-                }).count());
-                println!("  High risk: {}", prioritized.iter().filter(|v| {
-                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::High)
-                }).count());
-                println!("  Medium risk: {}", prioritized.iter().filter(|v| {
-                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Medium)
-                }).count());
-                println!("  Low risk: {}", prioritized.iter().filter(|v| {
-                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Low)
-                }).count());
-                
+                println!(
+                    "  Critical risk: {}",
+                    prioritized
+                        .iter()
+                        .filter(|v| {
+                            matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Critical)
+                        })
+                        .count()
+                );
+                println!(
+                    "  High risk: {}",
+                    prioritized
+                        .iter()
+                        .filter(|v| { matches!(v.risk_level, bazbom_ml::risk::RiskLevel::High) })
+                        .count()
+                );
+                println!(
+                    "  Medium risk: {}",
+                    prioritized
+                        .iter()
+                        .filter(|v| { matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Medium) })
+                        .count()
+                );
+                println!(
+                    "  Low risk: {}",
+                    prioritized
+                        .iter()
+                        .filter(|v| { matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Low) })
+                        .count()
+                );
+
                 // Find corresponding vulnerabilities in prioritized order
                 let mut reordered_vulns = Vec::new();
                 for prio_vuln in &prioritized {
@@ -1056,7 +1093,7 @@ fn main() -> Result<()> {
                         reordered_vulns.push(vuln.clone());
                     }
                 }
-                
+
                 reordered_vulns
             } else {
                 vulnerabilities.clone()
@@ -1067,24 +1104,28 @@ fn main() -> Result<()> {
 
             // Generate LLM-powered fix guides if requested
             let llm_guides = if llm {
-                use bazbom_ml::{LlmClient, LlmProvider, FixGenerator, FixContext};
-                
+                use bazbom_ml::{FixContext, FixGenerator, LlmClient, LlmProvider};
+
                 println!("[bazbom] generating LLM-powered fix guides...");
-                
+
                 // Determine model
-                let model = llm_model.unwrap_or_else(|| match llm_provider.to_lowercase().as_str() {
-                    "ollama" => "codellama:latest".to_string(),
-                    "anthropic" => "claude-3-5-sonnet-20241022".to_string(),
-                    "openai" => "gpt-4".to_string(),
-                    _ => "codellama:latest".to_string(),
-                });
-                
+                let model =
+                    llm_model.unwrap_or_else(|| match llm_provider.to_lowercase().as_str() {
+                        "ollama" => "codellama:latest".to_string(),
+                        "anthropic" => "claude-3-5-sonnet-20241022".to_string(),
+                        "openai" => "gpt-4".to_string(),
+                        _ => "codellama:latest".to_string(),
+                    });
+
                 // Validate provider is privacy-safe unless user explicitly opts in
                 let provider = match llm_provider.to_lowercase().as_str() {
                     "ollama" => {
                         let base_url = std::env::var("OLLAMA_BASE_URL")
                             .unwrap_or_else(|_| "http://localhost:11434".to_string());
-                        LlmProvider::Ollama { base_url, model: model.clone() }
+                        LlmProvider::Ollama {
+                            base_url,
+                            model: model.clone(),
+                        }
                     }
                     "anthropic" => {
                         if std::env::var("BAZBOM_ALLOW_EXTERNAL_API").is_err() {
@@ -1092,12 +1133,16 @@ fn main() -> Result<()> {
                             eprintln!("[bazbom] Set BAZBOM_ALLOW_EXTERNAL_API=1 to enable, or use 'ollama' for local-only processing.");
                             return Ok(());
                         }
-                        let api_key = std::env::var("ANTHROPIC_API_KEY")
-                            .unwrap_or_else(|_| {
-                                eprintln!("[bazbom] ERROR: ANTHROPIC_API_KEY environment variable not set");
-                                std::process::exit(1);
-                            });
-                        LlmProvider::Anthropic { api_key, model: model.clone() }
+                        let api_key = std::env::var("ANTHROPIC_API_KEY").unwrap_or_else(|_| {
+                            eprintln!(
+                                "[bazbom] ERROR: ANTHROPIC_API_KEY environment variable not set"
+                            );
+                            std::process::exit(1);
+                        });
+                        LlmProvider::Anthropic {
+                            api_key,
+                            model: model.clone(),
+                        }
                     }
                     "openai" => {
                         if std::env::var("BAZBOM_ALLOW_EXTERNAL_API").is_err() {
@@ -1105,19 +1150,23 @@ fn main() -> Result<()> {
                             eprintln!("[bazbom] Set BAZBOM_ALLOW_EXTERNAL_API=1 to enable, or use 'ollama' for local-only processing.");
                             return Ok(());
                         }
-                        let api_key = std::env::var("OPENAI_API_KEY")
-                            .unwrap_or_else(|_| {
-                                eprintln!("[bazbom] ERROR: OPENAI_API_KEY environment variable not set");
-                                std::process::exit(1);
-                            });
-                        LlmProvider::OpenAI { api_key, model: model.clone() }
+                        let api_key = std::env::var("OPENAI_API_KEY").unwrap_or_else(|_| {
+                            eprintln!(
+                                "[bazbom] ERROR: OPENAI_API_KEY environment variable not set"
+                            );
+                            std::process::exit(1);
+                        });
+                        LlmProvider::OpenAI {
+                            api_key,
+                            model: model.clone(),
+                        }
                     }
                     _ => {
                         eprintln!("[bazbom] ERROR: Unknown LLM provider '{}'. Use 'ollama', 'anthropic', or 'openai'.", llm_provider);
                         return Ok(());
                     }
                 };
-                
+
                 // Create LLM client
                 use bazbom_ml::LlmConfig;
                 let config = LlmConfig {
@@ -1127,20 +1176,23 @@ fn main() -> Result<()> {
                     timeout_seconds: 30,
                 };
                 let llm_client = LlmClient::new(config);
-                
+
                 // Check if provider is external and warn user
                 if llm_client.is_external() {
                     println!("[bazbom] ⚠️  Using external API: {}", llm_provider);
                     println!("[bazbom] 💡 Consider using 'ollama' for 100% local processing");
                 }
-                
+
                 let mut fix_generator = FixGenerator::new(llm_client);
                 let mut guides = Vec::new();
-                
+
                 // Generate guides for top vulnerabilities (limit to 5 to avoid token costs)
                 let max_guides = 5.min(report.suggestions.len());
-                println!("[bazbom] generating guides for top {} vulnerabilities...", max_guides);
-                
+                println!(
+                    "[bazbom] generating guides for top {} vulnerabilities...",
+                    max_guides
+                );
+
                 for suggestion in report.suggestions.iter().take(max_guides) {
                     if let Some(fixed_version) = &suggestion.fixed_version {
                         let build_system_str = format!("{:?}", system);
@@ -1152,25 +1204,31 @@ fn main() -> Result<()> {
                             build_system: build_system_str,
                             severity: suggestion.severity.clone(),
                             cvss_score: None, // TODO: Extract from vulnerability
-                            breaking_changes: suggestion.breaking_changes
+                            breaking_changes: suggestion
+                                .breaking_changes
                                 .as_ref()
                                 .map(|s| s.lines().map(|l| l.to_string()).collect())
                                 .unwrap_or_default(),
                         };
-                        
+
                         match fix_generator.generate_fix_guide(context) {
                             Ok(guide) => {
-                                println!("[bazbom]   ✓ generated guide for {}", suggestion.vulnerability_id);
+                                println!(
+                                    "[bazbom]   ✓ generated guide for {}",
+                                    suggestion.vulnerability_id
+                                );
                                 guides.push(guide);
                             }
                             Err(e) => {
-                                eprintln!("[bazbom]   ✗ failed to generate guide for {}: {}", 
-                                    suggestion.vulnerability_id, e);
+                                eprintln!(
+                                    "[bazbom]   ✗ failed to generate guide for {}: {}",
+                                    suggestion.vulnerability_id, e
+                                );
                             }
                         }
                     }
                 }
-                
+
                 println!("[bazbom] generated {} LLM-powered fix guides", guides.len());
                 Some(guides)
             } else {
@@ -1186,7 +1244,7 @@ fn main() -> Result<()> {
             println!("  Fixable: {}", report.summary.fixable);
             println!("  Unfixable: {}", report.summary.unfixable);
             println!("  Estimated effort: {}", report.summary.estimated_effort);
-            
+
             if let Some(guides) = &llm_guides {
                 println!("  LLM-powered guides: {}", guides.len());
             }
@@ -1236,25 +1294,28 @@ fn main() -> Result<()> {
                 // Display LLM-powered fix guides if available
                 if let Some(guides) = &llm_guides {
                     println!("\n[bazbom] 🤖 LLM-Powered Fix Guides:\n");
-                    
+
                     for (i, guide) in guides.iter().enumerate() {
                         println!("════════════════════════════════════════════════════════════");
                         println!("Guide {}: {} ({})", i + 1, guide.cve, guide.package);
                         println!("════════════════════════════════════════════════════════════");
-                        
+
                         if let Some(effort) = guide.estimated_effort_hours {
                             println!("\n⏱️  Estimated effort: {:.1} hours", effort);
                         }
-                        
-                        println!("\n🔧 Breaking change severity: {:?}", guide.breaking_change_severity);
-                        
+
+                        println!(
+                            "\n🔧 Breaking change severity: {:?}",
+                            guide.breaking_change_severity
+                        );
+
                         if !guide.upgrade_steps.is_empty() {
                             println!("\n📝 Upgrade Steps:");
                             for (j, step) in guide.upgrade_steps.iter().enumerate() {
                                 println!("   {}. {}", j + 1, step);
                             }
                         }
-                        
+
                         if !guide.code_changes.is_empty() {
                             println!("\n💻 Code Changes:");
                             for change in &guide.code_changes {
@@ -1269,7 +1330,7 @@ fn main() -> Result<()> {
                                 }
                             }
                         }
-                        
+
                         if !guide.configuration_changes.is_empty() {
                             println!("\n⚙️  Configuration Changes:");
                             for config in &guide.configuration_changes {
@@ -1282,24 +1343,21 @@ fn main() -> Result<()> {
                                 }
                             }
                         }
-                        
+
                         if !guide.testing_recommendations.is_empty() {
                             println!("\n🧪 Testing Recommendations:");
                             for test in &guide.testing_recommendations {
                                 println!("   • {}", test);
                             }
                         }
-                        
+
                         println!();
                     }
-                    
+
                     // Write LLM guides to file
                     let guides_path = PathBuf::from("llm_fix_guides.json");
-                    fs::write(
-                        &guides_path,
-                        serde_json::to_vec_pretty(&guides).unwrap(),
-                    )
-                    .with_context(|| format!("failed writing {:?}", guides_path))?;
+                    fs::write(&guides_path, serde_json::to_vec_pretty(&guides).unwrap())
+                        .with_context(|| format!("failed writing {:?}", guides_path))?;
                     println!("[bazbom] wrote LLM guides to {:?}", guides_path);
                 }
 
@@ -1692,38 +1750,52 @@ fn main() -> Result<()> {
             use std::path::PathBuf;
 
             if let Some(export_path) = export {
-                use bazbom_dashboard::{export_to_html, DashboardSummary, DependencyGraph, VulnerabilityCounts, Vulnerability};
+                use bazbom_dashboard::{
+                    export_to_html, DashboardSummary, DependencyGraph, Vulnerability,
+                    VulnerabilityCounts,
+                };
                 use std::fs;
-                
+
                 println!(
                     "[bazbom] Exporting static HTML dashboard to: {}",
                     export_path
                 );
-                
+
                 // Load findings from cache
                 let cache_dir = PathBuf::from(".bazbom/cache");
                 let findings_path = cache_dir.join("sca_findings.json");
-                
+
                 let (summary, graph_data, vulnerabilities) = if findings_path.exists() {
                     let findings_content = fs::read_to_string(&findings_path)
                         .context("Failed to read findings file")?;
                     let findings: serde_json::Value = serde_json::from_str(&findings_content)
                         .context("Failed to parse findings JSON")?;
-                    
+
                     // Extract summary
                     let summary = DashboardSummary {
-                        security_score: findings["summary"]["security_score"].as_u64().unwrap_or(0) as u8,
-                        total_dependencies: findings["summary"]["total_dependencies"].as_u64().unwrap_or(0) as usize,
+                        security_score: findings["summary"]["security_score"].as_u64().unwrap_or(0)
+                            as u8,
+                        total_dependencies: findings["summary"]["total_dependencies"]
+                            .as_u64()
+                            .unwrap_or(0) as usize,
                         vulnerabilities: VulnerabilityCounts {
-                            critical: findings["summary"]["vulnerabilities"]["critical"].as_u64().unwrap_or(0) as usize,
-                            high: findings["summary"]["vulnerabilities"]["high"].as_u64().unwrap_or(0) as usize,
-                            medium: findings["summary"]["vulnerabilities"]["medium"].as_u64().unwrap_or(0) as usize,
-                            low: findings["summary"]["vulnerabilities"]["low"].as_u64().unwrap_or(0) as usize,
+                            critical: findings["summary"]["vulnerabilities"]["critical"]
+                                .as_u64()
+                                .unwrap_or(0) as usize,
+                            high: findings["summary"]["vulnerabilities"]["high"]
+                                .as_u64()
+                                .unwrap_or(0) as usize,
+                            medium: findings["summary"]["vulnerabilities"]["medium"]
+                                .as_u64()
+                                .unwrap_or(0) as usize,
+                            low: findings["summary"]["vulnerabilities"]["low"]
+                                .as_u64()
+                                .unwrap_or(0) as usize,
                         },
                         license_issues: 0,
                         policy_violations: 0,
                     };
-                    
+
                     // Extract vulnerabilities
                     let vulns: Vec<_> = findings["vulnerabilities"]
                         .as_array()
@@ -1732,19 +1804,22 @@ fn main() -> Result<()> {
                         .map(|v| Vulnerability {
                             cve: v["cve"].as_str().unwrap_or("").to_string(),
                             package_name: v["package"]["name"].as_str().unwrap_or("").to_string(),
-                            package_version: v["package"]["version"].as_str().unwrap_or("").to_string(),
+                            package_version: v["package"]["version"]
+                                .as_str()
+                                .unwrap_or("")
+                                .to_string(),
                             severity: v["severity"].as_str().unwrap_or("").to_string(),
                             cvss: v["cvss"].as_f64().unwrap_or(0.0) as f32,
                             description: v["description"].as_str().map(|s| s.to_string()),
                             fixed_version: v["fixed_version"].as_str().map(|s| s.to_string()),
                         })
                         .collect();
-                    
+
                     let graph_data = DependencyGraph {
                         nodes: vec![],
                         edges: vec![],
                     };
-                    
+
                     (summary, graph_data, vulns)
                 } else {
                     println!("[bazbom] No findings file found, generating empty report");
@@ -1760,9 +1835,16 @@ fn main() -> Result<()> {
                         license_issues: 0,
                         policy_violations: 0,
                     };
-                    (summary, DependencyGraph { nodes: vec![], edges: vec![] }, vec![])
+                    (
+                        summary,
+                        DependencyGraph {
+                            nodes: vec![],
+                            edges: vec![],
+                        },
+                        vec![],
+                    )
                 };
-                
+
                 // Export to HTML
                 export_to_html(
                     &PathBuf::from(&export_path),
@@ -1770,7 +1852,7 @@ fn main() -> Result<()> {
                     &graph_data,
                     &vulnerabilities,
                 )?;
-                
+
                 println!("[bazbom] Successfully exported to: {}", export_path);
                 println!("[bazbom] Open the file in your browser to view the report");
                 return Ok(());
@@ -2130,10 +2212,8 @@ fn main() -> Result<()> {
                     };
 
                     let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
-                    generator.generate(
-                        ReportType::Compliance(framework_name),
-                        Path::new(&output),
-                    )?;
+                    generator
+                        .generate(ReportType::Compliance(framework_name), Path::new(&output))?;
 
                     println!("✅ Compliance report generated: {}", output);
                 }

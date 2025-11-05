@@ -37,7 +37,7 @@ impl BuildrProject {
         if rakefile.exists() {
             let content = fs::read_to_string(&rakefile)
                 .with_context(|| format!("Failed to read Rakefile: {}", rakefile.display()))?;
-            
+
             if content.contains("require 'buildr'")
                 || content.contains("require \"buildr\"")
                 || content.contains("Buildr.application")
@@ -65,10 +65,10 @@ impl BuildrProject {
         // compile.with 'org.springframework:spring-core:jar:5.3.0'
         // compile.with 'commons-io:commons-io:jar:2.11.0'
         // compile.from 'group:artifact:version'
-        
+
         for line in content.lines() {
             let line = line.trim();
-            
+
             // Skip comments
             if line.starts_with('#') {
                 continue;
@@ -89,13 +89,8 @@ impl BuildrProject {
         // compile.with 'group:artifact:jar:version'
         // compile.from 'group:artifact:version'
         // test.with 'group:artifact:version'
-        
-        let patterns = [
-            "compile.with",
-            "compile.from",
-            "test.with",
-            "test.from",
-        ];
+
+        let patterns = ["compile.with", "compile.from", "test.with", "test.from"];
 
         for pattern in &patterns {
             if line.contains(pattern) {
@@ -123,11 +118,11 @@ impl BuildrProject {
     /// Format: group:artifact:type:version or group:artifact:version
     fn parse_maven_coordinate(&self, coord: &str, scope_hint: &str) -> Option<BuildrDependency> {
         let parts: Vec<&str> = coord.split(':').collect();
-        
+
         if parts.len() >= 3 {
             let group_id = parts[0].to_string();
             let artifact_id = parts[1].to_string();
-            
+
             // Handle both group:artifact:version and group:artifact:type:version
             let version = if parts.len() >= 4 {
                 parts[3].to_string()
@@ -166,7 +161,7 @@ impl BuildrProject {
     /// Extract project name from build file
     fn get_project_name(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Look for define 'project-name' pattern
         for line in content.lines() {
             let line = line.trim();
@@ -184,14 +179,14 @@ impl BuildrProject {
                 }
             }
         }
-        
+
         Ok("unknown-buildr-project".to_string())
     }
 
     /// Extract project version from build file
     fn get_project_version(&self) -> Result<String> {
         let content = fs::read_to_string(&self.build_file)?;
-        
+
         // Look for VERSION = '1.0.0' or version = '1.0.0'
         for line in content.lines() {
             let line = line.trim();
@@ -209,7 +204,7 @@ impl BuildrProject {
                 }
             }
         }
-        
+
         Ok("1.0.0".to_string())
     }
 }
@@ -276,12 +271,12 @@ mod tests {
     fn test_buildr_project_detect_with_buildfile() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         fs::write(root.join("buildfile"), "define 'my-project'").unwrap();
-        
+
         let project = BuildrProject::detect(root).unwrap();
         assert!(project.is_some());
-        
+
         let project = project.unwrap();
         assert_eq!(project.build_file, root.join("buildfile"));
         assert!(!project.is_rakefile);
@@ -291,12 +286,16 @@ mod tests {
     fn test_buildr_project_detect_with_rakefile() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
-        fs::write(root.join("Rakefile"), "require 'buildr'\ndefine 'my-project'").unwrap();
-        
+
+        fs::write(
+            root.join("Rakefile"),
+            "require 'buildr'\ndefine 'my-project'",
+        )
+        .unwrap();
+
         let project = BuildrProject::detect(root).unwrap();
         assert!(project.is_some());
-        
+
         let project = project.unwrap();
         assert_eq!(project.build_file, root.join("Rakefile"));
         assert!(project.is_rakefile);
@@ -306,10 +305,10 @@ mod tests {
     fn test_buildr_project_not_detected() {
         let temp_dir = TempDir::new().unwrap();
         let root = temp_dir.path();
-        
+
         // Regular Rakefile without Buildr
         fs::write(root.join("Rakefile"), "task :default do\nend").unwrap();
-        
+
         let project = BuildrProject::detect(root).unwrap();
         assert!(project.is_none());
     }
@@ -322,12 +321,11 @@ mod tests {
             build_file: temp_dir.path().join("buildfile"),
             is_rakefile: false,
         };
-        
-        let dep = project.parse_maven_coordinate(
-            "org.springframework:spring-core:5.3.0",
-            "compile.with"
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_maven_coordinate("org.springframework:spring-core:5.3.0", "compile.with")
+            .unwrap();
+
         assert_eq!(dep.group_id, "org.springframework");
         assert_eq!(dep.artifact_id, "spring-core");
         assert_eq!(dep.version, "5.3.0");
@@ -342,12 +340,11 @@ mod tests {
             build_file: temp_dir.path().join("buildfile"),
             is_rakefile: false,
         };
-        
-        let dep = project.parse_maven_coordinate(
-            "commons-io:commons-io:jar:2.11.0",
-            "compile.from"
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_maven_coordinate("commons-io:commons-io:jar:2.11.0", "compile.from")
+            .unwrap();
+
         assert_eq!(dep.group_id, "commons-io");
         assert_eq!(dep.artifact_id, "commons-io");
         assert_eq!(dep.version, "2.11.0");
@@ -361,11 +358,11 @@ mod tests {
             build_file: temp_dir.path().join("buildfile"),
             is_rakefile: false,
         };
-        
-        let dep = project.parse_dependency_line(
-            "  compile.with 'org.apache.commons:commons-lang3:3.12.0'"
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_dependency_line("  compile.with 'org.apache.commons:commons-lang3:3.12.0'")
+            .unwrap();
+
         assert_eq!(dep.group_id, "org.apache.commons");
         assert_eq!(dep.artifact_id, "commons-lang3");
         assert_eq!(dep.version, "3.12.0");
@@ -379,11 +376,11 @@ mod tests {
             build_file: temp_dir.path().join("buildfile"),
             is_rakefile: false,
         };
-        
-        let dep = project.parse_dependency_line(
-            "  test.with 'junit:junit:4.13.2'"
-        ).unwrap();
-        
+
+        let dep = project
+            .parse_dependency_line("  test.with 'junit:junit:4.13.2'")
+            .unwrap();
+
         assert_eq!(dep.scope, "test");
     }
 
@@ -396,7 +393,7 @@ mod tests {
             scope: "compile".to_string(),
             source: DependencySource::Buildfile,
         };
-        
+
         let coords = buildr_to_maven_coordinates(&dep);
         assert_eq!(coords, "org.springframework:spring-core:5.3.0");
     }
@@ -414,7 +411,7 @@ mod tests {
             build_file: PathBuf::from("buildfile"),
             dependencies: vec![],
         };
-        
+
         assert_eq!(sbom.project_name, "test-project");
         assert_eq!(sbom.project_version, "1.0.0");
         assert_eq!(sbom.dependencies.len(), 0);

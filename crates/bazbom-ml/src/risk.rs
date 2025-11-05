@@ -11,13 +11,13 @@ use serde::{Deserialize, Serialize};
 pub struct EnhancedRiskScore {
     /// Overall risk score (0.0-1.0, higher = more risky)
     pub overall_score: f64,
-    
+
     /// Risk level category
     pub risk_level: RiskLevel,
-    
+
     /// Breakdown of score components
     pub components: RiskComponents,
-    
+
     /// Explanation of the score
     pub explanation: String,
 }
@@ -35,19 +35,19 @@ pub enum RiskLevel {
 pub struct RiskComponents {
     /// CVSS contribution (0.0-1.0)
     pub cvss_component: f64,
-    
+
     /// EPSS contribution (0.0-1.0)
     pub epss_component: f64,
-    
+
     /// KEV contribution (0.0-1.0)
     pub kev_component: f64,
-    
+
     /// Reachability contribution (0.0-1.0)
     pub reachability_component: f64,
-    
+
     /// Age/freshness contribution (0.0-1.0)
     pub age_component: f64,
-    
+
     /// Exploit availability contribution (0.0-1.0)
     pub exploit_component: f64,
 }
@@ -71,12 +71,12 @@ struct RiskWeights {
 impl Default for RiskWeights {
     fn default() -> Self {
         Self {
-            cvss_weight: 0.25,        // 25% CVSS score
-            epss_weight: 0.20,        // 20% EPSS
-            kev_weight: 0.20,         // 20% KEV status
+            cvss_weight: 0.25,         // 25% CVSS score
+            epss_weight: 0.20,         // 20% EPSS
+            kev_weight: 0.20,          // 20% KEV status
             reachability_weight: 0.20, // 20% Reachability
-            age_weight: 0.05,         // 5% Age
-            exploit_weight: 0.10,     // 10% Exploit availability
+            age_weight: 0.05,          // 5% Age
+            exploit_weight: 0.10,      // 10% Exploit availability
         }
     }
 }
@@ -88,7 +88,7 @@ impl RiskScorer {
             weights: RiskWeights::default(),
         }
     }
-    
+
     /// Create a scorer with custom weights
     ///
     /// # Arguments
@@ -120,28 +120,28 @@ impl RiskScorer {
             },
         }
     }
-    
+
     /// Calculate enhanced risk score from vulnerability features
     pub fn score(&self, features: &VulnerabilityFeatures) -> EnhancedRiskScore {
         // Normalize CVSS to 0.0-1.0
         let cvss_normalized = features.cvss_score / 10.0;
-        
+
         // EPSS is already 0.0-1.0
         let epss_normalized = features.epss;
-        
+
         // KEV is binary: present = 1.0, absent = 0.0
         let kev_normalized = if features.in_kev { 1.0 } else { 0.0 };
-        
+
         // Reachability is binary: reachable = 1.0, unreachable = 0.0
         let reachability_normalized = if features.is_reachable { 1.0 } else { 0.0 };
-        
+
         // Age: newer vulnerabilities are riskier (more likely to be actively exploited)
         // 0 days = 1.0, 365+ days = 0.0
         let age_normalized = 1.0 - (features.age_days as f64 / 365.0).min(1.0);
-        
+
         // Exploit availability is binary
         let exploit_normalized = if features.has_exploit { 1.0 } else { 0.0 };
-        
+
         // Calculate weighted components
         let components = RiskComponents {
             cvss_component: cvss_normalized * self.weights.cvss_weight,
@@ -151,7 +151,7 @@ impl RiskScorer {
             age_component: age_normalized * self.weights.age_weight,
             exploit_component: exploit_normalized * self.weights.exploit_weight,
         };
-        
+
         // Overall score is the sum of all components
         let overall_score = components.cvss_component
             + components.epss_component
@@ -159,7 +159,7 @@ impl RiskScorer {
             + components.reachability_component
             + components.age_component
             + components.exploit_component;
-        
+
         // Determine risk level
         let risk_level = if overall_score >= 0.8 {
             RiskLevel::Critical
@@ -172,10 +172,10 @@ impl RiskScorer {
         } else {
             RiskLevel::Minimal
         };
-        
+
         // Generate explanation
         let explanation = self.generate_explanation(features, &components, overall_score);
-        
+
         EnhancedRiskScore {
             overall_score,
             risk_level,
@@ -183,38 +183,49 @@ impl RiskScorer {
             explanation,
         }
     }
-    
-    fn generate_explanation(&self, features: &VulnerabilityFeatures, components: &RiskComponents, score: f64) -> String {
+
+    fn generate_explanation(
+        &self,
+        features: &VulnerabilityFeatures,
+        components: &RiskComponents,
+        score: f64,
+    ) -> String {
         let mut parts = Vec::new();
-        
+
         parts.push(format!("Risk score: {:.2}/1.00", score));
-        
+
         if components.cvss_component > 0.15 {
             parts.push(format!("High CVSS score ({:.1})", features.cvss_score));
         }
-        
+
         if components.epss_component > 0.15 {
-            parts.push(format!("High exploit probability (EPSS: {:.1}%)", features.epss * 100.0));
+            parts.push(format!(
+                "High exploit probability (EPSS: {:.1}%)",
+                features.epss * 100.0
+            ));
         }
-        
+
         if components.kev_component > 0.0 {
             parts.push("In CISA KEV (actively exploited)".to_string());
         }
-        
+
         if components.reachability_component > 0.0 {
             parts.push("Vulnerable code is reachable".to_string());
         } else {
             parts.push("Vulnerable code is NOT reachable (lower risk)".to_string());
         }
-        
+
         if components.exploit_component > 0.0 {
             parts.push("Public exploit code available".to_string());
         }
-        
+
         if components.age_component > 0.05 {
-            parts.push(format!("Recent vulnerability ({} days old)", features.age_days));
+            parts.push(format!(
+                "Recent vulnerability ({} days old)",
+                features.age_days
+            ));
         }
-        
+
         parts.join(". ")
     }
 }
@@ -228,13 +239,13 @@ impl Default for RiskScorer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_risk_scorer_creation() {
         let scorer = RiskScorer::new();
         assert_eq!(scorer.weights.cvss_weight, 0.25);
     }
-    
+
     #[test]
     fn test_critical_risk_vulnerability() {
         let scorer = RiskScorer::new();
@@ -248,14 +259,18 @@ mod tests {
             vuln_type: 1,
             is_reachable: true,
         };
-        
+
         let score = scorer.score(&features);
-        assert!(score.overall_score > 0.8, "Expected critical risk, got {}", score.overall_score);
+        assert!(
+            score.overall_score > 0.8,
+            "Expected critical risk, got {}",
+            score.overall_score
+        );
         assert_eq!(score.risk_level, RiskLevel::Critical);
         assert!(score.explanation.contains("CISA KEV"));
         assert!(score.explanation.contains("reachable"));
     }
-    
+
     #[test]
     fn test_low_risk_vulnerability() {
         let scorer = RiskScorer::new();
@@ -269,58 +284,65 @@ mod tests {
             vuln_type: 0,
             is_reachable: false,
         };
-        
+
         let score = scorer.score(&features);
-        assert!(score.overall_score < 0.3, "Expected low risk, got {}", score.overall_score);
-        assert!(matches!(score.risk_level, RiskLevel::Low | RiskLevel::Minimal));
+        assert!(
+            score.overall_score < 0.3,
+            "Expected low risk, got {}",
+            score.overall_score
+        );
+        assert!(matches!(
+            score.risk_level,
+            RiskLevel::Low | RiskLevel::Minimal
+        ));
         assert!(score.explanation.contains("NOT reachable"));
     }
-    
+
     #[test]
     fn test_unreachable_reduces_risk() {
         let scorer = RiskScorer::new();
-        
+
         // Same vulnerability, but one is reachable and one is not
         let reachable = VulnerabilityFeatures {
             cvss_score: 8.0,
             is_reachable: true,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let unreachable = VulnerabilityFeatures {
             cvss_score: 8.0,
             is_reachable: false,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let reachable_score = scorer.score(&reachable);
         let unreachable_score = scorer.score(&unreachable);
-        
+
         assert!(reachable_score.overall_score > unreachable_score.overall_score);
     }
-    
+
     #[test]
     fn test_kev_increases_risk() {
         let scorer = RiskScorer::new();
-        
+
         let with_kev = VulnerabilityFeatures {
             cvss_score: 7.0,
             in_kev: true,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let without_kev = VulnerabilityFeatures {
             cvss_score: 7.0,
             in_kev: false,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let with_kev_score = scorer.score(&with_kev);
         let without_kev_score = scorer.score(&without_kev);
-        
+
         assert!(with_kev_score.overall_score > without_kev_score.overall_score);
     }
-    
+
     #[test]
     fn test_custom_weights() {
         // Reachability-focused scoring (give it 50% weight)
@@ -332,25 +354,25 @@ mod tests {
             0.05, // age
             0.05, // exploit
         );
-        
+
         let reachable = VulnerabilityFeatures {
             cvss_score: 5.0,
             is_reachable: true,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let score = scorer.score(&reachable);
         // With 50% weight on reachability, score should be at least 0.5
         assert!(score.overall_score >= 0.5);
     }
-    
+
     #[test]
     fn test_risk_level_thresholds() {
         let scorer = RiskScorer::new();
-        
+
         // Test vulnerabilities that should fall into each risk level
         // These are realistic combinations of factors, not just CVSS alone
-        
+
         // Critical: High CVSS + EPSS + KEV + reachable
         let critical = VulnerabilityFeatures {
             cvss_score: 9.5,
@@ -362,8 +384,14 @@ mod tests {
             ..VulnerabilityFeatures::default()
         };
         let score = scorer.score(&critical);
-        assert_eq!(score.risk_level, RiskLevel::Critical, "Expected Critical, got {:?} (score: {:.2})", score.risk_level, score.overall_score);
-        
+        assert_eq!(
+            score.risk_level,
+            RiskLevel::Critical,
+            "Expected Critical, got {:?} (score: {:.2})",
+            score.risk_level,
+            score.overall_score
+        );
+
         // High: Good CVSS + EPSS, reachable
         let high = VulnerabilityFeatures {
             cvss_score: 8.0,
@@ -373,8 +401,14 @@ mod tests {
             ..VulnerabilityFeatures::default()
         };
         let score = scorer.score(&high);
-        assert_eq!(score.risk_level, RiskLevel::High, "Expected High, got {:?} (score: {:.2})", score.risk_level, score.overall_score);
-        
+        assert_eq!(
+            score.risk_level,
+            RiskLevel::High,
+            "Expected High, got {:?} (score: {:.2})",
+            score.risk_level,
+            score.overall_score
+        );
+
         // Medium: Moderate CVSS, some factors
         let medium = VulnerabilityFeatures {
             cvss_score: 6.0,
@@ -383,8 +417,14 @@ mod tests {
             ..VulnerabilityFeatures::default()
         };
         let score = scorer.score(&medium);
-        assert_eq!(score.risk_level, RiskLevel::Medium, "Expected Medium, got {:?} (score: {:.2})", score.risk_level, score.overall_score);
-        
+        assert_eq!(
+            score.risk_level,
+            RiskLevel::Medium,
+            "Expected Medium, got {:?} (score: {:.2})",
+            score.risk_level,
+            score.overall_score
+        );
+
         // Low: Lower CVSS, but has some EPSS
         let low = VulnerabilityFeatures {
             cvss_score: 5.5,
@@ -395,8 +435,14 @@ mod tests {
             ..VulnerabilityFeatures::default()
         };
         let score = scorer.score(&low);
-        assert_eq!(score.risk_level, RiskLevel::Low, "Expected Low, got {:?} (score: {:.2})", score.risk_level, score.overall_score);
-        
+        assert_eq!(
+            score.risk_level,
+            RiskLevel::Low,
+            "Expected Low, got {:?} (score: {:.2})",
+            score.risk_level,
+            score.overall_score
+        );
+
         // Minimal: Low CVSS, no factors
         let minimal = VulnerabilityFeatures {
             cvss_score: 3.0,
@@ -406,32 +452,38 @@ mod tests {
             ..VulnerabilityFeatures::default()
         };
         let score = scorer.score(&minimal);
-        assert_eq!(score.risk_level, RiskLevel::Minimal, "Expected Minimal, got {:?} (score: {:.2})", score.risk_level, score.overall_score);
+        assert_eq!(
+            score.risk_level,
+            RiskLevel::Minimal,
+            "Expected Minimal, got {:?} (score: {:.2})",
+            score.risk_level,
+            score.overall_score
+        );
     }
-    
+
     #[test]
     fn test_age_factor() {
         let scorer = RiskScorer::new();
-        
+
         let new_vuln = VulnerabilityFeatures {
             cvss_score: 7.0,
             age_days: 1,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let old_vuln = VulnerabilityFeatures {
             cvss_score: 7.0,
             age_days: 730,
             ..VulnerabilityFeatures::default()
         };
-        
+
         let new_score = scorer.score(&new_vuln);
         let old_score = scorer.score(&old_vuln);
-        
+
         // Newer vulnerabilities should score higher
         assert!(new_score.overall_score > old_score.overall_score);
     }
-    
+
     #[test]
     fn test_explanation_content() {
         let scorer = RiskScorer::new();
@@ -445,9 +497,9 @@ mod tests {
             vuln_type: 1,
             is_reachable: true,
         };
-        
+
         let score = scorer.score(&features);
-        
+
         // Check that explanation contains key information
         assert!(score.explanation.contains("Risk score"));
         assert!(score.explanation.contains("CVSS"));

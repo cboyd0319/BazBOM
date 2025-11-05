@@ -33,7 +33,10 @@ impl IncrementalAnalyzer {
         let changed_files = self.get_changed_files()?;
 
         if changed_files.is_empty() {
-            eprintln!("[bazbom] No files changed since {}. Using cached results.", self.base_ref);
+            eprintln!(
+                "[bazbom] No files changed since {}. Using cached results.",
+                self.base_ref
+            );
             return Ok(vec![]);
         }
 
@@ -126,7 +129,10 @@ impl IncrementalAnalyzer {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!("[bazbom] warning: Bazel query failed (falling back to full scan): {}", stderr);
+            eprintln!(
+                "[bazbom] warning: Bazel query failed (falling back to full scan): {}",
+                stderr
+            );
             return Ok(vec![]);
         }
 
@@ -186,11 +192,7 @@ impl AffectedTargets {
     }
 
     /// Create an incremental scan result
-    pub fn incremental(
-        targets: Vec<String>,
-        changed_files_count: usize,
-        base_ref: String,
-    ) -> Self {
+    pub fn incremental(targets: Vec<String>, changed_files_count: usize, base_ref: String) -> Self {
         Self {
             targets,
             changed_files_count,

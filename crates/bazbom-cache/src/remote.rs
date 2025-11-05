@@ -119,8 +119,16 @@ impl HttpRemoteCache {
     }
 
     /// Build request with authentication
-    fn build_request(&self, method: reqwest::Method, path: &str) -> reqwest::blocking::RequestBuilder {
-        let url = format!("{}/{}", self.base_url.trim_end_matches('/'), path.trim_start_matches('/'));
+    fn build_request(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+    ) -> reqwest::blocking::RequestBuilder {
+        let url = format!(
+            "{}/{}",
+            self.base_url.trim_end_matches('/'),
+            path.trim_start_matches('/')
+        );
         let mut req = self.client.request(method, &url);
 
         if let Some(ref token) = self.auth_token {
@@ -200,9 +208,7 @@ impl RemoteCacheBackend for HttpRemoteCache {
             return Ok(None);
         }
 
-        let stats: RemoteCacheStats = response
-            .json()
-            .context("Failed to parse cache stats")?;
+        let stats: RemoteCacheStats = response.json().context("Failed to parse cache stats")?;
 
         Ok(Some(stats))
     }
@@ -217,8 +223,9 @@ impl FileSystemRemoteCache {
     /// Create a new filesystem remote cache
     pub fn new(cache_dir: PathBuf) -> Result<Self> {
         // Create directory if it doesn't exist
-        std::fs::create_dir_all(&cache_dir)
-            .with_context(|| format!("Failed to create cache directory: {}", cache_dir.display()))?;
+        std::fs::create_dir_all(&cache_dir).with_context(|| {
+            format!("Failed to create cache directory: {}", cache_dir.display())
+        })?;
 
         Ok(Self { cache_dir })
     }
@@ -312,10 +319,7 @@ pub struct TwoTierCacheManager {
 
 impl TwoTierCacheManager {
     /// Create a new two-tier cache manager
-    pub fn new(
-        local: crate::CacheManager,
-        remote: Option<Box<dyn RemoteCacheBackend>>,
-    ) -> Self {
+    pub fn new(local: crate::CacheManager, remote: Option<Box<dyn RemoteCacheBackend>>) -> Self {
         Self { local, remote }
     }
 
@@ -388,11 +392,7 @@ pub fn create_remote_cache(config: &RemoteCacheConfig) -> Result<Box<dyn RemoteC
             auth_token,
             timeout_secs,
         } => {
-            let cache = HttpRemoteCache::new(
-                base_url.clone(),
-                auth_token.clone(),
-                *timeout_secs,
-            )?;
+            let cache = HttpRemoteCache::new(base_url.clone(), auth_token.clone(), *timeout_secs)?;
             Ok(Box::new(cache))
         }
         RemoteCacheConfig::FileSystem { path } => {
