@@ -1,5 +1,6 @@
 // Library exports for testing and internal use
 pub mod analyzers;
+pub mod ant;
 pub mod backup;
 pub mod batch_fixer;
 pub mod cli;
