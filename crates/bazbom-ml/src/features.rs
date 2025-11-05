@@ -47,9 +47,10 @@ impl VulnerabilityFeatures {
             if self.is_reachable { 1.0 } else { 0.0 },
         ]
     }
-    
-    /// Create default features for testing
-    pub fn default() -> Self {
+}
+
+impl Default for VulnerabilityFeatures {
+    fn default() -> Self {
         Self {
             cvss_score: 0.0,
             age_days: 0,
@@ -105,9 +106,10 @@ impl DependencyFeatures {
             self.recent_releases as f64,
         ]
     }
-    
-    /// Create default features for testing
-    pub fn default() -> Self {
+}
+
+impl Default for DependencyFeatures {
+    fn default() -> Self {
         Self {
             transitive_count: 0,
             avg_age_days: 0.0,
