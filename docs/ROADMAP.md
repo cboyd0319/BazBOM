@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~85% toward market leadership (⬆️ +5% this session)
+**Overall Completion:** ~87% toward market leadership (⬆️ +2% this session)
 
 ### ✅ Completed Phases (0-3, 5-6)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -295,7 +295,7 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans (with remote cache)
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (93% Complete, ⬆️ +5%)
+### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (97% Complete, ⬆️ +2%)
 
 **Container Support for JVM Artifacts, Additional JVM Build Systems**
 
@@ -339,8 +339,21 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
   - [x] Scala cross-version artifact handling
   - [x] SBOM generation for sbt projects
   - [x] 9 comprehensive tests passing
-- [ ] Groovy language support enhancements
-- [ ] Clojure language support enhancements
+- [x] Groovy language support enhancements ✅ **COMPLETE (2025-11-05)**
+  - [x] Groovy script dependency detection
+  - [x] @Grab annotation parsing (short and long form)
+  - [x] Grape dependency management
+  - [x] GrapeConfig.xml parsing
+  - [x] Maven coordinate conversion
+  - [x] SBOM generation for Groovy projects
+  - [x] 10 comprehensive tests passing
+- [x] Clojure language support enhancements ✅ **COMPLETE (2025-11-05)**
+  - [x] Leiningen (project.clj) project detection
+  - [x] tools.deps (deps.edn) project detection
+  - [x] Dependency parsing for both formats
+  - [x] Maven coordinate conversion
+  - [x] SBOM generation for Clojure projects
+  - [x] 10 comprehensive tests passing
 - [ ] Container image SBOM for JVM artifacts (`rules_oci` integration)
 - [ ] Kotlin Multiplatform support (JVM targets only)
 - [ ] Android-specific features (JVM-based)
