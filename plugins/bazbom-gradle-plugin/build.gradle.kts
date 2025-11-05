@@ -14,9 +14,9 @@ repositories {
 dependencies {
     implementation(gradleApi())
     implementation(localGroovy())
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation("com.google.code.gson:gson:2.13.2")
     
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.14.1")
     testImplementation("org.junit.platform:junit-platform-launcher")
     testImplementation("org.spockframework:spock-core:2.3-groovy-4.0")
     testImplementation(gradleTestKit())
