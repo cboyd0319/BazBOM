@@ -868,7 +868,7 @@ fn main() -> Result<()> {
                     println!("[bazbom] [+] policy check passed (no violations)");
                 } else {
                     println!(
-                        "[bazbom] ✗ policy check failed ({} violations)",
+                        "[bazbom] [X] policy check failed ({} violations)",
                         result.violations.len()
                     );
                     for violation in &result.violations {
@@ -945,7 +945,7 @@ fn main() -> Result<()> {
                         }
                     }
                     Err(e) => {
-                        eprintln!("✗ Policy file validation failed: {}", e);
+                        eprintln!("[X] Policy file validation failed: {}", e);
                         std::process::exit(1);
                     }
                 }
@@ -1221,7 +1221,7 @@ fn main() -> Result<()> {
                             }
                             Err(e) => {
                                 eprintln!(
-                                    "[bazbom]   ✗ failed to generate guide for {}: {}",
+                                    "[bazbom]   [X] failed to generate guide for {}: {}",
                                     suggestion.vulnerability_id, e
                                 );
                             }
@@ -1293,7 +1293,7 @@ fn main() -> Result<()> {
 
                 // Display LLM-powered fix guides if available
                 if let Some(guides) = &llm_guides {
-                    println!("\n[bazbom] 🤖 LLM-Powered Fix Guides:\n");
+                    println!("\n[bazbom] [AI] LLM-Powered Fix Guides:\n");
 
                     for (i, guide) in guides.iter().enumerate() {
                         println!("════════════════════════════════════════════════════════════");
@@ -1310,14 +1310,14 @@ fn main() -> Result<()> {
                         );
 
                         if !guide.upgrade_steps.is_empty() {
-                            println!("\n📝 Upgrade Steps:");
+                            println!("\n[*] Upgrade Steps:");
                             for (j, step) in guide.upgrade_steps.iter().enumerate() {
                                 println!("   {}. {}", j + 1, step);
                             }
                         }
 
                         if !guide.code_changes.is_empty() {
-                            println!("\n💻 Code Changes:");
+                            println!("\n[Code] Code Changes:");
                             for change in &guide.code_changes {
                                 println!("   • {}", change.description);
                                 println!("     File pattern: {}", change.file_pattern);
@@ -1345,7 +1345,7 @@ fn main() -> Result<()> {
                         }
 
                         if !guide.testing_recommendations.is_empty() {
-                            println!("\n🧪 Testing Recommendations:");
+                            println!("\n[Test] Testing Recommendations:");
                             for test in &guide.testing_recommendations {
                                 println!("   • {}", test);
                             }
@@ -1492,7 +1492,7 @@ fn main() -> Result<()> {
                                 }
                             }
                             Err(e) => {
-                                eprintln!("❌ Failed to apply Batch {}: {}", batch_num + 1, e);
+                                eprintln!("[X] Failed to apply Batch {}: {}", batch_num + 1, e);
                             }
                         }
                     } else {
@@ -1508,7 +1508,7 @@ fn main() -> Result<()> {
                     "  2. Commit changes: git commit -m 'fix: upgrade vulnerable dependencies'"
                 );
                 println!("  3. Create PR: bazbom fix --pr (or push manually)");
-                println!("\n🎉 Great job! Your project is more secure.");
+                println!("\n[+] Great job! Your project is more secure.");
             }
 
             if apply {
@@ -1548,7 +1548,7 @@ fn main() -> Result<()> {
                         println!("   URL: {}", pr_url);
                     }
                     Err(e) => {
-                        eprintln!("\n❌ Failed to create pull request: {}", e);
+                        eprintln!("\n[X] Failed to create pull request: {}", e);
                         eprintln!("\nTroubleshooting:");
                         eprintln!("  - Ensure GITHUB_TOKEN environment variable is set");
                         eprintln!("  - Ensure GITHUB_REPOSITORY is set (format: owner/repo)");
@@ -1637,8 +1637,8 @@ fn main() -> Result<()> {
                         bazbom_formats::licenses::LicenseRisk::Safe => "[+]",
                         bazbom_formats::licenses::LicenseRisk::Low => "[!]",
                         bazbom_formats::licenses::LicenseRisk::Medium => "[!]",
-                        bazbom_formats::licenses::LicenseRisk::High => "✗",
-                        bazbom_formats::licenses::LicenseRisk::Critical => "✗✗",
+                        bazbom_formats::licenses::LicenseRisk::High => "[X]",
+                        bazbom_formats::licenses::LicenseRisk::Critical => "[XX]",
                     };
 
                     println!(
@@ -1685,10 +1685,10 @@ fn main() -> Result<()> {
                 } else {
                     for warning in warnings {
                         let risk_indicator = match warning.risk {
-                            bazbom_formats::licenses::LicenseRisk::Critical => "✗✗ CRITICAL",
-                            bazbom_formats::licenses::LicenseRisk::High => "✗ HIGH",
+                            bazbom_formats::licenses::LicenseRisk::Critical => "[XX] CRITICAL",
+                            bazbom_formats::licenses::LicenseRisk::High => "[X] HIGH",
                             bazbom_formats::licenses::LicenseRisk::Medium => "[!] MEDIUM",
-                            _ => "ⓘ INFO",
+                            _ => "[i] INFO",
                         };
 
                         println!("{}: {}", risk_indicator, warning.message);

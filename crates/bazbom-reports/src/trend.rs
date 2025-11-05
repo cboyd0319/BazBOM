@@ -50,7 +50,7 @@ fn build_trend_html(generator: &ReportGenerator) -> String {
         <div class="subtitle">Project: {} v{} | Scan Date: {}</div>
 
         <div class="note">
-            <strong>📌 Note:</strong> This is a snapshot report. Historical trend analysis requires multiple scans over time. 
+            <strong>[Note] Note:</strong> This is a snapshot report. Historical trend analysis requires multiple scans over time. 
             Run regular scans to build comprehensive trend data.
         </div>
 
@@ -80,7 +80,7 @@ fn build_trend_html(generator: &ReportGenerator) -> String {
 
         <h2>Vulnerability Trends (Preview)</h2>
         <div class="chart-placeholder">
-            <strong>📈 Historical Chart</strong><br>
+            <strong>[Chart] Historical Chart</strong><br>
             <p style="margin-top: 10px;">Vulnerability trends will appear here after multiple scans.</p>
             <p>Run <code>bazbom scan</code> regularly to track changes over time.</p>
         </div>
@@ -156,7 +156,7 @@ fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String 
 
     if !vulns.critical.is_empty() {
         analysis.push(format!(
-            "<p>🚨 <strong>Critical Alert:</strong> {} CRITICAL vulnerabilities require immediate attention. These pose severe security risks and should be addressed within 24 hours.</p>",
+            "<p>[!!] <strong>Critical Alert:</strong> {} CRITICAL vulnerabilities require immediate attention. These pose severe security risks and should be addressed within 24 hours.</p>",
             vulns.critical.len()
         ));
     }

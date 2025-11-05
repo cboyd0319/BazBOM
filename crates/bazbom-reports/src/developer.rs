@@ -122,7 +122,7 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
 
     if !vulns.critical.is_empty() {
         sections.push(format!(
-            "<h2>🚨 Critical Vulnerabilities ({}) - IMMEDIATE ACTION REQUIRED</h2>\n{}",
+            "<h2>[!!] Critical Vulnerabilities ({}) - IMMEDIATE ACTION REQUIRED</h2>\n{}",
             vulns.critical.len(),
             vulns
                 .critical
@@ -232,8 +232,8 @@ bazbom fix --apply
             <div>
                 <div class="vuln-title">{} - {}</div>
                 <div class="vuln-meta">
-                    <span class="meta-item">📦 {}@{}</span>
-                    <span class="meta-item">💯 CVSS: {}</span>
+                    <span class="meta-item">[Pkg] {}@{}</span>
+                    <span class="meta-item">[Score] CVSS: {}</span>
                     <span class="meta-item">{}</span>
                 </div>
             </div>
@@ -247,7 +247,7 @@ bazbom fix --apply
         {}
         
         <div class="info-box">
-            <strong>📚 References:</strong>
+            <strong>[Refs] References:</strong>
             <ul>
                 <li><a href="https://nvd.nist.gov/vuln/detail/{}" target="_blank">NVD Entry</a></li>
                 <li><a href="https://osv.dev/vulnerability/{}" target="_blank">OSV Database</a></li>

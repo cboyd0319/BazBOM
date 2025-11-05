@@ -353,7 +353,7 @@ fn show_next_steps() {
     );
     println!();
     println!(
-        "📖 Full documentation: {}",
+        "[Doc] Full documentation: {}",
         style("https://github.com/cboyd0319/BazBOM")
             .cyan()
             .underlined()

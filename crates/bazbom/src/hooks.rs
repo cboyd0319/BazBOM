@@ -80,7 +80,7 @@ trap "rm -rf $BAZBOM_TMP" EXIT
 # Run BazBOM scan
 if ! bazbom scan{fast} --out-dir "$BAZBOM_TMP" . > /dev/null 2>&1; then
   echo ""
-  echo "❌ BazBOM scan failed"
+  echo "[X] BazBOM scan failed"
   echo "   Check that bazbom is installed and in your PATH"
   exit 1
 fi
@@ -91,7 +91,7 @@ if [ -f "{policy}" ]; then
   
   if ! bazbom policy check{policy_arg} > /dev/null 2>&1; then
     echo ""
-    echo "❌ Commit blocked by BazBOM policy violations"
+    echo "[X] Commit blocked by BazBOM policy violations"
     echo ""
     echo "Run 'bazbom scan' to see details"
     echo "Run 'bazbom fix --suggest' for remediation guidance"

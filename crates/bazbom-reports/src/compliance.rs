@@ -376,7 +376,7 @@ fn build_compliance_html(
         if vulns.critical.is_empty() {
             "[+] PASS"
         } else {
-            "❌ FAIL"
+            "[X] FAIL"
         },
         vulns.high.len(),
         if vulns.high.is_empty() {

@@ -223,7 +223,7 @@ pub fn notify_vulnerability_discovered(
     details.insert("Severity".to_string(), severity.to_string());
 
     let notification = Notification {
-        title: format!("🚨 {} Vulnerability Discovered", severity),
+        title: format!("[!!] {} Vulnerability Discovered", severity),
         message: format!(
             "New {} severity vulnerability {} found in {}:{}",
             severity, cve, package, version
