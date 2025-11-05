@@ -394,52 +394,7 @@ pub fn extract_bazel_dependencies_for_targets(
     Ok(full_graph)
 }
 
-/// Extract dependencies for specific Bazel targets with optimized queries
-pub fn extract_bazel_dependencies_for_targets_optimized(
-    workspace_path: &Path,
-    targets: &[String],
-    output_path: &Path,
-) -> Result<BazelDependencyGraph> {
-    println!(
-        "[bazbom] extracting dependencies for {} targets (optimized)",
-        targets.len()
-    );
 
-    // Create optimizer
-    let mut optimizer = BazelQueryOptimizer::new(workspace_path.to_path_buf());
-
-    // Build queries for each target's dependencies
-    let mut all_deps = std::collections::HashSet::new();
-    
-    for target in targets {
-        println!("  - querying deps for {}", target);
-        
-        // Query direct and transitive dependencies
-        match optimizer.query_deps(target, None) {
-            Ok(deps) => {
-                all_deps.extend(deps);
-            }
-            Err(e) => {
-                eprintln!("[bazbom] warning: failed to query deps for {}: {}", target, e);
-            }
-        }
-    }
-
-    // Print performance metrics
-    optimizer.print_metrics();
-
-    // First get all dependencies from maven_install.json
-    let full_graph = extract_bazel_dependencies(workspace_path, output_path)?;
-
-    // If we successfully queried deps, filter the graph
-    if !all_deps.is_empty() {
-        println!("[bazbom] filtering graph to {} relevant targets", all_deps.len());
-        // TODO: Actually filter the graph based on all_deps
-        // For now, return full graph but with metrics
-    }
-
-    Ok(full_graph)
-}
 
 /// Optimized Bazel query execution with caching and batching
 pub struct BazelQueryOptimizer {
@@ -924,30 +879,4 @@ pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
     )
 }
 
-/// Query Kotlin-specific targets in the workspace
-pub fn query_kotlin_targets(workspace_path: &Path) -> Result<Vec<String>> {
-    let query = "kind(kotlin_library, //...) + kind(kt_jvm_library, //...) + kind(kt_jvm_binary, //...) + kind(kt_jvm_test, //...)";
-    println!("[bazbom] querying Kotlin targets");
-    
-    query_bazel_targets(
-        workspace_path,
-        Some(query),
-        None,
-        None,
-        "//...",
-    )
-}
 
-/// Query Scala-specific targets in the workspace
-pub fn query_scala_targets(workspace_path: &Path) -> Result<Vec<String>> {
-    let query = "kind(scala_library, //...) + kind(scala_binary, //...) + kind(scala_test, //...)";
-    println!("[bazbom] querying Scala targets");
-    
-    query_bazel_targets(
-        workspace_path,
-        Some(query),
-        None,
-        None,
-        "//...",
-    )
-}
