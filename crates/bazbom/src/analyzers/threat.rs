@@ -254,7 +254,7 @@ impl ThreatAnalyzer {
             };
 
             let result = SarifResult {
-                rule_id: rule_id,
+                rule_id,
                 message: Message {
                     text: format!(
                         "{}: {} v{}{}",

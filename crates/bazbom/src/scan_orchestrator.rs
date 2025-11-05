@@ -178,7 +178,7 @@ impl ScanOrchestrator {
         }
         let threat_level = self
             .threat_detection
-            .unwrap_or_else(|| ThreatDetectionLevel::Standard);
+            .unwrap_or(ThreatDetectionLevel::Standard);
         if threat_level != ThreatDetectionLevel::Off {
             let threat = ThreatAnalyzer::new(threat_level);
             if threat.enabled(&self.config, self.threat_detection.is_some()) {
@@ -558,7 +558,7 @@ impl ScanOrchestrator {
         // Generate container SBOM
         let sbom_path = self.context.out_dir.join(format!(
             "container-{}.spdx.json",
-            scan_result.image.name.replace(':', "-").replace('/', "-")
+            scan_result.image.name.replace([':', '/'], "-")
         ));
 
         self.generate_container_sbom(&scan_result, &sbom_path)?;

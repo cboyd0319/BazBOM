@@ -158,7 +158,7 @@ impl PerformanceMonitor {
 
         if !self.phase_times.is_empty() {
             lines.push(String::new());
-            lines.push(format!("Phase breakdown:"));
+            lines.push("Phase breakdown:".to_string());
             let mut phases: Vec<_> = self.phase_times.iter().collect();
             phases.sort_by_key(|(_, duration)| std::cmp::Reverse(*duration));
             
@@ -258,7 +258,7 @@ impl PerformanceComparison {
                 -self.improvement_pct
             ));
         } else {
-            lines.push(format!("No change in performance"));
+            lines.push("No change in performance".to_string());
         }
 
         lines.join("\n")

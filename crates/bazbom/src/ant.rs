@@ -72,18 +72,16 @@ impl AntProject {
                         let mut rev = String::new();
                         let mut conf = String::from("compile");
                         
-                        for attr_result in e.attributes() {
-                            if let Ok(attr) = attr_result {
-                                let key = attr.key.as_ref();
-                                let value = String::from_utf8_lossy(&attr.value).to_string();
-                                
-                                match key {
-                                    b"org" => org = value,
-                                    b"name" => name = value,
-                                    b"rev" => rev = value,
-                                    b"conf" => conf = value,
-                                    _ => {}
-                                }
+                        for attr in e.attributes().flatten() {
+                            let key = attr.key.as_ref();
+                            let value = String::from_utf8_lossy(&attr.value).to_string();
+                            
+                            match key {
+                                b"org" => org = value,
+                                b"name" => name = value,
+                                b"rev" => rev = value,
+                                b"conf" => conf = value,
+                                _ => {}
                             }
                         }
                         
