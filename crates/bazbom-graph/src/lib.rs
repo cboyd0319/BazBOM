@@ -1,6 +1,17 @@
+//! Dependency graph data structures for BazBOM
+//!
+//! This crate provides unified graph representations for dependencies across
+//! different build systems. It normalizes Maven, Gradle, and Bazel dependency
+//! structures into a common format suitable for:
+//! - Vulnerability analysis
+//! - Transitive dependency resolution
+//! - SBOM generation
+//! - Visualization
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+/// Unique identifier for a component in the dependency graph
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ComponentId(pub String);
 

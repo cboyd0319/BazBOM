@@ -1,3 +1,21 @@
+//! Policy-as-code framework for BazBOM
+//!
+//! This crate implements flexible policy enforcement for dependency security:
+//! - YAML-based policy configuration
+//! - Rego (Open Policy Agent) integration for advanced rules
+//! - CUE language support for declarative policies
+//! - Policy inheritance and merging (team, project, global levels)
+//! - Audit logging for compliance and governance
+//! - Pre-built templates (PCI-DSS, HIPAA, SOC2, etc.)
+//!
+//! Policy checks include:
+//! - Severity thresholds (block CRITICAL/HIGH vulnerabilities)
+//! - License compliance (allowlist/denylist, copyleft detection)
+//! - CISA KEV blocking
+//! - EPSS scoring thresholds
+//! - Reachability requirements
+//! - VEX (Vulnerability Exploitability eXchange) auto-application
+
 use serde::{Deserialize, Serialize};
 
 pub mod audit;
