@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~94% toward market leadership (⬆️ +1% this session)
+**Overall Completion:** ~95% toward market leadership (⬆️ +1% this session)
 
 ### ✅ Completed Phases (0-3, 5-8)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -40,7 +40,7 @@
 - **Phase 9:** Ecosystem expansion (97% complete - Buildr & sbt SBOM generation added ⬆️ +5%)
 
 ### 🚧 In Progress (New!)
-- **Phase 10:** AI-powered intelligence (5% complete - ML infrastructure established ⬆️ NEW 2025-11-05)
+- **Phase 10:** AI-powered intelligence (25% complete - CLI integration complete ⬆️ +20% 2025-11-05)
 
 ### 📋 Planned
 - **Phase 11:** Enterprise distribution (Windows, Kubernetes, air-gapped)
@@ -383,7 +383,7 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
 - [ ] Kotlin Multiplatform support (JVM targets only)
 - [ ] Android-specific features (JVM-based)
 
-### Phase 10: AI Intelligence 🚧 IN PROGRESS (15% Complete, ⬆️ +10% 2025-11-05)
+### Phase 10: AI Intelligence 🚧 IN PROGRESS (25% Complete, ⬆️ +10% 2025-11-05)
 
 **ML Prioritization, LLM-Powered Fix Generation**
 
@@ -425,9 +425,20 @@ See [PHASE_10_AI_INTELLIGENCE.md](copilot/PHASE_10_AI_INTELLIGENCE.md) for detai
   - [x] Estimated time per batch
   - [x] Conflict reporting
 
+#### CLI Integration ✅ **COMPLETE 2025-11-05**
+- [x] Integration with scan command (--ml-risk flag) ✨ **NEW**
+  - [x] Extract features from vulnerabilities (CVSS, EPSS, KEV, reachability)
+  - [x] Calculate enhanced risk scores
+  - [x] Add ml_risk metadata to findings JSON
+  - [x] Human-readable explanations in output
+- [x] Integration with fix command (--ml-prioritize flag) ✨ **NEW**
+  - [x] ML-enhanced vulnerability prioritization
+  - [x] Reorder vulnerabilities by risk score
+  - [x] Display prioritization summary
+  - [x] Prioritized remediation suggestions
+
 #### Planned Features
-- [ ] Integration with scan command (--ml-risk flag)
-- [ ] Integration with fix --interactive command
+- [ ] Integration with fix --interactive command for smart batching
 - [ ] LLM-powered fix generation
 - [ ] Natural language policy queries
 - [ ] Code change impact analysis

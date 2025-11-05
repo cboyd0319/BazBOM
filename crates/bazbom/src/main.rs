@@ -944,10 +944,11 @@ fn main() -> Result<()> {
             apply,
             pr,
             interactive,
+            ml_prioritize,
         } => {
             println!(
-                "[bazbom] fix suggest={} apply={} pr={} interactive={}",
-                suggest, apply, pr, interactive
+                "[bazbom] fix suggest={} apply={} pr={} interactive={} ml_prioritize={}",
+                suggest, apply, pr, interactive, ml_prioritize
             );
 
             // Detect build system
@@ -978,8 +979,88 @@ fn main() -> Result<()> {
                 return Ok(());
             }
 
-            // Generate remediation suggestions
-            let report = remediation::generate_suggestions(&vulnerabilities, system);
+            // Apply ML-enhanced prioritization if requested
+            let prioritized_vulnerabilities = if ml_prioritize {
+                use bazbom_ml::{VulnerabilityPrioritizer, VulnerabilityFeatures};
+                
+                println!("[bazbom] applying ML-enhanced vulnerability prioritization...");
+                
+                // Create prioritizer
+                let prioritizer = VulnerabilityPrioritizer::new();
+                
+                // Convert vulnerabilities to prioritizer input format
+                let vuln_features: Vec<_> = vulnerabilities.iter().map(|vuln| {
+                    // Extract features (similar to scan command)
+                    let cvss_score = vuln.severity.as_ref()
+                        .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                        .unwrap_or(0.0);
+                    let epss = vuln.epss.as_ref()
+                        .map(|e| e.score)
+                        .unwrap_or(0.0);
+                    let in_kev = vuln.kev.is_some();
+                    let severity_level = vuln.severity.as_ref()
+                        .map(|s| match s.level {
+                            bazbom_advisories::SeverityLevel::Unknown => 0,
+                            bazbom_advisories::SeverityLevel::Low => 0,
+                            bazbom_advisories::SeverityLevel::Medium => 1,
+                            bazbom_advisories::SeverityLevel::High => 2,
+                            bazbom_advisories::SeverityLevel::Critical => 3,
+                        })
+                        .unwrap_or(0);
+                    
+                    let features = VulnerabilityFeatures {
+                        cvss_score,
+                        age_days: 0,
+                        has_exploit: false,
+                        epss,
+                        in_kev,
+                        severity_level,
+                        vuln_type: 0,
+                        is_reachable: false, // TODO: Load from scan results
+                    };
+                    
+                    let cve = vuln.id.clone();
+                    let package = vuln.affected.first()
+                        .map(|a| a.package.clone())
+                        .unwrap_or_else(|| "unknown".to_string());
+                    let version = "unknown".to_string(); // TODO: Extract from affected
+                    
+                    (features, cve, package, version)
+                }).collect();
+                
+                // Prioritize
+                let prioritized = prioritizer.prioritize(vuln_features);
+                
+                // Print prioritization summary
+                println!("[bazbom] ML prioritization complete:");
+                println!("  Critical risk: {}", prioritized.iter().filter(|v| {
+                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Critical)
+                }).count());
+                println!("  High risk: {}", prioritized.iter().filter(|v| {
+                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::High)
+                }).count());
+                println!("  Medium risk: {}", prioritized.iter().filter(|v| {
+                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Medium)
+                }).count());
+                println!("  Low risk: {}", prioritized.iter().filter(|v| {
+                    matches!(v.risk_level, bazbom_ml::risk::RiskLevel::Low)
+                }).count());
+                
+                // Find corresponding vulnerabilities in prioritized order
+                let mut reordered_vulns = Vec::new();
+                for prio_vuln in &prioritized {
+                    if let Some(vuln) = vulnerabilities.iter().find(|v| v.id == prio_vuln.cve) {
+                        reordered_vulns.push(vuln.clone());
+                    }
+                }
+                
+                reordered_vulns
+            } else {
+                vulnerabilities.clone()
+            };
+
+            // Generate remediation suggestions (now using prioritized vulnerabilities if ml_prioritize is enabled)
+            let report = remediation::generate_suggestions(&prioritized_vulnerabilities, system);
 
             // Display summary
             println!("\n[bazbom] Remediation Summary:");

@@ -91,6 +91,9 @@ pub enum Commands {
         /// Interactive mode with smart batch processing
         #[arg(long)]
         interactive: bool,
+        /// Use ML-enhanced prioritization for vulnerability fixes
+        #[arg(long)]
+        ml_prioritize: bool,
     },
     /// Advisory database operations (offline sync)
     Db {
