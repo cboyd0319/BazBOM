@@ -1,5 +1,6 @@
 // Library exports for testing and internal use
 pub mod analyzers;
+pub mod ant;
 pub mod backup;
 pub mod batch_fixer;
 pub mod cli;
@@ -13,6 +14,7 @@ pub mod incremental;
 pub mod init;
 pub mod notifications;
 pub mod parallel;
+pub mod performance;
 pub mod pipeline;
 pub mod publish;
 pub mod reachability;
