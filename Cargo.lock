@@ -269,6 +269,7 @@ dependencies = [
  "bazbom-dashboard",
  "bazbom-formats",
  "bazbom-graph",
+ "bazbom-ml",
  "bazbom-policy",
  "bazbom-reports",
  "bazbom-threats",
