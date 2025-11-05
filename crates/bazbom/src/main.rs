@@ -531,10 +531,85 @@ fn main() -> Result<()> {
                 println!("[bazbom] wrote {:?}", shading_output);
             }
 
+            // Apply ML-enhanced risk scoring if requested
+            let vulnerabilities_with_ml = if ml_risk {
+                use bazbom_ml::{RiskScorer, VulnerabilityFeatures};
+                
+                println!("[bazbom] applying ML-enhanced risk scoring...");
+                let scorer = RiskScorer::new();
+                
+                // Enhance each vulnerability with ML risk score
+                let enhanced_vulns: Vec<_> = vulnerabilities.iter().map(|vuln| {
+                    // Extract features from vulnerability
+                    let cvss_score = vuln.severity.as_ref()
+                        .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                        .unwrap_or(0.0);
+                    
+                    // Extract EPSS score (it's a struct with score and percentile fields)
+                    let epss = vuln.epss.as_ref()
+                        .map(|e| e.score)
+                        .unwrap_or(0.0);
+                    
+                    let in_kev = vuln.kev.is_some();
+                    
+                    // Check if vulnerability is reachable (if reachability analysis was run)
+                    let is_reachable = if let Some(ref reach) = reachability_result {
+                        // Simple heuristic: check if any reachable classes/packages match the vulnerability
+                        // In a real implementation, this would be more sophisticated
+                        !reach.reachable_classes.is_empty()
+                    } else {
+                        false // Unknown reachability
+                    };
+                    
+                    // Map severity level to numeric value (0=UNKNOWN/LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL)
+                    let severity_level = vuln.severity.as_ref()
+                        .map(|s| match s.level {
+                            bazbom_advisories::SeverityLevel::Unknown => 0,
+                            bazbom_advisories::SeverityLevel::Low => 0,
+                            bazbom_advisories::SeverityLevel::Medium => 1,
+                            bazbom_advisories::SeverityLevel::High => 2,
+                            bazbom_advisories::SeverityLevel::Critical => 3,
+                        })
+                        .unwrap_or(0);
+                    
+                    // Create features
+                    let features = VulnerabilityFeatures {
+                        cvss_score,
+                        age_days: 0, // TODO: Calculate from published date
+                        has_exploit: false, // TODO: Check exploit database
+                        epss,
+                        in_kev,
+                        severity_level,
+                        vuln_type: 0, // TODO: Map vulnerability type to numeric
+                        is_reachable,
+                    };
+                    
+                    // Calculate enhanced risk score
+                    let risk_score = scorer.score(&features);
+                    
+                    // Return enhanced vulnerability data
+                    let mut vuln_json = serde_json::to_value(vuln).unwrap();
+                    vuln_json["ml_risk"] = serde_json::json!({
+                        "overall_score": risk_score.overall_score,
+                        "risk_level": format!("{:?}", risk_score.risk_level),
+                        "components": risk_score.components,
+                        "explanation": risk_score.explanation,
+                    });
+                    vuln_json
+                }).collect();
+                
+                println!("[bazbom] ML risk scoring complete");
+                enhanced_vulns
+            } else {
+                // No ML enhancement, use original vulnerabilities
+                vulnerabilities.iter().map(|v| serde_json::to_value(v).unwrap()).collect()
+            };
+
             // Create findings file with vulnerability data, including reachability and shading info
             let findings_path = out.join("sca_findings.json");
             let mut findings_data = serde_json::json!({
-                "vulnerabilities": vulnerabilities,
+                "vulnerabilities": vulnerabilities_with_ml,
+                "ml_enhanced": ml_risk,
                 "summary": {
                     "total": vulnerabilities.len(),
                     "critical": vulnerabilities.iter().filter(|v| {
