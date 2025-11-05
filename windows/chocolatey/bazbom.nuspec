@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BazBOM Chocolatey Package Specification -->
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <!-- Package Identity -->
+    <id>bazbom</id>
+    <version>0.5.1</version>
+    <packageSourceUrl>https://github.com/cboyd0319/BazBOM</packageSourceUrl>
+    <owners>cboyd0319</owners>
+    
+    <!-- Package Metadata -->
+    <title>BazBOM - Enterprise SBOM and SCA Tool</title>
+    <authors>BazBOM Project</authors>
+    <projectUrl>https://github.com/cboyd0319/BazBOM</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/cboyd0319/BazBOM/main/static/bazbom-icon.png</iconUrl>
+    <copyright>2025 BazBOM Project</copyright>
+    <licenseUrl>https://github.com/cboyd0319/BazBOM/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <projectSourceUrl>https://github.com/cboyd0319/BazBOM</projectSourceUrl>
+    <docsUrl>https://github.com/cboyd0319/BazBOM/tree/main/docs</docsUrl>
+    <bugTrackerUrl>https://github.com/cboyd0319/BazBOM/issues</bugTrackerUrl>
+    
+    <!-- Tags for discoverability -->
+    <tags>security sbom sca supply-chain vulnerability-scanner dependency-analysis maven gradle bazel java kotlin scala android devsecops compliance cli</tags>
+    
+    <!-- Package Description -->
+    <summary>World-class JVM SBOM, SCA, and dependency graph tool. Privacy-first, offline-capable.</summary>
+    <description>
+# BazBOM - Enterprise SBOM and SCA for JVM
+
+World-class JVM SBOM, SCA, and dependency graph across Maven, Gradle, and Bazel projects. 
+Built for enterprise security teams who need accuracy, privacy, and compliance.
+
+## Features
+
+### Core Capabilities
+- **SBOM Generation**: SPDX 2.3 and CycloneDX 1.5 with cryptographic signing
+- **Vulnerability Scanning**: OSV, NVD, GHSA, CISA KEV, and EPSS integration
+- **Dependency Analysis**: Deep transitive dependency graphs with reachability analysis
+- **License Compliance**: Automated obligations and contamination detection
+- **Policy Enforcement**: 20+ compliance templates (PCI-DSS, HIPAA, FedRAMP, SOC 2)
+
+### Build System Support
+- Maven (pom.xml) with full multi-module support
+- Gradle (Groovy and Kotlin DSL) with Shadow plugin detection
+- Bazel (WORKSPACE, MODULE.bazel) with aspects-based analysis
+- Ant with Ivy dependency management
+- Buildr and sbt (Scala Build Tool)
+
+### JVM Languages
+- Java (all versions)
+- Kotlin (including Multiplatform)
+- Scala
+- Groovy
+- Clojure
+- Android (JVM artifacts)
+
+### Privacy &amp; Security
+- **Zero Telemetry**: 100% private, no data leaves your infrastructure
+- **Offline-First**: Works without internet access
+- **Signed Releases**: Sigstore cosign with SLSA Level 3 provenance
+- **Memory Safe**: Written in Rust, zero unsafe code
+
+### Advanced Features
+- Interactive TUI for dependency exploration
+- Web dashboard with real-time metrics
+- IDE plugins (VS Code, IntelliJ IDEA)
+- ML-powered vulnerability prioritization
+- LLM-assisted remediation guidance
+- Automated PR generation for fixes
+- Team coordination and assignment tracking
+
+## Installation
+
+After installation with Chocolatey, BazBOM will be available in your PATH:
+
+```
+bazbom --version
+bazbom scan .
+```
+
+## Quick Start
+
+1. Scan your project:
+   ```
+   bazbom scan .
+   ```
+
+2. Generate SBOM:
+   ```
+   bazbom scan . --format spdx --output sbom.json
+   ```
+
+3. Check policy compliance:
+   ```
+   bazbom policy check
+   ```
+
+4. Fix vulnerabilities:
+   ```
+   bazbom fix --suggest
+   ```
+
+## Documentation
+
+Full documentation available at: https://github.com/cboyd0319/BazBOM/tree/main/docs
+
+## Support
+
+- GitHub Issues: https://github.com/cboyd0319/BazBOM/issues
+- Discussions: https://github.com/cboyd0319/BazBOM/discussions
+    </description>
+    
+    <!-- Release Notes -->
+    <releaseNotes>
+## Version 0.5.1
+
+### New Features
+- Team coordination dashboard with metrics and assignments
+- LLM-powered fix suggestions (privacy-first with local Ollama)
+- Kotlin Multiplatform support
+- Android JVM artifact detection
+- Enhanced threat intelligence with OpenSSF Scorecard
+- Performance monitoring and benchmarking
+
+### Improvements
+- Faster caching with LRU eviction
+- Improved batch fixing with conflict detection
+- Better error messages and user guidance
+- 346+ tests passing (100% coverage maintained)
+
+### Bug Fixes
+- Fixed dependency resolution edge cases
+- Improved Gradle shadow plugin detection
+- Better handling of large monorepos
+    </releaseNotes>
+  </metadata>
+  
+  <!-- Files to include in package -->
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

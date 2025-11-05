@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BazBOM MSI Installer Configuration -->
+<!-- WiX Toolset 3.11+ required -->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product 
+    Id="*" 
+    Name="BazBOM" 
+    Language="1033" 
+    Version="0.5.1" 
+    Manufacturer="BazBOM Project" 
+    UpgradeCode="E7C9A1D2-8B3F-4A6E-9C5D-1E2F3A4B5C6D">
+    
+    <Package 
+      InstallerVersion="200" 
+      Compressed="yes" 
+      InstallScope="perMachine" 
+      Description="Enterprise-grade SBOM and SCA for JVM projects" 
+      Comments="Privacy-first dependency analysis and vulnerability scanning"
+      Manufacturer="BazBOM Project" />
+
+    <!-- Major upgrade configuration - allows in-place upgrades -->
+    <MajorUpgrade 
+      DowngradeErrorMessage="A newer version of BazBOM is already installed. Please uninstall it before installing this version." 
+      AllowSameVersionUpgrades="yes" />
+    
+    <!-- Embed CAB files in MSI -->
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- Installation UI (basic) -->
+    <UIRef Id="WixUI_Minimal" />
+    <UIRef Id="WixUI_ErrorProgressText" />
+
+    <!-- License agreement -->
+    <WixVariable Id="WixUILicenseRtf" Value="license.rtf" />
+
+    <!-- Features to install -->
+    <Feature Id="ProductFeature" Title="BazBOM" Level="1" Description="Core BazBOM binary and documentation">
+      <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="ProductDocumentation" />
+    </Feature>
+
+    <!-- Installation directory structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLFOLDER" Name="BazBOM">
+          
+          <!-- Binary directory -->
+          <Directory Id="BinFolder" Name="bin" />
+          
+          <!-- Documentation directory -->
+          <Directory Id="DocsFolder" Name="docs" />
+          
+          <!-- Data directory for offline advisory database -->
+          <Directory Id="DataFolder" Name="data" />
+          
+        </Directory>
+      </Directory>
+
+      <!-- Add to PATH environment variable -->
+      <Directory Id="ProgramMenuFolder" />
+    </Directory>
+
+    <!-- Component group for main binary -->
+    <ComponentGroup Id="ProductComponents" Directory="BinFolder">
+      <Component Id="BazBomExe" Guid="1A2B3C4D-5E6F-7A8B-9C0D-1E2F3A4B5C6D">
+        <File 
+          Id="BazBomExeFile" 
+          Source="$(var.SourceDir)\bazbom.exe" 
+          KeyPath="yes" 
+          Checksum="yes" />
+        
+        <!-- Add to PATH environment variable -->
+        <Environment 
+          Id="PATH" 
+          Name="PATH" 
+          Value="[BinFolder]" 
+          Permanent="no" 
+          Part="last" 
+          Action="set" 
+          System="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Component group for documentation -->
+    <ComponentGroup Id="ProductDocumentation" Directory="DocsFolder">
+      <Component Id="ReadmeFile" Guid="2B3C4D5E-6F7A-8B9C-0D1E-2F3A4B5C6D7E">
+        <File 
+          Id="ReadmeTxt" 
+          Source="$(var.SourceDir)\README.txt" 
+          KeyPath="yes" />
+      </Component>
+      
+      <Component Id="LicenseFile" Guid="3C4D5E6F-7A8B-9C0D-1E2F-3A4B5C6D7E8F">
+        <File 
+          Id="LicenseTxt" 
+          Source="$(var.SourceDir)\LICENSE.txt" 
+          KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Start menu shortcuts -->
+    <DirectoryRef Id="ProgramMenuFolder">
+      <Component Id="ApplicationShortcut" Guid="4D5E6F7A-8B9C-0D1E-2F3A-4B5C6D7E8F9A">
+        <Shortcut 
+          Id="BazBomCommandPrompt" 
+          Name="BazBOM Command Prompt" 
+          Description="Open a command prompt with BazBOM in PATH" 
+          Target="[System64Folder]cmd.exe" 
+          Arguments="/K &quot;echo BazBOM is ready. Type 'bazbom --help' to get started.&quot;" />
+        
+        <RemoveFolder 
+          Id="ProgramMenuFolder" 
+          On="uninstall" />
+        
+        <RegistryValue 
+          Root="HKCU" 
+          Key="Software\BazBOM\Installed" 
+          Type="integer" 
+          Value="1" 
+          KeyPath="yes" />
+      </Component>
+    </DirectoryRef>
+
+    <!-- Registry entries for uninstall information -->
+    <DirectoryRef Id="INSTALLFOLDER">
+      <Component Id="RegistryEntries" Guid="5E6F7A8B-9C0D-1E2F-3A4B-5C6D7E8F9A0B">
+        <RegistryKey Root="HKLM" Key="Software\BazBOM">
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLFOLDER]" />
+          <RegistryValue Type="string" Name="Version" Value="0.5.1" />
+        </RegistryKey>
+      </Component>
+    </DirectoryRef>
+
+  </Product>
+</Wix>

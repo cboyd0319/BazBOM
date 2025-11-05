@@ -1,0 +1,98 @@
+# BazBOM winget Package Manifest
+# Created with YamlCreate.ps1 v2.2.0
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.singleton.1.4.0.schema.json
+
+PackageIdentifier: BazBOM.BazBOM
+PackageVersion: 0.5.1
+PackageLocale: en-US
+Publisher: BazBOM Project
+PublisherUrl: https://github.com/cboyd0319/BazBOM
+PublisherSupportUrl: https://github.com/cboyd0319/BazBOM/issues
+# PrivacyUrl:
+Author: BazBOM Project
+PackageName: BazBOM
+PackageUrl: https://github.com/cboyd0319/BazBOM
+License: MIT
+LicenseUrl: https://github.com/cboyd0319/BazBOM/blob/main/LICENSE
+Copyright: Copyright (c) 2025 BazBOM Project
+# CopyrightUrl:
+ShortDescription: Enterprise-grade SBOM and SCA tool for JVM projects
+Description: |-
+  BazBOM is a world-class JVM SBOM, SCA, and dependency graph tool built for enterprise security teams.
+  
+  Features:
+  - SBOM generation (SPDX 2.3, CycloneDX 1.5)
+  - Vulnerability scanning (OSV, NVD, GHSA, CISA KEV, EPSS)
+  - Deep dependency analysis with reachability
+  - License compliance checking
+  - Policy enforcement (20+ templates)
+  - Support for Maven, Gradle, Bazel, Ant, sbt, Buildr
+  - Zero telemetry, 100% privacy-first
+  - Offline-capable with local advisory database
+  - IDE plugins (VS Code, IntelliJ IDEA)
+  - Web dashboard and interactive TUI
+  - ML-powered vulnerability prioritization
+  - LLM-assisted remediation guidance
+  
+  Build System Support:
+  - Maven (pom.xml)
+  - Gradle (build.gradle, build.gradle.kts)
+  - Bazel (WORKSPACE, MODULE.bazel)
+  - Ant (build.xml with Ivy)
+  - sbt (Scala Build Tool)
+  - Buildr
+  
+  JVM Languages:
+  - Java, Kotlin, Scala, Groovy, Clojure, Android
+
+Moniker: bazbom
+Tags:
+- sbom
+- sca
+- security
+- vulnerability-scanner
+- dependency-analysis
+- supply-chain
+- maven
+- gradle
+- bazel
+- java
+- kotlin
+- scala
+- android
+- devsecops
+- compliance
+- privacy-first
+# Agreements:
+# ReleaseNotes:
+ReleaseNotesUrl: https://github.com/cboyd0319/BazBOM/releases
+# PurchaseUrl:
+# InstallationNotes:
+Documentations:
+- DocumentLabel: Documentation
+  DocumentUrl: https://github.com/cboyd0319/BazBOM/tree/main/docs
+- DocumentLabel: Usage Guide
+  DocumentUrl: https://github.com/cboyd0319/BazBOM/blob/main/docs/USAGE.md
+ManifestType: singleton
+ManifestVersion: 1.4.0
+
+# Installer configuration
+Installers:
+- Architecture: x64
+  InstallerType: msi
+  InstallerUrl: https://github.com/cboyd0319/BazBOM/releases/download/v0.5.1/bazbom-0.5.1-x86_64.msi
+  InstallerSha256: CHECKSUM_PLACEHOLDER
+  ProductCode: '{E7C9A1D2-8B3F-4A6E-9C5D-1E2F3A4B5C6D}'
+  Scope: machine
+  InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+  InstallerSwitches:
+    Silent: /qn
+    SilentWithProgress: /qb
+    InstallLocation: INSTALLFOLDER="<INSTALLPATH>"
+  UpgradeBehavior: install
+  Commands:
+  - bazbom
+  ReleaseDate: 2025-11-05
