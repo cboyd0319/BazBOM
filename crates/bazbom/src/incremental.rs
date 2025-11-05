@@ -57,7 +57,7 @@ impl IncrementalAnalyzer {
     /// Get list of changed files from git
     fn get_changed_files(&self) -> Result<Vec<String>> {
         let output = Command::new("git")
-            .args(&["diff", "--name-only", &self.base_ref])
+            .args(["diff", "--name-only", &self.base_ref])
             .current_dir(&self.workspace_root)
             .output()
             .context("Failed to execute git diff command")?;
@@ -119,7 +119,7 @@ impl IncrementalAnalyzer {
         eprintln!("[bazbom] Executing Bazel query: {}", query);
 
         let output = Command::new("bazel")
-            .args(&["query", &query, "--output=label"])
+            .args(["query", &query, "--output=label"])
             .current_dir(&self.workspace_root)
             .output()
             .context("Failed to execute Bazel query command")?;
@@ -150,7 +150,7 @@ impl IncrementalAnalyzer {
 
         // Check if base ref exists
         let output = Command::new("git")
-            .args(&["rev-parse", "--verify", &self.base_ref])
+            .args(["rev-parse", "--verify", &self.base_ref])
             .current_dir(&self.workspace_root)
             .output();
 
