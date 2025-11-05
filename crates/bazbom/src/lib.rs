@@ -6,6 +6,7 @@ pub mod batch_fixer;
 pub mod buildr;
 pub mod sbt;
 pub mod cli;
+pub mod clojure;
 pub mod config;
 pub mod context;
 pub mod enrich;
