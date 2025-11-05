@@ -6,7 +6,6 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Maintainer takeover indicator
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,6 +65,7 @@ pub enum TakeoverSignal {
 /// Maintainer takeover detector
 pub struct MaintainerTakeoverDetector {
     /// Enabled detection rules
+    #[allow(dead_code)]
     enabled_signals: Vec<TakeoverSignal>,
     /// Strict mode (more sensitive detection)
     strict_mode: bool,
