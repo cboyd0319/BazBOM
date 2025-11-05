@@ -67,6 +67,7 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
         .route("/api/dependencies/graph", get(routes::get_dependency_graph))
         .route("/api/vulnerabilities", get(routes::get_vulnerabilities))
         .route("/api/sbom", get(routes::get_sbom))
+        .route("/api/team/dashboard", get(routes::get_team_dashboard))
         // Health check
         .route("/health", get(health_check))
         // Static files (future: React frontend)

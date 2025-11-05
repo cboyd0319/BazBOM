@@ -76,3 +76,42 @@ pub struct SbomSummary {
     pub packages: usize,
     pub relationships: usize,
 }
+
+/// Team dashboard summary
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamDashboard {
+    pub team_name: String,
+    pub total_members: usize,
+    pub open_vulnerabilities: VulnerabilityCounts,
+    pub assignments: Vec<TeamAssignment>,
+    pub unassigned_count: usize,
+    pub metrics: TeamMetrics,
+}
+
+/// Team assignment
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamAssignment {
+    pub assignee: String,
+    pub vulnerability_count: usize,
+    pub critical: usize,
+    pub high: usize,
+    pub medium: usize,
+    pub low: usize,
+}
+
+/// Team metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TeamMetrics {
+    pub mean_time_to_fix_days: f32,
+    pub vulnerabilities_fixed: usize,
+    pub vulnerabilities_introduced: usize,
+    pub net_improvement: i32,
+    pub top_contributors: Vec<TopContributor>,
+}
+
+/// Top contributor
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TopContributor {
+    pub email: String,
+    pub fixes_count: usize,
+}

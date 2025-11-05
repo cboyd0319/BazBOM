@@ -1,0 +1,39 @@
+[package]
+name = "bazbom-operator"
+version = "0.5.1"
+edition = "2021"
+authors = ["BazBOM Project"]
+license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
+description = "Kubernetes operator for BazBOM SBOM and SCA scanning"
+keywords = ["kubernetes", "operator", "sbom", "sca", "security"]
+categories = ["development-tools"]
+
+[dependencies]
+# Kubernetes client
+kube = { version = "0.91", features = ["runtime", "derive"] }
+k8s-openapi = { version = "0.22", features = ["v1_28"] }
+
+# Async runtime
+tokio = { version = "1.35", features = ["macros", "rt-multi-thread", "signal"] }
+futures = "0.3"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+schemars = "0.8"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio-test = "0.4"

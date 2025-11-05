@@ -1,0 +1,52 @@
+# Example BazBOMScan Resource
+# This creates a scan for a Maven-based application
+
+apiVersion: bazbom.io/v1
+kind: BazBOMScan
+metadata:
+  name: my-app-scan
+  namespace: default
+spec:
+  # Target deployment to scan
+  targetDeployment: my-app
+  
+  # Schedule (cron format) - daily at midnight
+  schedule: "0 0 * * *"
+  
+  # Build system type
+  buildSystem: maven
+  
+  # Scan options
+  scanOptions:
+    scanContainers: true
+    reachabilityAnalysis: true
+    mlPrioritize: true
+    llmFixes: false
+  
+  # Output format
+  outputFormat: spdx
+  
+  # Store SBOM in ConfigMap
+  storeSbom: true
+  
+  # GitHub integration (optional)
+  createGithubIssues: false
+  # githubRepository: "myorg/myapp"
+
+---
+# Example for Gradle application
+apiVersion: bazbom.io/v1
+kind: BazBOMScan
+metadata:
+  name: gradle-app-scan
+  namespace: default
+spec:
+  targetDeployment: gradle-app
+  schedule: "0 2 * * *"
+  buildSystem: gradle
+  scanOptions:
+    scanContainers: false
+    reachabilityAnalysis: true
+    mlPrioritize: true
+  outputFormat: cyclonedx
+  storeSbom: true
