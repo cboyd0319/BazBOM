@@ -64,7 +64,7 @@ fn build_developer_html(generator: &ReportGenerator) -> String {
 </head>
 <body>
     <div class="container">
-        <h1>🔒 Developer Security Report</h1>
+        <h1>Security: Developer Security Report</h1>
         
         <div class="summary">
             <h2>Project Summary</h2>
@@ -110,7 +110,7 @@ fn build_developer_html(generator: &ReportGenerator) -> String {
 fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
     if vulns.total_count() == 0 {
         return r#"<div class="no-vulns">
-            <div class="no-vulns-icon">✅</div>
+            <div class="no-vulns-icon">[+]</div>
             <h2>No Vulnerabilities Detected!</h2>
             <p>Your project is free of known vulnerabilities. Great job!</p>
             <p>Continue to scan regularly to maintain security.</p>
@@ -122,7 +122,7 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
 
     if !vulns.critical.is_empty() {
         sections.push(format!(
-            "<h2>🚨 Critical Vulnerabilities ({}) - IMMEDIATE ACTION REQUIRED</h2>\n{}",
+            "<h2>[!!] Critical Vulnerabilities ({}) - IMMEDIATE ACTION REQUIRED</h2>\n{}",
             vulns.critical.len(),
             vulns
                 .critical
@@ -135,7 +135,7 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
 
     if !vulns.high.is_empty() {
         sections.push(format!(
-            "<h2>⚠️ High Severity Vulnerabilities ({}) - FIX WITHIN 30 DAYS</h2>\n{}",
+            "<h2>[!] High Severity Vulnerabilities ({}) - FIX WITHIN 30 DAYS</h2>\n{}",
             vulns.high.len(),
             vulns
                 .high
@@ -148,7 +148,7 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
 
     if !vulns.medium.is_empty() {
         sections.push(format!(
-            "<h2>📋 Medium Severity Vulnerabilities ({})</h2>\n{}",
+            "<h2>[*] Medium Severity Vulnerabilities ({})</h2>\n{}",
             vulns.medium.len(),
             vulns
                 .medium
@@ -161,7 +161,7 @@ fn build_vulnerabilities_html(vulns: &crate::VulnerabilityFindings) -> String {
 
     if !vulns.low.is_empty() {
         sections.push(format!(
-            "<h2>ℹ️ Low Severity Vulnerabilities ({})</h2>\n{}",
+            "<h2>[i] Low Severity Vulnerabilities ({})</h2>\n{}",
             vulns.low.len(),
             vulns
                 .low
@@ -195,7 +195,7 @@ fn build_vulnerability_html(vuln: &VulnerabilityDetail, severity_class: &str) ->
     let fix_section = if let Some(ref fixed_version) = vuln.fixed_version {
         format!(
             r#"<div class="fix-instruction">
-            <strong>✅ Fix Available:</strong> Upgrade to version <code>{}</code>
+            <strong>[+] Fix Available:</strong> Upgrade to version <code>{}</code>
             <div class="code-block">
 # Maven (pom.xml)
 &lt;dependency&gt;
@@ -215,7 +215,7 @@ bazbom fix --apply
         )
     } else {
         r#"<div class="warning-box">
-            <strong>⚠️ No Fix Available Yet</strong>
+            <strong>[!] No Fix Available Yet</strong>
             <p>Consider:</p>
             <ul>
                 <li>Using an alternative package</li>
@@ -232,8 +232,8 @@ bazbom fix --apply
             <div>
                 <div class="vuln-title">{} - {}</div>
                 <div class="vuln-meta">
-                    <span class="meta-item">📦 {}@{}</span>
-                    <span class="meta-item">💯 CVSS: {}</span>
+                    <span class="meta-item">[Pkg] {}@{}</span>
+                    <span class="meta-item">[Score] CVSS: {}</span>
                     <span class="meta-item">{}</span>
                 </div>
             </div>
@@ -247,7 +247,7 @@ bazbom fix --apply
         {}
         
         <div class="info-box">
-            <strong>📚 References:</strong>
+            <strong>[Refs] References:</strong>
             <ul>
                 <li><a href="https://nvd.nist.gov/vuln/detail/{}" target="_blank">NVD Entry</a></li>
                 <li><a href="https://osv.dev/vulnerability/{}" target="_blank">OSV Database</a></li>

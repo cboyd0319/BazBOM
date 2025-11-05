@@ -14,7 +14,7 @@
 
 ## Features
 
-### 🎯 Feature Extraction
+### Feature Extraction: Feature Extraction
 Convert vulnerabilities and dependencies into numerical features for ML analysis.
 
 ```rust
@@ -32,7 +32,7 @@ let vuln = VulnerabilityFeatures {
 let features = vuln.to_vector(); // [9.8, 0.0, 0.0, 0.95, 1.0, ...]
 ```
 
-### 🔍 Anomaly Detection
+### Anomaly Detection: Anomaly Detection
 Identify unusual dependency patterns using statistical methods.
 
 ```rust
@@ -51,7 +51,7 @@ let anomalies = detector.detect(&suspicious, "log4j-evil");
 // Returns: [UnusualTransitiveCount, LowMaintainerScore, LowPopularity, MultipleSignals]
 ```
 
-### 🎲 Enhanced Risk Scoring
+### Enhanced Risk Scoring: Enhanced Risk Scoring
 Multi-factor risk scoring beyond simple CVSS.
 
 ```rust
@@ -78,13 +78,13 @@ let score = scorer.score(&vuln);
 
 ## Privacy & Security
 
-### 🔒 Local-Only Processing
+### Local-Only Processing: Local-Only Processing
 - All models run locally on your machine
 - No data sent to external services
 - No telemetry or usage tracking
 - Can operate completely offline
 
-### 📊 Transparent Data Collection
+### Transparent Data Collection: Transparent Data Collection
 - Feature extraction is fully visible (open source)
 - Only uses public vulnerability metadata
 - No proprietary code analysis
@@ -113,11 +113,11 @@ chrono = "0.4"           # Timestamps
 All features have comprehensive test coverage:
 
 ```
-features:  3 tests ✅
-anomaly:  14 tests ✅
-risk:     10 tests ✅
+features:  3 tests passing
+anomaly:  14 tests passing
+risk:     10 tests passing
 ─────────────────────
-Total:    23 tests ✅
+Total:    23 tests passing
 ```
 
 Run tests:

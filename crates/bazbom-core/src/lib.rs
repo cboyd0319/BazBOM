@@ -1,12 +1,22 @@
+//! Core types and utilities for BazBOM
+//!
+//! This crate provides fundamental types and functions used across all BazBOM crates:
+//! - Build system detection (Maven, Gradle, Bazel, Ant, Buildr, Sbt)
+//! - Version information
+//! - Common type definitions
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// BazBOM version string
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
+/// Get the BazBOM version
 pub fn version() -> &'static str {
     VERSION
 }
 
+/// Supported JVM build systems
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BuildSystem {
     Maven,

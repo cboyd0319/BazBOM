@@ -374,24 +374,24 @@ fn build_compliance_html(
         policy.policy_violations,
         vulns.critical.len(),
         if vulns.critical.is_empty() {
-            "✅ PASS"
+            "[+] PASS"
         } else {
-            "❌ FAIL"
+            "[X] FAIL"
         },
         vulns.high.len(),
         if vulns.high.is_empty() {
-            "✅ PASS"
+            "[+] PASS"
         } else {
-            "⚠️ WARNING"
+            "[!] WARNING"
         },
         vulns.medium.len(),
         if vulns.medium.len() <= 5 {
-            "✅ PASS"
+            "[+] PASS"
         } else {
-            "⚠️ WARNING"
+            "[!] WARNING"
         },
         vulns.low.len(),
-        "✅ PASS",
+        "[+] PASS",
         framework.name(),
         build_requirements_html(requirements),
         build_recommendations_html(vulns, policy),
@@ -461,7 +461,7 @@ fn build_recommendations_html(
     }
 
     if vulns.total_count() == 0 {
-        recommendations.push("<li>✅ Excellent! No vulnerabilities detected. Maintain regular scanning schedule.</li>");
+        recommendations.push("<li>[+] Excellent! No vulnerabilities detected. Maintain regular scanning schedule.</li>");
     }
 
     recommendations

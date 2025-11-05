@@ -30,7 +30,10 @@ pub fn check_malicious(
 /// Load malicious package database from external sources
 /// This would typically fetch from OSV, GHSA, or other sources
 pub async fn fetch_malicious_db() -> Result<Vec<String>, anyhow::Error> {
-    // TODO: Implement actual fetching from threat intelligence sources
+    // FUTURE ENHANCEMENT: Implement fetching from threat intelligence sources
+    // Sources to integrate: OSV Malicious, GHSA malware, npm advisory DB,
+    // PyPI malware reports, community-maintained blocklists
+    // Requires: HTTP client, caching layer, offline-first design
     // For now, return a sample database
     Ok(vec![
         "malicious-test-package".to_string(),

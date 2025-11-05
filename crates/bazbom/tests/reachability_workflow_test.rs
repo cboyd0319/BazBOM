@@ -234,7 +234,7 @@ fn test_end_to_end_reachability_workflow() {
         "Helper.doSomething should be reachable"
     );
 
-    println!("✓ End-to-end reachability workflow test passed");
+    println!("[+] End-to-end reachability workflow test passed");
     println!("  Detected {} entrypoints", entrypoints.len());
     println!("  Found {} reachable classes", reachable_classes.len());
     println!("  Found {} reachable methods", reachable_methods.len());
@@ -317,5 +317,5 @@ fn test_reachability_with_cache() {
         "Both runs should find same reachable methods"
     );
 
-    println!("✓ Reachability cache consistency test passed");
+    println!("[+] Reachability cache consistency test passed");
 }

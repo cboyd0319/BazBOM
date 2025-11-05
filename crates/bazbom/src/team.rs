@@ -96,7 +96,7 @@ impl TeamCoordinator {
             anyhow::bail!("Failed to assign vulnerability: {}", stderr);
         }
 
-        println!("✅ Assigned {} to {}", cve, assignee);
+        println!("[+] Assigned {} to {}", cve, assignee);
         Ok(())
     }
 
@@ -227,7 +227,7 @@ impl TeamCoordinator {
         }
 
         std::fs::write(output_path, csv)?;
-        println!("✅ Exported audit log to {}", output_path);
+        println!("[+] Exported audit log to {}", output_path);
 
         Ok(())
     }

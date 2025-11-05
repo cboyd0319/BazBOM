@@ -397,7 +397,7 @@ impl ScaAnalyzer {
 
                 if m.in_kev {
                     message_parts.push(
-                        "⚠️  Listed in CISA KEV (Known Exploited Vulnerabilities)".to_string(),
+                        "[!] Listed in CISA KEV (Known Exploited Vulnerabilities)".to_string(),
                     );
                 }
 

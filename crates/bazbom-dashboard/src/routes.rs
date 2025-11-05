@@ -109,7 +109,9 @@ async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSum
 pub async fn get_dependency_graph(
     State(_state): State<Arc<AppState>>,
 ) -> Result<Json<DependencyGraph>, (StatusCode, String)> {
-    // TODO: Load actual dependency graph from SBOM
+    // FUTURE ENHANCEMENT: Load actual dependency graph from SBOM
+    // Would parse SBOM files (SPDX/CycloneDX) from state.sbom_path
+    // and construct DependencyGraph from relationships section
     // For now, return mock data
     Ok(Json(DependencyGraph {
         nodes: vec![
@@ -209,7 +211,8 @@ async fn load_vulnerabilities(state: &AppState) -> anyhow::Result<Vulnerabilitie
 pub async fn get_sbom(
     State(_state): State<Arc<AppState>>,
 ) -> Result<Json<SbomSummary>, (StatusCode, String)> {
-    // TODO: Load actual SBOM
+    // FUTURE ENHANCEMENT: Load actual SBOM from state.sbom_path
+    // Would read and parse SPDX/CycloneDX JSON files
     // For now, return mock data
     Ok(Json(SbomSummary {
         format: "SPDX".to_string(),

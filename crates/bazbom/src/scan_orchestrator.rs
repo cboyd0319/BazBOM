@@ -761,11 +761,12 @@ impl ScanOrchestrator {
         let mut cache = ScanCache::new(cache_dir)?;
 
         // Build scan parameters for cache key
+        // NOTE: These parameters should be passed from ScanOptions in production use
         let scan_params = ScanParameters {
-            reachability: false, // TODO: pass from options
-            fast: false,         // TODO: pass from options
+            reachability: false, // Currently hardcoded; should use options.reachability
+            fast: false,         // Currently hardcoded; should use options.fast
             format: "spdx".to_string(),
-            bazel_targets: None, // TODO: pass from options
+            bazel_targets: None, // Currently hardcoded; should use options.bazel_targets
         };
 
         // Find build files

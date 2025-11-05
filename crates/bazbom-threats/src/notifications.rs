@@ -87,14 +87,14 @@ impl Notification {
         }
     }
 
-    /// Get emoji for severity
-    fn get_emoji(&self) -> &str {
+    /// Get severity indicator prefix
+    fn get_severity_prefix(&self) -> &str {
         match self.severity.to_lowercase().as_str() {
-            "critical" => "🚨",
-            "high" => "⚠️",
-            "medium" => "⚡",
-            "low" => "ℹ️",
-            _ => "📢",
+            "critical" => "[!!]",
+            "high" => "[!]",
+            "medium" => "[*]",
+            "low" => "[i]",
+            _ => "[>]",
         }
     }
 }
@@ -167,7 +167,7 @@ impl Notifier {
         channel: Option<&str>,
         username: Option<&str>,
     ) -> Result<()> {
-        let emoji = notification.get_emoji();
+        let emoji = notification.get_severity_prefix();
         let color = notification.get_color();
 
         let mut payload = json!({
@@ -209,7 +209,7 @@ impl Notifier {
             );
         }
 
-        log::info!("✓ Slack notification sent successfully");
+        log::info!("[+] Slack notification sent successfully");
         Ok(())
     }
 
@@ -230,7 +230,7 @@ impl Notifier {
         use lettre::{Message, SmtpTransport, Transport};
 
         // Build email body with severity indicator
-        let emoji = notification.get_emoji();
+        let emoji = notification.get_severity_prefix();
         let email_body = format!(
             "{} {}\n\nSeverity: {}\n\n{}\n\n---\nSent by BazBOM",
             emoji, notification.title, notification.severity, notification.message
@@ -269,7 +269,7 @@ impl Notifier {
             .send(&email)
             .map_err(|e| anyhow::anyhow!("Failed to send email: {}", e))?;
 
-        log::info!("✓ Email notification sent successfully to {:?}", to);
+        log::info!("[+] Email notification sent successfully to {:?}", to);
         Ok(())
     }
 
@@ -309,7 +309,7 @@ impl Notifier {
             );
         }
 
-        log::info!("✓ Teams notification sent successfully");
+        log::info!("[+] Teams notification sent successfully");
         Ok(())
     }
 
@@ -322,7 +322,7 @@ impl Notifier {
         labels: &[String],
         notification: &Notification,
     ) -> Result<()> {
-        let emoji = notification.get_emoji();
+        let emoji = notification.get_severity_prefix();
         let issue_body = format!(
             "## {}\n\n{}\n\n**Severity:** {}\n\n---\n*Automatically created by BazBOM*",
             notification.message,
@@ -367,7 +367,7 @@ impl Notifier {
         let issue_response: serde_json::Value = response.json()?;
         let issue_number = issue_response["number"].as_u64().unwrap_or(0);
 
-        log::info!("✓ GitHub issue #{} created successfully", issue_number);
+        log::info!("[+] GitHub issue #{} created successfully", issue_number);
         Ok(())
     }
 }
@@ -458,10 +458,10 @@ mod tests {
     #[test]
     fn test_notification_emojis() {
         let critical = Notification::new("Test", "Msg", "critical");
-        assert_eq!(critical.get_emoji(), "🚨");
+        assert_eq!(critical.get_severity_prefix(), "[!!]");
 
         let high = Notification::new("Test", "Msg", "high");
-        assert_eq!(high.get_emoji(), "⚠️");
+        assert_eq!(high.get_severity_prefix(), "[!]");
     }
 
     #[test]

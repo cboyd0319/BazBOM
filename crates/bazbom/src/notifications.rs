@@ -129,7 +129,8 @@ impl Notifier {
 
     /// Send notification via email (SMTP)
     fn send_email(&self, _smtp_url: &str, notification: &Notification) -> Result<()> {
-        // TODO: Implement SMTP email sending
+        // FUTURE ENHANCEMENT: Implement SMTP email sending using lettre crate
+        // Would require: SMTP server config, TLS setup, authentication
         // For now, just log that we would send an email
         println!(
             "[bazbom] Email notification (SMTP not yet implemented): {}",
@@ -222,7 +223,7 @@ pub fn notify_vulnerability_discovered(
     details.insert("Severity".to_string(), severity.to_string());
 
     let notification = Notification {
-        title: format!("🚨 {} Vulnerability Discovered", severity),
+        title: format!("[!!] {} Vulnerability Discovered", severity),
         message: format!(
             "New {} severity vulnerability {} found in {}:{}",
             severity, cve, package, version
@@ -251,7 +252,7 @@ pub fn notify_vulnerability_assigned(
     details.insert("Assigned By".to_string(), assigner.to_string());
 
     let notification = Notification {
-        title: "📋 Vulnerability Assigned".to_string(),
+        title: "[*] Vulnerability Assigned".to_string(),
         message: format!("{} has been assigned to {}", cve, assignee),
         severity: NotificationSeverity::Info,
         details: Some(details),
@@ -279,7 +280,7 @@ pub fn notify_vulnerability_fixed(
     details.insert("Fixed By".to_string(), fixed_by.to_string());
 
     let notification = Notification {
-        title: "✅ Vulnerability Fixed".to_string(),
+        title: "[+] Vulnerability Fixed".to_string(),
         message: format!(
             "{} has been remediated by upgrading {} from {} to {}",
             cve, package, old_version, new_version

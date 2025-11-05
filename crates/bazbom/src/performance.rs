@@ -257,13 +257,13 @@ impl PerformanceComparison {
 
         if self.improvement_pct > 0.0 {
             lines.push(format!(
-                "✅ {} faster ({:.1}% improvement)",
+                "[+] {} faster ({:.1}% improvement)",
                 format_duration(self.time_saved),
                 self.improvement_pct
             ));
         } else if self.improvement_pct < 0.0 {
             lines.push(format!(
-                "⚠️  {} slower ({:.1}% regression)",
+                "[!] {} slower ({:.1}% regression)",
                 format_duration(Duration::from_secs_f64(-self.time_saved.as_secs_f64())),
                 -self.improvement_pct
             ));

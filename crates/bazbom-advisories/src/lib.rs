@@ -1,3 +1,19 @@
+//! Security advisory database integration for BazBOM
+//!
+//! This crate provides comprehensive vulnerability intelligence by integrating
+//! with multiple security advisory sources:
+//! - OSV (Open Source Vulnerabilities) database
+//! - NVD (National Vulnerability Database)
+//! - GHSA (GitHub Security Advisories)
+//!
+//! Features:
+//! - Batch vulnerability queries for efficient lookups
+//! - EPSS (Exploit Prediction Scoring System) enrichment
+//! - CISA KEV (Known Exploited Vulnerabilities) catalog integration
+//! - Priority scoring (P0-P4) based on CVSS, EPSS, and KEV status
+//! - Vulnerability deduplication and merging across sources
+//! - Version range matching for affected package detection
+
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs;

@@ -385,7 +385,9 @@ pub fn extract_bazel_dependencies_for_targets(
     // Try to filter graph based on targets using Bazel query
     // This requires running `bazel query --output=proto` for each target
     // For now, return the full graph as filtering requires more complex query logic
-    // TODO: Implement target-specific filtering using bazel cquery
+    // FUTURE ENHANCEMENT: Implement target-specific filtering using bazel cquery
+    // This would use: bazel cquery "deps(//target:name)" --output=streamed_proto
+    // to get only dependencies for specified targets
 
     println!(
         "[bazbom] note: returning full dependency graph (target-specific filtering not yet implemented)"
