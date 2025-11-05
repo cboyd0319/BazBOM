@@ -1,0 +1,16 @@
+[package]
+name = "bazbom-ml"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+repository = "https://github.com/cboyd0319/BazBOM"
+description = "Machine learning infrastructure for BazBOM vulnerability prioritization and anomaly detection"
+
+[dependencies]
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tempfile = "3.8"

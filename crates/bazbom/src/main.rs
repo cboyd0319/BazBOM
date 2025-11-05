@@ -38,6 +38,7 @@ fn main() -> Result<()> {
         incremental: false,
         base: "main".into(),
         benchmark: false,
+        ml_risk: false,
     }) {
         Commands::Scan {
             path,
@@ -59,6 +60,7 @@ fn main() -> Result<()> {
             incremental,
             base,
             benchmark,
+            ml_risk,
         } => {
             // Check if any orchestration flags are set
             let use_orchestrator = cyclonedx

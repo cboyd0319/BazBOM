@@ -68,6 +68,9 @@ pub enum Commands {
         /// Enable performance benchmarking and metrics reporting
         #[arg(long)]
         benchmark: bool,
+        /// Use ML-enhanced risk scoring for vulnerability prioritization
+        #[arg(long)]
+        ml_risk: bool,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
