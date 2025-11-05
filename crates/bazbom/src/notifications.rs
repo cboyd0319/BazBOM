@@ -129,7 +129,8 @@ impl Notifier {
 
     /// Send notification via email (SMTP)
     fn send_email(&self, _smtp_url: &str, notification: &Notification) -> Result<()> {
-        // TODO: Implement SMTP email sending
+        // FUTURE ENHANCEMENT: Implement SMTP email sending using lettre crate
+        // Would require: SMTP server config, TLS setup, authentication
         // For now, just log that we would send an email
         println!(
             "[bazbom] Email notification (SMTP not yet implemented): {}",

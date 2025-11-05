@@ -206,11 +206,13 @@ impl OpenRewriteRunner {
         println!("[bazbom]   - Build verification");
         println!("[bazbom]   - Link to SARIF findings");
 
-        // TODO: Implement PR creation via GitHub API
+        // FUTURE ENHANCEMENT: Implement PR creation via GitHub API
+        // This would automate:
         // - Apply recipes
         // - Run builds and tests
         // - Create branch
         // - Open PR with detailed description
+        // Blocked on: GitHub API integration module (see remediation.rs for partial implementation)
 
         Ok(())
     }

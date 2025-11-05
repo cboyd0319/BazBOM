@@ -98,7 +98,9 @@ pub fn check_compromised_account_indicators(
     _maintainer_email: &str,
     _recent_changes: &[String],
 ) -> Option<ThreatIndicator> {
-    // TODO: Implement more sophisticated checks
+    // FUTURE ENHANCEMENT: Implement more sophisticated malicious package checks
+    // Would include: package age analysis, maintainer reputation scoring,
+    // sudden dependency changes detection, code diff analysis
     // For now, return None (not implemented)
     None
 }
@@ -108,11 +110,12 @@ pub fn check_backdoor_indicators(
     _package_name: &str,
     _dependencies: &[String],
 ) -> Option<ThreatIndicator> {
-    // TODO: Implement backdoor detection
+    // FUTURE ENHANCEMENT: Implement backdoor detection
     // This would analyze:
-    // - Obfuscated dependencies
-    // - Network connections in install scripts
-    // - Suspicious file operations
+    // - Obfuscated dependencies (base64-encoded strings, eval patterns)
+    // - Network connections in install scripts (postinstall hooks)
+    // - Suspicious file operations (home directory access, credential theft)
+    // Requires: static analysis of package build/install scripts
     // - Known backdoor patterns
     None
 }

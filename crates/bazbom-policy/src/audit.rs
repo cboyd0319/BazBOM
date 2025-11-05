@@ -145,7 +145,7 @@ impl AuditLogger {
                 AuditResult::Fail
             },
             violation_count: result.violations.len(),
-            warning_count: 0, // TODO: separate warnings from violations
+            warning_count: 0, // FIXME: separate warnings from violations (requires PolicyViolation.severity field)
             policy_source: policy_source.map(String::from),
             context,
         };

@@ -583,12 +583,12 @@ fn main() -> Result<()> {
                         // Create features
                         let features = VulnerabilityFeatures {
                             cvss_score,
-                            age_days: 0,        // TODO: Calculate from published date
-                            has_exploit: false, // TODO: Check exploit database
+                            age_days: 0,        // FIXME: Calculate from published date (need vulnerability.published_date field)
+                            has_exploit: false, // FIXME: Check exploit database (requires exploit-db integration)
                             epss,
                             in_kev,
                             severity_level,
-                            vuln_type: 0, // TODO: Map vulnerability type to numeric
+                            vuln_type: 0, // FIXME: Map vulnerability type to numeric (CWE-based categorization needed)
                             is_reachable,
                         };
 
@@ -1035,7 +1035,7 @@ fn main() -> Result<()> {
                             in_kev,
                             severity_level,
                             vuln_type: 0,
-                            is_reachable: false, // TODO: Load from scan results
+                            is_reachable: false, // FIXME: Load from scan results (requires reachability analyzer integration)
                         };
 
                         let cve = vuln.id.clone();
@@ -1044,7 +1044,7 @@ fn main() -> Result<()> {
                             .first()
                             .map(|a| a.package.clone())
                             .unwrap_or_else(|| "unknown".to_string());
-                        let version = "unknown".to_string(); // TODO: Extract from affected
+                        let version = "unknown".to_string(); // FIXME: Extract from affected.ranges field
 
                         (features, cve, package, version)
                     })
@@ -1203,7 +1203,7 @@ fn main() -> Result<()> {
                             fixed_version: fixed_version.clone(),
                             build_system: build_system_str,
                             severity: suggestion.severity.clone(),
-                            cvss_score: None, // TODO: Extract from vulnerability
+                            cvss_score: None, // FIXME: Extract from vulnerability.cvss field (requires advisory lookup)
                             breaking_changes: suggestion
                                 .breaking_changes
                                 .as_ref()
