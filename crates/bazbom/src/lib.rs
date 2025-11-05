@@ -3,6 +3,8 @@ pub mod analyzers;
 pub mod ant;
 pub mod backup;
 pub mod batch_fixer;
+pub mod buildr;
+pub mod sbt;
 pub mod cli;
 pub mod config;
 pub mod context;

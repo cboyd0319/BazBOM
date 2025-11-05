@@ -24,7 +24,7 @@
 ## Current Status
 
 **Version:** 0.5.1  
-**Overall Completion:** ~80% toward market leadership (⬆️ +2% this session)
+**Overall Completion:** ~85% toward market leadership (⬆️ +5% this session)
 
 ### ✅ Completed Phases (0-3, 5-6)
 - **Phase 0-3:** Core infrastructure, Rust CLI, Maven/Gradle plugins, advisory system
@@ -36,8 +36,8 @@
 ### 🚧 In Progress
 - **Phase 4:** Developer experience (IDE plugins 95% complete, needs testing & publishing)
 - **Phase 7:** Threat intelligence (95% complete)
-- **Phase 8:** Scale & performance (92% complete - Performance monitoring added ⬆️ +2%)
-- **Phase 9:** Ecosystem expansion (88% complete - Ant build system support added ⬆️ +3%)
+- **Phase 8:** Scale & performance (92% complete - Performance monitoring added)
+- **Phase 9:** Ecosystem expansion (93% complete - Buildr & sbt SBOM generation added ⬆️ +5%)
 
 ### 📋 Planned
 - **Phase 10:** AI-powered intelligence
@@ -295,7 +295,7 @@ See [PHASE_8_SCALE_PERFORMANCE.md](copilot/PHASE_8_SCALE_PERFORMANCE.md) for det
 - [ ] 10x faster PR scans (with remote cache)
 - [ ] Support for 50K+ target monorepos
 
-### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (88% Complete, ⬆️ +3%)
+### Phase 9: Container & JVM Ecosystem Expansion 🚧 IN PROGRESS (93% Complete, ⬆️ +5%)
 
 **Container Support for JVM Artifacts, Additional JVM Build Systems**
 
@@ -320,17 +320,25 @@ See [PHASE_9_ECOSYSTEM_EXPANSION.md](copilot/PHASE_9_ECOSYSTEM_EXPANSION.md) for
 - [ ] Full HTTP client integration with hyperlocal
 - [x] Container layer extraction and analysis workflow ✅ **COMPLETE**
 - [x] Integration with scan command ✅ **COMPLETE**
-- [x] Ant build system support (build.xml) ✅ **NEW THIS SESSION**
+- [x] Ant build system support (build.xml) ✅ **COMPLETE (Previous Session)**
   - [x] AntProject detection and management
   - [x] Ivy dependency management (ivy.xml parsing)
   - [x] Manual JAR file detection in lib directories
   - [x] Smart JAR filename parsing
   - [x] Maven coordinate conversion
   - [x] 8 comprehensive tests passing
-- [x] Buildr build system support (buildfile, Rakefile) ✅ **DETECTED (2025-11-04)**
-- [x] sbt (Scala Build Tool) support (build.sbt) ✅ **DETECTED (2025-11-04)**
-- [ ] Buildr SBOM generation implementation
-- [ ] sbt enhanced SBOM generation
+- [x] Buildr build system support (buildfile, Rakefile) ✅ **COMPLETE (2025-11-05)**
+  - [x] BuildrProject detection and management
+  - [x] Ruby DSL dependency parsing
+  - [x] Maven coordinate extraction
+  - [x] SBOM generation for Buildr projects
+  - [x] 10 comprehensive tests passing
+- [x] sbt (Scala Build Tool) support (build.sbt) ✅ **COMPLETE (2025-11-05)**
+  - [x] SbtProject detection and management
+  - [x] Scala dependency parsing (% and %%)
+  - [x] Scala cross-version artifact handling
+  - [x] SBOM generation for sbt projects
+  - [x] 9 comprehensive tests passing
 - [ ] Groovy language support enhancements
 - [ ] Clojure language support enhancements
 - [ ] Container image SBOM for JVM artifacts (`rules_oci` integration)
