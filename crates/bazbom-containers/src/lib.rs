@@ -302,10 +302,7 @@ impl ContainerScanner {
         let parser = OciImageParser::new(&self.image_path);
 
         // Create temporary directory for layer extraction
-        let temp_dir = std::env::temp_dir().join(format!(
-            "bazbom-layers-{}",
-            std::process::id()
-        ));
+        let temp_dir = std::env::temp_dir().join(format!("bazbom-layers-{}", std::process::id()));
         std::fs::create_dir_all(&temp_dir)
             .context("Failed to create temporary directory for layers")?;
 
@@ -335,11 +332,12 @@ impl ContainerScanner {
             // Convert candidates to JavaArtifact with full metadata
             for candidate in candidates {
                 // Try to extract Maven metadata if it's a JAR
-                let maven_coords = if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
-                    self.extract_maven_metadata(&candidate.path).ok()
-                } else {
-                    None
-                };
+                let maven_coords =
+                    if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
+                        self.extract_maven_metadata(&candidate.path).ok()
+                    } else {
+                        None
+                    };
 
                 // Calculate SHA-256 hash
                 let sha256 = self.calculate_file_hash(&candidate.path)?;
@@ -462,11 +460,13 @@ impl ContainerScanner {
             .collect();
 
         // Extract name and digest from manifest
-        let name = self.image_path.file_name()
+        let name = self
+            .image_path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
             .to_string();
-        
+
         let digest = manifest.config.digest.clone();
 
         Ok(ContainerImage {

@@ -105,10 +105,14 @@ impl IncrementalAnalyzer {
             .context("Failed to execute git diff")?;
 
         if !output.status.success() {
-            anyhow::bail!("git diff failed: {}", String::from_utf8_lossy(&output.stderr));
+            anyhow::bail!(
+                "git diff failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            );
         }
 
-        let diff_output = String::from_utf8(output.stdout).context("Invalid UTF-8 in git output")?;
+        let diff_output =
+            String::from_utf8(output.stdout).context("Invalid UTF-8 in git output")?;
 
         let mut modified_files = Vec::new();
         let mut added_files = Vec::new();
@@ -162,7 +166,8 @@ impl IncrementalAnalyzer {
             );
         }
 
-        let files_output = String::from_utf8(output.stdout).context("Invalid UTF-8 in git output")?;
+        let files_output =
+            String::from_utf8(output.stdout).context("Invalid UTF-8 in git output")?;
 
         let untracked_build_files: Vec<PathBuf> = files_output
             .lines()

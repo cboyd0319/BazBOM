@@ -29,10 +29,10 @@ pub fn export_to_html(
     vulnerabilities: &[Vulnerability],
 ) -> Result<()> {
     let html = generate_html(summary, graph_data, vulnerabilities)?;
-    
+
     fs::write(output_path, html)
         .with_context(|| format!("Failed to write HTML export to {:?}", output_path))?;
-    
+
     Ok(())
 }
 
@@ -45,8 +45,9 @@ fn generate_html(
     let summary_json = serde_json::to_string_pretty(summary)?;
     let graph_json = serde_json::to_string_pretty(graph_data)?;
     let vulns_json = serde_json::to_string_pretty(vulnerabilities)?;
-    
-    let html = format!(r#"<!DOCTYPE html>
+
+    let html = format!(
+        r#"<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -327,7 +328,7 @@ fn generate_html(
         graph_json,
         vulns_json
     );
-    
+
     Ok(html)
 }
 
@@ -335,7 +336,7 @@ fn generate_html(
 mod tests {
     use super::*;
     use crate::models::VulnerabilityCounts;
-    
+
     #[test]
     fn test_generate_html() {
         let summary = DashboardSummary {
@@ -350,16 +351,16 @@ mod tests {
             license_issues: 0,
             policy_violations: 0,
         };
-        
+
         let graph_data = DependencyGraph {
             nodes: vec![],
             edges: vec![],
         };
-        
+
         let vulnerabilities = vec![];
-        
+
         let html = generate_html(&summary, &graph_data, &vulnerabilities).unwrap();
-        
+
         assert!(html.contains("<!DOCTYPE html>"));
         assert!(html.contains("BazBOM Security Report"));
         assert!(html.contains("85")); // security score

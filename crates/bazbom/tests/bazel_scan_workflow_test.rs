@@ -74,7 +74,8 @@ fn test_bazel_scan_cyclonedx_workflow() {
     assert!(cdx_path.exists(), "CycloneDX SBOM not generated");
 
     let cdx_content = fs::read_to_string(&cdx_path).expect("Failed to read CycloneDX");
-    let cdx: serde_json::Value = serde_json::from_str(&cdx_content).expect("Invalid CycloneDX JSON");
+    let cdx: serde_json::Value =
+        serde_json::from_str(&cdx_content).expect("Invalid CycloneDX JSON");
 
     assert_eq!(cdx["bomFormat"], "CycloneDX");
     assert!(cdx["components"].is_array());
@@ -193,7 +194,10 @@ fn test_bazel_scan_vex_workflow() {
         let vex_content = fs::read_to_string(&vex_path).expect("Failed to read VEX");
         let vex: serde_json::Value = serde_json::from_str(&vex_content).expect("Invalid VEX JSON");
 
-        assert!(vex["document"].is_object(), "Invalid VEX document structure");
+        assert!(
+            vex["document"].is_object(),
+            "Invalid VEX document structure"
+        );
     }
 
     cleanup_temp_dir(temp_dir);
@@ -210,7 +214,7 @@ fn test_bazel_scan_multi_format_workflow() {
     build_cli(&workspace_root);
 
     let bazbom_binary = workspace_root.join("target/release/bazbom");
-    
+
     // Generate both SPDX and CycloneDX
     let output1 = Command::new(&bazbom_binary)
         .arg("scan")
@@ -238,7 +242,10 @@ fn test_bazel_scan_multi_format_workflow() {
 
     // Verify both formats exist
     assert!(temp_dir.join("sbom.spdx.json").exists(), "SPDX not found");
-    assert!(temp_dir.join("sbom.cdx.json").exists(), "CycloneDX not found");
+    assert!(
+        temp_dir.join("sbom.cdx.json").exists(),
+        "CycloneDX not found"
+    );
 
     cleanup_temp_dir(temp_dir);
     println!("✓ Multi-format workflow test passed");
@@ -303,7 +310,8 @@ fn verify_findings_output(temp_dir: &Path) {
     assert!(findings_path.exists(), "Findings JSON not generated");
 
     let findings_content = fs::read_to_string(&findings_path).expect("Failed to read findings");
-    let _findings: serde_json::Value = serde_json::from_str(&findings_content).expect("Invalid findings JSON");
+    let _findings: serde_json::Value =
+        serde_json::from_str(&findings_content).expect("Invalid findings JSON");
 }
 
 fn verify_sarif_output(temp_dir: &Path) {
@@ -311,7 +319,8 @@ fn verify_sarif_output(temp_dir: &Path) {
     assert!(sarif_path.exists(), "SARIF report not generated");
 
     let sarif_content = fs::read_to_string(&sarif_path).expect("Failed to read SARIF");
-    let sarif: serde_json::Value = serde_json::from_str(&sarif_content).expect("Invalid SARIF JSON");
+    let sarif: serde_json::Value =
+        serde_json::from_str(&sarif_content).expect("Invalid SARIF JSON");
 
     assert_eq!(sarif["version"], "2.1.0");
     assert!(sarif["runs"].is_array());

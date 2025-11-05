@@ -56,7 +56,7 @@ impl std::fmt::Display for ClojureDependency {
 /// Detect Clojure project
 pub fn detect_clojure_project<P: AsRef<Path>>(root: P) -> Option<ClojureProject> {
     let root = root.as_ref();
-    
+
     // Check for Leiningen (project.clj)
     let lein_project = root.join("project.clj");
     if lein_project.exists() {
@@ -64,7 +64,7 @@ pub fn detect_clojure_project<P: AsRef<Path>>(root: P) -> Option<ClojureProject>
             return Some(project);
         }
     }
-    
+
     // Check for tools.deps (deps.edn)
     let deps_edn = root.join("deps.edn");
     if deps_edn.exists() {
@@ -72,22 +72,21 @@ pub fn detect_clojure_project<P: AsRef<Path>>(root: P) -> Option<ClojureProject>
             return Some(project);
         }
     }
-    
+
     None
 }
 
 /// Parse Leiningen project.clj
 fn parse_leiningen_project(project_file: &Path) -> Result<ClojureProject> {
-    let content = fs::read_to_string(project_file)
-        .context("Failed to read project.clj")?;
-    
+    let content = fs::read_to_string(project_file).context("Failed to read project.clj")?;
+
     // Parse Clojure EDN/code (simplified parser)
     // Real implementation would use proper EDN parser or invoke Leiningen
-    
+
     let name = extract_project_name(&content).unwrap_or_else(|| "unknown".to_string());
     let version = extract_project_version(&content).unwrap_or_else(|| "0.0.0".to_string());
     let dependencies = parse_leiningen_dependencies(&content)?;
-    
+
     Ok(ClojureProject {
         root: project_file.parent().unwrap().to_path_buf(),
         project_type: ClojureProjectType::Leiningen,
@@ -99,14 +98,13 @@ fn parse_leiningen_project(project_file: &Path) -> Result<ClojureProject> {
 
 /// Parse tools.deps deps.edn
 fn parse_tools_deps_project(deps_file: &Path) -> Result<ClojureProject> {
-    let content = fs::read_to_string(deps_file)
-        .context("Failed to read deps.edn")?;
-    
+    let content = fs::read_to_string(deps_file).context("Failed to read deps.edn")?;
+
     // Parse EDN format (simplified)
     // Real implementation would use proper EDN parser
-    
+
     let dependencies = parse_tools_deps_dependencies(&content)?;
-    
+
     // tools.deps doesn't have project name/version in deps.edn
     // Would need to check pom.xml or use directory name
     let name = deps_file
@@ -115,7 +113,7 @@ fn parse_tools_deps_project(deps_file: &Path) -> Result<ClojureProject> {
         .and_then(|n| n.to_str())
         .unwrap_or("unknown")
         .to_string();
-    
+
     Ok(ClojureProject {
         root: deps_file.parent().unwrap().to_path_buf(),
         project_type: ClojureProjectType::ToolsDeps,
@@ -163,10 +161,10 @@ fn extract_project_version(content: &str) -> Option<String> {
 fn parse_leiningen_dependencies(content: &str) -> Result<Vec<ClojureDependency>> {
     let mut dependencies = Vec::new();
     let mut in_dependencies = false;
-    
+
     for line in content.lines() {
         let line = line.trim();
-        
+
         // Look for :dependencies vector
         if line.contains(":dependencies") {
             in_dependencies = true;
@@ -185,14 +183,14 @@ fn parse_leiningen_dependencies(content: &str) -> Result<Vec<ClojureDependency>>
             }
             continue;
         }
-        
+
         if in_dependencies {
             // End of dependencies section
             if line.starts_with(']') {
                 in_dependencies = false;
                 continue;
             }
-            
+
             // Parse dependency: [org.clojure/clojure "1.11.1"]
             if line.contains('[') && !line.contains(":dependencies") {
                 if let Some(dep) = parse_leiningen_dependency_line(line) {
@@ -201,7 +199,7 @@ fn parse_leiningen_dependencies(content: &str) -> Result<Vec<ClojureDependency>>
             }
         }
     }
-    
+
     Ok(dependencies)
 }
 
@@ -209,14 +207,14 @@ fn parse_leiningen_dependencies(content: &str) -> Result<Vec<ClojureDependency>>
 fn parse_leiningen_dependency_line(line: &str) -> Option<ClojureDependency> {
     // Format: [org.clojure/clojure "1.11.1"]
     // or: [org.clojure/clojure "1.11.1" :scope "test"]
-    
+
     let line = line.trim_matches(|c| c == '[' || c == ']');
     let parts: Vec<&str> = line.split_whitespace().collect();
-    
+
     if parts.is_empty() {
         return None;
     }
-    
+
     // Parse group/artifact
     let coord = parts[0];
     let (group, artifact) = if let Some(slash_pos) = coord.find('/') {
@@ -228,17 +226,17 @@ fn parse_leiningen_dependency_line(line: &str) -> Option<ClojureDependency> {
         // Single name like "clojure" implies group=artifact
         (coord.to_string(), coord.to_string())
     };
-    
+
     // Parse version
     let version = if parts.len() >= 2 {
         parts[1].trim_matches('"').to_string()
     } else {
         "LATEST".to_string()
     };
-    
+
     // Parse scope if present
     let scope = parse_dependency_scope(&parts);
-    
+
     Some(ClojureDependency {
         group,
         artifact,
@@ -262,43 +260,43 @@ fn parse_dependency_scope(parts: &[&str]) -> Option<String> {
 fn parse_tools_deps_dependencies(content: &str) -> Result<Vec<ClojureDependency>> {
     let mut dependencies = Vec::new();
     let mut in_deps = false;
-    
+
     for line in content.lines() {
         let line = line.trim();
-        
+
         // Look for :deps map
         if line.contains(":deps") {
             in_deps = true;
             continue;
         }
-        
+
         if in_deps {
             // End of deps section
             if line.starts_with('}') {
                 in_deps = false;
                 continue;
             }
-            
+
             // Parse dependency: org.clojure/clojure {:mvn/version "1.11.1"}
             if let Some(dep) = parse_tools_deps_dependency_line(line) {
                 dependencies.push(dep);
             }
         }
     }
-    
+
     Ok(dependencies)
 }
 
 /// Parse single tools.deps dependency line
 fn parse_tools_deps_dependency_line(line: &str) -> Option<ClojureDependency> {
     // Format: org.clojure/clojure {:mvn/version "1.11.1"}
-    
+
     let parts: Vec<&str> = line.split_whitespace().collect();
-    
+
     if parts.is_empty() {
         return None;
     }
-    
+
     // Parse group/artifact
     let coord = parts[0];
     let (group, artifact) = if let Some(slash_pos) = coord.find('/') {
@@ -309,10 +307,10 @@ fn parse_tools_deps_dependency_line(line: &str) -> Option<ClojureDependency> {
     } else {
         (coord.to_string(), coord.to_string())
     };
-    
+
     // Parse version from {:mvn/version "1.11.1"}
     let version = extract_mvn_version(line).unwrap_or_else(|| "LATEST".to_string());
-    
+
     Some(ClojureDependency {
         group,
         artifact,
@@ -326,11 +324,11 @@ fn extract_mvn_version(line: &str) -> Option<String> {
     // Look for :mvn/version "1.11.1"
     if let Some(version_pos) = line.find(":mvn/version") {
         let after_version = &line[version_pos + 12..]; // Skip ":mvn/version"
-        
+
         // Find first quote
         if let Some(quote_start) = after_version.find('"') {
             let after_quote = &after_version[quote_start + 1..];
-            
+
             // Find closing quote
             if let Some(quote_end) = after_quote.find('"') {
                 return Some(after_quote[..quote_end].to_string());
@@ -369,56 +367,59 @@ mod tests {
     use super::*;
     use std::io::Write;
     use tempfile::NamedTempFile;
-    
+
     #[test]
     fn test_extract_project_name() {
         let content = "(defproject my-app \"0.1.0-SNAPSHOT\"\n  :description \"Test app\"";
         assert_eq!(extract_project_name(content), Some("my-app".to_string()));
     }
-    
+
     #[test]
     fn test_extract_project_version() {
         let content = "(defproject my-app \"0.1.0-SNAPSHOT\"\n  :description \"Test app\"";
-        assert_eq!(extract_project_version(content), Some("0.1.0-SNAPSHOT".to_string()));
+        assert_eq!(
+            extract_project_version(content),
+            Some("0.1.0-SNAPSHOT".to_string())
+        );
     }
-    
+
     #[test]
     fn test_parse_leiningen_dependency_line() {
         let line = "[org.clojure/clojure \"1.11.1\"]";
         let dep = parse_leiningen_dependency_line(line).unwrap();
-        
+
         assert_eq!(dep.group, "org.clojure");
         assert_eq!(dep.artifact, "clojure");
         assert_eq!(dep.version, "1.11.1");
     }
-    
+
     #[test]
     fn test_parse_leiningen_dependency_with_scope() {
         let line = "[org.clojure/test.check \"1.1.1\" :scope \"test\"]";
         let dep = parse_leiningen_dependency_line(line).unwrap();
-        
+
         assert_eq!(dep.group, "org.clojure");
         assert_eq!(dep.artifact, "test.check");
         assert_eq!(dep.version, "1.1.1");
         assert_eq!(dep.scope, Some("test".to_string()));
     }
-    
+
     #[test]
     fn test_parse_tools_deps_dependency_line() {
         let line = "org.clojure/clojure {:mvn/version \"1.11.1\"}";
         let dep = parse_tools_deps_dependency_line(line).unwrap();
-        
+
         assert_eq!(dep.group, "org.clojure");
         assert_eq!(dep.artifact, "clojure");
         assert_eq!(dep.version, "1.11.1");
     }
-    
+
     #[test]
     fn test_extract_mvn_version() {
         let line = "org.clojure/clojure {:mvn/version \"1.11.1\"}";
         assert_eq!(extract_mvn_version(line), Some("1.11.1".to_string()));
     }
-    
+
     #[test]
     fn test_clojure_dependency_display() {
         let dep = ClojureDependency {
@@ -427,10 +428,10 @@ mod tests {
             version: "1.11.1".to_string(),
             scope: None,
         };
-        
+
         assert_eq!(dep.to_string(), "org.clojure/clojure:1.11.1");
     }
-    
+
     #[test]
     fn test_clojure_to_maven_coordinates() {
         let dep = ClojureDependency {
@@ -439,10 +440,13 @@ mod tests {
             version: "1.11.1".to_string(),
             scope: None,
         };
-        
-        assert_eq!(clojure_to_maven_coordinates(&dep), "org.clojure:clojure:1.11.1");
+
+        assert_eq!(
+            clojure_to_maven_coordinates(&dep),
+            "org.clojure:clojure:1.11.1"
+        );
     }
-    
+
     #[test]
     fn test_parse_leiningen_project() {
         let mut temp_file = NamedTempFile::new().unwrap();
@@ -451,9 +455,9 @@ mod tests {
             "(defproject my-app \"0.1.0-SNAPSHOT\"\n  :dependencies [[org.clojure/clojure \"1.11.1\"]\n                 [ring/ring-core \"1.9.5\"]])"
         )
         .unwrap();
-        
+
         let project = parse_leiningen_project(temp_file.path()).unwrap();
-        
+
         assert_eq!(project.name, "my-app");
         assert_eq!(project.version, "0.1.0-SNAPSHOT");
         assert_eq!(project.project_type, ClojureProjectType::Leiningen);
@@ -461,14 +465,14 @@ mod tests {
         assert_eq!(project.dependencies[0].group, "org.clojure");
         assert_eq!(project.dependencies[0].artifact, "clojure");
     }
-    
+
     #[test]
     fn test_detect_clojure_project_no_files() {
         use tempfile::TempDir;
-        
+
         let temp_dir = TempDir::new().unwrap();
         let result = detect_clojure_project(temp_dir.path());
-        
+
         assert!(result.is_none());
     }
 }

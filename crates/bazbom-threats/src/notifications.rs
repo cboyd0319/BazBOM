@@ -57,7 +57,11 @@ pub struct Notification {
 
 impl Notification {
     /// Create a new notification
-    pub fn new(title: impl Into<String>, message: impl Into<String>, severity: impl Into<String>) -> Self {
+    pub fn new(
+        title: impl Into<String>,
+        message: impl Into<String>,
+        severity: impl Into<String>,
+    ) -> Self {
         Self {
             title: title.into(),
             message: message.into(),
@@ -112,26 +116,41 @@ impl Notifier {
 
         for channel in &self.channels {
             let result = match channel {
-                NotificationChannel::Slack { webhook_url, channel, username } => {
-                    self.send_slack(webhook_url, notification, channel.as_deref(), username.as_deref())
-                }
-                NotificationChannel::Email { smtp_server, smtp_port, from_address, to_addresses, username, password } => {
-                    self.send_email(
-                        smtp_server,
-                        *smtp_port,
-                        from_address,
-                        to_addresses,
-                        notification,
-                        username.as_deref(),
-                        password.as_deref(),
-                    )
-                }
+                NotificationChannel::Slack {
+                    webhook_url,
+                    channel,
+                    username,
+                } => self.send_slack(
+                    webhook_url,
+                    notification,
+                    channel.as_deref(),
+                    username.as_deref(),
+                ),
+                NotificationChannel::Email {
+                    smtp_server,
+                    smtp_port,
+                    from_address,
+                    to_addresses,
+                    username,
+                    password,
+                } => self.send_email(
+                    smtp_server,
+                    *smtp_port,
+                    from_address,
+                    to_addresses,
+                    notification,
+                    username.as_deref(),
+                    password.as_deref(),
+                ),
                 NotificationChannel::Teams { webhook_url } => {
                     self.send_teams(webhook_url, notification)
                 }
-                NotificationChannel::GithubIssue { token, owner, repo, labels } => {
-                    self.send_github_issue(token, owner, repo, labels, notification)
-                }
+                NotificationChannel::GithubIssue {
+                    token,
+                    owner,
+                    repo,
+                    labels,
+                } => self.send_github_issue(token, owner, repo, labels, notification),
             };
 
             results.push(result);
@@ -307,7 +326,10 @@ impl Notifier {
         let issue_body = format!(
             "## {}\n\n{}\n\n**Severity:** {}\n\n---\n*Automatically created by BazBOM*",
             notification.message,
-            notification.metadata.get("details").unwrap_or(&"".to_string()),
+            notification
+                .metadata
+                .get("details")
+                .unwrap_or(&"".to_string()),
             notification.severity
         );
 
@@ -323,7 +345,7 @@ impl Notifier {
         // Send HTTP POST to GitHub API
         let client = reqwest::blocking::Client::new();
         let url = format!("https://api.github.com/repos/{}/{}/issues", owner, repo);
-        
+
         let response = client
             .post(&url)
             .header("Authorization", format!("Bearer {}", token))
@@ -344,7 +366,7 @@ impl Notifier {
 
         let issue_response: serde_json::Value = response.json()?;
         let issue_number = issue_response["number"].as_u64().unwrap_or(0);
-        
+
         log::info!("✓ GitHub issue #{} created successfully", issue_number);
         Ok(())
     }

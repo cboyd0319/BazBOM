@@ -20,12 +20,12 @@ use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 
+pub mod export;
 mod models;
 mod routes;
-pub mod export;
 
-pub use models::*;
 pub use export::{export_to_html, Vulnerability};
+pub use models::*;
 
 /// Dashboard application state
 #[derive(Clone)]

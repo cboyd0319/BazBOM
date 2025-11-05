@@ -4,7 +4,7 @@
 //! the risk scoring and anomaly detection features.
 
 use crate::features::VulnerabilityFeatures;
-use crate::risk::{RiskScorer, RiskLevel};
+use crate::risk::{RiskLevel, RiskScorer};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -24,10 +24,10 @@ pub struct PrioritizedVulnerability {
 /// Fix urgency level
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum FixUrgency {
-    Immediate,  // Fix within 24 hours
-    High,       // Fix within 1 week
-    Medium,     // Fix within 1 month
-    Low,        // Fix when convenient
+    Immediate, // Fix within 24 hours
+    High,      // Fix within 1 week
+    Medium,    // Fix within 1 month
+    Low,       // Fix when convenient
 }
 
 impl FixUrgency {
@@ -77,9 +77,9 @@ impl VulnerabilityPrioritizer {
             .into_iter()
             .map(|(features, cve, package, version)| {
                 let risk_result = self.risk_scorer.score(&features);
-                
+
                 let explanation = self.generate_explanation(&features, &risk_result.explanation);
-                
+
                 PrioritizedVulnerability {
                     cve,
                     package,
@@ -109,7 +109,11 @@ impl VulnerabilityPrioritizer {
     }
 
     /// Generate human-readable explanation for prioritization
-    fn generate_explanation(&self, features: &VulnerabilityFeatures, base_explanation: &str) -> String {
+    fn generate_explanation(
+        &self,
+        features: &VulnerabilityFeatures,
+        base_explanation: &str,
+    ) -> String {
         let mut parts = vec![base_explanation.to_string()];
 
         // Add context about specific risk factors
@@ -129,7 +133,10 @@ impl VulnerabilityPrioritizer {
         }
 
         if features.has_exploit {
-            parts.push("Public exploit code is available, making exploitation easier for attackers.".to_string());
+            parts.push(
+                "Public exploit code is available, making exploitation easier for attackers."
+                    .to_string(),
+            );
         }
 
         if features.age_days < 30 {
@@ -179,7 +186,8 @@ impl VulnerabilityPrioritizer {
                 vulnerabilities: high,
                 estimated_time_minutes: 60,
                 conflicts,
-                description: "High priority vulnerabilities - review for dependency conflicts".to_string(),
+                description: "High priority vulnerabilities - review for dependency conflicts"
+                    .to_string(),
             });
         }
 
@@ -289,7 +297,12 @@ impl FixBatch {
 mod tests {
     use super::*;
 
-    fn create_test_features(cvss: f64, epss: f64, kev: bool, reachable: bool) -> VulnerabilityFeatures {
+    fn create_test_features(
+        cvss: f64,
+        epss: f64,
+        kev: bool,
+        reachable: bool,
+    ) -> VulnerabilityFeatures {
         VulnerabilityFeatures {
             cvss_score: cvss,
             epss,
@@ -305,21 +318,36 @@ mod tests {
     #[test]
     fn test_prioritizer_creation() {
         let _prioritizer = VulnerabilityPrioritizer::new();
-        assert!(true); // Just test creation
+        // Test passes if creation succeeds without panicking
     }
 
     #[test]
     fn test_prioritize_vulnerabilities() {
         let prioritizer = VulnerabilityPrioritizer::new();
-        
+
         let vulnerabilities = vec![
-            (create_test_features(7.5, 0.3, false, true), "CVE-2024-0001".to_string(), "log4j-core".to_string(), "2.14.1".to_string()),
-            (create_test_features(9.8, 0.8, true, true), "CVE-2024-0002".to_string(), "spring-web".to_string(), "5.3.20".to_string()),
-            (create_test_features(5.0, 0.1, false, false), "CVE-2024-0003".to_string(), "guava".to_string(), "30.1".to_string()),
+            (
+                create_test_features(7.5, 0.3, false, true),
+                "CVE-2024-0001".to_string(),
+                "log4j-core".to_string(),
+                "2.14.1".to_string(),
+            ),
+            (
+                create_test_features(9.8, 0.8, true, true),
+                "CVE-2024-0002".to_string(),
+                "spring-web".to_string(),
+                "5.3.20".to_string(),
+            ),
+            (
+                create_test_features(5.0, 0.1, false, false),
+                "CVE-2024-0003".to_string(),
+                "guava".to_string(),
+                "30.1".to_string(),
+            ),
         ];
 
         let prioritized = prioritizer.prioritize(vulnerabilities);
-        
+
         assert_eq!(prioritized.len(), 3);
         // Highest risk should be first (CVE-2024-0002 with high CVSS, EPSS, KEV)
         assert_eq!(prioritized[0].cve, "CVE-2024-0002");
@@ -338,16 +366,28 @@ mod tests {
 
     #[test]
     fn test_fix_urgency_from_risk_level() {
-        assert_eq!(FixUrgency::from_risk_level(&RiskLevel::Critical), FixUrgency::Immediate);
-        assert_eq!(FixUrgency::from_risk_level(&RiskLevel::High), FixUrgency::High);
-        assert_eq!(FixUrgency::from_risk_level(&RiskLevel::Medium), FixUrgency::Medium);
-        assert_eq!(FixUrgency::from_risk_level(&RiskLevel::Low), FixUrgency::Low);
+        assert_eq!(
+            FixUrgency::from_risk_level(&RiskLevel::Critical),
+            FixUrgency::Immediate
+        );
+        assert_eq!(
+            FixUrgency::from_risk_level(&RiskLevel::High),
+            FixUrgency::High
+        );
+        assert_eq!(
+            FixUrgency::from_risk_level(&RiskLevel::Medium),
+            FixUrgency::Medium
+        );
+        assert_eq!(
+            FixUrgency::from_risk_level(&RiskLevel::Low),
+            FixUrgency::Low
+        );
     }
 
     #[test]
     fn test_create_fix_batches() {
         let prioritizer = VulnerabilityPrioritizer::new();
-        
+
         let prioritized = vec![
             PrioritizedVulnerability {
                 cve: "CVE-2024-0001".to_string(),
@@ -373,7 +413,7 @@ mod tests {
 
         let graph = HashMap::new();
         let batches = prioritizer.create_fix_batches(&prioritized, &graph);
-        
+
         assert!(!batches.is_empty());
         // Should have at least one batch for immediate fixes
         assert!(batches.iter().any(|b| b.urgency == FixUrgency::Immediate));
@@ -384,10 +424,10 @@ mod tests {
         let prioritizer = VulnerabilityPrioritizer::new();
         let mut graph = HashMap::new();
         graph.insert("package-a".to_string(), vec!["package-b".to_string()]);
-        
+
         // package-b is not isolated (package-a depends on it)
         assert!(!prioritizer.is_isolated("package-b", &graph));
-        
+
         // package-a is isolated (nothing depends on it)
         assert!(prioritizer.is_isolated("package-a", &graph));
     }
@@ -405,9 +445,9 @@ mod tests {
             severity_level: 3, // CRITICAL
             vuln_type: 1,      // RCE
         };
-        
+
         let explanation = prioritizer.generate_explanation(&features, "High risk");
-        
+
         // Should mention multiple risk factors
         assert!(explanation.contains("KEV") || explanation.contains("Known Exploited"));
         assert!(explanation.contains("EPSS") || explanation.contains("probability"));

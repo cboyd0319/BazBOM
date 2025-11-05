@@ -43,7 +43,7 @@ pub fn is_kotlin_multiplatform(project_root: &Path) -> bool {
     // Check for build.gradle.kts or build.gradle
     let build_gradle_kts = project_root.join("build.gradle.kts");
     let build_gradle = project_root.join("build.gradle");
-    
+
     let build_file = if build_gradle_kts.exists() {
         Some(build_gradle_kts)
     } else if build_gradle.exists() {
@@ -51,19 +51,21 @@ pub fn is_kotlin_multiplatform(project_root: &Path) -> bool {
     } else {
         None
     };
-    
+
     if let Some(build_file) = build_file {
         if let Ok(content) = fs::read_to_string(build_file) {
             // Look for kotlin { } block with multiplatform plugin
             return content.contains("kotlin(\"multiplatform\")")
                 || content.contains("id(\"org.jetbrains.kotlin.multiplatform\")")
                 || content.contains("kotlin-multiplatform")
-                || (content.contains("kotlin {") && 
-                    (content.contains("jvm()") || content.contains("android()") || 
-                     content.contains("js()") || content.contains("iosTarget")));
+                || (content.contains("kotlin {")
+                    && (content.contains("jvm()")
+                        || content.contains("android()")
+                        || content.contains("js()")
+                        || content.contains("iosTarget")));
         }
     }
-    
+
     false
 }
 
@@ -72,10 +74,10 @@ pub fn detect_kmp_project(project_root: &Path) -> Option<KotlinMultiplatformProj
     if !is_kotlin_multiplatform(project_root) {
         return None;
     }
-    
+
     let build_gradle_kts = project_root.join("build.gradle.kts");
     let build_gradle = project_root.join("build.gradle");
-    
+
     let build_file = if build_gradle_kts.exists() {
         build_gradle_kts
     } else if build_gradle.exists() {
@@ -83,13 +85,13 @@ pub fn detect_kmp_project(project_root: &Path) -> Option<KotlinMultiplatformProj
     } else {
         return None;
     };
-    
+
     let content = fs::read_to_string(&build_file).ok()?;
-    
+
     // Detect targets
     let has_jvm_target = content.contains("jvm()") || content.contains("jvm {");
     let has_android_target = content.contains("android()") || content.contains("android {");
-    
+
     let mut other_targets = Vec::new();
     if content.contains("js(") || content.contains("js {") {
         other_targets.push("js".to_string());
@@ -97,13 +99,14 @@ pub fn detect_kmp_project(project_root: &Path) -> Option<KotlinMultiplatformProj
     if content.contains("iosTarget") || content.contains("ios()") {
         other_targets.push("ios".to_string());
     }
-    if content.contains("linuxX64") || content.contains("macosX64") || content.contains("mingwX64") {
+    if content.contains("linuxX64") || content.contains("macosX64") || content.contains("mingwX64")
+    {
         other_targets.push("native".to_string());
     }
     if content.contains("wasm") {
         other_targets.push("wasm".to_string());
     }
-    
+
     Some(KotlinMultiplatformProject {
         root: project_root.to_path_buf(),
         build_file,
@@ -115,13 +118,12 @@ pub fn detect_kmp_project(project_root: &Path) -> Option<KotlinMultiplatformProj
 
 /// Extract SBOM from Kotlin Multiplatform project (JVM targets only)
 pub fn extract_kmp_sbom(project: &KotlinMultiplatformProject) -> Result<KmpSbom> {
-    let content = fs::read_to_string(&project.build_file)
-        .context("Failed to read build file")?;
-    
+    let content = fs::read_to_string(&project.build_file).context("Failed to read build file")?;
+
     // Extract project name and version
     let project_name = extract_project_name(&content, &project.root);
     let project_version = extract_project_version(&content);
-    
+
     // Collect target names
     let mut targets = Vec::new();
     if project.has_jvm_target {
@@ -131,22 +133,22 @@ pub fn extract_kmp_sbom(project: &KotlinMultiplatformProject) -> Result<KmpSbom>
         targets.push("android".to_string());
     }
     targets.extend(project.other_targets.clone());
-    
+
     // Parse dependencies from sourceSets
     let jvm_dependencies = parse_source_set_dependencies(&content, "jvmMain");
     let android_dependencies = parse_source_set_dependencies(&content, "androidMain");
-    
+
     // Also parse common dependencies (shared across all targets)
     let common_dependencies = parse_source_set_dependencies(&content, "commonMain");
-    
+
     // Combine common with JVM-specific
     let mut all_jvm_deps = common_dependencies.clone();
     all_jvm_deps.extend(jvm_dependencies);
-    
+
     // Combine common with Android-specific
     let mut all_android_deps = common_dependencies;
     all_android_deps.extend(android_dependencies);
-    
+
     Ok(KmpSbom {
         project_name,
         project_version,
@@ -167,12 +169,12 @@ fn extract_project_name(content: &str, project_root: &Path) -> String {
             }
         }
     }
-    
+
     // Try to find group in build.gradle.kts
     if let Some(name) = parse_project_name(content) {
         return name;
     }
-    
+
     // Fallback to directory name
     project_root
         .file_name()
@@ -222,43 +224,45 @@ fn extract_project_version(content: &str) -> String {
 /// Parse dependencies from a specific source set
 fn parse_source_set_dependencies(content: &str, source_set: &str) -> Vec<KmpDependency> {
     let mut dependencies = Vec::new();
-    
+
     // Find the sourceSet block
     let source_set_pattern = format!("{}Dependencies", source_set);
     let mut in_source_set = false;
     let mut brace_count = 0;
-    
+
     for line in content.lines() {
         let trimmed = line.trim();
-        
+
         // Check if we're entering the source set dependencies block
-        if trimmed.contains(&source_set_pattern) || trimmed.contains(&format!("val {} by getting", source_set)) {
+        if trimmed.contains(&source_set_pattern)
+            || trimmed.contains(&format!("val {} by getting", source_set))
+        {
             in_source_set = true;
         }
-        
+
         if in_source_set {
             // Track braces to know when we exit the block
             brace_count += trimmed.matches('{').count() as i32;
             brace_count -= trimmed.matches('}').count() as i32;
-            
+
             // Parse dependency lines: implementation("group:artifact:version")
-            if trimmed.starts_with("implementation(") || 
-                trimmed.starts_with("api(") || 
-                trimmed.starts_with("compileOnly(") ||
-                trimmed.starts_with("runtimeOnly(") {
-                
+            if trimmed.starts_with("implementation(")
+                || trimmed.starts_with("api(")
+                || trimmed.starts_with("compileOnly(")
+                || trimmed.starts_with("runtimeOnly(")
+            {
                 if let Some(dep) = parse_dependency_line(trimmed, source_set) {
                     dependencies.push(dep);
                 }
             }
-            
+
             // Exit when we've closed all braces
             if brace_count <= 0 && in_source_set {
                 break;
             }
         }
     }
-    
+
     dependencies
 }
 
@@ -270,10 +274,10 @@ fn parse_dependency_line(line: &str, scope: &str) -> Option<KmpDependency> {
     if end <= start {
         return None;
     }
-    
+
     let dep_string = &line[start + 1..end];
     let parts: Vec<&str> = dep_string.split(':').collect();
-    
+
     if parts.len() >= 2 {
         let group = parts[0].to_string();
         let artifact = parts[1].to_string();
@@ -282,7 +286,7 @@ fn parse_dependency_line(line: &str, scope: &str) -> Option<KmpDependency> {
         } else {
             "unspecified".to_string()
         };
-        
+
         Some(KmpDependency {
             group,
             artifact,
@@ -309,8 +313,10 @@ mod tests {
     fn test_kmp_project_detection() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 kotlin("multiplatform") version "1.9.0"
             }
@@ -319,8 +325,10 @@ mod tests {
                 jvm()
                 js()
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         assert!(is_kotlin_multiplatform(temp_dir.path()));
     }
 
@@ -328,13 +336,17 @@ mod tests {
     fn test_kmp_project_not_detected() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 id("java")
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         assert!(!is_kotlin_multiplatform(temp_dir.path()));
     }
 
@@ -342,8 +354,10 @@ mod tests {
     fn test_detect_kmp_targets() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 kotlin("multiplatform")
             }
@@ -354,8 +368,10 @@ mod tests {
                 js()
                 iosTarget()
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         let project = detect_kmp_project(temp_dir.path()).unwrap();
         assert!(project.has_jvm_target);
         assert!(project.has_android_target);
@@ -367,7 +383,7 @@ mod tests {
     fn test_parse_dependency_line() {
         let line = r#"implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0")"#;
         let dep = parse_dependency_line(line, "jvmMain").unwrap();
-        
+
         assert_eq!(dep.group, "org.jetbrains.kotlinx");
         assert_eq!(dep.artifact, "kotlinx-coroutines-core");
         assert_eq!(dep.version, "1.7.0");
@@ -382,7 +398,7 @@ mod tests {
             version: "1.9.0".to_string(),
             scope: "commonMain".to_string(),
         };
-        
+
         let coords = kmp_to_maven_coordinates(&dep);
         assert_eq!(coords, "org.jetbrains.kotlin:kotlin-stdlib:1.9.0");
     }
@@ -420,7 +436,7 @@ mod tests {
                 }
             }
         "#;
-        
+
         let deps = parse_source_set_dependencies(content, "jvmMain");
         assert_eq!(deps.len(), 2);
         assert_eq!(deps[0].group, "io.ktor");
@@ -432,8 +448,10 @@ mod tests {
     fn test_kmp_sbom_structure() {
         let temp_dir = TempDir::new().unwrap();
         let build_file = temp_dir.path().join("build.gradle.kts");
-        
-        fs::write(&build_file, r#"
+
+        fs::write(
+            &build_file,
+            r#"
             plugins {
                 kotlin("multiplatform")
             }
@@ -456,16 +474,22 @@ mod tests {
                     }
                 }
             }
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         let settings_file = temp_dir.path().join("settings.gradle.kts");
-        fs::write(&settings_file, r#"
+        fs::write(
+            &settings_file,
+            r#"
             rootProject.name = "test-kmp"
-        "#).unwrap();
-        
+        "#,
+        )
+        .unwrap();
+
         let project = detect_kmp_project(temp_dir.path()).unwrap();
         let sbom = extract_kmp_sbom(&project).unwrap();
-        
+
         assert_eq!(sbom.project_name, "test-kmp");
         assert_eq!(sbom.project_version, "1.0.0");
         assert!(sbom.targets.contains(&"jvm".to_string()));

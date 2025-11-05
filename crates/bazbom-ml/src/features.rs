@@ -10,25 +10,25 @@ use serde::{Deserialize, Serialize};
 pub struct VulnerabilityFeatures {
     /// CVSS base score (0.0-10.0)
     pub cvss_score: f64,
-    
+
     /// Age in days since publication
     pub age_days: u32,
-    
+
     /// Whether exploit code is publicly available
     pub has_exploit: bool,
-    
+
     /// EPSS score (0.0-1.0, probability of exploitation)
     pub epss: f64,
-    
+
     /// Whether vulnerability is in CISA KEV (Known Exploited Vulnerabilities)
     pub in_kev: bool,
-    
+
     /// Severity category (encoded: 0=LOW, 1=MEDIUM, 2=HIGH, 3=CRITICAL)
     pub severity_level: u8,
-    
+
     /// Vulnerability type (encoded: 0=OTHER, 1=RCE, 2=XSS, 3=SQLi, 4=CSRF, etc.)
     pub vuln_type: u8,
-    
+
     /// Whether the vulnerable code is reachable in the application
     pub is_reachable: bool,
 }
@@ -69,25 +69,25 @@ impl Default for VulnerabilityFeatures {
 pub struct DependencyFeatures {
     /// Number of transitive dependencies
     pub transitive_count: u32,
-    
+
     /// Average age of all dependencies in days
     pub avg_age_days: f64,
-    
+
     /// Number of known vulnerabilities
     pub vuln_count: u32,
-    
+
     /// Number of dependencies from the same group/org
     pub same_group_count: u32,
-    
+
     /// Whether this is a direct dependency
     pub is_direct: bool,
-    
+
     /// Package popularity score (downloads per day, normalized 0-1)
     pub popularity: f64,
-    
+
     /// Maintainer reputation score (0-1, based on history)
     pub maintainer_score: f64,
-    
+
     /// Number of releases in the last year
     pub recent_releases: u32,
 }
@@ -126,7 +126,7 @@ impl Default for DependencyFeatures {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_vulnerability_features_to_vector() {
         let features = VulnerabilityFeatures {
@@ -139,7 +139,7 @@ mod tests {
             vuln_type: 1,      // RCE
             is_reachable: true,
         };
-        
+
         let vector = features.to_vector();
         assert_eq!(vector.len(), 8);
         assert_eq!(vector[0], 9.8);
@@ -151,7 +151,7 @@ mod tests {
         assert_eq!(vector[6], 1.0);
         assert_eq!(vector[7], 1.0); // is_reachable
     }
-    
+
     #[test]
     fn test_dependency_features_to_vector() {
         let features = DependencyFeatures {
@@ -164,7 +164,7 @@ mod tests {
             maintainer_score: 0.8,
             recent_releases: 12,
         };
-        
+
         let vector = features.to_vector();
         assert_eq!(vector.len(), 8);
         assert_eq!(vector[0], 42.0);
@@ -176,14 +176,14 @@ mod tests {
         assert_eq!(vector[6], 0.8);
         assert_eq!(vector[7], 12.0);
     }
-    
+
     #[test]
     fn test_default_features() {
         let vuln_features = VulnerabilityFeatures::default();
         assert_eq!(vuln_features.cvss_score, 0.0);
         assert_eq!(vuln_features.age_days, 0);
         assert!(!vuln_features.has_exploit);
-        
+
         let dep_features = DependencyFeatures::default();
         assert_eq!(dep_features.transitive_count, 0);
         assert_eq!(dep_features.popularity, 0.5);

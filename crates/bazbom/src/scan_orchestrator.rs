@@ -1,4 +1,6 @@
-use crate::analyzers::{CodeqlAnalyzer, ScaAnalyzer, SemgrepAnalyzer, SyftRunner, ThreatAnalyzer, ThreatDetectionLevel};
+use crate::analyzers::{
+    CodeqlAnalyzer, ScaAnalyzer, SemgrepAnalyzer, SyftRunner, ThreatAnalyzer, ThreatDetectionLevel,
+};
 use crate::cli::{AutofixMode, CodeqlSuite, ContainerStrategy};
 use crate::config::Config;
 use crate::context::Context;
@@ -270,10 +272,11 @@ impl ScanOrchestrator {
                 "[bazbom] ║  Total Duration: {:<40} ║",
                 crate::performance::format_duration(metrics.total_duration)
             );
-            
+
             // Display individual phase timings
             if let Some(duration) = metrics.sbom_generation_duration {
-                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                let percentage =
+                    (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
                 println!(
                     "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
                     "SBOM Generation",
@@ -281,9 +284,10 @@ impl ScanOrchestrator {
                     percentage
                 );
             }
-            
+
             if let Some(duration) = metrics.vulnerability_scan_duration {
-                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                let percentage =
+                    (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
                 println!(
                     "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
                     "Vulnerability Scan",
@@ -291,9 +295,10 @@ impl ScanOrchestrator {
                     percentage
                 );
             }
-            
+
             if let Some(duration) = metrics.threat_detection_duration {
-                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                let percentage =
+                    (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
                 println!(
                     "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
                     "Threat Detection",
@@ -301,9 +306,10 @@ impl ScanOrchestrator {
                     percentage
                 );
             }
-            
+
             if let Some(duration) = metrics.reachability_duration {
-                let percentage = (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
+                let percentage =
+                    (duration.as_secs_f64() / metrics.total_duration.as_secs_f64()) * 100.0;
                 println!(
                     "[bazbom] ║    {:<20} {:<20} ({:>5.1}%) ║",
                     "Reachability",
@@ -311,7 +317,7 @@ impl ScanOrchestrator {
                     percentage
                 );
             }
-            
+
             println!("[bazbom] ╠══════════════════════════════════════════════════════════╣");
             println!(
                 "[bazbom] ║  Dependencies: {:<44} ║",
@@ -321,12 +327,9 @@ impl ScanOrchestrator {
                 "[bazbom] ║  Vulnerabilities: {:<41} ║",
                 metrics.vulnerabilities_count
             );
-            println!(
-                "[bazbom] ║  Build System: {:<44} ║",
-                metrics.build_system
-            );
+            println!("[bazbom] ║  Build System: {:<44} ║", metrics.build_system);
             println!("[bazbom] ╚══════════════════════════════════════════════════════════╝");
-            
+
             // Save metrics to file
             let metrics_path = self.context.out_dir.join("performance.json");
             if let Ok(json) = serde_json::to_string_pretty(&metrics) {
@@ -475,11 +478,15 @@ impl ScanOrchestrator {
             ContainerStrategy::Bazbom => crate::analyzers::ContainerStrategy::Bazbom,
         };
 
-        println!("[bazbom] using container scanning strategy: {:?}", internal_strategy);
+        println!(
+            "[bazbom] using container scanning strategy: {:?}",
+            internal_strategy
+        );
 
         // For now, use Syft if available, otherwise use BazBOM native scanning
         match internal_strategy {
-            crate::analyzers::ContainerStrategy::Syft | crate::analyzers::ContainerStrategy::Auto => {
+            crate::analyzers::ContainerStrategy::Syft
+            | crate::analyzers::ContainerStrategy::Auto => {
                 // Try Syft first
                 let _runner = SyftRunner::new(internal_strategy);
                 println!("[bazbom] container SBOM: Syft integration (future feature)");
@@ -509,7 +516,10 @@ impl ScanOrchestrator {
             return Ok(());
         }
 
-        println!("[bazbom] found {} container images to scan", workspace_images.len());
+        println!(
+            "[bazbom] found {} container images to scan",
+            workspace_images.len()
+        );
 
         // Scan each image
         for image_path in workspace_images {
@@ -585,7 +595,10 @@ impl ScanOrchestrator {
 
         // Add container as a package
         let container_pkg = Package {
-            spdxid: format!("SPDXRef-Package-{}", scan_result.image.name.replace(':', "-")),
+            spdxid: format!(
+                "SPDXRef-Package-{}",
+                scan_result.image.name.replace(':', "-")
+            ),
             name: scan_result.image.name.clone(),
             version_info: Some("latest".to_string()),
             download_location: "NOASSERTION".to_string(),
@@ -710,9 +723,15 @@ impl ScanOrchestrator {
         if changes.requires_rescan() {
             println!("[bazbom] significant changes detected, full scan required:");
             if changes.has_build_file_changes() {
-                println!("[bazbom]   - build files changed: {:?}", changes.changed_build_files);
+                println!(
+                    "[bazbom]   - build files changed: {:?}",
+                    changes.changed_build_files
+                );
             }
-            println!("[bazbom]   - total changed files: {}", changes.all_changed_files().len());
+            println!(
+                "[bazbom]   - total changed files: {}",
+                changes.all_changed_files().len()
+            );
             Ok(false)
         } else {
             println!("[bazbom] no significant changes detected");
@@ -753,11 +772,8 @@ impl ScanOrchestrator {
         let build_files = self.find_build_files()?;
 
         // Generate cache key
-        let cache_key = ScanCache::generate_cache_key(
-            &self.context.workspace,
-            &build_files,
-            &scan_params,
-        )?;
+        let cache_key =
+            ScanCache::generate_cache_key(&self.context.workspace, &build_files, &scan_params)?;
 
         // Try to get cached result
         if let Some(cached) = cache.get_scan_result(&cache_key)? {
@@ -832,11 +848,8 @@ impl ScanOrchestrator {
         let build_files = self.find_build_files()?;
 
         // Generate cache key
-        let cache_key = ScanCache::generate_cache_key(
-            &self.context.workspace,
-            &build_files,
-            &scan_params,
-        )?;
+        let cache_key =
+            ScanCache::generate_cache_key(&self.context.workspace, &build_files, &scan_params)?;
 
         // Read scan outputs
         let sbom_path = self.context.sbom_dir.join("spdx.json");
@@ -850,11 +863,7 @@ impl ScanOrchestrator {
                 None
             };
 
-            let cached_result = CachedScanResult::new(
-                sbom_json,
-                findings_json,
-                scan_params,
-            );
+            let cached_result = CachedScanResult::new(sbom_json, findings_json, scan_params);
 
             cache.put_scan_result(&cache_key, &cached_result)?;
             println!("[bazbom] cached scan results (key: {})", &cache_key[..16]);

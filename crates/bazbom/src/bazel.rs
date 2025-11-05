@@ -394,8 +394,6 @@ pub fn extract_bazel_dependencies_for_targets(
     Ok(full_graph)
 }
 
-
-
 /// Optimized Bazel query execution with caching and batching
 #[allow(dead_code)]
 pub struct BazelQueryOptimizer {
@@ -404,6 +402,7 @@ pub struct BazelQueryOptimizer {
     metrics: BazelPerformanceMetrics,
 }
 
+#[allow(dead_code)]
 impl BazelQueryOptimizer {
     /// Create a new Bazel query optimizer
     pub fn new(workspace_path: std::path::PathBuf) -> Self {
@@ -418,9 +417,9 @@ impl BazelQueryOptimizer {
     pub fn query(&mut self, query_expr: &str) -> Result<Vec<String>> {
         use std::time::Instant;
         let start = Instant::now();
-        
+
         self.metrics.query_count += 1;
-        
+
         // Check cache first
         if let Some(cached) = self.cache.get(query_expr) {
             println!("[bazbom] using cached query result");
@@ -431,13 +430,8 @@ impl BazelQueryOptimizer {
         self.metrics.cache_misses += 1;
 
         // Execute query
-        let result = query_bazel_targets(
-            &self.workspace_path,
-            Some(query_expr),
-            None,
-            None,
-            "//...",
-        )?;
+        let result =
+            query_bazel_targets(&self.workspace_path, Some(query_expr), None, None, "//...")?;
 
         // Update metrics
         self.metrics.query_time_ms += start.elapsed().as_millis() as u64;
@@ -484,25 +478,29 @@ impl BazelQueryOptimizer {
         self.cache.clear();
         self.metrics = BazelPerformanceMetrics::new();
     }
-    
+
     /// Get current performance metrics
     pub fn metrics(&self) -> &BazelPerformanceMetrics {
         &self.metrics
     }
-    
+
     /// Print performance summary
     pub fn print_metrics(&self) {
         println!("\n[bazbom] Bazel Query Performance Metrics:");
         println!("  Total queries: {}", self.metrics.query_count);
-        println!("  Cache hits: {} ({:.1}% hit rate)", 
-                 self.metrics.cache_hits, 
-                 self.metrics.cache_hit_rate());
+        println!(
+            "  Cache hits: {} ({:.1}% hit rate)",
+            self.metrics.cache_hits,
+            self.metrics.cache_hit_rate()
+        );
         println!("  Cache misses: {}", self.metrics.cache_misses);
         println!("  Total targets: {}", self.metrics.total_targets);
         println!("  Total query time: {}ms", self.metrics.query_time_ms);
         if self.metrics.query_count > 0 {
-            println!("  Avg query time: {}ms", 
-                     self.metrics.query_time_ms / self.metrics.query_count as u64);
+            println!(
+                "  Avg query time: {}ms",
+                self.metrics.query_time_ms / self.metrics.query_count as u64
+            );
         }
     }
 }
@@ -545,6 +543,7 @@ impl Default for BazelPerformanceMetrics {
 }
 
 /// Check if a Bazel rule is a JVM-related rule (Java, Kotlin, or Scala)
+#[allow(dead_code)]
 pub fn is_jvm_rule(rule_kind: &str) -> bool {
     let jvm_rules = [
         // Java rules
@@ -567,39 +566,42 @@ pub fn is_jvm_rule(rule_kind: &str) -> bool {
         "scala_import",
         "scala_macro_library",
     ];
-    
+
     jvm_rules.contains(&rule_kind)
 }
 
 /// Get a Bazel query expression for all JVM rules in the workspace
+#[allow(dead_code)]
 pub fn get_jvm_rule_query(universe: &str) -> String {
     let rule_kinds = [
-        "java_library", "java_binary", "java_test",
-        "kotlin_library", "kt_jvm_library", "kt_jvm_binary", "kt_jvm_test",
-        "scala_library", "scala_binary", "scala_test",
+        "java_library",
+        "java_binary",
+        "java_test",
+        "kotlin_library",
+        "kt_jvm_library",
+        "kt_jvm_binary",
+        "kt_jvm_test",
+        "scala_library",
+        "scala_binary",
+        "scala_test",
     ];
-    
+
     let kind_queries: Vec<String> = rule_kinds
         .iter()
         .map(|kind| format!("kind({}, {})", kind, universe))
         .collect();
-    
+
     // Combine all queries with union operator
     kind_queries.join(" + ")
 }
 
 /// Query all JVM targets in the workspace (Java, Kotlin, Scala)
+#[allow(dead_code)]
 pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
     let query = get_jvm_rule_query("//...");
     println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
-    
-    query_bazel_targets(
-        workspace_path,
-        Some(&query),
-        None,
-        None,
-        "//...",
-    )
+
+    query_bazel_targets(workspace_path, Some(&query), None, None, "//...")
 }
 
 #[cfg(test)]
@@ -800,21 +802,21 @@ mod tests {
     #[test]
     fn test_bazel_performance_metrics_cache_hit_rate() {
         let mut metrics = BazelPerformanceMetrics::new();
-        
+
         // No queries yet
         assert_eq!(metrics.cache_hit_rate(), 0.0);
-        
+
         // 50% hit rate
         metrics.query_count = 10;
         metrics.cache_hits = 5;
         metrics.cache_misses = 5;
         assert_eq!(metrics.cache_hit_rate(), 50.0);
-        
+
         // 100% hit rate
         metrics.cache_hits = 10;
         metrics.cache_misses = 0;
         assert_eq!(metrics.cache_hit_rate(), 100.0);
-        
+
         // 0% hit rate
         metrics.cache_hits = 0;
         metrics.cache_misses = 10;
@@ -825,7 +827,7 @@ mod tests {
     fn test_bazel_query_optimizer_creation() {
         let workspace = std::path::PathBuf::from("/tmp/test");
         let optimizer = BazelQueryOptimizer::new(workspace.clone());
-        
+
         assert_eq!(optimizer.workspace_path, workspace);
         assert_eq!(optimizer.cache.len(), 0);
         assert_eq!(optimizer.metrics.query_count, 0);
@@ -835,15 +837,17 @@ mod tests {
     fn test_bazel_query_optimizer_clear_cache() {
         let workspace = std::path::PathBuf::from("/tmp/test");
         let mut optimizer = BazelQueryOptimizer::new(workspace);
-        
+
         // Manually add some cache entries to simulate usage
-        optimizer.cache.insert("test_query".to_string(), vec!["//target1".to_string()]);
+        optimizer
+            .cache
+            .insert("test_query".to_string(), vec!["//target1".to_string()]);
         optimizer.metrics.query_count = 5;
         optimizer.metrics.cache_hits = 3;
-        
+
         // Clear cache
         optimizer.clear_cache();
-        
+
         // Verify everything is reset
         assert_eq!(optimizer.cache.len(), 0);
         assert_eq!(optimizer.metrics.query_count, 0);
@@ -854,7 +858,7 @@ mod tests {
     fn test_bazel_query_optimizer_metrics_access() {
         let workspace = std::path::PathBuf::from("/tmp/test");
         let optimizer = BazelQueryOptimizer::new(workspace);
-        
+
         let metrics = optimizer.metrics();
         assert_eq!(metrics.query_count, 0);
         assert_eq!(metrics.cache_hits, 0);
@@ -880,4 +884,3 @@ mod tests {
         assert!(query.contains("scala_"));
     }
 }
-

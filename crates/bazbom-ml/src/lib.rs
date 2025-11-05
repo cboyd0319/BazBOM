@@ -26,12 +26,19 @@ pub mod anomaly;
 pub mod features;
 pub mod fix_generator;
 pub mod llm;
-pub mod risk;
 pub mod prioritization;
+pub mod risk;
 
 pub use anomaly::{Anomaly, AnomalyDetector, AnomalyType};
 pub use features::{DependencyFeatures, VulnerabilityFeatures};
-pub use fix_generator::{FixGenerator, FixContext, FixGuide, CodeChange, ConfigChange, BreakingSeverity, BatchFixPlan};
-pub use llm::{LlmClient, LlmConfig, LlmProvider, LlmRequest, LlmResponse, LlmMessage, TokenUsage, FixPromptBuilder, PolicyQueryBuilder};
+pub use fix_generator::{
+    BatchFixPlan, BreakingSeverity, CodeChange, ConfigChange, FixContext, FixGenerator, FixGuide,
+};
+pub use llm::{
+    FixPromptBuilder, LlmClient, LlmConfig, LlmMessage, LlmProvider, LlmRequest, LlmResponse,
+    PolicyQueryBuilder, TokenUsage,
+};
+pub use prioritization::{
+    FixBatch, FixUrgency, PrioritizedVulnerability, VulnerabilityPrioritizer,
+};
 pub use risk::{EnhancedRiskScore, RiskScorer};
-pub use prioritization::{VulnerabilityPrioritizer, PrioritizedVulnerability, FixBatch, FixUrgency};

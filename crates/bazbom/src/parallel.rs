@@ -180,27 +180,25 @@ where
             let completed = Arc::clone(&completed);
             let f = Arc::clone(&f);
 
-            let handle = thread::spawn(move || {
-                loop {
-                    let item = {
-                        let mut items = items.lock().unwrap();
-                        items.next()
-                    };
+            let handle = thread::spawn(move || loop {
+                let item = {
+                    let mut items = items.lock().unwrap();
+                    items.next()
+                };
 
-                    match item {
-                        Some(item) => {
-                            let result = f(item);
-                            {
-                                let mut results = results.lock().unwrap();
-                                results.push(result);
-                            }
-                            {
-                                let mut completed = completed.lock().unwrap();
-                                *completed += 1;
-                            }
+                match item {
+                    Some(item) => {
+                        let result = f(item);
+                        {
+                            let mut results = results.lock().unwrap();
+                            results.push(result);
                         }
-                        None => break,
+                        {
+                            let mut completed = completed.lock().unwrap();
+                            *completed += 1;
+                        }
                     }
+                    None => break,
                 }
             });
 
@@ -210,17 +208,15 @@ where
         // Progress monitoring thread
         let progress_handle = {
             let completed = Arc::clone(&completed);
-            thread::spawn(move || {
-                loop {
-                    let count = *completed.lock().unwrap();
-                    progress_fn(count, total);
+            thread::spawn(move || loop {
+                let count = *completed.lock().unwrap();
+                progress_fn(count, total);
 
-                    if count >= total {
-                        break;
-                    }
-
-                    thread::sleep(std::time::Duration::from_millis(100));
+                if count >= total {
+                    break;
                 }
+
+                thread::sleep(std::time::Duration::from_millis(100));
             })
         };
 
@@ -282,24 +278,24 @@ where
 {
     let total = items.len();
     let completed = Arc::new(Mutex::new(0usize));
-    
+
     let results: Vec<Result<R>> = items
         .into_par_iter()
         .map(|item| {
             let result = f(item);
-            
+
             // Update progress
             let count = {
                 let mut c = completed.lock().unwrap();
                 *c += 1;
                 *c
             };
-            
+
             progress_fn(count, total);
             result
         })
         .collect();
-    
+
     results
 }
 
@@ -307,11 +303,7 @@ where
 ///
 /// Splits items into chunks and processes each chunk in parallel.
 /// Useful when processing small items with high overhead.
-pub fn process_batched<T, R, F>(
-    items: Vec<T>,
-    chunk_size: usize,
-    f: F,
-) -> Vec<Result<R>>
+pub fn process_batched<T, R, F>(items: Vec<T>, chunk_size: usize, f: F) -> Vec<Result<R>>
 where
     T: Send + Clone,
     R: Send,
@@ -322,11 +314,8 @@ where
         .chunks(chunk_size)
         .map(|chunk| chunk.to_vec())
         .collect();
-    
-    chunks
-        .into_par_iter()
-        .flat_map(f)
-        .collect()
+
+    chunks.into_par_iter().flat_map(f).collect()
 }
 
 #[cfg(test)]
@@ -544,7 +533,7 @@ mod tests {
         });
 
         assert_eq!(results.len(), 10);
-        
+
         let mut values: Vec<i32> = results.into_iter().map(|r| r.unwrap()).collect();
         values.sort();
         assert_eq!(values, vec![2, 4, 6, 8, 10, 12, 14, 16, 18, 20]);

@@ -3,9 +3,9 @@
 //! Provides utilities for tracking scan performance, memory usage,
 //! and generating performance reports for optimization.
 
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
-use serde::{Deserialize, Serialize};
 
 /// Performance metrics for a scan operation
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -87,7 +87,7 @@ impl PerformanceMonitor {
             let duration = prev_start.elapsed();
             self.phase_times.insert(prev_phase, duration);
         }
-        
+
         self.current_phase = Some((phase.to_string(), Instant::now()));
     }
 
@@ -161,10 +161,15 @@ impl PerformanceMonitor {
             lines.push("Phase breakdown:".to_string());
             let mut phases: Vec<_> = self.phase_times.iter().collect();
             phases.sort_by_key(|(_, duration)| std::cmp::Reverse(*duration));
-            
+
             for (phase, duration) in phases {
                 let pct = (duration.as_secs_f64() / total.as_secs_f64()) * 100.0;
-                lines.push(format!("  {}: {:.2}s ({:.1}%)", phase, duration.as_secs_f64(), pct));
+                lines.push(format!(
+                    "  {}: {:.2}s ({:.1}%)",
+                    phase,
+                    duration.as_secs_f64(),
+                    pct
+                ));
             }
         }
 
@@ -185,7 +190,7 @@ pub fn estimate_time_savings(
 /// Format duration as human-readable string
 pub fn format_duration(duration: Duration) -> String {
     let total_secs = duration.as_secs_f64();
-    
+
     if total_secs < 1.0 {
         format!("{:.0}ms", duration.as_millis())
     } else if total_secs < 60.0 {
@@ -215,7 +220,7 @@ impl PerformanceComparison {
     pub fn compare(baseline: PerformanceMetrics, current: PerformanceMetrics) -> Self {
         let baseline_secs = baseline.total_duration.as_secs_f64();
         let current_secs = current.total_duration.as_secs_f64();
-        
+
         let improvement_pct = if baseline_secs > 0.0 {
             ((baseline_secs - current_secs) / baseline_secs) * 100.0
         } else {
@@ -242,18 +247,23 @@ impl PerformanceComparison {
             format!("Performance Comparison"),
             format!("====================="),
             format!(""),
-            format!("Baseline: {}", format_duration(self.baseline.total_duration)),
+            format!(
+                "Baseline: {}",
+                format_duration(self.baseline.total_duration)
+            ),
             format!("Current:  {}", format_duration(self.current.total_duration)),
             format!(""),
         ];
 
         if self.improvement_pct > 0.0 {
-            lines.push(format!("✅ {} faster ({:.1}% improvement)",
+            lines.push(format!(
+                "✅ {} faster ({:.1}% improvement)",
                 format_duration(self.time_saved),
                 self.improvement_pct
             ));
         } else if self.improvement_pct < 0.0 {
-            lines.push(format!("⚠️  {} slower ({:.1}% regression)",
+            lines.push(format!(
+                "⚠️  {} slower ({:.1}% regression)",
                 format_duration(Duration::from_secs_f64(-self.time_saved.as_secs_f64())),
                 -self.improvement_pct
             ));
@@ -285,7 +295,7 @@ mod tests {
     #[test]
     fn test_performance_monitor_multiple_phases() {
         let mut monitor = PerformanceMonitor::new("gradle".to_string());
-        
+
         monitor.start_phase("sbom_generation");
         std::thread::sleep(Duration::from_millis(5));
         monitor.start_phase("vulnerability_scan");
@@ -386,7 +396,7 @@ mod tests {
         let mut monitor = PerformanceMonitor::new("bazel".to_string());
         monitor.set_dependencies_count(50);
         monitor.set_vulnerabilities_count(3);
-        
+
         let summary = monitor.summary();
         assert!(summary.contains("Performance Summary"));
         assert!(summary.contains("bazel"));

@@ -3,16 +3,16 @@ use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
 use bazbom_formats::sarif::{
-    ArtifactLocation, Location, Message, MessageString, PhysicalLocation,
-    Result as SarifResult, Rule, SarifReport,
+    ArtifactLocation, Location, Message, MessageString, PhysicalLocation, Result as SarifResult,
+    Rule, SarifReport,
+};
+use bazbom_threats::{
+    database_integration::MaliciousPackageDatabase,
+    dependency_confusion::DependencyConfusionDetector, typosquatting, ThreatIndicator, ThreatLevel,
+    ThreatType,
 };
 use std::collections::HashMap;
 use std::fmt;
-use bazbom_threats::{
-    database_integration::MaliciousPackageDatabase,
-    dependency_confusion::DependencyConfusionDetector,
-    typosquatting, ThreatIndicator, ThreatLevel, ThreatType,
-};
 
 /// Threat intelligence analyzer
 pub struct ThreatAnalyzer {
@@ -83,7 +83,10 @@ impl ThreatAnalyzer {
             return Ok(Vec::new());
         }
 
-        println!("[bazbom] loading SBOM for threat analysis from {:?}", spdx_path);
+        println!(
+            "[bazbom] loading SBOM for threat analysis from {:?}",
+            spdx_path
+        );
         let content = std::fs::read_to_string(&spdx_path).context("failed to read SPDX file")?;
 
         let doc: serde_json::Value =
@@ -115,7 +118,10 @@ impl ThreatAnalyzer {
             }
         }
 
-        println!("[bazbom] loaded {} components for threat analysis", components.len());
+        println!(
+            "[bazbom] loaded {} components for threat analysis",
+            components.len()
+        );
         Ok(components)
     }
 
@@ -126,7 +132,10 @@ impl ThreatAnalyzer {
             return Ok(threats);
         }
 
-        println!("[bazbom] running threat detection (level: {:?})...", self.level);
+        println!(
+            "[bazbom] running threat detection (level: {:?})...",
+            self.level
+        );
 
         // 1. Query malicious package database (basic level)
         if self.level >= ThreatDetectionLevel::Basic {
@@ -148,8 +157,8 @@ impl ThreatAnalyzer {
                         threat_type: ThreatType::MaliciousPackage,
                         description: "Package name contains suspicious keywords".to_string(),
                         evidence: vec!["Package name matches malicious pattern".to_string()],
-                        recommendation:
-                            "Remove this package immediately and review dependencies.".to_string(),
+                        recommendation: "Remove this package immediately and review dependencies."
+                            .to_string(),
                     });
                 }
             }
@@ -186,9 +195,7 @@ impl ThreatAnalyzer {
 
             for component in components {
                 // Check if component name starts with an internal pattern
-                if component
-                    .name
-                    .starts_with("internal-")
+                if component.name.starts_with("internal-")
                     || component.name.starts_with("company-")
                     || component.name.starts_with("private-")
                 {
@@ -217,7 +224,9 @@ impl ThreatAnalyzer {
         let mut rules_seen = HashMap::new();
 
         for threat in threats {
-            let rule_id = format!("{:?}", threat.threat_type).to_lowercase().replace(' ', "-");
+            let rule_id = format!("{:?}", threat.threat_type)
+                .to_lowercase()
+                .replace(' ', "-");
 
             // Add rule if not already present
             if !rules_seen.contains_key(&rule_id) {
@@ -258,7 +267,10 @@ impl ThreatAnalyzer {
                 message: Message {
                     text: format!(
                         "{}: {} v{}{}",
-                        threat.description, threat.package_name, threat.package_version, evidence_text
+                        threat.description,
+                        threat.package_name,
+                        threat.package_version,
+                        evidence_text
                     ),
                 },
                 level: level_str.to_string(),
