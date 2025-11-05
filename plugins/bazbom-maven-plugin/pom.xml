@@ -25,10 +25,10 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <maven.version>3.8.1</maven.version>
-        <maven.plugin.annotations.version>3.9.0</maven.plugin.annotations.version>
-        <junit.version>5.10.0</junit.version>
-        <jackson.version>2.15.2</jackson.version>
+        <maven.version>3.9.11</maven.version>
+        <maven.plugin.annotations.version>3.15.1</maven.plugin.annotations.version>
+        <junit.version>5.14.1</junit.version>
+        <jackson.version>2.20.1</jackson.version>
     </properties>
 
     <dependencies>
@@ -94,7 +94,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-plugin-plugin</artifactId>
-                <version>3.9.0</version>
+                <version>3.15.1</version>
                 <configuration>
                     <goalPrefix>bazbom</goalPrefix>
                 </configuration>
@@ -104,7 +104,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.14.0</version>
                 <configuration>
                     <source>11</source>
                     <target>11</target>
@@ -115,7 +115,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.6.0</version>
             </plugin>
         </plugins>
     </build>

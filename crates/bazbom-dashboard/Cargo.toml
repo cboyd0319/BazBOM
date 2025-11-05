@@ -22,7 +22,7 @@ anyhow = "1.0"
 thiserror = "1.0"
 
 # Templates (optional, for server-side rendering)
-tera = "1.19"
+tera = "1.20"
 
 # Date/time for exports
 chrono = "0.4"
