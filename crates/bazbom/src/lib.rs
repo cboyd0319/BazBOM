@@ -15,6 +15,7 @@ pub mod fixes;
 pub mod groovy;
 pub mod hooks;
 pub mod incremental;
+pub mod kotlin_multiplatform;
 pub mod init;
 pub mod notifications;
 pub mod parallel;
