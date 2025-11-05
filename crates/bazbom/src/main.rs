@@ -945,10 +945,13 @@ fn main() -> Result<()> {
             pr,
             interactive,
             ml_prioritize,
+            llm,
+            llm_provider,
+            llm_model,
         } => {
             println!(
-                "[bazbom] fix suggest={} apply={} pr={} interactive={} ml_prioritize={}",
-                suggest, apply, pr, interactive, ml_prioritize
+                "[bazbom] fix suggest={} apply={} pr={} interactive={} ml_prioritize={} llm={}",
+                suggest, apply, pr, interactive, ml_prioritize, llm
             );
 
             // Detect build system
@@ -1062,6 +1065,118 @@ fn main() -> Result<()> {
             // Generate remediation suggestions (now using prioritized vulnerabilities if ml_prioritize is enabled)
             let report = remediation::generate_suggestions(&prioritized_vulnerabilities, system);
 
+            // Generate LLM-powered fix guides if requested
+            let llm_guides = if llm {
+                use bazbom_ml::{LlmClient, LlmProvider, FixGenerator, FixContext};
+                
+                println!("[bazbom] generating LLM-powered fix guides...");
+                
+                // Determine model
+                let model = llm_model.unwrap_or_else(|| match llm_provider.to_lowercase().as_str() {
+                    "ollama" => "codellama:latest".to_string(),
+                    "anthropic" => "claude-3-5-sonnet-20241022".to_string(),
+                    "openai" => "gpt-4".to_string(),
+                    _ => "codellama:latest".to_string(),
+                });
+                
+                // Validate provider is privacy-safe unless user explicitly opts in
+                let provider = match llm_provider.to_lowercase().as_str() {
+                    "ollama" => {
+                        let base_url = std::env::var("OLLAMA_BASE_URL")
+                            .unwrap_or_else(|_| "http://localhost:11434".to_string());
+                        LlmProvider::Ollama { base_url, model: model.clone() }
+                    }
+                    "anthropic" => {
+                        if std::env::var("BAZBOM_ALLOW_EXTERNAL_API").is_err() {
+                            eprintln!("[bazbom] WARNING: Anthropic is an external API that sends data outside your network.");
+                            eprintln!("[bazbom] Set BAZBOM_ALLOW_EXTERNAL_API=1 to enable, or use 'ollama' for local-only processing.");
+                            return Ok(());
+                        }
+                        let api_key = std::env::var("ANTHROPIC_API_KEY")
+                            .unwrap_or_else(|_| {
+                                eprintln!("[bazbom] ERROR: ANTHROPIC_API_KEY environment variable not set");
+                                std::process::exit(1);
+                            });
+                        LlmProvider::Anthropic { api_key, model: model.clone() }
+                    }
+                    "openai" => {
+                        if std::env::var("BAZBOM_ALLOW_EXTERNAL_API").is_err() {
+                            eprintln!("[bazbom] WARNING: OpenAI is an external API that sends data outside your network.");
+                            eprintln!("[bazbom] Set BAZBOM_ALLOW_EXTERNAL_API=1 to enable, or use 'ollama' for local-only processing.");
+                            return Ok(());
+                        }
+                        let api_key = std::env::var("OPENAI_API_KEY")
+                            .unwrap_or_else(|_| {
+                                eprintln!("[bazbom] ERROR: OPENAI_API_KEY environment variable not set");
+                                std::process::exit(1);
+                            });
+                        LlmProvider::OpenAI { api_key, model: model.clone() }
+                    }
+                    _ => {
+                        eprintln!("[bazbom] ERROR: Unknown LLM provider '{}'. Use 'ollama', 'anthropic', or 'openai'.", llm_provider);
+                        return Ok(());
+                    }
+                };
+                
+                // Create LLM client
+                use bazbom_ml::LlmConfig;
+                let config = LlmConfig {
+                    provider,
+                    max_tokens: 2000,
+                    temperature: 0.7,
+                    timeout_seconds: 30,
+                };
+                let llm_client = LlmClient::new(config);
+                
+                // Check if provider is external and warn user
+                if llm_client.is_external() {
+                    println!("[bazbom] ⚠️  Using external API: {}", llm_provider);
+                    println!("[bazbom] 💡 Consider using 'ollama' for 100% local processing");
+                }
+                
+                let mut fix_generator = FixGenerator::new(llm_client);
+                let mut guides = Vec::new();
+                
+                // Generate guides for top vulnerabilities (limit to 5 to avoid token costs)
+                let max_guides = 5.min(report.suggestions.len());
+                println!("[bazbom] generating guides for top {} vulnerabilities...", max_guides);
+                
+                for suggestion in report.suggestions.iter().take(max_guides) {
+                    if let Some(fixed_version) = &suggestion.fixed_version {
+                        let build_system_str = format!("{:?}", system);
+                        let context = FixContext {
+                            cve: suggestion.vulnerability_id.clone(),
+                            package: suggestion.affected_package.clone(),
+                            current_version: suggestion.current_version.clone(),
+                            fixed_version: fixed_version.clone(),
+                            build_system: build_system_str,
+                            severity: suggestion.severity.clone(),
+                            cvss_score: None, // TODO: Extract from vulnerability
+                            breaking_changes: suggestion.breaking_changes
+                                .as_ref()
+                                .map(|s| s.lines().map(|l| l.to_string()).collect())
+                                .unwrap_or_default(),
+                        };
+                        
+                        match fix_generator.generate_fix_guide(context) {
+                            Ok(guide) => {
+                                println!("[bazbom]   ✓ generated guide for {}", suggestion.vulnerability_id);
+                                guides.push(guide);
+                            }
+                            Err(e) => {
+                                eprintln!("[bazbom]   ✗ failed to generate guide for {}: {}", 
+                                    suggestion.vulnerability_id, e);
+                            }
+                        }
+                    }
+                }
+                
+                println!("[bazbom] generated {} LLM-powered fix guides", guides.len());
+                Some(guides)
+            } else {
+                None
+            };
+
             // Display summary
             println!("\n[bazbom] Remediation Summary:");
             println!(
@@ -1071,6 +1186,10 @@ fn main() -> Result<()> {
             println!("  Fixable: {}", report.summary.fixable);
             println!("  Unfixable: {}", report.summary.unfixable);
             println!("  Estimated effort: {}", report.summary.estimated_effort);
+            
+            if let Some(guides) = &llm_guides {
+                println!("  LLM-powered guides: {}", guides.len());
+            }
 
             if suggest {
                 // Suggest mode: display suggestions
@@ -1112,6 +1231,76 @@ fn main() -> Result<()> {
                         }
                     }
                     println!();
+                }
+
+                // Display LLM-powered fix guides if available
+                if let Some(guides) = &llm_guides {
+                    println!("\n[bazbom] 🤖 LLM-Powered Fix Guides:\n");
+                    
+                    for (i, guide) in guides.iter().enumerate() {
+                        println!("════════════════════════════════════════════════════════════");
+                        println!("Guide {}: {} ({})", i + 1, guide.cve, guide.package);
+                        println!("════════════════════════════════════════════════════════════");
+                        
+                        if let Some(effort) = guide.estimated_effort_hours {
+                            println!("\n⏱️  Estimated effort: {:.1} hours", effort);
+                        }
+                        
+                        println!("\n🔧 Breaking change severity: {:?}", guide.breaking_change_severity);
+                        
+                        if !guide.upgrade_steps.is_empty() {
+                            println!("\n📝 Upgrade Steps:");
+                            for (j, step) in guide.upgrade_steps.iter().enumerate() {
+                                println!("   {}. {}", j + 1, step);
+                            }
+                        }
+                        
+                        if !guide.code_changes.is_empty() {
+                            println!("\n💻 Code Changes:");
+                            for change in &guide.code_changes {
+                                println!("   • {}", change.description);
+                                println!("     File pattern: {}", change.file_pattern);
+                                println!("     Reason: {}", change.reason);
+                                if let Some(before) = &change.before {
+                                    println!("     Before: {}", before);
+                                }
+                                if let Some(after) = &change.after {
+                                    println!("     After: {}", after);
+                                }
+                            }
+                        }
+                        
+                        if !guide.configuration_changes.is_empty() {
+                            println!("\n⚙️  Configuration Changes:");
+                            for config in &guide.configuration_changes {
+                                println!("   • {} ({})", config.description, config.file);
+                                if let Some(before) = &config.before {
+                                    println!("     Before: {}", before);
+                                }
+                                if let Some(after) = &config.after {
+                                    println!("     After: {}", after);
+                                }
+                            }
+                        }
+                        
+                        if !guide.testing_recommendations.is_empty() {
+                            println!("\n🧪 Testing Recommendations:");
+                            for test in &guide.testing_recommendations {
+                                println!("   • {}", test);
+                            }
+                        }
+                        
+                        println!();
+                    }
+                    
+                    // Write LLM guides to file
+                    let guides_path = PathBuf::from("llm_fix_guides.json");
+                    fs::write(
+                        &guides_path,
+                        serde_json::to_vec_pretty(&guides).unwrap(),
+                    )
+                    .with_context(|| format!("failed writing {:?}", guides_path))?;
+                    println!("[bazbom] wrote LLM guides to {:?}", guides_path);
                 }
 
                 // Write suggestions to file
