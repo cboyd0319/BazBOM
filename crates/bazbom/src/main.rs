@@ -583,7 +583,7 @@ fn main() -> Result<()> {
                         // Create features
                         let features = VulnerabilityFeatures {
                             cvss_score,
-                            age_days: 0,        // FIXME: Calculate from published date (need vulnerability.published_date field)
+                            age_days: 0, // FIXME: Calculate from published date (need vulnerability.published_date field)
                             has_exploit: false, // FIXME: Check exploit database (requires exploit-db integration)
                             epss,
                             in_kev,

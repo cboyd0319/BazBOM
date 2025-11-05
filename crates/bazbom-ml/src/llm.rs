@@ -158,7 +158,10 @@ impl LlmClient {
         // PRIVACY FIRST: Check for local Ollama first
         let provider = if let Ok(base_url) = std::env::var("OLLAMA_BASE_URL") {
             let model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama2".to_string());
-            eprintln!("[+] Using local Ollama at {} (privacy-preserving)", base_url);
+            eprintln!(
+                "[+] Using local Ollama at {} (privacy-preserving)",
+                base_url
+            );
             LlmProvider::Ollama { base_url, model }
         } else if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
             let model = std::env::var("ANTHROPIC_MODEL")

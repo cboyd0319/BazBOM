@@ -23,10 +23,7 @@ pub fn run_init(path: &str) -> Result<()> {
     let project_path = PathBuf::from(path);
 
     // Welcome message
-    println!(
-        "\n{}",
-        style("Welcome to BazBOM!").bold().cyan()
-    );
+    println!("\n{}", style("Welcome to BazBOM!").bold().cyan());
     println!("Let's get your project secured.\n");
 
     // Step 1: Detect build system
@@ -313,10 +310,7 @@ fn display_summary(result: &ScanResult) -> Result<()> {
         result.critical_vulns + result.high_vulns + result.medium_vulns + result.low_vulns;
 
     if total_vulns > 0 {
-        println!(
-            "  [!] Vulnerabilities: {}",
-            style(total_vulns).bold().red()
-        );
+        println!("  [!] Vulnerabilities: {}", style(total_vulns).bold().red());
         if result.critical_vulns > 0 {
             println!(
                 "    CRITICAL: {}",
