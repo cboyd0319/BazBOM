@@ -1,0 +1,140 @@
+# BazBOMScan Custom Resource Definition
+# This CRD defines the schema for BazBOM scan resources in Kubernetes
+
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: bazbomscans.bazbom.io
+spec:
+  group: bazbom.io
+  scope: Namespaced
+  names:
+    plural: bazbomscans
+    singular: bazbomscan
+    kind: BazBOMScan
+    shortNames:
+    - bbs
+  versions:
+  - name: v1
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            required:
+            - targetDeployment
+            properties:
+              targetDeployment:
+                type: string
+                description: "Name of Deployment to scan"
+              schedule:
+                type: string
+                description: "Cron schedule for scans (e.g., '0 0 * * *')"
+              policyConfigMap:
+                type: string
+                description: "ConfigMap containing bazbom.yml policy"
+              buildSystem:
+                type: string
+                description: "Build system type (maven, gradle, bazel)"
+                enum:
+                - maven
+                - gradle
+                - bazel
+                - ant
+                - buildr
+                - sbt
+              scanOptions:
+                type: object
+                properties:
+                  scanContainers:
+                    type: boolean
+                    description: "Scan container images"
+                  reachabilityAnalysis:
+                    type: boolean
+                    description: "Include reachability analysis"
+                  mlPrioritize:
+                    type: boolean
+                    description: "ML-powered prioritization"
+                  llmFixes:
+                    type: boolean
+                    description: "LLM-powered fix suggestions"
+              outputFormat:
+                type: string
+                description: "Output format"
+                enum:
+                - spdx
+                - cyclonedx
+                - json
+                default: "spdx"
+              storeSbom:
+                type: boolean
+                description: "Store SBOM in ConfigMap"
+                default: true
+              createGithubIssues:
+                type: boolean
+                description: "Create GitHub issues for vulnerabilities"
+              githubRepository:
+                type: string
+                description: "GitHub repository (owner/repo)"
+          status:
+            type: object
+            properties:
+              lastScanTime:
+                type: string
+                format: date-time
+                description: "Last scan timestamp"
+              phase:
+                type: string
+                description: "Scan phase (Pending, Running, Complete, Failed)"
+              vulnerabilities:
+                type: object
+                properties:
+                  critical:
+                    type: integer
+                  high:
+                    type: integer
+                  medium:
+                    type: integer
+                  low:
+                    type: integer
+              totalDependencies:
+                type: integer
+                description: "Total dependencies found"
+              sbomConfigMap:
+                type: string
+                description: "ConfigMap name containing SBOM"
+              sbomUrl:
+                type: string
+                description: "URL to SBOM file"
+              errorMessage:
+                type: string
+                description: "Error message if scan failed"
+              securityScore:
+                type: integer
+                minimum: 0
+                maximum: 100
+                description: "Security score (0-100)"
+    additionalPrinterColumns:
+    - name: Target
+      type: string
+      jsonPath: .spec.targetDeployment
+    - name: Schedule
+      type: string
+      jsonPath: .spec.schedule
+    - name: Last Scan
+      type: date
+      jsonPath: .status.lastScanTime
+    - name: Critical
+      type: integer
+      jsonPath: .status.vulnerabilities.critical
+    - name: High
+      type: integer
+      jsonPath: .status.vulnerabilities.high
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    subresources:
+      status: {}

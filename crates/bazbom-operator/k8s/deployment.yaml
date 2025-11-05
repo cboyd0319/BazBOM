@@ -1,0 +1,86 @@
+# BazBOM Operator Deployment
+# Deploys the operator that watches for BazBOMScan resources
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bazbom-operator
+  namespace: bazbom-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bazbom-operator
+rules:
+# BazBOMScan resources
+- apiGroups: ["bazbom.io"]
+  resources: ["bazbomscans"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["bazbom.io"]
+  resources: ["bazbomscans/status"]
+  verbs: ["get", "update", "patch"]
+# Jobs for running scans
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+# ConfigMaps for storing SBOMs
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "create", "update", "patch"]
+# Deployments to scan
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+# Pods (for logs)
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: bazbom-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bazbom-operator
+subjects:
+- kind: ServiceAccount
+  name: bazbom-operator
+  namespace: bazbom-system
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bazbom-operator
+  namespace: bazbom-system
+  labels:
+    app: bazbom-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bazbom-operator
+  template:
+    metadata:
+      labels:
+        app: bazbom-operator
+    spec:
+      serviceAccountName: bazbom-operator
+      containers:
+      - name: operator
+        image: bazbom/bazbom-operator:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: RUST_LOG
+          value: "info"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
