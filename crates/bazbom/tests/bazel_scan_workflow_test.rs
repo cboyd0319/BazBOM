@@ -4,7 +4,7 @@
 //! including dependency extraction, SBOM generation, and security analysis.
 
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Test the complete Bazel scan workflow with default options
@@ -273,7 +273,7 @@ fn build_cli(workspace_root: &PathBuf) {
     assert!(status.success(), "CLI build failed");
 }
 
-fn verify_spdx_output(temp_dir: &PathBuf) {
+fn verify_spdx_output(temp_dir: &Path) {
     let spdx_path = temp_dir.join("sbom.spdx.json");
     assert!(spdx_path.exists(), "SPDX SBOM not generated");
 
@@ -286,7 +286,7 @@ fn verify_spdx_output(temp_dir: &PathBuf) {
     assert!(spdx["relationships"].is_array());
 }
 
-fn verify_dependency_graph(temp_dir: &PathBuf) {
+fn verify_dependency_graph(temp_dir: &Path) {
     let deps_path = temp_dir.join("bazel_deps.json");
     assert!(deps_path.exists(), "Dependency graph not generated");
 
@@ -298,7 +298,7 @@ fn verify_dependency_graph(temp_dir: &PathBuf) {
     assert!(deps["metadata"].is_object());
 }
 
-fn verify_findings_output(temp_dir: &PathBuf) {
+fn verify_findings_output(temp_dir: &Path) {
     let findings_path = temp_dir.join("sca_findings.json");
     assert!(findings_path.exists(), "Findings JSON not generated");
 
@@ -306,7 +306,7 @@ fn verify_findings_output(temp_dir: &PathBuf) {
     let _findings: serde_json::Value = serde_json::from_str(&findings_content).expect("Invalid findings JSON");
 }
 
-fn verify_sarif_output(temp_dir: &PathBuf) {
+fn verify_sarif_output(temp_dir: &Path) {
     let sarif_path = temp_dir.join("sca_findings.sarif");
     assert!(sarif_path.exists(), "SARIF report not generated");
 

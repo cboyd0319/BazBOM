@@ -397,6 +397,7 @@ pub fn extract_bazel_dependencies_for_targets(
 
 
 /// Optimized Bazel query execution with caching and batching
+#[allow(dead_code)]
 pub struct BazelQueryOptimizer {
     workspace_path: std::path::PathBuf,
     cache: std::collections::HashMap<String, Vec<String>>,
@@ -508,6 +509,7 @@ impl BazelQueryOptimizer {
 
 /// Performance metrics for Bazel operations
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct BazelPerformanceMetrics {
     pub query_count: usize,
     pub cache_hits: usize,
@@ -540,6 +542,64 @@ impl Default for BazelPerformanceMetrics {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Check if a Bazel rule is a JVM-related rule (Java, Kotlin, or Scala)
+pub fn is_jvm_rule(rule_kind: &str) -> bool {
+    let jvm_rules = [
+        // Java rules
+        "java_library",
+        "java_binary",
+        "java_test",
+        "java_plugin",
+        "java_import",
+        // Kotlin rules (rules_kotlin)
+        "kotlin_library",
+        "kotlin_jvm_library",
+        "kt_jvm_library",
+        "kt_jvm_binary",
+        "kt_jvm_test",
+        "kt_jvm_import",
+        // Scala rules (rules_scala)
+        "scala_library",
+        "scala_binary",
+        "scala_test",
+        "scala_import",
+        "scala_macro_library",
+    ];
+    
+    jvm_rules.contains(&rule_kind)
+}
+
+/// Get a Bazel query expression for all JVM rules in the workspace
+pub fn get_jvm_rule_query(universe: &str) -> String {
+    let rule_kinds = [
+        "java_library", "java_binary", "java_test",
+        "kotlin_library", "kt_jvm_library", "kt_jvm_binary", "kt_jvm_test",
+        "scala_library", "scala_binary", "scala_test",
+    ];
+    
+    let kind_queries: Vec<String> = rule_kinds
+        .iter()
+        .map(|kind| format!("kind({}, {})", kind, universe))
+        .collect();
+    
+    // Combine all queries with union operator
+    kind_queries.join(" + ")
+}
+
+/// Query all JVM targets in the workspace (Java, Kotlin, Scala)
+pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
+    let query = get_jvm_rule_query("//...");
+    println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
+    
+    query_bazel_targets(
+        workspace_path,
+        Some(&query),
+        None,
+        None,
+        "//...",
+    )
 }
 
 #[cfg(test)]
@@ -820,63 +880,4 @@ mod tests {
         assert!(query.contains("scala_"));
     }
 }
-
-/// Check if a Bazel rule is a JVM-related rule (Java, Kotlin, or Scala)
-pub fn is_jvm_rule(rule_kind: &str) -> bool {
-    let jvm_rules = [
-        // Java rules
-        "java_library",
-        "java_binary",
-        "java_test",
-        "java_plugin",
-        "java_import",
-        // Kotlin rules (rules_kotlin)
-        "kotlin_library",
-        "kotlin_jvm_library",
-        "kt_jvm_library",
-        "kt_jvm_binary",
-        "kt_jvm_test",
-        "kt_jvm_import",
-        // Scala rules (rules_scala)
-        "scala_library",
-        "scala_binary",
-        "scala_test",
-        "scala_import",
-        "scala_macro_library",
-    ];
-    
-    jvm_rules.contains(&rule_kind)
-}
-
-/// Get a Bazel query expression for all JVM rules in the workspace
-pub fn get_jvm_rule_query(universe: &str) -> String {
-    let rule_kinds = [
-        "java_library", "java_binary", "java_test",
-        "kotlin_library", "kt_jvm_library", "kt_jvm_binary", "kt_jvm_test",
-        "scala_library", "scala_binary", "scala_test",
-    ];
-    
-    let kind_queries: Vec<String> = rule_kinds
-        .iter()
-        .map(|kind| format!("kind({}, {})", kind, universe))
-        .collect();
-    
-    // Combine all queries with union operator
-    kind_queries.join(" + ")
-}
-
-/// Query all JVM targets in the workspace (Java, Kotlin, Scala)
-pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
-    let query = get_jvm_rule_query("//...");
-    println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
-    
-    query_bazel_targets(
-        workspace_path,
-        Some(&query),
-        None,
-        None,
-        "//...",
-    )
-}
-
 

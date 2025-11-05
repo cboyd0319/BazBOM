@@ -141,7 +141,7 @@ fn bench_dependency_graph_traversal(c: &mut Criterion) {
                 b.iter(|| {
                     // Traverse all nodes in the graph
                     let mut visited = std::collections::HashSet::new();
-                    for (node, _) in graph {
+                    for node in graph.keys() {
                         visited.insert(node.clone());
                     }
                     black_box(visited.len());
@@ -218,7 +218,7 @@ fn bench_parallel_processing(c: &mut Criterion) {
                 b.iter(|| {
                     let results: Vec<_> = components
                         .iter()
-                        .map(|c| simulate_processing(c))
+                        .map(simulate_processing)
                         .collect();
                     black_box(results);
                 });
@@ -232,7 +232,7 @@ fn bench_parallel_processing(c: &mut Criterion) {
                 b.iter(|| {
                     let results: Vec<_> = components
                         .par_iter()
-                        .map(|c| simulate_processing(c))
+                        .map(simulate_processing)
                         .collect();
                     black_box(results);
                 });

@@ -45,7 +45,7 @@ fn bench_graph_traversal(c: &mut Criterion) {
                 b.iter(|| {
                     // Traverse all dependencies
                     let mut visited = std::collections::HashSet::new();
-                    for (pkg, _) in deps {
+                    for pkg in deps.keys() {
                         if !visited.contains(pkg) {
                             visited.insert(pkg.clone());
                         }
@@ -112,7 +112,7 @@ fn bench_parallel_processing(c: &mut Criterion) {
                     // Process dependencies in parallel
                     let packages: Vec<_> = deps.keys().cloned().collect();
                     let num_threads = num_cpus::get();
-                    let chunk_size = (packages.len() + num_threads - 1) / num_threads;
+                    let chunk_size = packages.len().div_ceil(num_threads);
                     
                     let results = Arc::new(Mutex::new(Vec::new()));
                     let mut handles = vec![];

@@ -1,10 +1,9 @@
 //! Reconciliation logic for BazBOMScan resources
 
 use crate::{crd::*, error::{OperatorError, Result}, Context};
-use chrono::Utc;
 use k8s_openapi::api::{
     batch::v1::{Job, JobSpec},
-    core::v1::{ConfigMap, Container, PodSpec, PodTemplateSpec},
+    core::v1::{Container, PodSpec, PodTemplateSpec},
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;
 use kube::{
