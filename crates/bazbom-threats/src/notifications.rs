@@ -91,9 +91,9 @@ impl Notification {
     fn get_emoji(&self) -> &str {
         match self.severity.to_lowercase().as_str() {
             "critical" => "🚨",
-            "high" => "⚠️",
+            "high" => "[!]",
             "medium" => "⚡",
-            "low" => "ℹ️",
+            "low" => "[i]",
             _ => "📢",
         }
     }
@@ -209,7 +209,7 @@ impl Notifier {
             );
         }
 
-        log::info!("✓ Slack notification sent successfully");
+        log::info!("[+] Slack notification sent successfully");
         Ok(())
     }
 
@@ -269,7 +269,7 @@ impl Notifier {
             .send(&email)
             .map_err(|e| anyhow::anyhow!("Failed to send email: {}", e))?;
 
-        log::info!("✓ Email notification sent successfully to {:?}", to);
+        log::info!("[+] Email notification sent successfully to {:?}", to);
         Ok(())
     }
 
@@ -309,7 +309,7 @@ impl Notifier {
             );
         }
 
-        log::info!("✓ Teams notification sent successfully");
+        log::info!("[+] Teams notification sent successfully");
         Ok(())
     }
 
@@ -367,7 +367,7 @@ impl Notifier {
         let issue_response: serde_json::Value = response.json()?;
         let issue_number = issue_response["number"].as_u64().unwrap_or(0);
 
-        log::info!("✓ GitHub issue #{} created successfully", issue_number);
+        log::info!("[+] GitHub issue #{} created successfully", issue_number);
         Ok(())
     }
 }
@@ -461,7 +461,7 @@ mod tests {
         assert_eq!(critical.get_emoji(), "🚨");
 
         let high = Notification::new("Test", "Msg", "high");
-        assert_eq!(high.get_emoji(), "⚠️");
+        assert_eq!(high.get_emoji(), "[!]");
     }
 
     #[test]

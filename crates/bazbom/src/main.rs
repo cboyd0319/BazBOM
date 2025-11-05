@@ -745,7 +745,7 @@ fn main() -> Result<()> {
 
                 if !policy_result.passed {
                     println!(
-                        "[bazbom] ⚠ policy violations detected ({} violations)",
+                        "[bazbom] [!] policy violations detected ({} violations)",
                         policy_result.violations.len()
                     );
                     for violation in &policy_result.violations {
@@ -761,7 +761,7 @@ fn main() -> Result<()> {
                     .with_context(|| format!("failed writing {:?}", policy_violations_path))?;
                     println!("[bazbom] wrote {:?}", policy_violations_path);
                 } else {
-                    println!("[bazbom] ✓ all policy checks passed");
+                    println!("[bazbom] [+] all policy checks passed");
                 }
             }
 
@@ -865,7 +865,7 @@ fn main() -> Result<()> {
 
                 // Print summary
                 if result.passed {
-                    println!("[bazbom] ✓ policy check passed (no violations)");
+                    println!("[bazbom] [+] policy check passed (no violations)");
                 } else {
                     println!(
                         "[bazbom] ✗ policy check failed ({} violations)",
@@ -929,7 +929,7 @@ fn main() -> Result<()> {
                 let policy_path = PathBuf::from(&policy_file);
                 match policy_integration::load_policy_config(&policy_path) {
                     Ok(policy) => {
-                        println!("✓ Policy file is valid");
+                        println!("[+] Policy file is valid");
                         println!("\nPolicy Configuration:");
                         println!("  Severity threshold: {:?}", policy.severity_threshold);
                         println!("  KEV gate: {}", policy.kev_gate);
@@ -1179,8 +1179,8 @@ fn main() -> Result<()> {
 
                 // Check if provider is external and warn user
                 if llm_client.is_external() {
-                    println!("[bazbom] ⚠️  Using external API: {}", llm_provider);
-                    println!("[bazbom] 💡 Consider using 'ollama' for 100% local processing");
+                    println!("[bazbom] [!] Using external API: {}", llm_provider);
+                    println!("[bazbom] [i] Consider using 'ollama' for 100% local processing");
                 }
 
                 let mut fix_generator = FixGenerator::new(llm_client);
@@ -1214,7 +1214,7 @@ fn main() -> Result<()> {
                         match fix_generator.generate_fix_guide(context) {
                             Ok(guide) => {
                                 println!(
-                                    "[bazbom]   ✓ generated guide for {}",
+                                    "[bazbom]   [+] generated guide for {}",
                                     suggestion.vulnerability_id
                                 );
                                 guides.push(guide);
@@ -1301,11 +1301,11 @@ fn main() -> Result<()> {
                         println!("════════════════════════════════════════════════════════════");
 
                         if let Some(effort) = guide.estimated_effort_hours {
-                            println!("\n⏱️  Estimated effort: {:.1} hours", effort);
+                            println!("\n[t]  Estimated effort: {:.1} hours", effort);
                         }
 
                         println!(
-                            "\n🔧 Breaking change severity: {:?}",
+                            "\n[c] Breaking change severity: {:?}",
                             guide.breaking_change_severity
                         );
 
@@ -1332,7 +1332,7 @@ fn main() -> Result<()> {
                         }
 
                         if !guide.configuration_changes.is_empty() {
-                            println!("\n⚙️  Configuration Changes:");
+                            println!("\n[c]  Configuration Changes:");
                             for config in &guide.configuration_changes {
                                 println!("   • {} ({})", config.description, config.file);
                                 if let Some(before) = &config.before {
@@ -1377,15 +1377,15 @@ fn main() -> Result<()> {
                 use dialoguer::{theme::ColorfulTheme, Confirm};
 
                 println!(
-                    "\n🔍 Found {} fixable vulnerabilities",
+                    "\n[*] Found {} fixable vulnerabilities",
                     report.suggestions.len()
                 );
-                println!("📊 Grouping by impact analysis...\n");
+                println!("[*] Grouping by impact analysis...\n");
 
                 let batch_fixer = BatchFixer::new(&report.suggestions);
                 let batches = batch_fixer.create_batches();
 
-                println!("✅ Safe batch groups identified: {}\n", batches.len());
+                println!("[+] Safe batch groups identified: {}\n", batches.len());
 
                 for (batch_num, batch) in batches.iter().enumerate() {
                     // Display batch header
@@ -1404,7 +1404,7 @@ fn main() -> Result<()> {
                         );
 
                         if let Some(reason) = &update.breaking_reason {
-                            println!("│     ⚠️  {}", reason);
+                            println!("│     [!] {}", reason);
                         }
                     }
 
@@ -1420,7 +1420,7 @@ fn main() -> Result<()> {
 
                     // Display conflicts if any
                     if !batch.conflicts.is_empty() {
-                        println!("│ ⚠️  Conflicts detected:");
+                        println!("│ [!] Conflicts detected:");
                         for conflict in &batch.conflicts {
                             println!(
                                 "│   - {}: requested {}",
@@ -1466,12 +1466,12 @@ fn main() -> Result<()> {
                             Ok(result) => {
                                 if result.applied == batch_suggestions.len() {
                                     println!(
-                                        "✅ All {} updates applied successfully!",
+                                        "[+] All {} updates applied successfully!",
                                         result.applied
                                     );
                                 } else {
                                     println!(
-                                        "⚠️  Applied: {}, Failed: {}, Skipped: {}",
+                                        "[!] Applied: {}, Failed: {}, Skipped: {}",
                                         result.applied, result.failed, result.skipped
                                     );
                                 }
@@ -1481,11 +1481,11 @@ fn main() -> Result<()> {
                                 if let Ok(test_result) = run_tests(system, &root) {
                                     if test_result.success {
                                         println!(
-                                            "✅ All tests passed! ({:.1}s)",
+                                            "[+] All tests passed! ({:.1}s)",
                                             test_result.duration.as_secs_f64()
                                         );
                                     } else {
-                                        println!("⚠️  Tests failed! Rolling back changes...");
+                                        println!("[!] Tests failed! Rolling back changes...");
                                         println!("{}", test_result.output);
                                         eprintln!("\n[bazbom] Batch {} failed tests - please review manually", batch_num + 1);
                                     }
@@ -1496,13 +1496,13 @@ fn main() -> Result<()> {
                             }
                         }
                     } else {
-                        println!("⏭️  Skipped Batch {}\n", batch_num + 1);
+                        println!("[>]  Skipped Batch {}\n", batch_num + 1);
                     }
                 }
 
-                println!("\n📊 Summary:");
+                println!("\n[*] Summary:");
                 println!("  Batches processed: {}", batches.len());
-                println!("\n💡 Next steps:");
+                println!("\n[i] Next steps:");
                 println!("  1. Review changes: git diff");
                 println!(
                     "  2. Commit changes: git commit -m 'fix: upgrade vulnerable dependencies'"
@@ -1544,7 +1544,7 @@ fn main() -> Result<()> {
 
                 match remediation::generate_pr(&report.suggestions, system, &root) {
                     Ok(pr_url) => {
-                        println!("\n✅ Pull request created successfully!");
+                        println!("\n[+] Pull request created successfully!");
                         println!("   URL: {}", pr_url);
                     }
                     Err(e) => {
@@ -1634,9 +1634,9 @@ fn main() -> Result<()> {
 
                     let risk_str = format!("{:?}", risk);
                     let indicator = match risk {
-                        bazbom_formats::licenses::LicenseRisk::Safe => "✓",
-                        bazbom_formats::licenses::LicenseRisk::Low => "⚠",
-                        bazbom_formats::licenses::LicenseRisk::Medium => "⚠",
+                        bazbom_formats::licenses::LicenseRisk::Safe => "[+]",
+                        bazbom_formats::licenses::LicenseRisk::Low => "[!]",
+                        bazbom_formats::licenses::LicenseRisk::Medium => "[!]",
                         bazbom_formats::licenses::LicenseRisk::High => "✗",
                         bazbom_formats::licenses::LicenseRisk::Critical => "✗✗",
                     };
@@ -1681,13 +1681,13 @@ fn main() -> Result<()> {
                 println!("\n# Copyleft Contamination Report\n");
 
                 if warnings.is_empty() {
-                    println!("✓ No copyleft contamination detected");
+                    println!("[+] No copyleft contamination detected");
                 } else {
                     for warning in warnings {
                         let risk_indicator = match warning.risk {
                             bazbom_formats::licenses::LicenseRisk::Critical => "✗✗ CRITICAL",
                             bazbom_formats::licenses::LicenseRisk::High => "✗ HIGH",
-                            bazbom_formats::licenses::LicenseRisk::Medium => "⚠ MEDIUM",
+                            bazbom_formats::licenses::LicenseRisk::Medium => "[!] MEDIUM",
                             _ => "ⓘ INFO",
                         };
 
@@ -1979,23 +1979,23 @@ fn main() -> Result<()> {
 
                     if let Some(team_name) = name {
                         config.name = team_name;
-                        println!("✅ Set team name to: {}", config.name);
+                        println!("[+] Set team name to: {}", config.name);
                     }
 
                     if let Some(email) = add_member {
                         config.add_member(email.clone());
-                        println!("✅ Added team member: {}", email);
+                        println!("[+] Added team member: {}", email);
                     }
 
                     if let Some(email) = remove_member {
                         config.remove_member(&email);
-                        println!("✅ Removed team member: {}", email);
+                        println!("[+] Removed team member: {}", email);
                     }
 
                     // Create .bazbom directory if it doesn't exist
                     std::fs::create_dir_all(".bazbom")?;
                     config.save(config_path)?;
-                    println!("✅ Team configuration saved to {}", config_path);
+                    println!("[+] Team configuration saved to {}", config_path);
                 }
             }
         }
@@ -2156,7 +2156,7 @@ fn main() -> Result<()> {
                     findings,
                     output,
                 } => {
-                    println!("📊 Generating executive summary report...");
+                    println!("[*] Generating executive summary report...");
 
                     let sbom_data = load_sbom_data(sbom.as_deref())?;
                     let vulnerabilities = if let Some(findings_path) = findings {
@@ -2179,7 +2179,7 @@ fn main() -> Result<()> {
                     let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
                     generator.generate(ReportType::Executive, Path::new(&output))?;
 
-                    println!("✅ Executive report generated: {}", output);
+                    println!("[+] Executive report generated: {}", output);
                 }
                 ReportCmd::Compliance {
                     framework,
@@ -2189,7 +2189,7 @@ fn main() -> Result<()> {
                 } => {
                     let framework_name = convert_framework(framework);
                     println!(
-                        "📊 Generating compliance report for {}...",
+                        "[*] Generating compliance report for {}...",
                         framework_name.name()
                     );
 
@@ -2215,14 +2215,14 @@ fn main() -> Result<()> {
                     generator
                         .generate(ReportType::Compliance(framework_name), Path::new(&output))?;
 
-                    println!("✅ Compliance report generated: {}", output);
+                    println!("[+] Compliance report generated: {}", output);
                 }
                 ReportCmd::Developer {
                     sbom,
                     findings,
                     output,
                 } => {
-                    println!("📊 Generating developer report...");
+                    println!("[*] Generating developer report...");
 
                     let sbom_data = load_sbom_data(sbom.as_deref())?;
                     let vulnerabilities = if let Some(findings_path) = findings {
@@ -2245,14 +2245,14 @@ fn main() -> Result<()> {
                     let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
                     generator.generate(ReportType::Developer, Path::new(&output))?;
 
-                    println!("✅ Developer report generated: {}", output);
+                    println!("[+] Developer report generated: {}", output);
                 }
                 ReportCmd::Trend {
                     sbom,
                     findings,
                     output,
                 } => {
-                    println!("📊 Generating trend report...");
+                    println!("[*] Generating trend report...");
 
                     let sbom_data = load_sbom_data(sbom.as_deref())?;
                     let vulnerabilities = if let Some(findings_path) = findings {
@@ -2275,14 +2275,14 @@ fn main() -> Result<()> {
                     let generator = ReportGenerator::new(sbom_data, vulnerabilities, policy);
                     generator.generate(ReportType::Trend, Path::new(&output))?;
 
-                    println!("✅ Trend report generated: {}", output);
+                    println!("[+] Trend report generated: {}", output);
                 }
                 ReportCmd::All {
                     sbom,
                     findings,
                     output_dir,
                 } => {
-                    println!("📊 Generating all reports...");
+                    println!("[*] Generating all reports...");
 
                     // Create output directory
                     fs::create_dir_all(&output_dir)?;
@@ -2337,10 +2337,10 @@ fn main() -> Result<()> {
 
                     for (report_type, output_path) in reports {
                         generator.generate(report_type, Path::new(&output_path))?;
-                        println!("  ✅ {}", output_path);
+                        println!("  [+] {}", output_path);
                     }
 
-                    println!("\n✅ All reports generated in: {}", output_dir);
+                    println!("\n[+] All reports generated in: {}", output_dir);
                 }
             }
         }

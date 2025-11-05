@@ -153,7 +153,7 @@ fn test_bazel_full_scan_integration() {
     // Cleanup - intentionally ignore errors as cleanup failure doesn't affect test validity
     std::mem::drop(fs::remove_dir_all(&temp_dir));
 
-    println!("✓ Bazel integration test passed");
+    println!("[+] Bazel integration test passed");
     println!("  - {} packages extracted", packages.len());
     println!("  - {} relationships generated", relationships.len());
     println!("  - {} components in dependency graph", components.len());

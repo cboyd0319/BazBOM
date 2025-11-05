@@ -9,7 +9,7 @@
 //! - Displaying summary and next steps
 
 use anyhow::{Context, Result};
-use console::{style, Emoji};
+use console::style;
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressStyle};
 use std::fs;
@@ -18,54 +18,43 @@ use std::path::{Path, PathBuf};
 use bazbom_core::detect_build_system;
 use bazbom_policy::templates::{PolicyTemplate, PolicyTemplateLibrary};
 
-static SPARKLE: Emoji = Emoji("✨", "");
-static SEARCH: Emoji = Emoji("🔍", "");
-static CHECK: Emoji = Emoji("✅", "");
-static WARNING: Emoji = Emoji("⚠️ ", "!");
-static INFO: Emoji = Emoji("💡", "i");
-static ROCKET: Emoji = Emoji("🚀", "");
-
 /// Interactive setup wizard
 pub fn run_init(path: &str) -> Result<()> {
     let project_path = PathBuf::from(path);
 
     // Welcome message
     println!(
-        "\n{} {} {}",
-        SPARKLE,
-        style("Welcome to BazBOM!").bold().cyan(),
-        SPARKLE
+        "\n{}",
+        style("Welcome to BazBOM!").bold().cyan()
     );
     println!("Let's get your project secured.\n");
 
     // Step 1: Detect build system
-    println!("{} Detecting build system...", SEARCH);
+    println!("[*] Detecting build system...");
     let build_system = detect_build_system(&project_path);
 
     println!(
-        "{} Found: {} project",
-        CHECK,
+        "[+] Found: {} project",
         style(format!("{:?}", build_system)).bold().green()
     );
     println!();
 
     // Step 2: Select policy template
-    println!("📋 Choose a policy template:");
+    println!("Choose a policy template:");
     let template = select_policy_template()?;
     println!();
 
     // Step 3: Create bazbom.yml
     println!(
-        "{} Creating bazbom.yml with {} policy",
-        CHECK,
+        "[+] Creating bazbom.yml with {} policy",
         style(&template.name).bold()
     );
     create_config_file(&project_path, &template)?;
     println!();
 
     // Step 4: Run first scan
-    println!("{} Running first scan...", SEARCH);
-    println!("{} This may take a minute...", INFO);
+    println!("[*] Running first scan...");
+    println!("[i] This may take a minute...");
 
     let scan_result = run_first_scan(&project_path)?;
     println!();
@@ -123,7 +112,7 @@ fn create_config_file(project_path: &Path, template: &PolicyTemplate) -> Result<
 
     // Check if file already exists
     if config_path.exists() {
-        println!("{} bazbom.yml already exists, skipping creation", WARNING);
+        println!("[!] bazbom.yml already exists, skipping creation");
         return Ok(());
     }
 
@@ -314,7 +303,7 @@ fn get_mock_scan_result() -> ScanResult {
 
 /// Display scan summary
 fn display_summary(result: &ScanResult) -> Result<()> {
-    println!("📊 {}", style("Summary:").bold());
+    println!("{}", style("Summary:").bold());
     println!("  Total dependencies: {}", style(result.total_deps).bold());
     println!("  Direct: {}", result.direct_deps);
     println!("  Transitive: {}", result.transitive_deps);
@@ -325,8 +314,7 @@ fn display_summary(result: &ScanResult) -> Result<()> {
 
     if total_vulns > 0 {
         println!(
-            "  {} Vulnerabilities: {}",
-            WARNING,
+            "  [!] Vulnerabilities: {}",
             style(total_vulns).bold().red()
         );
         if result.critical_vulns > 0 {
@@ -345,7 +333,7 @@ fn display_summary(result: &ScanResult) -> Result<()> {
             println!("    LOW: {}", result.low_vulns);
         }
     } else {
-        println!("  {} No vulnerabilities detected!", CHECK);
+        println!("  [+] No vulnerabilities detected!");
     }
 
     println!("  License issues: {}", result.license_issues);
@@ -356,7 +344,7 @@ fn display_summary(result: &ScanResult) -> Result<()> {
 
 /// Show next steps
 fn show_next_steps() {
-    println!("{} {}", INFO, style("Next steps:").bold());
+    println!("[i] {}", style("Next steps:").bold());
     println!(
         "  1. Review findings: {}",
         style("bazbom scan . --format json").cyan()
@@ -377,7 +365,7 @@ fn show_next_steps() {
             .underlined()
     );
     println!();
-    println!("{} {}", ROCKET, style("Happy securing!").bold().green());
+    println!("{}", style("Happy securing!").bold().green());
     println!();
 }
 

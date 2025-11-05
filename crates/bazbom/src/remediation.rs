@@ -400,7 +400,7 @@ fn generate_breaking_changes_warning(
         Some(v) => v,
         None => {
             return Some(format!(
-                "⚠️  Version change ({} → {})\n\n\
+                "[!] Version change ({} → {})\n\n\
                  Cannot parse semantic version numbers. Please review the changelog manually.\n\
                  Version formats that don't follow semantic versioning (X.Y.Z) require careful review:\n\
                  1. Check the library's release notes\n\
@@ -415,7 +415,7 @@ fn generate_breaking_changes_warning(
         Some(v) => v,
         None => {
             return Some(format!(
-                "⚠️  Version change ({} → {})\n\n\
+                "[!] Version change ({} → {})\n\n\
                  Cannot parse target version number. Please review the changelog manually.",
                 current_version, fixed
             ));
@@ -425,7 +425,7 @@ fn generate_breaking_changes_warning(
     if fixed_major > current_major {
         // Major version bump detected
         let mut warning = format!(
-            "⚠️  MAJOR VERSION UPGRADE ({} → {})\n\n\
+            "[!] MAJOR VERSION UPGRADE ({} → {})\n\n\
              This is a major version upgrade which may include breaking changes:\n\n\
              - API changes: Methods may be removed, renamed, or have different signatures\n\
              - Deprecated features: Previously deprecated APIs may be removed\n\
@@ -497,7 +497,7 @@ fn generate_breaking_changes_warning(
         if fixed_minor > current_minor {
             // Minor version bump
             Some(format!(
-                "ℹ️  Minor version upgrade ({} → {})\n\n\
+                "[i] Minor version upgrade ({} → {})\n\n\
                  This is a minor version upgrade which should be backward compatible but may include:\n\
                  - New features and APIs\n\
                  - Deprecation warnings for future removal\n\
@@ -512,7 +512,7 @@ fn generate_breaking_changes_warning(
         } else {
             // Patch version bump
             Some(format!(
-                "✅ Patch version upgrade ({} → {})\n\n\
+                "[+] Patch version upgrade ({} → {})\n\n\
                  This is a patch version upgrade which should be fully backward compatible.\n\
                  It typically includes:\n\
                  - Bug fixes\n\
@@ -527,7 +527,7 @@ fn generate_breaking_changes_warning(
     } else {
         // Downgrade or unusual version scheme
         Some(format!(
-            "⚠️  Version change ({} → {})\n\n\
+            "[!] Version change ({} → {})\n\n\
              This version change doesn't follow typical semantic versioning.\n\
              Please review the library's changelog carefully before upgrading.",
             current_version, fixed
@@ -633,7 +633,7 @@ fn apply_maven_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
                     updated = updated.replace(version_line, &new_line);
                     match_found = true;
                     println!(
-                        "  ✓ Updated {}: {} → {}",
+                        "  [+] Updated {}: {} → {}",
                         artifact, suggestion.current_version, fixed_version
                     );
                     break;
@@ -698,7 +698,7 @@ fn apply_gradle_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> 
             updated = updated.replace(line, &new_line);
             match_found = true;
             println!(
-                "  ✓ Updated {}: {} → {}",
+                "  [+] Updated {}: {} → {}",
                 artifact, suggestion.current_version, fixed_version
             );
             break;
@@ -757,7 +757,7 @@ fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
             updated = updated.replace(line, &new_line);
             match_found = true;
             println!(
-                "  ✓ Updated {}: {} → {}",
+                "  [+] Updated {}: {} → {}",
                 artifact, suggestion.current_version, fixed_version
             );
             break;
@@ -780,7 +780,7 @@ fn apply_bazel_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> R
     // 1. Update maven_install.json if it exists
     // 2. Run `bazel run @maven//:pin` to regenerate lock files
     // For now, just update the BUILD/WORKSPACE file
-    println!("  ⚠️  Remember to run: bazel run @maven//:pin");
+    println!("  [!] Remember to run: bazel run @maven//:pin");
 
     Ok(())
 }
@@ -831,7 +831,7 @@ pub fn apply_fixes_with_testing(
     let test_result = run_tests(build_system, project_root)?;
 
     if test_result.success {
-        println!("\n✅ Tests passed! Fixes applied successfully.");
+        println!("\n[+] Tests passed! Fixes applied successfully.");
         println!("   Duration: {:.2}s", test_result.duration.as_secs_f64());
 
         // Clean up backup
@@ -1000,7 +1000,7 @@ pub fn generate_pr(
     println!("\n[bazbom] Creating pull request...");
     let pr_url = create_github_pr(&config, &pr_title, &pr_body, &branch_name)?;
 
-    println!("\n✅ Pull request created successfully!");
+    println!("\n[+] Pull request created successfully!");
     println!("   URL: {}", pr_url);
 
     Ok(pr_url)
@@ -1053,9 +1053,9 @@ fn generate_commit_message(
 fn generate_pr_title(_suggestions: &[RemediationSuggestion], apply_result: &ApplyResult) -> String {
     let count = apply_result.applied;
     if count == 1 {
-        "🔒 Fix 1 security vulnerability".to_string()
+        "[S] Fix 1 security vulnerability".to_string()
     } else {
-        format!("🔒 Fix {} security vulnerabilities", count)
+        format!("[S] Fix {} security vulnerabilities", count)
     }
 }
 
@@ -1064,7 +1064,7 @@ fn generate_pr_body(
     suggestions: &[RemediationSuggestion],
     apply_result: &ApplyResultWithTests,
 ) -> String {
-    let mut body = String::from("## 🔒 Security Fixes\n\n");
+    let mut body = String::from("## [S] Security Fixes\n\n");
     body.push_str(
         "This PR automatically upgrades vulnerable dependencies identified by BazBOM.\n\n",
     );
@@ -1072,7 +1072,7 @@ fn generate_pr_body(
     // Summary section
     body.push_str("### Summary\n\n");
     body.push_str(&format!(
-        "- ✅ **{}** vulnerabilities fixed\n",
+        "- [+] **{}** vulnerabilities fixed\n",
         apply_result.apply_result.applied
     ));
     if apply_result.apply_result.failed > 0 {
@@ -1083,7 +1083,7 @@ fn generate_pr_body(
     }
     if apply_result.apply_result.skipped > 0 {
         body.push_str(&format!(
-            "- ⏭️  **{}** vulnerabilities skipped (no fix available)\n",
+            "- [>] **{}** vulnerabilities skipped (no fix available)\n",
             apply_result.apply_result.skipped
         ));
     }
@@ -1112,12 +1112,12 @@ fn generate_pr_body(
     body.push_str("### Test Results\n\n");
     if apply_result.tests_run {
         if apply_result.tests_passed {
-            body.push_str("✅ All tests passed after applying fixes.\n\n");
+            body.push_str("[+] All tests passed after applying fixes.\n\n");
         } else {
             body.push_str("❌ Tests failed (changes were rolled back).\n\n");
         }
     } else {
-        body.push_str("⏭️  Tests were skipped or not found.\n\n");
+        body.push_str("[>] Tests were skipped or not found.\n\n");
     }
 
     // Review instructions

@@ -39,14 +39,14 @@ fn build_trend_html(generator: &ReportGenerator) -> String {
         .insight-box {{ background: #edf2f7; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; border-radius: 4px; }}
         .insight-box h3 {{ color: #2d3748; margin-top: 0; }}
         .recommendation {{ background: #ffffff; border: 1px solid #e2e8f0; padding: 15px; margin: 10px 0; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
-        .recommendation::before {{ content: "💡 "; font-size: 1.2em; }}
+        .recommendation::before {{ content: "[i] "; font-size: 1.2em; }}
         .footer {{ margin-top: 60px; padding-top: 20px; border-top: 2px solid #e2e8f0; color: #718096; text-align: center; }}
         .note {{ background: #fef5e7; border-left: 4px solid #f39c12; padding: 15px; margin: 20px 0; border-radius: 4px; }}
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📊 Security Trend Report</h1>
+        <h1>Report: Security Trend Report</h1>
         <div class="subtitle">Project: {} v{} | Scan Date: {}</div>
 
         <div class="note">
@@ -149,7 +149,7 @@ fn calculate_risk_level(vulns: &crate::VulnerabilityFindings) -> &'static str {
 /// Build current state analysis text
 fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String {
     if vulns.total_count() == 0 {
-        return "<p>✅ <strong>Excellent security posture!</strong> No vulnerabilities detected in your dependencies. Continue maintaining this high standard with regular scans.</p>".to_string();
+        return "<p>[+] <strong>Excellent security posture!</strong> No vulnerabilities detected in your dependencies. Continue maintaining this high standard with regular scans.</p>".to_string();
     }
 
     let mut analysis = Vec::new();
@@ -163,14 +163,14 @@ fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String 
 
     if !vulns.high.is_empty() {
         analysis.push(format!(
-            "<p>⚠️ <strong>High Priority:</strong> {} HIGH severity vulnerabilities detected. Industry best practice recommends remediation within 30 days.</p>",
+            "<p>[!] <strong>High Priority:</strong> {} HIGH severity vulnerabilities detected. Industry best practice recommends remediation within 30 days.</p>",
             vulns.high.len()
         ));
     }
 
     if !vulns.medium.is_empty() {
         analysis.push(format!(
-            "<p>📋 <strong>Medium Priority:</strong> {} MEDIUM severity vulnerabilities found. Plan remediation within 90 days as part of regular maintenance.</p>",
+            "<p>[*] <strong>Medium Priority:</strong> {} MEDIUM severity vulnerabilities found. Plan remediation within 90 days as part of regular maintenance.</p>",
             vulns.medium.len()
         ));
     }
@@ -186,7 +186,7 @@ fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String 
 
     if kev_count > 0 {
         analysis.push(format!(
-            "<p>🎯 <strong>CISA KEV Alert:</strong> {} vulnerabilities are listed in CISA's Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.</p>",
+            "<p>[*] <strong>CISA KEV Alert:</strong> {} vulnerabilities are listed in CISA's Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.</p>",
             kev_count
         ));
     }
@@ -202,7 +202,7 @@ fn build_current_state_analysis(vulns: &crate::VulnerabilityFindings) -> String 
 
     if reachable_count > 0 {
         analysis.push(format!(
-            "<p>🔍 <strong>Reachability Analysis:</strong> {} vulnerabilities have reachable code paths in your application, increasing actual risk.</p>",
+            "<p>[*] <strong>Reachability Analysis:</strong> {} vulnerabilities have reachable code paths in your application, increasing actual risk.</p>",
             reachable_count
         ));
     }

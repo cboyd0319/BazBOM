@@ -196,7 +196,7 @@ impl PolicyTemplateLibrary {
             .map_err(|e| format!("Failed to write template file: {}", e))?;
 
         Ok(format!(
-            "✅ Initialized policy template: {} at {}",
+            "[+] Initialized policy template: {} at {}",
             template.name,
             dest.display()
         ))

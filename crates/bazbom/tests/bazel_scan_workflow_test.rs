@@ -40,7 +40,7 @@ fn test_bazel_scan_default_workflow() {
     verify_sarif_output(&temp_dir);
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ Default workflow test passed");
+    println!("[+] Default workflow test passed");
 }
 
 /// Test Bazel scan with CycloneDX output format
@@ -81,7 +81,7 @@ fn test_bazel_scan_cyclonedx_workflow() {
     assert!(cdx["components"].is_array());
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ CycloneDX workflow test passed");
+    println!("[+] CycloneDX workflow test passed");
 }
 
 /// Test Bazel scan with specific target filtering
@@ -115,7 +115,7 @@ fn test_bazel_scan_target_filtering_workflow() {
     verify_dependency_graph(&temp_dir);
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ Target filtering workflow test passed");
+    println!("[+] Target filtering workflow test passed");
 }
 
 /// Test Bazel scan with policy enforcement
@@ -159,7 +159,7 @@ description: Test policy for integration testing
     );
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ Policy workflow test passed");
+    println!("[+] Policy workflow test passed");
 }
 
 /// Test Bazel scan with VEX generation
@@ -201,7 +201,7 @@ fn test_bazel_scan_vex_workflow() {
     }
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ VEX workflow test passed");
+    println!("[+] VEX workflow test passed");
 }
 
 /// Test Bazel scan with multi-format output
@@ -248,7 +248,7 @@ fn test_bazel_scan_multi_format_workflow() {
     );
 
     cleanup_temp_dir(temp_dir);
-    println!("✓ Multi-format workflow test passed");
+    println!("[+] Multi-format workflow test passed");
 }
 
 // Helper functions

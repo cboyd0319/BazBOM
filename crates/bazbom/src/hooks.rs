@@ -34,18 +34,18 @@ pub fn install_hooks(config: &HooksConfig) -> Result<()> {
     }
 
     println!(
-        "✅ Installed pre-commit hook: {}",
+        "[+] Installed pre-commit hook: {}",
         pre_commit_hook.display()
     );
     println!(
-        "✅ Configured {} scan mode",
+        "[+] Configured {} scan mode",
         if config.fast_mode { "fast" } else { "full" }
     );
 
     if Path::new(&config.policy_file).exists() {
-        println!("✅ Using policy file: {}", config.policy_file);
+        println!("[+] Using policy file: {}", config.policy_file);
     } else {
-        println!("⚠️  Policy file not found: {}", config.policy_file);
+        println!("[!] Policy file not found: {}", config.policy_file);
         println!("   Create {} to enforce policies", config.policy_file);
     }
 
@@ -71,7 +71,7 @@ fn generate_hook_script(config: &HooksConfig) -> String {
 
 set -e
 
-echo "🔍 Scanning dependencies with BazBOM..."
+echo "[*] Scanning dependencies with BazBOM..."
 
 # Create temporary output directory
 BAZBOM_TMP=$(mktemp -d)
@@ -87,7 +87,7 @@ fi
 
 # Check policy if policy file exists
 if [ -f "{policy}" ]; then
-  echo "📋 Checking policy: {policy}..."
+  echo "[*] Checking policy: {policy}..."
   
   if ! bazbom policy check{policy_arg} > /dev/null 2>&1; then
     echo ""
@@ -100,7 +100,7 @@ if [ -f "{policy}" ]; then
   fi
 fi
 
-echo "✅ No policy violations. Proceeding with commit."
+echo "[+] No policy violations. Proceeding with commit."
 exit 0
 "#,
         fast = fast_flag,

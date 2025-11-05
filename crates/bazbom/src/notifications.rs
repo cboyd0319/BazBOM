@@ -251,7 +251,7 @@ pub fn notify_vulnerability_assigned(
     details.insert("Assigned By".to_string(), assigner.to_string());
 
     let notification = Notification {
-        title: "📋 Vulnerability Assigned".to_string(),
+        title: "[*] Vulnerability Assigned".to_string(),
         message: format!("{} has been assigned to {}", cve, assignee),
         severity: NotificationSeverity::Info,
         details: Some(details),
@@ -279,7 +279,7 @@ pub fn notify_vulnerability_fixed(
     details.insert("Fixed By".to_string(), fixed_by.to_string());
 
     let notification = Notification {
-        title: "✅ Vulnerability Fixed".to_string(),
+        title: "[+] Vulnerability Fixed".to_string(),
         message: format!(
             "{} has been remediated by upgrading {} from {} to {}",
             cve, package, old_version, new_version

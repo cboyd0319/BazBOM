@@ -80,9 +80,9 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
     let addr = format!("127.0.0.1:{}", config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    println!("🚀 BazBOM Dashboard running at http://{}", addr);
-    println!("📊 Security Score: Loading...");
-    println!("⚠️  Vulnerabilities: Analyzing...");
+    println!("[*] BazBOM Dashboard running at http://{}", addr);
+    println!("[*] Security Score: Loading...");
+    println!("[!] Vulnerabilities: Analyzing...");
     println!();
     println!("Press Ctrl+C to stop");
 
