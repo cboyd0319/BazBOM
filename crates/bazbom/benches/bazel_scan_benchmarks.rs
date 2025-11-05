@@ -8,8 +8,6 @@
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
-use tempfile::NamedTempFile;
-use std::io::Write;
 
 /// Benchmark parsing maven_install.json files of various sizes
 fn bench_maven_install_parsing(c: &mut Criterion) {
@@ -50,7 +48,7 @@ fn bench_spdx_generation(c: &mut Criterion) {
                     let mut packages = Vec::new();
                     let mut relationships = Vec::new();
                     
-                    for (idx, component) in components.iter().enumerate() {
+                    for (idx, _component) in components.iter().enumerate() {
                         let spdx_id = format!("Package-{}", idx);
                         packages.push(spdx_id.clone());
                         relationships.push(format!("DESCRIBES-{}", spdx_id));
