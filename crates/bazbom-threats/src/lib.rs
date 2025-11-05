@@ -10,11 +10,14 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+pub mod custom_feeds;
 pub mod database_integration;
 pub mod dependency_confusion;
+pub mod maintainer_takeover;
 pub mod malicious;
 pub mod monitoring;
 pub mod notifications;
+pub mod scorecard;
 pub mod supply_chain;
 pub mod typosquatting;
 

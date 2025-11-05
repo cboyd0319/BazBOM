@@ -37,6 +37,8 @@ fn bench_build_system_detection(c: &mut Criterion) {
 
 /// Benchmark dependency graph construction
 fn bench_dependency_graph(c: &mut Criterion) {
+    use bazbom_graph::{Component, ComponentId};
+    
     let mut group = c.benchmark_group("dependency_graph");
     
     // Test with different graph sizes
@@ -51,13 +53,22 @@ fn bench_dependency_graph(c: &mut Criterion) {
                     
                     // Add nodes and edges to simulate real dependencies
                     for i in 0..size {
-                        let node_id = format!("dep-{}", i);
-                        graph.add_node(node_id.clone());
+                        let node_id = ComponentId::new(format!("dep-{}", i));
+                        let component = Component {
+                            id: node_id.clone(),
+                            name: format!("dep-{}", i),
+                            version: "1.0.0".to_string(),
+                            purl: None,
+                            license: None,
+                            scope: None,
+                            hash: None,
+                        };
+                        graph.add_component(component);
                         
                         // Add edge to previous node (creating a chain)
                         if i > 0 {
-                            let parent_id = format!("dep-{}", i - 1);
-                            graph.add_edge(parent_id, node_id);
+                            let parent_id = ComponentId::new(format!("dep-{}", i - 1));
+                            graph.add_edge(parent_id, node_id, "depends".to_string());
                         }
                     }
                     
