@@ -60,3 +60,7 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "dependency_analysis"
 harness = false
+
+[[bench]]
+name = "bazel_scan_benchmarks"
+harness = false
