@@ -29,6 +29,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Advanced Features
 
+- **[Advanced Bazel Features](guides/ADVANCED_BAZEL_FEATURES.md)** ⭐ - **Query optimization, caching, performance tuning, and custom workflows**
 - **[Orchestrated Scanning](ORCHESTRATED_SCAN.md)** - Integrate Semgrep and CodeQL with merged SARIF output
 - **[IDE Integration](IDE_INTEGRATION.md)** - Real-time vulnerability scanning in your IDE
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
