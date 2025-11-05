@@ -413,6 +413,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bazbom-ml"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "bazbom-policy"
 version = "0.5.1"
 dependencies = [
