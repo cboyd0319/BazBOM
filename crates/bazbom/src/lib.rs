@@ -11,6 +11,7 @@ pub mod context;
 pub mod enrich;
 pub mod explore;
 pub mod fixes;
+pub mod groovy;
 pub mod hooks;
 pub mod incremental;
 pub mod init;
