@@ -25,7 +25,9 @@
 pub mod anomaly;
 pub mod features;
 pub mod risk;
+pub mod prioritization;
 
 pub use anomaly::{Anomaly, AnomalyDetector, AnomalyType};
 pub use features::{DependencyFeatures, VulnerabilityFeatures};
 pub use risk::{EnhancedRiskScore, RiskScorer};
+pub use prioritization::{VulnerabilityPrioritizer, PrioritizedVulnerability, FixBatch, FixUrgency};
