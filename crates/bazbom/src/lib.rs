@@ -1,5 +1,6 @@
 // Library exports for testing and internal use
 pub mod analyzers;
+pub mod android;
 pub mod ant;
 pub mod backup;
 pub mod batch_fixer;
@@ -15,6 +16,7 @@ pub mod fixes;
 pub mod groovy;
 pub mod hooks;
 pub mod incremental;
+pub mod kotlin_multiplatform;
 pub mod init;
 pub mod notifications;
 pub mod parallel;

@@ -59,15 +59,83 @@ export ANTHROPIC_MODEL=claude-3-sonnet-20240229
 ### 3. Use LLM Features
 
 ```bash
-# Generate AI-powered fix suggestions
+# Generate AI-powered fix suggestions (uses Ollama by default)
 bazbom fix --llm
+
+# Use specific provider and model
+bazbom fix --llm --llm-provider anthropic --llm-model claude-3-5-sonnet-20241022
 
 # Interactive LLM-assisted remediation
 bazbom fix --llm --interactive
 
-# Query policy recommendations
-bazbom policy query "What severity threshold should I use for production?"
+# Combine ML prioritization with LLM fix generation
+bazbom fix --ml-prioritize --llm
+
+# Apply fixes with LLM guidance
+bazbom fix --llm --apply
+
+# Create PR with LLM-generated descriptions
+bazbom fix --llm --pr
 ```
+
+---
+
+## CLI Reference
+
+### `bazbom fix --llm`
+
+Generate LLM-powered fix guides for vulnerabilities.
+
+**Flags:**
+- `--llm`: Enable LLM-powered fix generation
+- `--llm-provider <PROVIDER>`: Choose provider (ollama, anthropic, openai). Default: ollama
+- `--llm-model <MODEL>`: Specify model (e.g., codellama, gpt-4, claude-3-opus)
+- `--suggest`: Show suggestions without applying (default with --llm)
+- `--apply`: Apply fixes automatically with LLM guidance
+- `--pr`: Create GitHub PR with LLM-generated description
+- `--interactive`: Interactive mode with LLM assistance
+- `--ml-prioritize`: Combine with ML risk scoring
+
+**Examples:**
+
+```bash
+# Use local Ollama (privacy-first, recommended)
+bazbom fix --llm
+
+# Use specific Ollama model
+bazbom fix --llm --llm-model codellama:latest
+
+# Use OpenAI GPT-4 (requires OPENAI_API_KEY and BAZBOM_ALLOW_EXTERNAL_API=1)
+export OPENAI_API_KEY=sk-...
+export BAZBOM_ALLOW_EXTERNAL_API=1
+bazbom fix --llm --llm-provider openai --llm-model gpt-4
+
+# Use Anthropic Claude (requires ANTHROPIC_API_KEY and BAZBOM_ALLOW_EXTERNAL_API=1)
+export ANTHROPIC_API_KEY=sk-ant-...
+export BAZBOM_ALLOW_EXTERNAL_API=1
+bazbom fix --llm --llm-provider anthropic --llm-model claude-3-5-sonnet-20241022
+
+# Combine ML prioritization with LLM guidance
+bazbom fix --ml-prioritize --llm
+
+# Interactive mode with LLM assistance
+bazbom fix --llm --interactive
+```
+
+**Output:**
+
+The command generates:
+1. **Console output**: Detailed fix guides with steps, code changes, and testing recommendations
+2. **File**: `llm_fix_guides.json` - Structured JSON with all generated guides
+3. **File**: `remediation_suggestions.json` - Traditional remediation suggestions
+
+**Privacy Protection:**
+
+BazBOM enforces privacy-first defaults:
+- ✅ **Ollama (default)**: No warnings, 100% local processing
+- ⚠️ **External APIs**: Requires `BAZBOM_ALLOW_EXTERNAL_API=1` environment variable
+- 🛡️ **API Key validation**: Checks for API keys before attempting external calls
+- 📊 **Usage tracking**: Token usage and cost estimates displayed
 
 ---
 

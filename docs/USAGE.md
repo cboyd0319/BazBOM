@@ -879,6 +879,11 @@ bazbom fix [OPTIONS]
 - `--suggest` - Show fix suggestions without applying changes (recommend-only mode)
 - `--apply` - Apply fixes automatically with testing and rollback
 - `--pr` - Create a pull request with fixes applied (requires GitHub authentication)
+- `--interactive` - Interactive mode with smart batch processing
+- `--ml-prioritize` - Use ML-enhanced risk scoring for vulnerability prioritization
+- `--llm` - Generate LLM-powered fix guides with detailed migration steps (privacy-first: uses Ollama by default)
+- `--llm-provider <PROVIDER>` - Choose LLM provider: ollama (default), anthropic, or openai
+- `--llm-model <MODEL>` - Specify LLM model (e.g., codellama, gpt-4, claude-3-opus)
 
 **Examples:**
 
@@ -886,8 +891,20 @@ bazbom fix [OPTIONS]
 # Get fix suggestions with educational context
 bazbom fix --suggest
 
-# View suggestions with priorities and effort estimates
-bazbom fix --suggest
+# Use ML-enhanced prioritization
+bazbom fix --ml-prioritize --suggest
+
+# Generate LLM-powered fix guides (uses local Ollama by default)
+bazbom fix --llm
+
+# LLM guides with specific model
+bazbom fix --llm --llm-model codellama:latest
+
+# Interactive mode with smart batch processing
+bazbom fix --interactive
+
+# Combine ML prioritization with LLM guidance
+bazbom fix --ml-prioritize --llm
 
 # Apply fixes automatically with testing
 bazbom fix --apply
@@ -896,6 +913,9 @@ bazbom fix --apply
 export GITHUB_TOKEN="ghp_..."
 export GITHUB_REPOSITORY="owner/repo"
 bazbom fix --pr
+
+# LLM-assisted PR with detailed migration guide
+bazbom fix --llm --pr
 ```
 
 **Suggest Mode Features:**

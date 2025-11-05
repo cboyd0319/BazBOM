@@ -94,6 +94,15 @@ pub enum Commands {
         /// Use ML-enhanced prioritization for vulnerability fixes
         #[arg(long)]
         ml_prioritize: bool,
+        /// Use LLM-powered fix generation (privacy-first: uses Ollama by default)
+        #[arg(long)]
+        llm: bool,
+        /// LLM provider (ollama, anthropic, or openai). Defaults to ollama for privacy.
+        #[arg(long, value_name = "PROVIDER", default_value = "ollama")]
+        llm_provider: String,
+        /// LLM model (e.g., codellama, gpt-4, claude-3-opus)
+        #[arg(long, value_name = "MODEL")]
+        llm_model: Option<String>,
     },
     /// Advisory database operations (offline sync)
     Db {
