@@ -28,19 +28,19 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       
       - name: Setup Java
-        uses: actions/setup-java@5896cecc08fd8a1fbdfbb517a8bd08b42909ff46 # v4.7.0
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           distribution: 'temurin'
           java-version: '11'
           cache: 'maven'
       
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@e403ad507104847c3539436a14f16b779aa17af5 # v0.8.1
+        uses: bazel-contrib/setup-bazel@8d2cb86a3680a820c3e219597279ce3f80d17a47 # 0.15.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
@@ -68,12 +68,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       
       - name: Setup Node.js
-        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4.1.0
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
           node-version: '20'
           cache: 'npm'
@@ -94,12 +94,12 @@ jobs:
     
     steps:
       - name: Checkout code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
       
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@e403ad507104847c3539436a14f16b779aa17af5 # v0.8.1
+        uses: bazel-contrib/setup-bazel@8d2cb86a3680a820c3e219597279ce3f80d17a47 # 0.15.0
         with:
           bazelisk-cache: true
       
