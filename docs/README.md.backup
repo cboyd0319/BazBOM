@@ -1,17 +1,6 @@
 # BazBOM Documentation
 
-Curated entry point for every BazBOM guide. Files are grouped by the job they help you complete—start with "Getting Started" and branch out to deeper references as needed.
-
-## Quick Navigation
-
-**Essential docs** (from tech writer persona):
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Components, data flow, boundaries, decisions (ADR-style summaries)
-- **[USAGE.md](USAGE.md)** - Common tasks: generate SBOM locally, in CI, per-target, per-image
-- **[BAZEL.md](BAZEL.md)** - Aspects, rules, targets, macros, minimal reproducible examples
-- **[CI.md](CI.md)** - Bazel + CI recipes (GitHub Actions baseline), caching, artifacts, SARIF/attestations
-- **[FORMAT_SPDX.md](FORMAT_SPDX.md)** - SPDX 2.3 mapping, fields, known gaps
-- **[INTEGRATIONS.md](INTEGRATIONS.md)** - Syft/OSV/Dependency-Track/GUAC (stubs or recipes)
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Top 20 failures with exact error text + fix
+Curated entry point for every BazBOM guide. Files are grouped by the job they help you complete—start with “Getting Started” and branch out to deeper references as needed.
 
 ## Getting Started
 
@@ -23,11 +12,11 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## User Guide & How-tos
 
-- [Usage Guide](user-guide/usage.md) – core commands, SBOM outputs, policy workflows (also see top-level [USAGE.md](USAGE.md))
+- [Usage Guide](user-guide/usage.md) – core commands, SBOM outputs, policy workflows
 - [Report Generation](user-guide/report-generation.md) – executive, compliance, and SARIF reporting
-- [Advanced Bazel Usage](user-guide/advanced-bazel-features.md) – query tuning and large monorepos (also see [BAZEL.md](BAZEL.md))
+- [Advanced Bazel Usage](user-guide/advanced-bazel-features.md) – query tuning and large monorepos
 - [Policy Integration](user-guide/policy-integration.md) & [Rego Best Practices](user-guide/rego-best-practices.md)
-- [Troubleshooting Playbook](user-guide/troubleshooting.md) (also see top-level [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
+- [Troubleshooting Playbook](user-guide/troubleshooting.md)
 
 ## Integrations
 
@@ -40,7 +29,6 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Orchestrated Scan (Semgrep/CodeQL)](integrations/orchestrated-scan.md)
 - [Container Scanning](integrations/container-scanning.md)
 - [RipGrep Integration](integrations/ripgrep-integration.md)
-- **[Complete Integration Guide](INTEGRATIONS.md)** - All integrations in one place
 
 ## Security & Assurance
 
@@ -53,17 +41,15 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## Architecture & Internals
 
-- **[Architecture Overview](ARCHITECTURE.md)** - High-level components, data flow, mini-ADRs
-- [Detailed Architecture](architecture/architecture.md) - Complete implementation details
+- [Architecture Overview](architecture/architecture.md)
 - [Current Implementation Notes](architecture/architecture-current.md)
 - [Dependency Graph Analysis](architecture/graph-analysis.md)
-- [ADR Index](ADR/) - Architecture Decision Records
+- [ADR Index](ADR/)
 - [Reference: JVM Build Systems](reference/jvm-build-systems.md), [JVM Language Support](reference/jvm-language-support.md), [ML Features](reference/ml-features.md)
 - [Diagrams](diagrams/) – Mermaid diagrams rendered in CI
 
 ## Operations & Release Management
 
-- **[CI/CD Integration](CI.md)** - Complete CI recipes for GitHub Actions, GitLab, Jenkins, CircleCI
 - [Release Process](operations/release-process.md)
 - [Release Checklist](operations/release-checklist.md)
 - [Homebrew Tap Creation](operations/homebrew-tap-creation.md)
@@ -89,42 +75,18 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 ## Examples, Benchmarks & Reference Material
 
 - [Examples](examples/) – sample workflows and CI automation
-- [CLI Examples](examples/CLI_EXAMPLES.md)
-- [Bazel Monorepo Workflows](examples/bazel-monorepo-workflows.md)
-- [Maven Spring Boot](examples/maven_spring_boot.md)
-- [Gradle Kotlin](examples/gradle_kotlin.md)
-- [Shaded JAR](examples/shaded_jar.md)
 - [Benchmarks](benchmarks/README.md)
 - [Capabilities Reference](reference/capabilities-reference.md)
-
-## Format Specifications
-
-- **[SPDX 2.3 Format](FORMAT_SPDX.md)** - Field mapping, examples, validation, known gaps
-- [Schemas Reference](reference/schemas/README.md)
 
 ## Archive & Historical Notes
 
 - [Archive Index](archive/README.md)
 - [Documentation Consolidation Plan](archive/documentation-consolidation-plan.md)
-- [Phase Documentation](archive/phases/) - Historical roadmap phases
 
 ## Quality & Style Standards
 
 - [Documentation Standards](strategy/product-roadmap/DOCUMENTATION_STANDARDS.md)
-- [Tech Writer Persona](tech_writer_persona.md)
 - Style references: Google Developer Style, Microsoft Writing Style, Diátaxis
 - CI checks: `markdownlint`, `vale`, broken-link checks, example validation
 
-> All canonical documentation resides under `docs/`. Root-level files exist only where GitHub's UI requires them (README.md, CONTRIBUTING.md, etc.).
-
-## Documentation Principles
-
-Following the **tech writer persona** guidelines:
-
-1. **Signal > Noise** - No paragraphs that can be a table. No tables that should be a checklist.
-2. **Progressive disclosure** - Start with the 20% everyone needs; link out for the 80%.
-3. **Docs as product** - Each page has a clear job, audience, and success metric.
-4. **Truth from code** - When in doubt, infer from `BUILD`, Bazel aspects, and Rust modules.
-5. **Maintainability** - Short pages, shared partials/snippets, versioned examples, generated references.
-6. **One link of truth** - Canonicalize duplicated guidance. Cross-link instead of repeating.
-7. **Mermaid diagrams** - Picture the pipeline. Keep simple (≤7 nodes); annotate edges; title every diagram.
+> All canonical documentation resides under `docs/`. Root-level files exist only where GitHub’s UI requires them.
