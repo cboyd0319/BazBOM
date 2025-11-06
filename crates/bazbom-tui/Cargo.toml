@@ -10,7 +10,7 @@ repository = "https://github.com/cboyd0319/BazBOM"
 [dependencies]
 # Terminal UI framework
 ratatui = "0.28"
-crossterm = "0.28"
+crossterm = "0.29"
 
 # Data structures and serialization
 serde = { version = "1.0", features = ["derive"] }
