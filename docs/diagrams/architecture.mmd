@@ -1,16 +1,17 @@
-graph TD
-    A[Bazel Build] -->|Aspect Traversal| B[Dependency Discovery]
-    B --> C[SBOM Generator]
-    C --> D[SPDX JSON Files]
-    D --> E[SCA Engine]
-    E -->|OSV Query| F[Vulnerability Database]
-    F --> G[SARIF Reports]
-    G --> H[GitHub Code Scanning]
+flowchart TD
+    A[bazbom CLI]
+    B[Build Detection]
+    C[Graph Normalizer]
+    D[Advisory Engine]
+    E[Policy Engine]
+    F[Exporters]
     
-    C --> I[SBOM Validator]
-    E --> J[SARIF Validator]
+    A --> B
+    B -->|Maven/Gradle/Bazel| C
+    C --> D
+    D --> E
+    E --> F
     
-    style A fill:#e1f5ff
-    style D fill:#ffe1e1
-    style G fill:#ffe1e1
-    style H fill:#e1ffe1
+    style A fill:#e67e22
+    style C fill:#3498db
+    style F fill:#2ecc71

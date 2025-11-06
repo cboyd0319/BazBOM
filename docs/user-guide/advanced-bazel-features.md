@@ -1,5 +1,7 @@
 # Advanced Bazel Features Guide
 
+> **Quick Start:** See [../BAZEL.md](../BAZEL.md) for essential Bazel concepts, aspects, and common patterns. This document covers advanced optimization and enterprise-scale scenarios.
+
 This guide covers advanced features and optimization techniques for Bazel scanning with BazBOM.
 
 ## Table of Contents

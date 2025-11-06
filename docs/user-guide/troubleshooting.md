@@ -1,5 +1,7 @@
 # Troubleshooting
 
+> **Quick Reference:** See [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md) for top 20 failures with exact error text and quick fixes. This document provides extended troubleshooting scenarios.
+
 Common issues and solutions for BazBOM.
 
 ## Build Issues

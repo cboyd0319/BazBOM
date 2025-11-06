@@ -1,5 +1,7 @@
 # Usage Guide
 
+> **Quick Reference:** See [../USAGE.md](../USAGE.md) for a concise usage guide with common tasks and quick examples. This document provides comprehensive command details and advanced workflows.
+
 This guide covers day-to-day commands and workflows for BazBOM.
 
 ## Installation
