@@ -585,7 +585,7 @@ fn main() -> Result<()> {
                             .published
                             .as_ref()
                             .and_then(|pub_date| {
-                                // Parse ISO 8601 timestamp (e.g., "2024-01-15T10:30:00Z")
+                                // Parse RFC3339 timestamp (ISO 8601 subset, e.g., "2024-01-15T10:30:00Z")
                                 chrono::DateTime::parse_from_rfc3339(pub_date)
                                     .ok()
                                     .map(|dt| {
@@ -1120,6 +1120,7 @@ fn main() -> Result<()> {
                                         }
                                     }).or_else(|| {
                                         // If no "introduced" found, look for "fixed"
+                                        // Format: "<version" indicates "fixed in this version" (versions before this are affected)
                                         range.events.iter().find_map(|event| {
                                             if let bazbom_advisories::VersionEvent::Fixed { fixed } = event {
                                                 Some(format!("<{}", fixed))
@@ -1129,6 +1130,7 @@ fn main() -> Result<()> {
                                         })
                                     }).or_else(|| {
                                         // Finally, look for "last_affected"
+                                        // Format: "<=version" indicates "last affected version" (this and earlier versions affected)
                                         range.events.iter().find_map(|event| {
                                             if let bazbom_advisories::VersionEvent::LastAffected { last_affected } = event {
                                                 Some(format!("<={}", last_affected))
