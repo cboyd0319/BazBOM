@@ -74,7 +74,7 @@ jobs:
           persist-credentials: false
       
       - name: Run OSV Scanner
-        uses: google/osv-scanner-action@v2.0.3
+        uses: google/osv-scanner-action@v2.2.4
         with:
           scan-args: |-
             --lockfile=requirements.txt
