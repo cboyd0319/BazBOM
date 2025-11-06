@@ -86,5 +86,5 @@ EOF
 
 ## CSAF VEX Support
 
-BazBOM also supports the CSAF VEX format for enterprise compliance. See [docs/VEX.md](../VEX.md) for details.
+BazBOM also supports the CSAF VEX format for enterprise compliance. See [docs/security/vex.md](../../security/vex.md) for details.
 

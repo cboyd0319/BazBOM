@@ -10,15 +10,15 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/PROVENANCE.md)
+[![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 [![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
-[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/copilot/JVM_FOCUSED_PRIORITIES.md)
+[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/strategy/product-roadmap/JVM_FOCUSED_PRIORITIES.md)
 
 [Quickstart](#quickstart) •
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Documentation](docs/README.md) •
-[Docs Standards](docs/copilot/DOCUMENTATION_STANDARDS.md) •
+[Docs Standards](docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md) •
 [Contributing](CONTRIBUTING.md)
 
 </div>
@@ -34,7 +34,7 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 > - **Single Binary** - Easy installation and distribution
 > 
 > **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
-> See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed feature breakdown.
+> See [Implementation Status](docs/strategy/implementation-status.md) for detailed feature breakdown.
 
 ---
 
@@ -79,7 +79,7 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 
 **Philosophy:** World-class depth for JVM ecosystems rather than shallow breadth across many languages.
 
-For detailed language and build system support, see [JVM Language Support](docs/JVM_LANGUAGE_SUPPORT.md).
+For detailed language and build system support, see [JVM Language Support](docs/reference/jvm-language-support.md).
 
 For multi-language SBOM generation, use specialized tools for each ecosystem.
 
@@ -92,7 +92,7 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 
 ### What's New (November 2025)
 
-#### Developer Experience (Phase 4 - 95% Complete)
+#### Developer Experience (IDE integrations – 95% complete)
 - **Interactive Init Wizard**: `bazbom init` with guided setup, 20+ policy templates, and first scan
 - **Smart Batch Fixing**: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
 - **TUI Dependency Explorer**: `bazbom explore` for interactive terminal-based dependency browsing
@@ -101,20 +101,20 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 - **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
 - **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
 
-#### Threat Intelligence (Phase 7 - 95% Complete)
+#### Threat Intelligence (95% complete)
 - **Supply Chain Attack Detection**: Proactive detection of malicious packages and typosquatting
 - **Typosquatting Detection**: Identifies packages with names similar to popular libraries (e.g., log4jj vs log4j)
 - **Dependency Confusion**: Detects potential internal namespace hijacking
 - **Threat Intelligence Feeds**: OSV, GHSA, and curated threat database integration
 - **Team Notifications**: Alert via Slack, email, Teams, or GitHub Issues on threat detection
-- **[Full Documentation](docs/THREAT_DETECTION.md)**: Complete guide to threat detection features
+- **[Full Documentation](docs/security/threat-detection.md)**: Complete guide to threat detection features
 
-#### Container Scanning (Phase 9 - 60% Complete)
+#### Container Scanning (60% complete)
 - **OCI Image Analysis**: Scan Docker/OCI container images for Java dependencies
 - **Layer-by-Layer Scanning**: Analyze each container layer independently
 - **Maven Metadata Extraction**: Extract groupId:artifactId:version from JARs
 - **Container SBOM Generation**: Create SBOMs for containerized applications
-- **[Full Documentation](docs/CONTAINER_SCANNING.md)**: Complete guide to container scanning
+- **[Full Documentation](docs/integrations/container-scanning.md)**: Complete guide to container scanning
 
 #### Core Features (Complete)
 - **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
@@ -163,7 +163,7 @@ bazbom scan .
 - Signed, verified binaries
 - Shell completions included
 
-See [Homebrew Installation Guide](docs/HOMEBREW_INSTALLATION.md) for detailed instructions.
+See [Homebrew Installation Guide](docs/getting-started/homebrew-installation.md) for detailed instructions.
 
 ### Option 1: Pre-built Binaries
 
@@ -189,7 +189,7 @@ sudo mv bazbom /usr/local/bin/
 bazbom --version
 ```
 
-All binaries are signed with Sigstore cosign. See [Release Process](docs/RELEASE_PROCESS.md) for verification instructions.
+All binaries are signed with Sigstore cosign. See [Release Process](docs/operations/release-process.md) for verification instructions.
 
 ### Option 2: Build from Source (Rust CLI)
 
@@ -312,8 +312,8 @@ bazel build //:sca_scan
 That's it. No configuration files, no manual dependency lists.
 
 **New to BazBOM?**
--  **[90-Second Quickstart](docs/90-SECOND-QUICKSTART.md)** - Fastest path from zero to first scan
--  **[5-Minute Tutorial](docs/QUICKSTART.md)** - Comprehensive getting started guide
+-  **[90-Second Quickstart](docs/getting-started/quickstart-90-seconds.md)** - Fastest path from zero to first scan
+-  **[5-Minute Tutorial](docs/getting-started/quickstart.md)** - Comprehensive getting started guide
 -  **[Interactive Demo](docs/examples/orchestrated-scan-quickstart.sh)** - Try all scan modes
 
 ---
@@ -585,7 +585,7 @@ Features:
 - **Curated rulesets**: 10 high-impact JVM security rules (no noise)
 - **Backward compatible**: Original scan behavior unchanged without flags
 
-See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCAN.md) for details and [examples/bazbom.toml](examples/bazbom.toml) for configuration.
+See [Orchestrated Scanning Guide](docs/integrations/orchestrated-scan.md) for details and [examples/bazbom.toml](examples/bazbom.toml) for configuration.
 
 ---
 
@@ -932,7 +932,7 @@ bazel run //:apply_vex -- \
   --output=bazel-bin/sca_findings_filtered.json
 ```
 
-See [VEX Guide](docs/VEX.md) for creating VEX statements.
+See [VEX Guide](docs/security/vex.md) for creating VEX statements.
 
 ---
 
@@ -982,7 +982,7 @@ build:sbom --output_groups=+sbom
 # Use with: bazel build --config=sbom //...
 ```
 
-See [Usage Guide](docs/USAGE.md) for full reference.
+See [Usage Guide](docs/user-guide/usage.md) for full reference.
 
 ---
 
@@ -1037,7 +1037,7 @@ Expected times with **remote cache enabled**:
 - Use incremental mode in PRs (only changed targets)
 - Parallel execution (`--jobs=auto`)
 
-See [Performance Guide](docs/PERFORMANCE.md) for tuning details.
+See [Performance Guide](docs/operations/performance.md) for tuning details.
 
 ---
 
@@ -1057,7 +1057,7 @@ BazBOM operates with **least privilege**:
 - **Offline-first**: Use `bazbom db sync` to explicitly update advisory mirrors; scans run without network access.
 - **Deterministic outputs**: Identical inputs produce identical outputs.
 
-See [Threat Model](docs/THREAT_MODEL.md) for complete analysis.
+See [Threat Model](docs/security/threat-model.md) for complete analysis.
 
 ### SLSA Compliance
 
@@ -1067,7 +1067,7 @@ BazBOM targets **SLSA Level 3**:
 -  GitHub-hosted runners (hardened platform)
 -  Build logs retained (90 days)
 
-See [Provenance Guide](docs/PROVENANCE.md) for verification steps.
+See [Provenance Guide](docs/operations/provenance.md) for verification steps.
 
 ### Reporting Vulnerabilities
 
@@ -1124,11 +1124,11 @@ bazel build //:sbom_all
 bazel run //tools/supplychain:incremental_analyzer
 ```
 
-See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
+See [Performance Guide](docs/operations/performance.md) for more optimizations.
 
 </details>
 
-**More help:** [Troubleshooting Guide](docs/TROUBLESHOOTING.md) • [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
+**More help:** [Troubleshooting Guide](docs/user-guide/troubleshooting.md) • [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
 
 ---
 
@@ -1136,58 +1136,45 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 > ** Complete Product Roadmap**
 > 
-> See [**Master Roadmap (docs/ROADMAP.md)**](docs/ROADMAP.md) for the complete feature tracking checklist with all phases, distribution channels, and milestones.
+> See [**Master Roadmap (docs/strategy/roadmap.md)**](docs/strategy/roadmap.md) for the complete feature tracking checklist with all phases, distribution channels, and milestones.
 >
 > **Quick Links:**
-> - [Distribution & Marketplaces](docs/ROADMAP.md#distribution--marketplaces) - GitHub Marketplace, Homebrew, IDE plugins, Windows support
-> - [Phase Checklist](docs/ROADMAP.md#phase-checklist) - Track all implemented and planned features
-> - [8-Week UX Sprint](docs/copilot/IMPLEMENTATION_ROADMAP.md) - Interactive init, TUI, dashboard, team features
-> - [Strategic Vision](docs/copilot/STRATEGIC_ROADMAP.md) - 12-18 month market leadership plan
+> - [Distribution & Marketplaces](docs/strategy/roadmap.md#distribution--marketplaces) – channel readiness
+> - [Implementation Roadmap](docs/strategy/product-roadmap/IMPLEMENTATION_ROADMAP.md) – active delivery tracker
+> - [Strategic Vision](docs/strategy/product-roadmap/STRATEGIC_ROADMAP.md) – medium-term investments
 
-**Current Status (v0.5.1): ~40% Complete**
+### Delivery status (v1.0 candidate)
 
-###  Completed (Phases 0-3, 5)
-- [x] **Rust single-binary CLI** - Memory-safe, signed releases
-- [x] **Build system plugins** - Maven & Gradle deep integration
-- [x] **Advisory intelligence** - OSV/NVD/GHSA + KEV + EPSS enrichment
-- [x] **Policy-as-code** - YAML + Rego/OPA, enterprise templates
-- [x] **License compliance** - 200+ SPDX licenses, compatibility matrix
-- [x] **Reachability analysis** - ASM-based call graphs
-- [x] **Shading detection** - Maven Shade, Gradle Shadow support
-- [x] **SBOM generation** - SPDX 2.3, CycloneDX 1.5, SARIF 2.1.0
-- [x] **SLSA Level 3** - Provenance infrastructure, Sigstore signing
-- [x] **Homebrew distribution** - `brew tap cboyd0319/bazbom`
-- [x] **GitHub Action** - Native CI/CD integration
+**Shipping now**
+- ✅ Rust single-binary CLI with signed releases
+- ✅ Build-system plugins for Maven and Gradle (Bazel support via aspects)
+- ✅ Advisory intelligence: OSV / NVD / GHSA with KEV & EPSS enrichment
+- ✅ Policy-as-code with enterprise templates and license compliance
+- ✅ Reachability analysis, shading detection, SPDX / CycloneDX / SARIF exporters
+- ✅ Homebrew distribution and GitHub Action integration
 
-###  In Progress (Phase 4: 95% Complete)
-- [x] **IDE plugins** - IntelliJ & VS Code ready, needs publishing
-- [x] **Auto-remediation** - `bazbom fix --apply` & `--pr` implemented
-- [x] **Pre-commit hooks** - `bazbom install-hooks` functional
-- [ ] **Marketplace publishing** - VS Code & JetBrains (P0)
-- [ ] **Real-world testing** - Needs validation with live projects
+**Finishing touches**
+- 🟡 Publish IntelliJ & VS Code extensions to their marketplaces
+- 🟡 Expand real-world testing on large JVM monorepos
+- 🟡 Polish dashboard visuals and documentation ahead of 1.0 GA
 
-###  Planned (Phases 6-11)
-- [ ] **GitHub Marketplace** - Actions marketplace listing (P0)
-- [ ] **Windows support** - Chocolatey, winget, MSI installer (P0)
-- [ ] **Web dashboard** - Interactive D3.js graphs, executive reports (P1)
-- [ ] **Threat intelligence** - Supply chain attack detection (P1)
-- [ ] **Scale optimization** - 50K+ target monorepo support (P0)
-- [ ] **Containers** - Docker, Kubernetes, OCI images (P1)
-- [ ] **Multi-language** - Node.js, Python, Go support (P1)
-- [ ] **AI intelligence** - ML prioritization, LLM-powered fixes (P2)
-- [ ] **Enterprise distribution** - K8s operator, air-gapped bundles (P1)
+**Queued backlog**
+- GitHub Marketplace publishing and Windows packages (Chocolatey / winget / MSI)
+- Web dashboard refinements and executive reporting
+- Supply-chain threat intelligence alerts and scale/performance work
+- Container scanning hardening, broader language coverage, AI-assisted workflows
+- Enterprise distribution bundles (Kubernetes operator, air-gapped tooling)
 
-**Detailed Tracking:** [Complete Roadmap](docs/ROADMAP.md) | [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)
+**Detailed tracking:** [Complete Roadmap](docs/strategy/roadmap.md) | [Implementation Status](docs/strategy/implementation-status.md)
 
 **Have Input?** [Vote on Features](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
 
----
 
 ## Current State & Architecture
 
 ### 100% Rust Implementation 
 
-BazBOM has completed its transition to Rust. See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for complete details.
+BazBOM has completed its transition to Rust. See [Implementation Status](docs/strategy/implementation-status.md) for complete details.
 
 **Core Features (Production Ready):**
 -  Rust CLI with all commands functional
@@ -1236,8 +1223,8 @@ BazBOM has completed its transition to Rust. See [Implementation Status](docs/co
 ### Getting Help
 
 If something doesn't work as documented:
-1. Check [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md)
-2. Review [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
+1. Check [Implementation Status](docs/strategy/implementation-status.md)
+2. Review [Troubleshooting Guide](docs/user-guide/troubleshooting.md)
 3. Open an issue with `documentation` label if docs are incorrect
 4. Open an issue with `bug` label if functionality is broken
 
@@ -1246,30 +1233,29 @@ If something doesn't work as documented:
 ## Documentation
 
 ### Getting Started
-- **[Quickstart](docs/QUICKSTART.md)** - 5-minute setup
-- **[Usage Guide](docs/USAGE.md)** - All commands and workflows
-- **[Installation](docs/QUICKSTART.md#installation)** - Detailed setup
+- **[Quickstart](docs/getting-started/quickstart.md)** - 5-minute setup
+- **[Usage Guide](docs/user-guide/usage.md)** - All commands and workflows
+- **[Installation](docs/getting-started/quickstart.md#1-install-bazbom)** - Detailed setup
 
 ### Architecture & Design
-- **[Architecture](docs/ARCHITECTURE.md)** - System design and data flow
-- **[Supply Chain](docs/SUPPLY_CHAIN.md)** - SBOM/SCA implementation
-- **[Threat Model](docs/THREAT_MODEL.md)** - Security analysis
+- **[Architecture](docs/architecture/architecture.md)** - System design and data flow
+- **[Supply Chain](docs/security/supply-chain.md)** - SBOM/SCA implementation
+- **[Threat Model](docs/security/threat-model.md)** - Security analysis
 - **[ADRs](docs/ADR/)** - Architecture Decision Records
-- **[Strategic Roadmap](docs/copilot/STRATEGIC_ROADMAP.md)** - Complete vision and roadmap
-- **[Phase 4 Progress](docs/copilot/PHASE_4_PROGRESS.md)** - IDE integration development status
+- **[Strategic Roadmap](docs/strategy/product-roadmap/STRATEGIC_ROADMAP.md)** - Complete vision and roadmap
 
 ### Advanced Features
-- **[Performance](docs/PERFORMANCE.md)** - Large monorepo optimization
-- **[Threat Detection](docs/THREAT_DETECTION.md)** - Supply chain attack detection
-- **[Container Scanning](docs/CONTAINER_SCANNING.md)** - Docker/OCI image analysis
-- **[Provenance](docs/PROVENANCE.md)** - SLSA Level 3 attestation
-- **[VEX](docs/VEX.md)** - False positive management
-- **[Dependency Graphs](docs/GRAPH_ANALYSIS.md)** - Visualization and queries
+- **[Performance](docs/operations/performance.md)** - Large monorepo optimization
+- **[Threat Detection](docs/security/threat-detection.md)** - Supply chain attack detection
+- **[Container Scanning](docs/integrations/container-scanning.md)** - Docker/OCI image analysis
+- **[Provenance](docs/operations/provenance.md)** - SLSA Level 3 attestation
+- **[VEX](docs/security/vex.md)** - False positive management
+- **[Dependency Graphs](docs/architecture/graph-analysis.md)** - Visualization and queries
 
 ### Operations
-- **[Validation](docs/VALIDATION.md)** - SBOM/SARIF schema validation
-- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Common issues and fixes
-- **[Versioning](docs/VERSIONING.md)** - Release process and semantic versioning
+- **[Validation](docs/operations/validation.md)** - SBOM/SARIF schema validation
+- **[Troubleshooting](docs/user-guide/troubleshooting.md)** - Common issues and fixes
+- **[Versioning](docs/operations/versioning.md)** - Release process and semantic versioning
 
 ### Full Documentation Index
 See [docs/README.md](docs/README.md) for the complete documentation map.
@@ -1277,7 +1263,7 @@ See [docs/README.md](docs/README.md) for the complete documentation map.
 Documentation Standards
 - All canonical documentation lives under `docs/`.
 - Root files (like `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `MAINTAINERS.md`) are allowed as stubs/entry points.
-- See standards: [docs/copilot/DOCUMENTATION_STANDARDS.md](docs/copilot/DOCUMENTATION_STANDARDS.md).
+- See standards: [docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md](docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md).
 
 ---
 

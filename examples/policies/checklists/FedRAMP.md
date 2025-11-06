@@ -416,7 +416,7 @@ jq '[.vulnerabilities[] | {
 - [CISA BOD 22-01](https://www.cisa.gov/binding-operational-directive-22-01)
 - [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
 - [SLSA Framework](https://slsa.dev/)
-- [BazBOM Policy Integration Guide](../../docs/guides/POLICY_INTEGRATION.md)
+- [BazBOM Policy Integration Guide](../../docs/user-guide/policy-integration.md)
 
 ## Support
 

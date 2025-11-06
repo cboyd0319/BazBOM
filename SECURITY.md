@@ -139,8 +139,8 @@ Comprehensive security documentation:
 
 - [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) - Python security best practices
 - [Risk Ledger](docs/security/RISK_LEDGER.md) - Current security posture and findings
-- [Threat Model](docs/THREAT_MODEL.md) - Attack vectors and mitigations
-- [PYSEC_OMEGA Guide](docs/copilot/PYSEC.md) - Security standards reference
+- [Threat Model](docs/security/threat-model.md) - Attack vectors and mitigations
+- [PYSEC_OMEGA Guide](docs/strategy/product-roadmap/PYSEC.md) - Security standards reference
 
 ## Security Metrics
 

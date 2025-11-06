@@ -376,7 +376,7 @@ concurrency:
 ## Resources
 
 - [GitHub Actions Security Guides](https://docs.github.com/en/actions/security-guides)
-- [PYSEC_OMEGA Documentation](../docs/copilot/PYSEC.md)
+- [PYSEC_OMEGA Documentation](../docs/strategy/product-roadmap/PYSEC.md)
 - [SLSA Framework](https://slsa.dev/)
 - [Sigstore Project](https://www.sigstore.dev/)
 - [SARIF Specification](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)

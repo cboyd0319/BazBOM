@@ -8,7 +8,7 @@
 > -  **In Progress** - Under active development
 > -  **Planned** - Documented but not yet implemented
 >
-> See [Implementation Status](../copilot/IMPLEMENTATION_STATUS.md) for comprehensive details.
+> See [Implementation Status](../strategy/product-roadmap/../strategy/implementation-status.md) for comprehensive details.
 
 > **TL;DR**: Universal JVM supply chain security toolkit. Supports Maven, Gradle, and Bazel with unified CLI. Generates SPDX/CycloneDX SBOMs, scans vulnerabilities (OSV/NVD/GHSA/KEV/EPSS), SLSA Level 3 provenance, Sigstore signing, VEX support, and GitHub Action integration.
 

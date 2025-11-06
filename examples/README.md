@@ -257,4 +257,4 @@ cat policy_violations.sarif
 
 If you have questions or need help with policy configurations:
 - Open an issue: https://github.com/cboyd0319/BazBOM/issues
-- See documentation: `docs/USAGE.md`
+- See documentation: `docs/user-guide/usage.md`

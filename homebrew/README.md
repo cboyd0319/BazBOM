@@ -124,4 +124,4 @@ Future improvements:
 
 - [Homebrew Formula Cookbook](https://docs.brew.sh/Formula-Cookbook)
 - [Creating and Maintaining a Tap](https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap)
-- [BazBOM Homebrew Tap Guide](../docs/copilot/HOMEBREW_TAP.md)
+- [BazBOM Homebrew Tap Guide](../docs/strategy/product-roadmap/HOMEBREW_TAP.md)

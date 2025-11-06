@@ -354,7 +354,7 @@ fi
 - [HIPAA Security Rule](https://www.hhs.gov/hipaa/for-professionals/security/index.html)
 - [HHS Breach Notification Rule](https://www.hhs.gov/hipaa/for-professionals/breach-notification/index.html)
 - [NIST HIPAA Security Rule Toolkit](https://csrc.nist.gov/projects/hipaa-security-rule-toolkit)
-- [BazBOM Policy Integration Guide](../../docs/guides/POLICY_INTEGRATION.md)
+- [BazBOM Policy Integration Guide](../../docs/user-guide/policy-integration.md)
 
 ## Support
 

@@ -6,7 +6,7 @@ Thank you for your interest in contributing to BazBOM! This document provides gu
 
 ### Prerequisites
 
-- Follow [Local Development Environment](docs/developer/LOCAL_ENVIRONMENT_SETUP.md) for complete setup instructions
+- Follow [Local Development Environment](docs/development/local-environment-setup.md) for complete setup instructions
 - Rust (stable) via `rustup`, including `rustfmt`, `clippy`, and `llvm-tools-preview`
 - [Bazelisk](https://github.com/bazelbuild/bazelisk) (recommended Bazel wrapper) with Bazel-compatible JDK 17
 - Java build tooling: OpenJDK 17, Maven, and Gradle

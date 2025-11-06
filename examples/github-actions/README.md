@@ -277,6 +277,6 @@ permissions:
 ## References
 
 - [BazBOM Documentation](../../docs/README.md)
-- [Integration Plan](../../docs/copilot/BAZBOM_INTEGRATION_PLAN.md)
+- [Integration Plan](../../docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md)
 - [GitHub Code Scanning](https://docs.github.com/en/code-security/code-scanning)
 - [SARIF 2.1.0 Spec](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)

@@ -49,4 +49,4 @@ bazbom-output/
 - Merged SARIF 2.1.0 output
 - deps.dev enrichment
 
-See `docs/copilot/BAZBOM_INTEGRATION_PLAN.md` for complete integration details.
+See `docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md` for complete integration details.

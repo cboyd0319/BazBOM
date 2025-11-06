@@ -188,9 +188,9 @@ Found an error or have suggestions for improving these checklists?
 
 ## Additional Resources
 
-- **Policy Integration Guide:** [docs/guides/POLICY_INTEGRATION.md](../../../docs/guides/POLICY_INTEGRATION.md)
-- **Rego Best Practices:** [docs/guides/REGO_BEST_PRACTICES.md](../../../docs/guides/REGO_BEST_PRACTICES.md)
-- **Usage Documentation:** [docs/USAGE.md](../../../docs/USAGE.md)
+- **Policy Integration Guide:** [docs/user-guide/policy-integration.md](../../../docs/user-guide/policy-integration.md)
+- **Rego Best Practices:** [docs/user-guide/rego-best-practices.md](../../../docs/user-guide/rego-best-practices.md)
+- **Usage Documentation:** [docs/user-guide/usage.md](../../../docs/user-guide/usage.md)
 - **Policy Templates:** [examples/policies/](../)
 
 ---

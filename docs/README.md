@@ -1,101 +1,92 @@
-# Documentation Index
+# BazBOM Documentation
 
-Welcome to the BazBOM documentation! This directory contains comprehensive guides for using and understanding BazBOM.
+Curated entry point for every BazBOM guide. Files are grouped by the job they help you complete—start with “Getting Started” and branch out to deeper references as needed.
 
 ## Getting Started
 
-- **[90-Second Quickstart](90-SECOND-QUICKSTART.md)**  Zero to first scan in 90 seconds
-- **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
-- **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
-- **[JVM Language Support](JVM_LANGUAGE_SUPPORT.md)**  - **Complete guide for Java, Kotlin, and Scala across Maven, Gradle, and Bazel**
-- **[IDE Setup](quickstart/IDE_SETUP.md)** - Quick start guide for IDE integration
-- **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
-- **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from Python to Rust CLI
+- [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – zero to first scan with defaults
+- [Quick Start Guide](getting-started/quickstart.md) – five-minute walkthrough with CI tips
+- [Homebrew Installation](getting-started/homebrew-installation.md) – signed packages and tap management
+- [Migration Guide](getting-started/migration-guide.md) – Python legacy → Rust CLI transition
+- [IDE Setup Checklist](getting-started/ide-setup.md) – configure IntelliJ / VS Code extensions
 
-## Architecture & Design
+## User Guide & How-tos
 
-- **[Architecture (Current State)](ARCHITECTURE_CURRENT.md)**  - **Current Python/Rust dual architecture with data flows**
-- **[Architecture (Planned)](ARCHITECTURE.md)** - Long-term system design and architecture diagrams
-- **[Supply Chain Security](SUPPLY_CHAIN.md)** - SBOM/SCA architecture and usage
-- **[Threat Model](THREAT_MODEL.md)** - Security assets, risks, and controls
-- **[ADRs](ADR/)** - Architecture Decision Records
-  - [ADR-0001: Fetch Strategy](ADR/ADR-0001-fetch-strategy.md) - Why http_archive over BCR
-  - [ADR-0002: SBOM Format](ADR/ADR-0002-sbom-format.md) - SPDX vs CycloneDX selection
-  - [ADR-0003: Aspect Scope](ADR/ADR-0003-aspect-scope.md) - Target coverage and filtering
-  - [ADR-0004: SARIF Mapping](ADR/ADR-0004-sarif-mapping.md) - Severity level mapping
-  - [ADR-0005: Incremental Analysis](ADR/ADR-0005-incremental-analysis.md) - Git-based optimization
-  - [ADR-0006: Graph Storage](ADR/ADR-0006-graph-storage.md) - Dependency graph data structure
-  - [ADR-0007: SLSA Level](ADR/ADR-0007-slsa-level.md) - Provenance target level
+- [Usage Guide](user-guide/usage.md) – core commands, SBOM outputs, policy workflows
+- [Report Generation](user-guide/report-generation.md) – executive, compliance, and SARIF reporting
+- [Advanced Bazel Usage](user-guide/advanced-bazel-features.md) – query tuning and large monorepos
+- [Policy Integration](user-guide/policy-integration.md) & [Rego Best Practices](user-guide/rego-best-practices.md)
+- [Troubleshooting Playbook](user-guide/troubleshooting.md)
 
-## Advanced Features
+## Integrations
 
-- **[Advanced Bazel Features](guides/ADVANCED_BAZEL_FEATURES.md)**  - **Query optimization, caching, performance tuning, and custom workflows**
-- **[Orchestrated Scanning](ORCHESTRATED_SCAN.md)** - Integrate Semgrep and CodeQL with merged SARIF output
-- **[IDE Integration](IDE_INTEGRATION.md)** - Real-time vulnerability scanning in your IDE
-- **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
-- **[Performance Optimization](PERFORMANCE.md)** - Tuning for large monorepos
-- **[Provenance Generation](PROVENANCE.md)** - SLSA provenance and signing
-- **[VEX Statements](VEX.md)** - Managing false positives and accepted risks
-- **[Dependency Graph Analysis](GRAPH_ANALYSIS.md)** - Querying and visualizing dependencies
-- **[RipGrep Integration](RIPGREP_INTEGRATION.md)** - Fast file scanning for large monorepos
-- **[Capabilities Reference](reference/capabilities-reference.md)** - Complete feature catalog
+- [IDE Integration Overview](integrations/ide/ide-integration.md)
+  - [Marketplace Assets](integrations/ide/marketplace-assets.md)
+  - [Submission Checklist](integrations/ide/marketplace-submission.md)
+  - [Plugin Testing Guide](integrations/ide/plugin-testing.md)
+  - [Marketplace Publishing](integrations/ide/marketplace-publishing.md)
+- [LLM Integration](integrations/llm-integration.md) and [LLM Usage Patterns](integrations/llm-usage.md)
+- [Orchestrated Scan (Semgrep/CodeQL)](integrations/orchestrated-scan.md)
+- [Container Scanning](integrations/container-scanning.md)
+- [RipGrep Integration](integrations/ripgrep-integration.md)
 
-## Operations
+## Security & Assurance
 
-- **[Validation](VALIDATION.md)** - SPDX and SARIF validation steps
-- **[Troubleshooting](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Versioning](VERSIONING.md)** - Release process and semantic versioning guidelines
+- [Supply Chain Architecture](security/supply-chain.md)
+- [Threat Detection Guide](security/threat-detection.md)
+- [Threat Model](security/threat-model.md)
+- [Vulnerability Enrichment](security/vulnerability-enrichment.md)
+- [VEX Guidance](security/vex.md) and [VEX Statements](vex/README.md)
+- Security policy references: [Secure Coding](security/SECURE_CODING_GUIDE.md), [Risk Ledger](security/RISK_LEDGER.md), [Workflow Security Policy](security/WORKFLOW_SECURITY_POLICY.md)
 
-## Developer & Maintainer Guides
+## Architecture & Internals
 
-- **[Local Development Environment](developer/LOCAL_ENVIRONMENT_SETUP.md)** - Platform setup, linting, and verification steps
-- **[Release Process](RELEASE_PROCESS.md)** - Binary releases, signing, and distribution
-- **[Homebrew Tap Creation](HOMEBREW_TAP_CREATION.md)** - Creating and maintaining the Homebrew tap
-- **[Release Checklist](RELEASE_CHECKLIST.md)** - Pre-release verification steps
+- [Architecture Overview](architecture/architecture.md)
+- [Current Implementation Notes](architecture/architecture-current.md)
+- [Dependency Graph Analysis](architecture/graph-analysis.md)
+- [ADR Index](ADR/)
+- [Reference: JVM Build Systems](reference/jvm-build-systems.md), [JVM Language Support](reference/jvm-language-support.md), [ML Features](reference/ml-features.md)
+- [Diagrams](diagrams/) – Mermaid diagrams rendered in CI
 
-## Testing & Coverage
+## Operations & Release Management
 
-- **[Test Plan](TEST_PLAN.md)** - Strategy and scope
-- **[Testing Guide](testing/TESTING_GUIDE.md)** - Comprehensive testing documentation (Rust)
-- **[Test Fixtures](testing/TEST_FIXTURES_README.md)** - Sample data for testing
+- [Release Process](operations/release-process.md)
+- [Release Checklist](operations/release-checklist.md)
+- [Homebrew Tap Creation](operations/homebrew-tap-creation.md)
+- [Provenance & SLSA](operations/provenance.md)
+- [Performance Tuning](operations/performance.md)
+- [Validation Workflows](operations/validation.md)
+- [Versioning Strategy](operations/versioning.md)
 
-## Planning & Roadmap Documentation
+## Development & Testing
 
-Essential resources for tracking BazBOM development:
+- [Local Environment Setup](development/local-environment-setup.md)
+- [Dependency Management](development/dependency-management.md)
+- [Test Plan](development/test-plan.md) and [Testing Guide](development/testing-guide.md)
+- [Test Fixtures](development/test-fixtures.md)
 
-- **[Master Roadmap (ROADMAP.md)](ROADMAP.md)**  - **Complete feature tracking checklist with all phases and distribution channels**
-- **[Implementation Roadmap](copilot/IMPLEMENTATION_ROADMAP.md)**  - **8-week UX sprint: Interactive init, TUI explorer, web dashboard, team features**
-- **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)**  - **Comprehensive audit of actual vs. documented capabilities**
-- **[Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md)**  - **12-18 month vision and market leadership plan**
-- **[Copilot Directory](copilot/)** - All phase specifications and planning documents
-- **[Developer Guides](developer/)** - Internal development documentation
+## Strategy & Roadmap
 
-## Diagrams
+- [Product Roadmap](strategy/roadmap.md)
+- [Implementation Status](strategy/implementation-status.md)
+- [Market Analysis](strategy/market-analysis/)
+- [Product Roadmap Resources](strategy/product-roadmap/) – integration plans, documentation standards, release packaging
 
-Architecture diagrams are available in the [diagrams](diagrams/) directory in Mermaid format.
+## Examples, Benchmarks & Reference Material
 
-## Documentation Standards
+- [Examples](examples/) – sample workflows and CI automation
+- [Benchmarks](benchmarks/README.md)
+- [Capabilities Reference](reference/capabilities-reference.md)
 
-All canonical documentation lives under `docs/` only. Root-level files are minimal stubs when required by GitHub UX.
+## Archive & Historical Notes
 
-Standards:
-- **[Documentation Standards](copilot/DOCUMENTATION_STANDARDS.md)** (canonical)
-- **[Google Developer Documentation Style Guide](https://developers.google.com/style)**
-- **[Microsoft Writing Style Guide](https://learn.microsoft.com/en-us/style-guide/welcome/)**
-- **Diátaxis Framework** (Tutorial, How-to, Explanation, Reference)
+- [Archive Index](archive/README.md)
+- [Documentation Consolidation Plan](archive/documentation-consolidation-plan.md)
 
-Validation (CI):
-- `markdownlint` for structure
-- `vale` for style and tone
-- Link validation
-- Examples verified where applicable
+## Quality & Style Standards
 
-## Historical Documentation
+- [Documentation Standards](strategy/product-roadmap/DOCUMENTATION_STANDARDS.md)
+- Style references: Google Developer Style, Microsoft Writing Style, Diátaxis
+- CI checks: `markdownlint`, `vale`, broken-link checks, example validation
 
-Completed transitions and legacy documentation:
-
-- **[Historical Documentation Archive](historical/)** - Archived docs from completed transitions
-  - [Rust Transition Complete](historical/RUST_TRANSITION_COMPLETE.md) - 100% Rust implementation achieved
-  - [Python Dependencies Removal](historical/PYTHON_DEPENDENCIES.md) - Zero Python runtime dependencies
-
-See [Documentation Consolidation Plan](DOCUMENTATION_CONSOLIDATION_PLAN.md) for archival strategy.
+> All canonical documentation resides under `docs/`. Root-level files exist only where GitHub’s UI requires them.

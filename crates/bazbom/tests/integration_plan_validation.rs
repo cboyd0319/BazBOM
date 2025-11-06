@@ -1,5 +1,5 @@
 /// Integration test to validate the BazBOM Integration Plan implementation
-/// Based on docs/copilot/BAZBOM_INTEGRATION_PLAN.md
+/// Based on docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md
 ///
 /// This test validates:
 /// 1. Directory structure (sbom/, findings/, enrich/, fixes/, publish/)

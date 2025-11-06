@@ -103,6 +103,6 @@ cargo test --test orchestration_test
 
 ## Further Reading
 
-- [Integration Plan](../../docs/copilot/BAZBOM_INTEGRATION_PLAN.md) - Complete specification
-- [Orchestrated Scan Guide](../../docs/ORCHESTRATED_SCAN.md) - Usage documentation
-- [Usage Guide](../../docs/USAGE.md) - Command reference
+- [Integration Plan](../../docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md) - Complete specification
+- [Orchestrated Scan Guide](../../docs/integrations/orchestrated-scan.md) - Usage documentation
+- [Usage Guide](../../docs/user-guide/usage.md) - Command reference

@@ -1,201 +1,44 @@
-# BazBOM Security
+# Security Guide
 
-This directory contains security-related documentation, policies, and scan results for BazBOM.
+This directory collects the documents and artefacts that underpin BazBOM’s secure-by-design posture. Use it as the starting point when you need to evaluate risk, run assurance workflows, or author internal policy.
 
-## Directory Structure
+## High-priority references
 
-```
-security/
-├── README.md                          # This file
-├── RISK_LEDGER.md                     # Security risk documentation
-├── SECURE_CODING_GUIDE.md             # Coding best practices
-├── POLICIES/                          # Security policies
-│   └── semgrep/                       # Semgrep security rules
-│       └── python-security.yaml       # Custom Python security rules
-└── SCANNER_RESULTS/                   # Security scan outputs (gitignored)
-    ├── bandit-*.sarif
-    ├── semgrep-*.sarif
-    ├── pip-audit-*.json
-    └── safety-*.json
-```
+- [Supply Chain Architecture](supply-chain.md) – SBOM and SCA data flows
+- [Threat Model](threat-model.md) – Assets, adversaries, mitigations
+- [Threat Detection Playbook](threat-detection.md) – Attack detection and response tactics
+- [Vulnerability Enrichment](vulnerability-enrichment.md) – KEV, EPSS, GHSA enrichment pipeline
+- [VEX Guidance](vex.md) – Managing false positives and documenting compensating controls
+- Root-level [SECURITY.md](../../SECURITY.md) – Coordinated disclosure process
 
-## Quick Links
+## Operating the security toolchain
 
-### Documentation
-
-- **[Risk Ledger](RISK_LEDGER.md)** - Current security posture, vulnerabilities, and remediation status
-- **[Secure Coding Guide](SECURE_CODING_GUIDE.md)** - Python security best practices with examples
-- **[Security Policy](../../SECURITY.md)** - How to report vulnerabilities
-- **[Threat Model](../THREAT_MODEL.md)** - Attack vectors and mitigations
-
-### Security Standards
-
-- **[PYSEC_OMEGA](../copilot/PYSEC.md)** - Supreme Python security standards
-- **[OWASP Top 10](https://owasp.org/www-project-top-ten/)** - Web application security
-- **[CWE Top 25](https://cwe.mitre.org/top25/)** - Most dangerous software weaknesses
-- **[SLSA](https://slsa.dev/)** - Supply chain security framework
-
-## Security Tools
-
-### Static Analysis (SAST)
+Most day-to-day scanning is handled directly by the Rust CLI:
 
 ```bash
-# Run Bandit security scanner
-bandit -r tools/supplychain -c .bandit -f sarif -o security/SCANNER_RESULTS/bandit.sarif
-
-# Run Semgrep with custom policies
-semgrep scan --config auto --config security/POLICIES/semgrep/ \
-  --sarif --output security/SCANNER_RESULTS/semgrep.sarif tools/supplychain
-
-# Run CodeQL (requires GitHub CLI)
-gh codeql database create codeql-db --language=python
-gh codeql database analyze codeql-db --format=sarif-latest --output=security/SCANNER_RESULTS/codeql.sarif
+bazbom scan . --with-semgrep --with-codeql
+bazbom db sync                 # refresh advisory data
+bazbom policy check            # enforce policy gates
+bazbom report executive        # security summary exports
 ```
 
-### Dependency Scanning
+Complementary artefacts in this directory:
 
-```bash
-# Audit Python dependencies
-pip-audit --format json --output security/SCANNER_RESULTS/pip-audit.json
+| File | Purpose |
+| --- | --- |
+| `SECURE_CODING_GUIDE.md` | Coding practices and guardrails for contributors |
+| `RISK_LEDGER.md` | Current risk register with mitigation ownership |
+| `SECURITY_REVIEW_CHECKLIST.md` | Release/security review checklist |
+| `CODEQL_OPTIMIZATION.md` / `CODEQL_TIMEOUT_MITIGATION.md` | Hardening guidance for CodeQL workflows |
+| `WORKFLOW_SECURITY_POLICY.md` | CI hardening, secret handling, and access controls |
 
-# Check with Safety
-safety check --json --output security/SCANNER_RESULTS/safety.json
+Custom Semgrep policies live under `POLICIES/`. Scanner outputs are written to `SCANNER_RESULTS/` (gitignored) when you run optional tools (`semgrep`, `trufflehog`, etc.).
 
-# OSV Scanner
-osv-scanner --format json --output security/SCANNER_RESULTS/osv.json .
-```
+## Related resources
 
-### Secret Detection
+- [Threat Detection](threat-detection.md) for advanced telemetry
+- [Operations / Validation](../operations/validation.md) for SBOM/SARIF schema checks
+- [Release Process](../operations/release-process.md) for signed releases and provenance
+- [Dependency Management](../development/dependency-management.md) for supply-chain hygiene
 
-```bash
-# TruffleHog secret scanner
-trufflehog filesystem . --json --no-update > security/SCANNER_RESULTS/trufflehog.json
-
-# GitLeaks secret scanner
-gitleaks detect --source . --report-path security/SCANNER_RESULTS/gitleaks.json --verbose
-```
-
-### Pre-commit Hooks
-
-```bash
-# Install pre-commit hooks
-pre-commit install
-
-# Run all hooks manually
-pre-commit run --all-files
-
-# Update hook versions
-pre-commit autoupdate
-```
-
-## Security Policies
-
-### Custom Semgrep Rules
-
-We maintain custom security rules in `POLICIES/semgrep/python-security.yaml`:
-
-- **dangerous-xml-parsing** - Detect XXE vulnerabilities
-- **subprocess-shell-true** - Prevent command injection
-- **yaml-unsafe-load** - Unsafe YAML deserialization
-- **pickle-unsafe-load** - Pickle deserialization risks
-- **exec-eval-usage** - Dangerous code execution
-- **sql-string-concatenation** - SQL injection prevention
-- **hardcoded-secret** - Secret detection
-- **insecure-random** - Weak randomness
-- **unvalidated-redirect** - Open redirect prevention
-- **path-traversal-risk** - Directory traversal
-- **logging-sensitive-data** - Secret leakage in logs
-- **weak-cryptography** - MD5/SHA1 usage
-- **unsafe-deserialization** - JSON deserialization
-- **missing-timeout** - HTTP request timeouts
-
-### Running Custom Rules
-
-```bash
-# Run only custom policies
-semgrep scan --config security/POLICIES/semgrep/ tools/supplychain
-
-# Run with auto rules + custom
-semgrep scan --config auto --config security/POLICIES/semgrep/ tools/supplychain
-```
-
-## Security Workflows
-
-### GitHub Actions
-
-BazBOM uses multiple security workflows:
-
-1. **CodeQL** (`.github/workflows/codeql.yml`)
-   - Comprehensive Python security analysis
-   - Runs on: push, PR, weekly schedule
-   - Results: GitHub Security tab
-
-2. **Supply Chain** (`.github/workflows/supplychain.yml`)
-   - SBOM generation and signing
-   - Vulnerability scanning
-   - Provenance attestations
-   - Runs on: push, PR, daily schedule
-
-3. **CI** (`.github/workflows/ci.yml`)
-   - Build and test validation
-   - SHA-pinned actions
-   - Minimal permissions
-   - Runs on: push, PR
-
-### Viewing Results
-
-- **GitHub Security Tab**: Navigate to repository → Security → Code scanning alerts
-- **Workflow Artifacts**: Download SARIF/JSON reports from workflow runs
-- **Local Scans**: Run tools locally and view results in `security/SCANNER_RESULTS/`
-
-## Security Checklist
-
-### For Contributors
-
-Before submitting a PR, ensure:
-
-- [ ] Pre-commit hooks pass
-- [ ] No secrets in code or commits
-- [ ] Input validation for all external data
-- [ ] No shell=True in subprocess calls
-- [ ] Parameterized SQL queries
-- [ ] defusedxml for XML parsing
-- [ ] URL scheme validation
-- [ ] Error messages don't leak sensitive data
-- [ ] Tests cover security-critical paths
-- [ ] Documentation updated
-
-### For Reviewers
-
-When reviewing PRs, verify:
-
-- [ ] Security tools pass (Bandit, Semgrep, CodeQL)
-- [ ] No new vulnerabilities introduced
-- [ ] Security best practices followed
-- [ ] Input validation present
-- [ ] Error handling appropriate
-- [ ] No hardcoded secrets
-- [ ] Tests validate security controls
-- [ ] Documentation accurate
-
-### For Maintainers
-
-Regular security tasks:
-
-- [ ] Review Risk Ledger weekly
-- [ ] Update security documentation
-- [ ] Review Dependabot PRs
-- [ ] Monitor GitHub Security alerts
-- [ ] Update security tools
-- [ ] Run comprehensive security audit monthly
-- [ ] Update threat model quarterly
-
-## Security Metrics
-
-Current security posture is tracked in the [Risk Ledger](RISK_LEDGER.md):
-
-- **Vulnerability Count**: Critical, High, Medium, Low
-- **Dependency Status**: Known CVEs in dependencies
-- **Test Coverage**: Security-critical code paths
-- **Scan Results**: SAST, dependency, secret detection
-
+Security is everyone’s responsibility—contribute improvements by opening an issue or PR, and keep `SECURITY.md` up to date when escalation paths change.

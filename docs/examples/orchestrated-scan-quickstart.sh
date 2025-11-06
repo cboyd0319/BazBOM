@@ -1,7 +1,7 @@
 #!/bin/bash
 # BazBOM Orchestrated Scan Quickstart Demo
 # This script demonstrates the complete orchestrated scanning workflow
-# as defined in docs/copilot/BAZBOM_INTEGRATION_PLAN.md
+# as defined in docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md
 #
 # Usage: ./orchestrated-scan-quickstart.sh [project-dir]
 
@@ -201,7 +201,7 @@ echo "  - .github/workflows/bazbom-orchestrated-scan.yml"
 echo ""
 echo "Documentation:"
 echo "  - docs/ORCHESTRATED_SCAN.md - Complete guide"
-echo "  - docs/copilot/BAZBOM_INTEGRATION_PLAN.md - Integration plan"
+echo "  - docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md - Integration plan"
 echo "  - docs/USAGE.md - Command reference"
 echo ""
 echo "OK: Quickstart demo complete!"

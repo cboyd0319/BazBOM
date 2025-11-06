@@ -263,7 +263,7 @@ bazbom scan --format csv > vulnerabilities.csv
 - [PCI-DSS v4.0 Standard](https://www.pcisecuritystandards.org/)
 - [PCI Software Security Framework](https://www.pcisecuritystandards.org/document_library)
 - [CISA KEV Catalog](https://www.cisa.gov/known-exploited-vulnerabilities-catalog)
-- [BazBOM Policy Integration Guide](../../docs/guides/POLICY_INTEGRATION.md)
+- [BazBOM Policy Integration Guide](../../docs/user-guide/policy-integration.md)
 
 ## Support
 

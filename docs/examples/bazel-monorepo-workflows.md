@@ -461,6 +461,6 @@ bazbom scan . --bazel-affected-by-files file.java --bazel-universe '//backend/..
 
 **Next Steps:**
 
-- [Usage Guide](../USAGE.md) - Complete command reference
+- [Usage Guide](../../user-guide/usage.md) - Complete command reference
 - [Capabilities Reference](../reference/capabilities-reference.md) - Full feature list
 - [GitHub Action Setup](../CI_CD_INTEGRATION.md) - CI/CD integration

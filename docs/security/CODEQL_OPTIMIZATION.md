@@ -203,4 +203,4 @@ If autobuild fails:
 
 - [Workflow Security Policy](WORKFLOW_SECURITY_POLICY.md)
 - [Security Review Checklist](SECURITY_REVIEW_CHECKLIST.md)
-- [Orchestrated Scan](../ORCHESTRATED_SCAN.md)
+- [Orchestrated Scan](../integrations/orchestrated-scan.md)

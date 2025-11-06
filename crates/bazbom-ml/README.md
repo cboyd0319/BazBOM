@@ -2,7 +2,7 @@
 
 **Machine Learning infrastructure for BazBOM vulnerability analysis**
 
-[![Tests](https://img.shields.io/badge/tests-23%20passing-brightgreen)](../../docs/ML_FEATURES.md)
+[![Tests](https://img.shields.io/badge/tests-23%20passing-brightgreen)](../../docs/reference/ml-features.md)
 [![Coverage](https://img.shields.io/badge/coverage-%3E90%25-brightgreen)]()
 [![Privacy](https://img.shields.io/badge/privacy-local%20only-blue)]()
 
@@ -178,8 +178,8 @@ fn analyze_vulnerability(vuln_data: VulnerabilityData) {
 
 ## Documentation
 
-- [ML Features Guide](../../docs/ML_FEATURES.md) - Complete feature documentation
-- [Phase 10 Spec](../../docs/copilot/PHASE_10_AI_INTELLIGENCE.md) - Detailed roadmap
+- [ML Features Guide](../../docs/reference/ml-features.md) - Complete feature documentation
+- [Phase 10 Spec](../../docs/archive/phases/PHASE_10_AI_INTELLIGENCE.md) - Detailed roadmap
 - [API Documentation](https://docs.rs/bazbom-ml) - API reference (coming soon)
 
 ## Contributing

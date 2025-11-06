@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Master Roadmap (docs/ROADMAP.md)** - Comprehensive feature tracking checklist consolidating all phases
+- **Master Roadmap (docs/strategy/roadmap.md)** - Comprehensive feature tracking checklist consolidating all phases
 - Complete phase-by-phase tracking for Phases 0-11
 - Distribution & marketplace readiness tracking (Homebrew, GitHub Marketplace, IDE plugins, Windows)
 - Detailed status indicators for all features and capabilities
