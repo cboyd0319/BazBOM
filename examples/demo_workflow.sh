@@ -17,7 +17,7 @@ echo "--------------------------------------------------"
 python3 tools/supplychain/extract_maven_deps.py \
   --workspace WORKSPACE \
   --output /tmp/demo_deps.json
-echo "✓ Dependencies extracted to /tmp/demo_deps.json"
+echo "[OK] Dependencies extracted to /tmp/demo_deps.json"
 echo ""
 
 echo "Step 2: Generate SPDX SBOM"
@@ -26,7 +26,7 @@ python3 tools/supplychain/write_sbom.py \
   --input /tmp/demo_deps.json \
   --output /tmp/demo_sbom.spdx.json \
   --name "bazbom-demo"
-echo "✓ SBOM generated at /tmp/demo_sbom.spdx.json"
+echo "[OK] SBOM generated at /tmp/demo_sbom.spdx.json"
 echo ""
 
 echo "Step 3: Validate SBOM"
@@ -42,8 +42,8 @@ python3 tools/supplychain/graph_generator.py \
   --sbom /tmp/demo_sbom.spdx.json \
   --output-json /tmp/demo_graph.json \
   --output-graphml /tmp/demo_graph.graphml
-echo "✓ JSON graph: /tmp/demo_graph.json"
-echo "✓ GraphML: /tmp/demo_graph.graphml"
+echo "[OK] JSON graph: /tmp/demo_graph.json"
+echo "[OK] GraphML: /tmp/demo_graph.graphml"
 echo ""
 
 echo "Step 5: Generate SLSA provenance"
@@ -53,7 +53,7 @@ python3 tools/supplychain/provenance_builder.py \
   --output /tmp/demo_provenance.json \
   --commit "$(git rev-parse HEAD)" \
   --builder "cboyd0319/BazBOM"
-echo "✓ Provenance generated at /tmp/demo_provenance.json"
+echo "[OK] Provenance generated at /tmp/demo_provenance.json"
 echo ""
 
 echo "Step 6: Run vulnerability scan (OSV)"
@@ -63,7 +63,7 @@ if python3 tools/supplychain/osv_query.py \
   --sbom /tmp/demo_sbom.spdx.json \
   --output /tmp/demo_sca.json \
   --batch 2>/dev/null; then
-  echo "✓ SCA scan completed: /tmp/demo_sca.json"
+  echo "[OK] SCA scan completed: /tmp/demo_sca.json"
   
   echo ""
   echo "Step 7: Generate SARIF report"
@@ -71,7 +71,7 @@ if python3 tools/supplychain/osv_query.py \
   python3 tools/supplychain/sarif_adapter.py \
     --input /tmp/demo_sca.json \
     --output /tmp/demo_findings.sarif
-  echo "✓ SARIF report: /tmp/demo_findings.sarif"
+  echo "[OK] SARIF report: /tmp/demo_findings.sarif"
   
   echo ""
   echo "Step 8: Validate SARIF report"

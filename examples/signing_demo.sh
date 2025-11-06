@@ -30,7 +30,7 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-echo -e "${GREEN}✓ Prerequisites checked${NC}\n"
+echo -e "${GREEN}[OK] Prerequisites checked${NC}\n"
 
 # Step 1: Generate SBOM (if not exists)
 echo -e "${BLUE}Step 1: Generate SBOM${NC}"
@@ -41,9 +41,9 @@ if [ ! -f "${SBOM_PATH}" ]; then
     echo "Generating SBOM..."
     cd "${REPO_ROOT}"
     bazel build //:workspace_sbom
-    echo -e "${GREEN}✓ SBOM generated: ${SBOM_PATH}${NC}\n"
+    echo -e "${GREEN}[OK] SBOM generated: ${SBOM_PATH}${NC}\n"
 else
-    echo -e "${GREEN}✓ SBOM exists: ${SBOM_PATH}${NC}\n"
+    echo -e "${GREEN}[OK] SBOM exists: ${SBOM_PATH}${NC}\n"
 fi
 
 # Step 2: Sign SBOM
@@ -80,7 +80,7 @@ else
     echo -e "${YELLOW}Skipping signing (cosign not installed)${NC}"
 fi
 
-echo -e "${GREEN}✓ Signing step complete${NC}\n"
+echo -e "${GREEN}[OK] Signing step complete${NC}\n"
 
 # Step 3: Query Rekor
 echo -e "${BLUE}Step 3: Query Rekor Transparency Log${NC}"
@@ -113,7 +113,7 @@ python3 "${REPO_ROOT}/tools/supplychain/intoto_attestation.py" generate \
   "${SBOM_PATH}" \
   --output "${ATTESTATION_PATH}"
 
-echo -e "${GREEN}✓ Attestation created: ${ATTESTATION_PATH}${NC}\n"
+echo -e "${GREEN}[OK] Attestation created: ${ATTESTATION_PATH}${NC}\n"
 
 # Show attestation structure
 echo "Attestation structure:"
@@ -139,11 +139,11 @@ echo -e "${BLUE}=== Summary ===${NC}"
 echo ""
 echo "This demo showed the complete SBOM attestation workflow:"
 echo ""
-echo "1. ✓ Generate SBOM with Bazel"
-echo "2. ✓ Sign SBOM with Sigstore (cosign)"
-echo "3. ✓ Log signature to Rekor transparency log"
-echo "4. ✓ Create in-toto attestation bundle"
-echo "5. ✓ Verify signature and attestation"
+echo "1. [OK] Generate SBOM with Bazel"
+echo "2. [OK] Sign SBOM with Sigstore (cosign)"
+echo "3. [OK] Log signature to Rekor transparency log"
+echo "4. [OK] Create in-toto attestation bundle"
+echo "5. [OK] Verify signature and attestation"
 echo ""
 echo "Files created:"
 echo "  - SBOM:        ${SBOM_PATH}"
