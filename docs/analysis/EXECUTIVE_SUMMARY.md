@@ -18,20 +18,20 @@ BazBOM has a **unique market position**: it offers enterprise-grade SBOM/SCA cap
 
 ## Current State Assessment
 
-### Strong Technical Foundations ✅
+### Strong Technical Foundations 
 
 | Capability | Status | Quality |
 |------------|--------|---------|
-| Rust Implementation | ✅ Complete | Production-ready |
-| Maven Support | ✅ Complete | Native plugin |
-| Gradle Support | ✅ Complete | Native plugin |
-| Bazel Support | ✅ Complete | **Unique advantage** |
-| Vulnerability Database | ✅ Complete | 5 sources (OSV, NVD, GHSA, KEV, EPSS) |
-| Policy System | ✅ Complete | YAML + Rego/OPA |
-| SBOM Generation | ✅ Complete | SPDX 2.3, CycloneDX 1.5 |
-| Remediation | ⚠️ Partial | Needs UX polish |
-| IDE Integration | ⚠️ Alpha | Needs polish |
-| Visualization | ⚠️ Limited | External tools required |
+| Rust Implementation |  Complete | Production-ready |
+| Maven Support |  Complete | Native plugin |
+| Gradle Support |  Complete | Native plugin |
+| Bazel Support |  Complete | **Unique advantage** |
+| Vulnerability Database |  Complete | 5 sources (OSV, NVD, GHSA, KEV, EPSS) |
+| Policy System |  Complete | YAML + Rego/OPA |
+| SBOM Generation |  Complete | SPDX 2.3, CycloneDX 1.5 |
+| Remediation |  Partial | Needs UX polish |
+| IDE Integration |  Alpha | Needs polish |
+| Visualization |  Limited | External tools required |
 
 **Verdict:** Strong technical capabilities, but **user experience** needs improvement to drive adoption.
 
@@ -135,24 +135,24 @@ bazbom dashboard
 
 | Feature | Status | Timeline |
 |---------|--------|----------|
-| **Interactive onboarding** | 📋 Planned | Weeks 1-2 |
-| **Visual dependency graph** | 📋 Planned | Weeks 3-4 |
-| **One-click remediation** | ⚠️ Partial | Weeks 3-4 |
-| **IDE integration** | ⚠️ Alpha | Weeks 5-6 |
-| **Policy templates** | 📋 Planned | Weeks 1-2 |
-| **Team coordination** | 📋 Planned | Weeks 7-8 |
+| **Interactive onboarding** |  Planned | Weeks 1-2 |
+| **Visual dependency graph** |  Planned | Weeks 3-4 |
+| **One-click remediation** |  Partial | Weeks 3-4 |
+| **IDE integration** |  Alpha | Weeks 5-6 |
+| **Policy templates** |  Planned | Weeks 1-2 |
+| **Team coordination** |  Planned | Weeks 7-8 |
 
 **Nice-to-Have (Future):**
 
 | Feature | Status | Timeline |
 |---------|--------|----------|
-| AI-assisted analysis | 📋 Planned | Weeks 9-12 |
-| Web dashboard | 📋 Planned | Weeks 3-4 |
-| Mobile support | 📋 Planned | TBD |
+| AI-assisted analysis |  Planned | Weeks 9-12 |
+| Web dashboard |  Planned | Weeks 3-4 |
+| Mobile support |  Planned | TBD |
 
 ## Implementation Roadmap
 
-### Phase 1: Quick Wins (Weeks 1-2) 🎯
+### Phase 1: Quick Wins (Weeks 1-2) 
 
 **Goal:** Dramatically improve first impression
 
@@ -170,7 +170,7 @@ Deliverables:
 
 **Estimated Effort:** 2 weeks, 1 developer
 
-### Phase 2: Visual Excellence (Weeks 3-4) 🎨
+### Phase 2: Visual Excellence (Weeks 3-4) 
 
 **Goal:** Best-in-class visualization
 
@@ -188,7 +188,7 @@ Deliverables:
 
 **Estimated Effort:** 2 weeks, 1 developer
 
-### Phase 3: IDE Polish (Weeks 5-6) 🛠️
+### Phase 3: IDE Polish (Weeks 5-6) 
 
 **Goal:** Seamless IDE experience
 
@@ -206,7 +206,7 @@ Deliverables:
 
 **Estimated Effort:** 2 weeks, 1 developer
 
-### Phase 4: Team Features (Weeks 7-8) 👥
+### Phase 4: Team Features (Weeks 7-8) 
 
 **Goal:** Enable team collaboration
 
@@ -241,7 +241,7 @@ Deliverables:
 |---------|--------|------------|
 | **Pricing** | Free | $10K+/year |
 | **Privacy** | Local, zero telemetry | Cloud-required |
-| **Bazel Support** | ✅ Git-aware incremental | ✅ Supported (manual queries) |
+| **Bazel Support** |  Git-aware incremental |  Supported (manual queries) |
 | **Bazel PR Scans** | 6x faster (auto-detect affected) | Full scan or manual query |
 | **Onboarding** | 5 min (post-Phase 1) | 10-15 min |
 | **IDE Integration** | VS Code + IntelliJ | VS Code + JetBrains |
@@ -455,4 +455,4 @@ BazBOM has **strong technical foundations** and **unique market advantages**. Th
 **Questions?** Open a GitHub Discussion.  
 **Want to contribute?** See CONTRIBUTING.md.
 
-Let's make security tooling accessible to everyone. 🚀
+Let's make security tooling accessible to everyone. 

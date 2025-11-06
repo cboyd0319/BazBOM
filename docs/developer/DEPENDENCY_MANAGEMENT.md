@@ -5,10 +5,10 @@ This document describes how BazBOM manages Python dependencies following PYSEC_O
 ## Overview
 
 BazBOM uses **pip-tools** with hash-based verification to ensure:
-- ✅ **Reproducible builds** - Same dependencies every time
-- ✅ **Supply chain security** - SHA256 hash verification prevents tampering
-- ✅ **Transitive dependency tracking** - All dependencies explicitly listed
-- ✅ **Security auditing** - Easy to scan for vulnerabilities
+-  **Reproducible builds** - Same dependencies every time
+-  **Supply chain security** - SHA256 hash verification prevents tampering
+-  **Transitive dependency tracking** - All dependencies explicitly listed
+-  **Security auditing** - Easy to scan for vulnerabilities
 
 ## Dependency Files
 
@@ -168,10 +168,10 @@ git commit -m "security: Update requests to 2.32.3 (CVE-XXXX-YYYY)"
 **Required:** All requirements files MUST include SHA256 hashes.
 
 ```bash
-# ✅ CORRECT
+#  CORRECT
 pip-compile --generate-hashes requirements.in
 
-# ❌ WRONG - No hashes
+#  WRONG - No hashes
 pip-compile requirements.in
 ```
 
@@ -246,10 +246,10 @@ grep -c "hash=sha256" requirements.txt
 ### When Hashes Are Verified
 
 ```bash
-# ✅ Hash verification ENABLED
+#  Hash verification ENABLED
 pip install -r requirements.txt --require-hashes
 
-# ⚠️ Hash verification DISABLED (dangerous!)
+#  Hash verification DISABLED (dangerous!)
 pip install -r requirements.txt
 ```
 
@@ -384,9 +384,9 @@ pip-audit -r requirements.txt
 ```
 
 **Remember:**
-- ✅ Always use `--generate-hashes`
-- ✅ Always use `--require-hashes` when installing
-- ✅ Commit both .in and .txt files
-- ✅ Audit before every commit
-- ✅ Review transitive dependencies
-- ✅ Keep dependencies up to date
+-  Always use `--generate-hashes`
+-  Always use `--require-hashes` when installing
+-  Commit both .in and .txt files
+-  Audit before every commit
+-  Review transitive dependencies
+-  Keep dependencies up to date

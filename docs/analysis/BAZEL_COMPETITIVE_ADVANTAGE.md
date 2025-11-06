@@ -82,8 +82,8 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 |----------|--------|------------|
 | **Full Monorepo** (5247 targets) | ~45 min | ~45 min |
 | **Single Package** (~10 targets) | ~2 min | ~2 min |
-| **PR with 1 file changed** | **8 sec** ⚡ | ~45 min (full) or manual query |
-| **PR with 5 files changed** | **2 min** ⚡ | ~45 min (full) or manual query |
+| **PR with 1 file changed** | **8 sec**  | ~45 min (full) or manual query |
+| **PR with 5 files changed** | **2 min**  | ~45 min (full) or manual query |
 
 **BazBOM Advantage:** 6-30x faster for typical PR scans
 
@@ -103,7 +103,7 @@ bazbom scan . --bazel-affected-by-files src/java/main/lib/top_x.java
 # [bazbom] scanning 2 selected targets
 #   - //src/java:get_top_x_repos
 #   - //src/java:lib
-# ⏱️  Completed in 8.2 seconds
+#   Completed in 8.2 seconds
 ```
 
 **Endor Labs Workflow (Manual):**
@@ -170,9 +170,9 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 
 | Tool | Approach | Targets Scanned | Time | Developer Experience |
 |------|----------|-----------------|------|---------------------|
-| **BazBOM** | Automatic affected target detection | 2 | 8 sec | ⭐⭐⭐⭐⭐ Just works |
-| **Endor Labs** | Manual query specification | 2 | 2 min | ⭐⭐⭐ Requires scripting |
-| **Endor Labs** | Full workspace scan | 5,247 | 45 min | ⭐⭐ Slow, but comprehensive |
+| **BazBOM** | Automatic affected target detection | 2 | 8 sec |  Just works |
+| **Endor Labs** | Manual query specification | 2 | 2 min |  Requires scripting |
+| **Endor Labs** | Full workspace scan | 5,247 | 45 min |  Slow, but comprehensive |
 
 ### Medium Monorepo Example
 
@@ -180,24 +180,24 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 
 | Tool | Approach | Targets Scanned | Time | Developer Experience |
 |------|----------|-----------------|------|---------------------|
-| **BazBOM** | Automatic affected target detection | 12 | 90 sec | ⭐⭐⭐⭐⭐ Just works |
-| **Endor Labs** | Manual query specification | 12 | 3 min | ⭐⭐⭐ Requires scripting |
-| **Endor Labs** | Full workspace scan | 500 | 8 min | ⭐⭐ Slow |
+| **BazBOM** | Automatic affected target detection | 12 | 90 sec |  Just works |
+| **Endor Labs** | Manual query specification | 12 | 3 min |  Requires scripting |
+| **Endor Labs** | Full workspace scan | 500 | 8 min |  Slow |
 
 ## Feature Parity Matrix
 
 | Feature | BazBOM | Endor Labs | Winner |
 |---------|--------|------------|--------|
-| **Bazel Support** | ✅ | ✅ | Tie |
-| **Target Selection** | ✅ | ✅ | Tie |
-| **Query Support** | ✅ | ✅ | Tie |
-| **Workspace Discovery** | ✅ | ✅ | Tie |
-| **Quick Scan Mode** | ✅ | ✅ | Tie |
-| **Deep Scan / Reachability** | ✅ | ✅ | Tie |
-| **Git-Aware Incremental** | ✅ | ❌ | **BazBOM** |
-| **Auto Affected Target Detection** | ✅ | ❌ | **BazBOM** |
-| **PR Optimization** | ✅ 6x faster | ❌ Manual | **BazBOM** |
-| **Zero Config PR Scans** | ✅ | ❌ | **BazBOM** |
+| **Bazel Support** |  |  | Tie |
+| **Target Selection** |  |  | Tie |
+| **Query Support** |  |  | Tie |
+| **Workspace Discovery** |  |  | Tie |
+| **Quick Scan Mode** |  |  | Tie |
+| **Deep Scan / Reachability** |  |  | Tie |
+| **Git-Aware Incremental** |  |  | **BazBOM** |
+| **Auto Affected Target Detection** |  |  | **BazBOM** |
+| **PR Optimization** |  6x faster |  Manual | **BazBOM** |
+| **Zero Config PR Scans** |  |  | **BazBOM** |
 
 ## Strategic Positioning
 
@@ -233,13 +233,13 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 
 ### Headlines
 
-✅ **Correct:**
+ **Correct:**
 - "6x Faster Bazel PR Scans with BazBOM"
 - "Automatic Incremental Scanning for Bazel Monorepos"
 - "Zero-Config Bazel Security for CI/CD"
 - "Git-Aware Bazel Analysis"
 
-❌ **Incorrect:**
+ **Incorrect:**
 - ~~"Only Bazel SBOM Tool"~~ (Not true)
 - ~~"First Bazel Support"~~ (Not true)
 
@@ -247,7 +247,7 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 
 | Feature | BazBOM | Endor Labs |
 |---------|--------|------------|
-| Bazel Support | ✅ Yes | ✅ Yes |
+| Bazel Support |  Yes |  Yes |
 | Target Selection | Automatic + Manual | Manual Only |
 | PR Scan Speed | 8 sec (typical) | 45 min (full) or scripting |
 | Configuration | Zero-config | Requires scripting |
@@ -279,10 +279,10 @@ endorctl scan --use-bazel --bazel-targets-query='kind(java_binary, //...)'
 
 **Updated Assessment:**
 
-✅ **Endor Labs DOES support Bazel** - comprehensively  
-✅ **BazBOM's advantage is WORKFLOW, not support** - 6x faster  
-✅ **Both tools are viable** - BazBOM wins on speed, cost, privacy  
-✅ **BazBOM's unique value** - Automatic incremental scanning
+ **Endor Labs DOES support Bazel** - comprehensively  
+ **BazBOM's advantage is WORKFLOW, not support** - 6x faster  
+ **Both tools are viable** - BazBOM wins on speed, cost, privacy  
+ **BazBOM's unique value** - Automatic incremental scanning
 
 **Positioning:**
 > "BazBOM: The fastest, easiest way to scan Bazel monorepos. While other tools require manual target specification, BazBOM automatically detects affected targets, making PR scans 6x faster. Free, private, and optimized for developer workflows."

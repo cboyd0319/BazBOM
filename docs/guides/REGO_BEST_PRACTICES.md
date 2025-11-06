@@ -19,10 +19,10 @@ This guide explains how to write effective Rego policies for BazBOM's policy eng
 
 **Rego** (pronounced "ray-go") is the policy language for Open Policy Agent (OPA). Use Rego when:
 
-✅ **Complex Logic**: AND/OR/NOT combinations that are hard to express in YAML  
-✅ **Dynamic Rules**: Policies that depend on context or metadata  
-✅ **Reusable Logic**: Functions and rules that can be shared  
-✅ **Advanced Queries**: Filtering, aggregation, or transformation  
+ **Complex Logic**: AND/OR/NOT combinations that are hard to express in YAML  
+ **Dynamic Rules**: Policies that depend on context or metadata  
+ **Reusable Logic**: Functions and rules that can be shared  
+ **Advanced Queries**: Filtering, aggregation, or transformation  
 
 Use YAML when:
 - Simple threshold-based rules
@@ -397,7 +397,7 @@ bazbom scan --policy policy.rego --input test-sbom.json
 
 ### 1. Use Indexed Lookups
 
-❌ **Slow:**
+ **Slow:**
 ```rego
 deny[msg] {
     vuln := input.vulnerabilities[_]
@@ -406,7 +406,7 @@ deny[msg] {
 }
 ```
 
-✅ **Fast:**
+ **Fast:**
 ```rego
 deny[msg] {
     vuln := input.vulnerabilities[_]
@@ -417,7 +417,7 @@ deny[msg] {
 
 ### 2. Avoid Redundant Iterations
 
-❌ **Slow:**
+ **Slow:**
 ```rego
 deny[msg] {
     vuln := input.vulnerabilities[_]
@@ -432,7 +432,7 @@ deny[msg] {
 }
 ```
 
-✅ **Fast:**
+ **Fast:**
 ```rego
 deny[msg] {
     vuln := input.vulnerabilities[_]
@@ -450,7 +450,7 @@ deny[msg] {
 
 ### 3. Use Comprehensions
 
-❌ **Slow:**
+ **Slow:**
 ```rego
 critical_vulns[vuln.id] {
     vuln := input.vulnerabilities[_]
@@ -460,7 +460,7 @@ critical_vulns[vuln.id] {
 count_critical := count(critical_vulns)
 ```
 
-✅ **Fast:**
+ **Fast:**
 ```rego
 count_critical := count([v | v := input.vulnerabilities[_]; v.severity == "CRITICAL"])
 ```
@@ -643,7 +643,7 @@ warn[msg] {
 
 ## Best Practices Summary
 
-✅ **DO:**
+ **DO:**
 - Use descriptive rule names and messages
 - Include compliance requirement references (e.g., "PCI-DSS 6.2.4")
 - Test policies with unit tests
@@ -651,7 +651,7 @@ warn[msg] {
 - Use comprehensions for filtering
 - Document complex logic with comments
 
-❌ **DON'T:**
+ **DON'T:**
 - Use generic error messages
 - Iterate multiple times over same data
 - Forget to handle missing fields

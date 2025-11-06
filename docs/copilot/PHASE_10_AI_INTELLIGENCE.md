@@ -1,7 +1,7 @@
 # Phase 10: AI-Powered Intelligence
 
 **Status:** Planned (Research)
-**Priority:** 🟢 P2 - Innovation/Differentiation
+**Priority:**  P2 - Innovation/Differentiation
 **Timeline:** Months 8-12 (16 weeks)
 **Team Size:** 1 ML engineer + 1 Rust developer
 **Dependencies:** Phase 0-3 complete, Phase 7 (threat intelligence) recommended
@@ -21,10 +21,10 @@
 4. **Intelligent Triage** - Auto-categorize vulnerabilities (false positive, real threat, etc.)
 
 **Success Metrics:**
-- ✅ 50% reduction in manual triage time
-- ✅ 90%+ accuracy in exploit prediction (better than EPSS)
-- ✅ 80%+ accuracy in anomaly detection
-- ✅ LLM generates useful migration guides 70%+ of the time
+-  50% reduction in manual triage time
+-  90%+ accuracy in exploit prediction (better than EPSS)
+-  80%+ accuracy in anomaly detection
+-  LLM generates useful migration guides 70%+ of the time
 
 **Strategic Rationale:** Differentiate from competitors through AI-native features.
 
@@ -227,7 +227,7 @@ impl AnomalyDetector {
 bazbom scan --detect-anomalies
 
 # Output:
-# ⚠️ Anomalies Detected:
+#  Anomalies Detected:
 #
 # 1. com.example:suspicious-lib:1.0.0
 #    Anomaly Score: -0.87 (HIGH)
@@ -395,15 +395,15 @@ bazbom scan --intelligent-triage
 # Output:
 # Vulnerability Triage:
 #
-# 🔴 Real Threats (2) - Fix immediately
+#  Real Threats (2) - Fix immediately
 #   - CVE-2024-xxxx in spring-web (Confidence: 95%)
 #   - CVE-2023-yyyy in log4j-core (Confidence: 89%)
 #
-# 🟡 Low Priority (5) - Plan fixes
+#  Low Priority (5) - Plan fixes
 #   - CVE-2022-zzzz in junit (Test-only, Confidence: 92%)
 #   - ...
 #
-# ✅ False Positives (3) - Ignore
+#  False Positives (3) - Ignore
 #   - CVE-2021-aaaa in netty (Windows-only, you're on Linux, Confidence: 87%)
 #   - ...
 ```
@@ -438,13 +438,13 @@ ml:
 ```
 BazBOM ML Features:
 
-✅ Local Models (Default):
+ Local Models (Default):
    - Exploit prediction (XGBoost model, 2MB)
    - Anomaly detection (Isolation Forest, 1MB)
    - LLM assistant (Llama 3 8B, 8GB RAM required)
    - Your data never leaves your machine
 
-☁️ Cloud LLM (Optional):
+ Cloud LLM (Optional):
    - If you enable OpenAI/Anthropic integration:
    - Package names, versions, CVE IDs sent to API
    - No source code, no secrets, no PII
@@ -475,12 +475,12 @@ Configure: bazbom config set ml.llm_assistant.provider local|openai|disabled
 
 | Feature | Competitors | BazBOM |
 |---------|------------|--------|
-| **Rule-Based Prioritization** | ✅ All | ✅ Yes |
-| **ML Exploit Prediction** | ⚠️ Some (proprietary) | ✅ Custom model |
-| **Anomaly Detection** | ❌ Rare | ✅ Yes |
-| **LLM Assistant** | ❌ None (as of 2024) | ✅ Local + Cloud |
-| **Intelligent Triage** | ⚠️ Some | ✅ Yes |
-| **Privacy** | ❌ Cloud-first | ✅ Local-first |
+| **Rule-Based Prioritization** |  All |  Yes |
+| **ML Exploit Prediction** |  Some (proprietary) |  Custom model |
+| **Anomaly Detection** |  Rare |  Yes |
+| **LLM Assistant** |  None (as of 2024) |  Local + Cloud |
+| **Intelligent Triage** |  Some |  Yes |
+| **Privacy** |  Cloud-first |  Local-first |
 
 **Differentiation:** Only open source SCA with AI-native features and local-first privacy.
 

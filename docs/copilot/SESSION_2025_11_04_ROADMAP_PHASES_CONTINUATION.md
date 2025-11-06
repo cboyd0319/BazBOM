@@ -178,9 +178,9 @@ struct PackageLock {
 **Example Detection:**
 ```bash
 $ bazbom scan /path/to/node-project
-🔍 Detected ecosystems: node
-📦 Found 127 dependencies (15 direct, 112 transitive)
-⚠️  3 vulnerabilities detected
+ Detected ecosystems: node
+ Found 127 dependencies (15 direct, 112 transitive)
+  3 vulnerabilities detected
 ```
 
 ---
@@ -237,9 +237,9 @@ struct PipfileLock {
 **Example Usage:**
 ```bash
 $ bazbom scan /path/to/python-project
-🔍 Detected ecosystems: python
-📦 Found 42 dependencies (8 direct, 34 transitive)
-⚠️  2 vulnerabilities detected (1 CRITICAL, 1 HIGH)
+ Detected ecosystems: python
+ Found 42 dependencies (8 direct, 34 transitive)
+  2 vulnerabilities detected (1 CRITICAL, 1 HIGH)
 ```
 
 ---
@@ -250,10 +250,10 @@ $ bazbom scan /path/to/python-project
 
 **Compilation:**
 ```
-✅ All crates compile cleanly
-✅ Minimal warnings (4 dead code warnings in bazbom/bazel.rs)
-✅ No clippy errors
-✅ No security warnings
+ All crates compile cleanly
+ Minimal warnings (4 dead code warnings in bazbom/bazel.rs)
+ No clippy errors
+ No security warnings
 ```
 
 **Test Suite:**
@@ -329,12 +329,12 @@ crates/bazbom-ecosystems/
 ### Phase 8: Scale & Performance (85% complete)
 
 **Completed:**
-- ✅ Intelligent caching (LRU, TTL, SHA-256)
-- ✅ Incremental analysis (git-based change detection)
-- ✅ Bazel query optimization
-- ✅ Parallel processing
-- ✅ **Remote caching (HTTP, filesystem, S3/Redis stubs)**
-- ✅ Performance benchmarks
+-  Intelligent caching (LRU, TTL, SHA-256)
+-  Incremental analysis (git-based change detection)
+-  Bazel query optimization
+-  Parallel processing
+-  **Remote caching (HTTP, filesystem, S3/Redis stubs)**
+-  Performance benchmarks
 
 **Remaining (15%):**
 - [ ] Memory optimization for large projects
@@ -345,11 +345,11 @@ crates/bazbom-ecosystems/
 ### Phase 9: Ecosystem Expansion (75% complete)
 
 **Completed:**
-- ✅ Container scanning (Docker, OCI)
-- ✅ Maven metadata extraction
-- ✅ **Ecosystem plugin framework**
-- ✅ **Node.js/npm support**
-- ✅ **Python/pip support**
+-  Container scanning (Docker, OCI)
+-  Maven metadata extraction
+-  **Ecosystem plugin framework**
+-  **Node.js/npm support**
+-  **Python/pip support**
 
 **Remaining (25%):**
 - [ ] Go modules support
@@ -382,19 +382,19 @@ crates/bazbom-ecosystems/
 ### Competitive Positioning
 
 **vs. Snyk:**
-- ✅ Node.js support (match)
-- ✅ Python support (match)
-- ✅ Remote caching (advantage)
+-  Node.js support (match)
+-  Python support (match)
+-  Remote caching (advantage)
 
 **vs. Checkmarx SCA:**
-- ✅ Multi-language (partial match)
-- ✅ Privacy-preserving (advantage)
-- ✅ Open source (advantage)
+-  Multi-language (partial match)
+-  Privacy-preserving (advantage)
+-  Open source (advantage)
 
 **vs. Endor Labs:**
-- ✅ Remote caching (match)
-- ⚡ Scale (partial - needs 50K+ verification)
-- ✅ Cost (free/open source advantage)
+-  Remote caching (match)
+-  Scale (partial - needs 50K+ verification)
+-  Cost (free/open source advantage)
 
 ---
 
@@ -428,16 +428,16 @@ cache:
 $ bazbom scan .
 
 # First run: Cache miss, stores locally + remotely
-⏱️  Scan took 60 seconds
-💾 Cached to local and remote
+  Scan took 60 seconds
+ Cached to local and remote
 
 # Second run (same machine): Local cache hit
-⏱️  Scan took 2 seconds
-✅ Loaded from local cache
+  Scan took 2 seconds
+ Loaded from local cache
 
 # Second run (different machine): Remote cache hit
-⏱️  Scan took 5 seconds
-✅ Loaded from remote cache, promoted to local
+  Scan took 5 seconds
+ Loaded from remote cache, promoted to local
 ```
 
 ### Multi-Language Scanning
@@ -447,20 +447,20 @@ $ bazbom scan .
 $ cd /path/to/express-app
 $ bazbom scan .
 
-🔍 Detected ecosystems: node
-📦 Analyzing dependencies...
+ Detected ecosystems: node
+ Analyzing dependencies...
    Found 342 dependencies
    - express@4.18.2
    - lodash@4.17.21
    - axios@1.6.0
    - ... (339 more)
 
-⚠️  Security Scan Results:
+  Security Scan Results:
    CRITICAL: 2
    HIGH: 5
    MEDIUM: 12
    
-💡 Run 'bazbom fix --suggest' for remediation
+ Run 'bazbom fix --suggest' for remediation
 ```
 
 **Python Project:**
@@ -468,20 +468,20 @@ $ bazbom scan .
 $ cd /path/to/django-app
 $ bazbom scan .
 
-🔍 Detected ecosystems: python
-📦 Analyzing dependencies...
+ Detected ecosystems: python
+ Analyzing dependencies...
    Found 87 dependencies
    - django@4.2.0
    - requests@2.31.0
    - numpy@1.24.0
    - ... (84 more)
 
-⚠️  Security Scan Results:
+  Security Scan Results:
    CRITICAL: 1 (urllib3 CVE-2023-45803)
    HIGH: 3
    MEDIUM: 8
    
-💡 Run 'bazbom fix --apply' to auto-fix
+ Run 'bazbom fix --apply' to auto-fix
 ```
 
 **Polyglot Project (Future):**
@@ -489,14 +489,14 @@ $ bazbom scan .
 $ cd /path/to/full-stack-app
 $ bazbom scan .
 
-🔍 Detected ecosystems: java, node, python
-📦 Analyzing dependencies...
+ Detected ecosystems: java, node, python
+ Analyzing dependencies...
    Java: 145 dependencies
    Node.js: 342 dependencies
    Python: 87 dependencies
    Total: 574 dependencies
 
-⚠️  Security Scan Results:
+  Security Scan Results:
    CRITICAL: 3
    HIGH: 8
    MEDIUM: 20
@@ -571,10 +571,10 @@ $ bazbom scan .
 ### Remote Cache Security
 
 **Implemented:**
-- ✅ Bearer token authentication (HTTP backend)
-- ✅ HTTPS support
-- ✅ Cache key hashing (SHA-256)
-- ✅ No sensitive data in cache keys
+-  Bearer token authentication (HTTP backend)
+-  HTTPS support
+-  Cache key hashing (SHA-256)
+-  No sensitive data in cache keys
 
 **Recommendations:**
 - Use HTTPS for all remote cache endpoints
@@ -585,10 +585,10 @@ $ bazbom scan .
 ### Ecosystem Security
 
 **Implemented:**
-- ✅ No code execution during parsing
-- ✅ Safe file I/O with error handling
-- ✅ JSON/TOML parsing with serde (safe)
-- ✅ No network calls during scanning
+-  No code execution during parsing
+-  Safe file I/O with error handling
+-  JSON/TOML parsing with serde (safe)
+-  No network calls during scanning
 
 **Recommendations:**
 - Validate lockfile integrity
@@ -649,8 +649,8 @@ This session delivered two major competitive advantages:
 
 **Project Status:**
 - Overall: 76% complete toward market leadership
-- Phase 8: 85% complete (remote caching ✅)
-- Phase 9: 75% complete (Node.js ✅, Python ✅)
+- Phase 8: 85% complete (remote caching )
+- Phase 9: 75% complete (Node.js , Python )
 
 **Time to Market:**
 - Phase 8 completion: 2-3 weeks

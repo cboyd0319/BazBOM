@@ -33,9 +33,9 @@ bazbom scan .
 ```
 
 **That's it!** You now have:
-- ✅ `sbom/spdx.json` - Complete software bill of materials
-- ✅ `findings/sca.sarif` - Security vulnerabilities (OSV/NVD/GHSA)
-- ✅ `findings/merged.sarif` - GitHub Code Scanning ready
+-  `sbom/spdx.json` - Complete software bill of materials
+-  `findings/sca.sarif` - Security vulnerabilities (OSV/NVD/GHSA)
+-  `findings/merged.sarif` - GitHub Code Scanning ready
 
 ## 3. Understand Results (45 seconds)
 
@@ -70,11 +70,11 @@ Add to `.github/workflows/security.yml`:
 ## What Just Happened?
 
 BazBOM automatically:
-1. 🔍 **Detected** your build system (Maven/Gradle/Bazel)
-2. 📦 **Extracted** all dependencies (direct + transitive)
-3. 🛡️ **Scanned** against 3 vulnerability databases
-4. 📋 **Generated** standards-compliant SBOM (SPDX 2.3)
-5. 🎯 **Created** GitHub-ready SARIF report
+1.  **Detected** your build system (Maven/Gradle/Bazel)
+2.  **Extracted** all dependencies (direct + transitive)
+3.  **Scanned** against 3 vulnerability databases
+4.  **Generated** standards-compliant SBOM (SPDX 2.3)
+5.  **Created** GitHub-ready SARIF report
 
 **No configuration required. Zero telemetry. Runs offline.**
 
@@ -207,10 +207,10 @@ Now `bazbom scan .` uses these defaults. CLI flags override config.
 
 ## Support
 
-- 📖 [Documentation](README.md)
-- 🐛 [Report Issues](https://github.com/cboyd0319/BazBOM/issues)
-- 💬 [Discussions](https://github.com/cboyd0319/BazBOM/discussions)
-- 📧 [Security Issues](SECURITY.md)
+-  [Documentation](README.md)
+-  [Report Issues](https://github.com/cboyd0319/BazBOM/issues)
+-  [Discussions](https://github.com/cboyd0319/BazBOM/discussions)
+-  [Security Issues](SECURITY.md)
 
 ---
 
@@ -218,4 +218,4 @@ Now `bazbom scan .` uses these defaults. CLI flags override config.
 **Time to understand results: +45 seconds**  
 **Time to production-grade security: ~2 minutes total**
 
-That's BazBOM. Simple, fast, secure. 🚀
+That's BazBOM. Simple, fast, secure. 

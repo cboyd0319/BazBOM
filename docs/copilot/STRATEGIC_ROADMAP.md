@@ -6,7 +6,7 @@
 **Horizon:** 12-18 Months
 **Scope:** JVM Languages (Java, Kotlin, Scala, Groovy, Clojure) and Build Systems (Ant, Maven, Gradle, Bazel, Buildr)
 
-> **📋 Related Planning Documents:**
+> ** Related Planning Documents:**
 > - **[Master Roadmap (../ROADMAP.md)](../ROADMAP.md)** - Complete feature tracking checklist for all phases
 > - **[Implementation Roadmap (IMPLEMENTATION_ROADMAP.md)](IMPLEMENTATION_ROADMAP.md)** - 8-week UX improvement sprint
 > - **[Implementation Status (IMPLEMENTATION_STATUS.md)](IMPLEMENTATION_STATUS.md)** - Current vs. documented capabilities
@@ -35,24 +35,24 @@ This roadmap charts the path from current state (~70% feature completeness vs. c
 
 | Capability | BazBOM Status | Market Competition | Strategic Value |
 |------------|---------------|-------------------|-----------------|
-| **Bazel Native Support** | ✅ Complete | ❌ EndorLabs only (commercial) | **CRITICAL** |
-| **Build-Time Accuracy** | ✅ Best-in-class | ⚠️ Limited (most post-build) | **HIGH** |
-| **SLSA Level 3 Provenance** | ✅ Certified | ❌ Rare (Snyk/Sonatype lack) | **HIGH** |
-| **Memory Safety (Rust)** | ✅ Complete | ⚠️ Mixed (most Java/Python) | **MEDIUM** |
-| **Zero Telemetry/Offline** | ✅ Complete | ❌ Rare (cloud-first norm) | **MEDIUM** |
-| **Reachability Analysis** | ✅ ASM-based | ✅ EndorLabs has advanced | **COMPETITIVE** |
-| **MIT License** | ✅ Fully open | ❌ All competitors proprietary | **STRATEGIC** |
+| **Bazel Native Support** |  Complete |  EndorLabs only (commercial) | **CRITICAL** |
+| **Build-Time Accuracy** |  Best-in-class |  Limited (most post-build) | **HIGH** |
+| **SLSA Level 3 Provenance** |  Certified |  Rare (Snyk/Sonatype lack) | **HIGH** |
+| **Memory Safety (Rust)** |  Complete |  Mixed (most Java/Python) | **MEDIUM** |
+| **Zero Telemetry/Offline** |  Complete |  Rare (cloud-first norm) | **MEDIUM** |
+| **Reachability Analysis** |  ASM-based |  EndorLabs has advanced | **COMPETITIVE** |
+| **MIT License** |  Fully open |  All competitors proprietary | **STRATEGIC** |
 
 ### Gaps (Competitive Disadvantages)
 
 | Category | Gap Severity | Market Leader | Impact |
 |----------|-------------|---------------|--------|
-| **Developer Experience** | 🔴 Critical | Snyk (IDE plugins) | User adoption |
-| **Automated Remediation** | 🔴 Critical | EndorLabs, Snyk | Developer productivity |
-| **Visualization/UI** | 🔴 Critical | All competitors | Executive buy-in |
-| **License Compliance** | 🟡 Significant | Sonatype | Enterprise adoption |
-| **Container Support (JVM artifacts)** | 🟡 Significant | EndorLabs, Snyk | Cloud-native workloads |
-| **Additional JVM Build Systems** | 🟢 Minor | Limited competition | Comprehensive JVM coverage |
+| **Developer Experience** |  Critical | Snyk (IDE plugins) | User adoption |
+| **Automated Remediation** |  Critical | EndorLabs, Snyk | Developer productivity |
+| **Visualization/UI** |  Critical | All competitors | Executive buy-in |
+| **License Compliance** |  Significant | Sonatype | Enterprise adoption |
+| **Container Support (JVM artifacts)** |  Significant | EndorLabs, Snyk | Cloud-native workloads |
+| **Additional JVM Build Systems** |  Minor | Limited competition | Comprehensive JVM coverage |
 
 ### Market Context
 
@@ -120,15 +120,15 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 
 | Phase | Timeline | Priority | Status | Key Deliverable |
 |-------|----------|----------|--------|-----------------|
-| [Phase 0-3](PHASE_4_PROGRESS.md) | ✅ Complete | - | Done | Rust CLI, Maven/Gradle plugins, Advisories |
-| [Phase 4: Developer Experience](PHASE_4_DEVELOPER_EXPERIENCE.md) | Months 1-3 | 🔴 P0 | Planned | IDE plugins, auto-remediation |
-| [Phase 5: Enterprise Policy](PHASE_5_ENTERPRISE_POLICY.md) | Months 2-4 | 🔴 P0 | Planned | Policy templates, license compliance |
-| [Phase 6: Visualization](PHASE_6_VISUALIZATION.md) | Months 3-5 | 🟡 P1 | Planned | Web dashboard, executive reports |
-| [Phase 7: Threat Intelligence](PHASE_7_THREAT_INTELLIGENCE.md) | Months 4-6 | 🟡 P1 | Planned | Malicious package detection |
-| [Phase 8: Scale & Performance](PHASE_8_SCALE_PERFORMANCE.md) | Months 5-7 | 🔴 P0 | Planned | Incremental analysis, 50K targets |
-| [Phase 9: Container & JVM Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md) | Months 6-9 | 🟡 P1 | Planned | Containers (JVM artifacts), Ant, Buildr |
-| [Phase 10: AI Intelligence](PHASE_10_AI_INTELLIGENCE.md) | Months 8-12 | 🟢 P2 | Research | ML prioritization, LLM fixes |
-| [Phase 11: Distribution](PHASE_11_DISTRIBUTION.md) | Months 9-12 | 🟡 P1 | Planned | Windows, Kubernetes, air-gapped |
+| [Phase 0-3](PHASE_4_PROGRESS.md) |  Complete | - | Done | Rust CLI, Maven/Gradle plugins, Advisories |
+| [Phase 4: Developer Experience](PHASE_4_DEVELOPER_EXPERIENCE.md) | Months 1-3 |  P0 | Planned | IDE plugins, auto-remediation |
+| [Phase 5: Enterprise Policy](PHASE_5_ENTERPRISE_POLICY.md) | Months 2-4 |  P0 | Planned | Policy templates, license compliance |
+| [Phase 6: Visualization](PHASE_6_VISUALIZATION.md) | Months 3-5 |  P1 | Planned | Web dashboard, executive reports |
+| [Phase 7: Threat Intelligence](PHASE_7_THREAT_INTELLIGENCE.md) | Months 4-6 |  P1 | Planned | Malicious package detection |
+| [Phase 8: Scale & Performance](PHASE_8_SCALE_PERFORMANCE.md) | Months 5-7 |  P0 | Planned | Incremental analysis, 50K targets |
+| [Phase 9: Container & JVM Expansion](PHASE_9_ECOSYSTEM_EXPANSION.md) | Months 6-9 |  P1 | Planned | Containers (JVM artifacts), Ant, Buildr |
+| [Phase 10: AI Intelligence](PHASE_10_AI_INTELLIGENCE.md) | Months 8-12 |  P2 | Research | ML prioritization, LLM fixes |
+| [Phase 11: Distribution](PHASE_11_DISTRIBUTION.md) | Months 9-12 |  P1 | Planned | Windows, Kubernetes, air-gapped |
 
 **Timeline Notes:**
 - Phases overlap intentionally (parallel workstreams)
@@ -140,7 +140,7 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 
 ## 90-Day Execution Plan
 
-> **🚀 NEW: Implementation Roadmap**
+> ** NEW: Implementation Roadmap**
 > 
 > See [IMPLEMENTATION_ROADMAP.md](IMPLEMENTATION_ROADMAP.md) for detailed execution plan on making BazBOM the ultimate easy-to-use solution. This 8-week focused roadmap complements the strategic phases below with immediate actionable features.
 
@@ -165,9 +165,9 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 - Deliverable: 90% auto-fix success rate
 
 **Success Criteria:**
-- ✅ 500+ IntelliJ plugin downloads
-- ✅ <10 second scan time in IDE
-- ✅ 80% developer satisfaction (survey)
+-  500+ IntelliJ plugin downloads
+-  <10 second scan time in IDE
+-  80% developer satisfaction (survey)
 
 ### Sprint 4-6: Remediation & Policy (Weeks 7-12)
 
@@ -189,9 +189,9 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 - Deliverable: 5 industry-standard templates
 
 **Success Criteria:**
-- ✅ 95% of P0/P1 vulnerabilities auto-fixable
-- ✅ <5 minute PR creation time
-- ✅ 10+ enterprises using policy templates
+-  95% of P0/P1 vulnerabilities auto-fixable
+-  <5 minute PR creation time
+-  10+ enterprises using policy templates
 
 ### Sprint 7-9: Visibility & Scale (Weeks 13-18)
 
@@ -213,9 +213,9 @@ This roadmap spans **11 phases** over **12-18 months**, prioritized by impact an
 - Deliverable: C-suite ready reporting
 
 **Success Criteria:**
-- ✅ CISO understands security posture in <5 minutes
-- ✅ 50K target monorepo scans in <10 minutes
-- ✅ Zero manual report generation
+-  CISO understands security posture in <5 minutes
+-  50K target monorepo scans in <10 minutes
+-  Zero manual report generation
 
 ---
 
@@ -437,7 +437,7 @@ See **[OPEN_SOURCE_SUSTAINABILITY.md](OPEN_SOURCE_SUSTAINABILITY.md)** for detai
 
 ### When to Say "Yes" to Features
 
-✅ **Accept if:**
+ **Accept if:**
 - Directly supports a P0/P1 phase objective
 - Community-requested (5+ GitHub issues/upvotes)
 - Increases competitive parity with EndorLabs/Snyk
@@ -446,7 +446,7 @@ See **[OPEN_SOURCE_SUSTAINABILITY.md](OPEN_SOURCE_SUSTAINABILITY.md)** for detai
 
 ### When to Say "No" to Features
 
-❌ **Reject if:**
+ **Reject if:**
 - Only benefits <1% of users
 - Duplicates existing tools (e.g., container scanning - use Trivy)
 - Requires telemetry/cloud services
@@ -457,10 +457,10 @@ See **[OPEN_SOURCE_SUSTAINABILITY.md](OPEN_SOURCE_SUSTAINABILITY.md)** for detai
 
 | Feature Request | Impact | Effort | Priority |
 |----------------|--------|--------|----------|
-| High Impact + Low Effort | 🔴 Do First | - | P0 |
-| High Impact + High Effort | 🟡 Plan Carefully | - | P1 |
-| Low Impact + Low Effort | 🟢 Community Contribution | - | P2 |
-| Low Impact + High Effort | ⚪ Decline Politely | - | Won't Do |
+| High Impact + Low Effort |  Do First | - | P0 |
+| High Impact + High Effort |  Plan Carefully | - | P1 |
+| Low Impact + Low Effort |  Community Contribution | - | P2 |
+| Low Impact + High Effort |  Decline Politely | - | Won't Do |
 
 ---
 
@@ -593,4 +593,4 @@ This is a living document. Provide feedback via:
 
 **Ready to build the world's best open source Java SCA tool?**
 
-**Let's start with Phase 4.** 🚀
+**Let's start with Phase 4.** 

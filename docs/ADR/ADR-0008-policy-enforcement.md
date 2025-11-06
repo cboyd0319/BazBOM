@@ -83,9 +83,9 @@ This allows CI/CD pipelines to enforce policies automatically:
 - **Testing**: Easy to unit test policy logic
 
 **Alternative considered**: Bazel rule with aspects
-- ❌ Harder to debug and customize
-- ❌ Tight coupling to Bazel
-- ❌ Less transparent to developers
+-  Harder to debug and customize
+-  Tight coupling to Bazel
+-  Less transparent to developers
 
 ## Policy Categories
 
@@ -178,7 +178,7 @@ PolicyChecker({
 Human-readable violation summary:
 
 ```text
-❌ Policy violations found: 3
+ Policy violations found: 3
 
 CRITICAL (1):
   • max_critical_vulnerabilities: Found 1 critical vulnerabilities (max allowed: 0)
@@ -319,7 +319,7 @@ genrule(
 
 bazel build //:policy_check_report
 if [ $? -ne 0 ]; then
-  echo "❌ Policy violations found. Please fix before committing."
+  echo " Policy violations found. Please fix before committing."
   cat bazel-bin/policy_check.json | jq '.violations'
   exit 1
 fi

@@ -35,8 +35,8 @@ BazBOM Phase 4 brings the security scanning experience into your IDE:
 
 A side panel shows all project dependencies with security status:
 
-- ✅ **Secure** dependencies (green)
-- ⚠️ **Vulnerable** dependencies (yellow/red)
+-  **Secure** dependencies (green)
+-  **Vulnerable** dependencies (yellow/red)
 - Vulnerability counts per dependency
 - Grouped by scope (compile, test, runtime)
 - Scan and refresh buttons
@@ -50,25 +50,25 @@ Inline warnings appear directly in your build files:
 <dependency>
     <groupId>org.apache.logging.log4j</groupId>
     <artifactId>log4j-core</artifactId>
-    <version>2.17.0</version>  ⚠️ CVE-2021-44832 (MEDIUM)
+    <version>2.17.0</version>   CVE-2021-44832 (MEDIUM)
 </dependency>
 ```
 
 **Gradle (`build.gradle` or `build.gradle.kts`):**
 ```groovy
-implementation 'log4j:log4j-core:2.17.0'  ⚠️ CVE-2021-44832 (MEDIUM)
+implementation 'log4j:log4j-core:2.17.0'   CVE-2021-44832 (MEDIUM)
 ```
 
 **Bazel (`BUILD.bazel`, `WORKSPACE`, `MODULE.bazel`):**
 ```python
-"org.apache.logging.log4j:log4j-core:2.17.0"  ⚠️ CVE-2021-44832 (MEDIUM)
+"org.apache.logging.log4j:log4j-core:2.17.0"   CVE-2021-44832 (MEDIUM)
 ```
 
 Severity levels:
-- 🔴 **CRITICAL** - Red error underline
-- 🟠 **HIGH** - Orange warning underline
-- 🟡 **MEDIUM** - Yellow weak warning
-- 🔵 **LOW** - Blue info
+-  **CRITICAL** - Red error underline
+-  **HIGH** - Orange warning underline
+-  **MEDIUM** - Yellow weak warning
+-  **LOW** - Blue info
 
 Special indicators:
 - **(CISA KEV)** - Known Exploited Vulnerability
@@ -79,20 +79,20 @@ Special indicators:
 Press `Alt+Enter` (or `⌥⏎` on Mac) on a highlighted vulnerability:
 
 ```
-⚠️ log4j-core 2.17.0 has CVE-2021-44832
-💡 Upgrade to safe version 2.21.1
+ log4j-core 2.17.0 has CVE-2021-44832
+ Upgrade to safe version 2.21.1
 ```
 
 When you select the fix:
-1. ✅ Version is updated in your build file
-2. ✅ Maven/Gradle project reloads automatically
-3. ✅ Tests run in the background
-4. ✅ Notification shows success or failure
+1.  Version is updated in your build file
+2.  Maven/Gradle project reloads automatically
+3.  Tests run in the background
+4.  Notification shows success or failure
 
 **Notifications:**
-- ✅ Success: "Upgraded log4j-core to 2.21.1. All tests passed."
-- ⚠️ Warning: "Upgraded log4j-core to 2.21.1 but tests failed. Please review and fix."
-- ❌ Error: "Failed to upgrade log4j-core: [reason]"
+-  Success: "Upgraded log4j-core to 2.21.1. All tests passed."
+-  Warning: "Upgraded log4j-core to 2.21.1 but tests failed. Please review and fix."
+-  Error: "Failed to upgrade log4j-core: [reason]"
 
 ### Installation
 
@@ -127,7 +127,7 @@ cd BazBOM/crates/bazbom-intellij-plugin
 ./gradlew buildPlugin
 
 # Install manually
-# Go to Settings → Plugins → ⚙️ → Install Plugin from Disk
+# Go to Settings → Plugins →  → Install Plugin from Disk
 # Select: build/distributions/bazbom-intellij-plugin-*.zip
 ```
 
@@ -421,7 +421,7 @@ cargo test -p bazbom-lsp
 
 ## Roadmap
 
-### Completed ✅
+### Completed 
 - [x] IntelliJ plugin with Maven/Gradle/Bazel support
 - [x] VS Code extension with LSP
 - [x] Real-time vulnerability highlighting
@@ -429,12 +429,12 @@ cargo test -p bazbom-lsp
 - [x] Automated testing after upgrades
 - [x] Notification system
 
-### In Progress 🔄
+### In Progress 
 - [ ] Manual testing with real projects
 - [ ] Performance optimization
 - [ ] Marketplace publishing
 
-### Planned 📅
+### Planned 
 - [ ] User analytics (privacy-preserving, opt-in)
 - [ ] Enhanced settings panels
 - [ ] Vulnerability details panel with links
@@ -453,4 +453,4 @@ cargo test -p bazbom-lsp
 
 ---
 
-**Ready to try it?** Install the plugin and start scanning! 🚀
+**Ready to try it?** Install the plugin and start scanning! 

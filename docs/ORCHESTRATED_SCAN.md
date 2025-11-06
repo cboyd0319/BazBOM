@@ -244,7 +244,7 @@ When generating remediation suggestions, BazBOM now:
 Example breaking changes warning:
 
 ```
-⚠️ Major version upgrade (2.11.0 → 3.0.0)
+ Major version upgrade (2.11.0 → 3.0.0)
 
 This is a major version upgrade which may include breaking changes:
 - API changes: Methods may be removed, renamed, or have different signatures

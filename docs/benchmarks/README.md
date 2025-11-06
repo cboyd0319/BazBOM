@@ -62,22 +62,22 @@ Results are saved to `benchmarks/results/`:
 ## Example Output
 
 ```
-🚀 Starting BazBOM Benchmark Suite
+ Starting BazBOM Benchmark Suite
 Tools: bazbom, syft
 Sizes: small_100_deps, medium_500_deps
 
-📊 Benchmarking small_100_deps...
-  Running bazbom... ✅ 5.23s
-  Running syft... ✅ 7.45s
+ Benchmarking small_100_deps...
+  Running bazbom...  5.23s
+  Running syft...  7.45s
 
-📊 Benchmarking medium_500_deps...
-  Running bazbom... ✅ 12.67s
-  Running syft... ✅ 18.92s
+ Benchmarking medium_500_deps...
+  Running bazbom...  12.67s
+  Running syft...  18.92s
 
-💾 Results saved to benchmarks/results/benchmark_results.json
-📊 Leaderboard generated at benchmarks/results/leaderboard.md
+ Results saved to benchmarks/results/benchmark_results.json
+ Leaderboard generated at benchmarks/results/leaderboard.md
 
-✅ Benchmark suite complete!
+ Benchmark suite complete!
 ```
 
 ## Leaderboard Example
@@ -97,11 +97,11 @@ Sizes: small_100_deps, medium_500_deps
 ## Performance Comparison
 
 **small_100_deps:**
-- 🥇 **Fastest:** bazbom (5.23s)
+-  **Fastest:** bazbom (5.23s)
 - syft: 1.4x slower
 
 **medium_500_deps:**
-- 🥇 **Fastest:** bazbom (12.67s)
+-  **Fastest:** bazbom (12.67s)
 - syft: 1.5x slower
 ```
 

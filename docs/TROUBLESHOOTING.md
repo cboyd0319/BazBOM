@@ -203,9 +203,9 @@ jq '.packages[].externalRefs[] | select(.referenceType=="purl")' \
 
 ```bash
 # These are different to OSV:
-# pkg:maven/org.example/my-lib@1.0.0      ✓ Correct
-# pkg:maven/org.example/my-lib@1.0        ✗ Different version
-# pkg:maven/org.example/my-lib@v1.0.0     ✗ Extra 'v' prefix
+# pkg:maven/org.example/my-lib@1.0.0       Correct
+# pkg:maven/org.example/my-lib@1.0         Different version
+# pkg:maven/org.example/my-lib@v1.0.0      Extra 'v' prefix
 ```
 
 ### SARIF Upload Fails

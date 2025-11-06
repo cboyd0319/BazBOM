@@ -26,22 +26,22 @@ Target **SLSA Level 3** for BazBOM builds.
     <tr>
       <td><strong>Level 1</strong></td>
       <td>Provenance exists</td>
-      <td>✅ Implemented</td>
+      <td> Implemented</td>
     </tr>
     <tr>
       <td><strong>Level 2</strong></td>
       <td>Signed provenance, tamper-resistant</td>
-      <td>✅ Implemented (Sigstore)</td>
+      <td> Implemented (Sigstore)</td>
     </tr>
     <tr>
       <td><strong>Level 3</strong></td>
       <td>Hardened build platform, non-falsifiable</td>
-      <td>✅ Implemented (GitHub-hosted)</td>
+      <td> Implemented (GitHub-hosted)</td>
     </tr>
     <tr>
       <td><strong>Level 4</strong></td>
       <td>Two-person review, hermetic builds</td>
-      <td>🔄 Partial (CODEOWNERS, builds hermetic)</td>
+      <td> Partial (CODEOWNERS, builds hermetic)</td>
     </tr>
   </tbody>
 </table>
@@ -122,7 +122,7 @@ BUILDER=$(jq -r '.predicate.runDetails.builder.id' bazel-bin/app/app.provenance.
 # 4. Build is isolated (check no persistent environment)
 # (Manual audit: review GitHub Actions workflow)
 
-echo "✓ SLSA Level 3 requirements validated"
+echo " SLSA Level 3 requirements validated"
 ```
 
 ## Alternatives Considered

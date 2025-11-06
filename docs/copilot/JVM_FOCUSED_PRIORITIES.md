@@ -186,14 +186,14 @@ The `bazbom-ecosystems` crate with multi-language support (Node.js, Python, Go, 
 
 The following are explicitly **out of scope** for BazBOM:
 
-- ❌ Node.js/npm package analysis
-- ❌ Python/pip package analysis
-- ❌ Go modules package analysis
-- ❌ Rust/Cargo package analysis
-- ❌ Generic multi-language support
-- ❌ Non-JVM polyglot projects
-- ❌ JavaScript/TypeScript dependency trees
-- ❌ C/C++ dependency management
+-  Node.js/npm package analysis
+-  Python/pip package analysis
+-  Go modules package analysis
+-  Rust/Cargo package analysis
+-  Generic multi-language support
+-  Non-JVM polyglot projects
+-  JavaScript/TypeScript dependency trees
+-  C/C++ dependency management
 
 **Exception:** Container scanning is in scope ONLY for detecting Java artifacts (JARs) within containers, not for multi-language container dependency analysis.
 
@@ -270,7 +270,7 @@ A: Only the JVM targets, not JS, Native, or WASM targets.
 BazBOM's value proposition is **world-class JVM SBOM generation** with deep Maven, Gradle, and Bazel integration. By staying focused on this mission, we can deliver the best tool in this space rather than a mediocre multi-language alternative.
 
 **Next Actions:**
-1. ✅ Remove multi-language ecosystem crate
+1.  Remove multi-language ecosystem crate
 2. Test IDE plugins with JVM projects
 3. Create marketplace demos
 4. Update documentation for clarity

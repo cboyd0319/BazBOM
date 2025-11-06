@@ -380,7 +380,7 @@ cd crates/bazbom-intellij-plugin
 ./gradlew runIde
 
 # Or manually install in IntelliJ:
-# Settings → Plugins → ⚙️ → Install Plugin from Disk
+# Settings → Plugins →  → Install Plugin from Disk
 # Select build/distributions/bazbom-intellij-plugin-1.0.0.zip
 ```
 
@@ -502,15 +502,15 @@ export JETBRAINS_TOKEN="perm:..."
 
 Real-time vulnerability scanning for Java projects. Detect security issues in your Maven, Gradle, and Bazel dependencies instantly.
 
-## ✨ Key Features
+##  Key Features
 
-- 🔍 **Real-time Scanning:** Instant feedback as you code
-- 🛡️ **Privacy-First:** 100% local, no data sent to external servers
-- ⚡ **Fast:** Scans complete in <10 seconds
-- 🎯 **Smart Fixes:** One-click upgrades with automated testing
-- 🔧 **Multi-Build Support:** Maven, Gradle, and Bazel
+-  **Real-time Scanning:** Instant feedback as you code
+-  **Privacy-First:** 100% local, no data sent to external servers
+-  **Fast:** Scans complete in <10 seconds
+-  **Smart Fixes:** One-click upgrades with automated testing
+-  **Multi-Build Support:** Maven, Gradle, and Bazel
 
-## 🚀 Quick Start
+##  Quick Start
 
 1. Install BazBOM CLI: `brew install cboyd0319/tap/bazbom`
 2. Sync database: `bazbom db sync`
@@ -518,18 +518,18 @@ Real-time vulnerability scanning for Java projects. Detect security issues in yo
 4. See vulnerabilities highlighted in build files
 5. Press Alt+Enter to fix
 
-## 📖 Documentation
+##  Documentation
 
 - [Getting Started Guide](https://github.com/cboyd0319/BazBOM/blob/main/docs/USAGE.md)
 - [Configuration Options](https://github.com/cboyd0319/BazBOM/blob/main/docs/CONFIGURATION.md)
 - [FAQ](https://github.com/cboyd0319/BazBOM/blob/main/docs/FAQ.md)
 
-## 🐛 Support
+##  Support
 
 - [GitHub Issues](https://github.com/cboyd0319/BazBOM/issues)
 - [Documentation](https://github.com/cboyd0319/BazBOM/tree/main/docs)
 
-## 📄 License
+##  License
 
 MIT License - Free for personal and commercial use
 ```
@@ -574,12 +574,12 @@ MIT License - Free for personal and commercial use
 
 **Sample Tweet:**
 ```
-🚀 Just launched BazBOM IDE plugins for VS Code & IntelliJ!
+ Just launched BazBOM IDE plugins for VS Code & IntelliJ!
 
-✨ Real-time vulnerability scanning
-⚡ <10 second scans
-🛡️ 100% local & private
-🎯 One-click fixes
+ Real-time vulnerability scanning
+ <10 second scans
+ 100% local & private
+ One-click fixes
 
 Maven • Gradle • Bazel support
 

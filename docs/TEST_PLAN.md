@@ -1,6 +1,6 @@
 # BazBOM Comprehensive Test Plan
 
-> **⚠️ HISTORICAL DOCUMENT**: This test plan is historical and references the old Python implementation. BazBOM is now 100% Rust. For current testing information, see [testing/TESTING_GUIDE.md](testing/TESTING_GUIDE.md).
+> ** HISTORICAL DOCUMENT**: This test plan is historical and references the old Python implementation. BazBOM is now 100% Rust. For current testing information, see [testing/TESTING_GUIDE.md](testing/TESTING_GUIDE.md).
 >
 > **Rust Testing Status**: 97 tests passing (98.1% pass rate), with coverage enforced at 90%+ via CI. See `.github/workflows/rust.yml` for current test execution.
 
@@ -18,7 +18,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 
 ## Completed Modules (90%+ Coverage)
 
-### ✅ Metrics Aggregator (100% Coverage)
+###  Metrics Aggregator (100% Coverage)
 - **File**: `tools/supplychain/metrics_aggregator.py`
 - **Tests**: `test_metrics_aggregator.py` (32 tests)
 - **Coverage**: 100% lines, 70% branches
@@ -30,7 +30,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
   - Report generation (JSON and text formats)
   - CLI interface with various argument combinations
 
-### ✅ License Analyzer (98% Coverage)
+###  License Analyzer (98% Coverage)
 - **File**: `tools/supplychain/license_analyzer.py`
 - **Tests**: `test_license_analyzer.py` (60 tests)
 - **Coverage**: 98% lines, 95% branches
@@ -43,7 +43,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
   - CLI interface with all argument combinations
   - Edge cases (Unicode, empty inputs, malformed data)
 
-### ✅ VEX Processor (98% Coverage)
+###  VEX Processor (98% Coverage)
 - **File**: `tools/supplychain/vex_processor.py`
 - **Tests**: `test_vex_processor.py` + `test_vex_processor_extended.py` (42 tests)
 - **Coverage**: 98% lines, 96% branches
@@ -57,13 +57,13 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
   - CLI with full processing and validation-only modes
   - Severity recalculation after suppression
 
-### ✅ Provenance Builder (100% Coverage)
+###  Provenance Builder (100% Coverage)
 - **File**: `tools/supplychain/provenance_builder.py`
 - **Tests**: Existing tests in `test_provenance_builder.py`
 - **Coverage**: 100% lines, 100% branches
 - **Maintained by**: Existing test suite
 
-### ✅ Validate SARIF (100% Coverage)
+###  Validate SARIF (100% Coverage)
 - **File**: `tools/supplychain/validators/validate_sarif.py`
 - **Tests**: Existing tests in `test_validate_sarif.py`
 - **Coverage**: 100% lines, 100% branches
@@ -71,7 +71,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 
 ## High Priority Modules for Testing (0% Coverage)
 
-### 🔴 Priority 1: CLI and User-Facing Tools
+###  Priority 1: CLI and User-Facing Tools
 
 #### bazbom_cli.py (0% coverage, 147 statements)
 **Complexity**: High - Entry point for CLI interface
@@ -99,7 +99,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 - Validate interactive prompts
 - Test batch processing mode
 
-### 🟡 Priority 2: Integration Modules
+###  Priority 2: Integration Modules
 
 #### osv_contributor.py (0% coverage, 194 statements)
 **Complexity**: Medium - OSV API integration
@@ -133,7 +133,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 - Validate metrics calculation
 - Test report generation
 
-### 🟢 Priority 3: Validation Modules
+###  Priority 3: Validation Modules
 
 #### validators/validate_provenance.py (0% coverage, 142 statements)
 **Complexity**: Low - Schema validation
@@ -145,7 +145,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 
 ## Partially Tested Modules Requiring Improvement
 
-### 🟠 High Impact (< 50% coverage)
+###  High Impact (< 50% coverage)
 
 #### license_extractor.py (38% coverage)
 **Missing Coverage**:
@@ -219,7 +219,7 @@ This document outlines the comprehensive test strategy for achieving 90%+ code c
 - Validate change severity calculation
 - Test report generation
 
-### 🟡 Medium Impact (50-70% coverage)
+###  Medium Impact (50-70% coverage)
 
 #### intoto_attestation.py (51% coverage)
 - Need tests for attestation bundle creation
@@ -493,26 +493,26 @@ pytest -m "integration"
 - Less boilerplate: No need for class inheritance
 
 **Conversion Progress**:
-- ✅ `test_csv_exporter.py` (6 tests) - now uses `tmp_path` fixture
-- 🔄 19 unittest.TestCase files remaining
+-  `test_csv_exporter.py` (6 tests) - now uses `tmp_path` fixture
+-  19 unittest.TestCase files remaining
 
 #### 5. Performance Best Practices
 
 **DO**:
-- ✅ Use fixtures for shared setup
-- ✅ Mark slow tests with `@pytest.mark.slow`
-- ✅ Use parametrization for input matrices
-- ✅ Mock external dependencies (network, filesystem)
-- ✅ Seed random number generators
-- ✅ Use `tmp_path` for temporary files
-- ✅ Keep tests under 100ms when possible
+-  Use fixtures for shared setup
+-  Mark slow tests with `@pytest.mark.slow`
+-  Use parametrization for input matrices
+-  Mock external dependencies (network, filesystem)
+-  Seed random number generators
+-  Use `tmp_path` for temporary files
+-  Keep tests under 100ms when possible
 
 **DON'T**:
-- ❌ Use `time.sleep()` in tests (use time control/mocking)
-- ❌ Access real network or external services
-- ❌ Create files in source tree (use `tmp_path`)
-- ❌ Depend on test execution order
-- ❌ Use hidden global state
+-  Use `time.sleep()` in tests (use time control/mocking)
+-  Access real network or external services
+-  Create files in source tree (use `tmp_path`)
+-  Depend on test execution order
+-  Use hidden global state
 
 #### 6. Running Tests Efficiently
 
@@ -564,7 +564,7 @@ def modified_sbom(sample_sbom_data):
 
 **Avoid Repetitive Setup**:
 ```python
-# ❌ BAD: Repetitive setup in every test
+#  BAD: Repetitive setup in every test
 def test_feature_1():
     mock_response = Mock()
     mock_response.status_code = 200
@@ -577,7 +577,7 @@ def test_feature_2():
     mock_response.json.return_value = {"key": "value"}
     # ... test code
 
-# ✅ GOOD: Use fixture factory
+#  GOOD: Use fixture factory
 @pytest.fixture
 def mock_http_response():
     def _create(status=200, data=None):
@@ -598,14 +598,14 @@ def test_feature_2(mock_http_response):
 
 **Parametrization Over Duplication**:
 ```python
-# ❌ BAD: Duplicate tests
+#  BAD: Duplicate tests
 def test_parse_version_1_0_0():
     assert parse_version("1.0.0") == (1, 0, 0)
 
 def test_parse_version_2_1_3():
     assert parse_version("2.1.3") == (2, 1, 3)
 
-# ✅ GOOD: Parametrized test
+#  GOOD: Parametrized test
 @pytest.mark.parametrize("input,expected", [
     ("1.0.0", (1, 0, 0)),
     ("2.1.3", (2, 1, 3)),
@@ -617,7 +617,7 @@ def test_parse_version(input, expected):
 
 **File I/O Optimization**:
 ```python
-# ❌ BAD: Manual tempfile management
+#  BAD: Manual tempfile management
 def test_something():
     temp_dir = tempfile.mkdtemp()
     try:
@@ -628,7 +628,7 @@ def test_something():
     finally:
         shutil.rmtree(temp_dir)
 
-# ✅ GOOD: Use tmp_path fixture
+#  GOOD: Use tmp_path fixture
 def test_something(tmp_path):
     file_path = tmp_path / "test.json"
     file_path.write_text(json.dumps(data))

@@ -1,6 +1,6 @@
 # Container Image Scanning
 
-**Status:** ✅ Available in BazBOM v0.5.1+  
+**Status:**  Available in BazBOM v0.5.1+  
 **Phase:** 9 - Ecosystem Expansion (60% Complete)
 
 ---
@@ -65,7 +65,7 @@ bazbom scan --containers=bazbom
 
 ## Supported Features
 
-### ✅ Implemented
+###  Implemented
 
 - OCI/Docker image format parsing
 - Layer extraction and analysis
@@ -75,7 +75,7 @@ bazbom scan --containers=bazbom
 - Container SBOM generation with PURLs
 - Layer attribution (which layer contains which artifact)
 
-### 🚧 Partial / Future
+###  Partial / Future
 
 - Docker HTTP API integration (currently uses tar files)
 - Real-time container pulls from registry
@@ -105,9 +105,9 @@ bazbom scan --containers=syft
 
 | Strategy | Status | Speed | Accuracy | Multi-Language |
 |----------|--------|-------|----------|----------------|
-| `bazbom` | ✅ Available | Medium | High (Java) | Java only |
-| `syft` | 📋 Planned | Fast | Medium | All languages |
-| `auto` | ✅ Available | Variable | High | Depends |
+| `bazbom` |  Available | Medium | High (Java) | Java only |
+| `syft` |  Planned | Fast | Medium | All languages |
+| `auto` |  Available | Variable | High | Depends |
 
 ---
 
@@ -484,7 +484,7 @@ bazbom scan --containers=bazbom --fail-on-vuln high
 if [ $? -eq 0 ]; then
   docker push myapp:latest
 else
-  echo "❌ Container scan failed - not pushing"
+  echo " Container scan failed - not pushing"
   exit 1
 fi
 ```
@@ -596,10 +596,10 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for more information.
 - No multi-architecture support
 
 **Roadmap:**
-- ✅ Basic OCI parsing
-- ✅ Layer extraction
-- ✅ Maven metadata extraction
-- 🚧 Docker HTTP API integration
-- 📋 Multi-language support
-- 📋 Registry integration
-- 📋 Multi-arch support
+-  Basic OCI parsing
+-  Layer extraction
+-  Maven metadata extraction
+-  Docker HTTP API integration
+-  Multi-language support
+-  Registry integration
+-  Multi-arch support

@@ -4,17 +4,17 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Getting Started
 
-- **[90-Second Quickstart](90-SECOND-QUICKSTART.md)** ⚡ Zero to first scan in 90 seconds
+- **[90-Second Quickstart](90-SECOND-QUICKSTART.md)**  Zero to first scan in 90 seconds
 - **[Quick Start](QUICKSTART.md)** - Get up and running in 5 minutes
 - **[Usage Guide](USAGE.md)** - Day-to-day commands and workflows
-- **[JVM Language Support](JVM_LANGUAGE_SUPPORT.md)** ⭐ - **Complete guide for Java, Kotlin, and Scala across Maven, Gradle, and Bazel**
+- **[JVM Language Support](JVM_LANGUAGE_SUPPORT.md)**  - **Complete guide for Java, Kotlin, and Scala across Maven, Gradle, and Bazel**
 - **[IDE Setup](quickstart/IDE_SETUP.md)** - Quick start guide for IDE integration
 - **[Homebrew Installation](HOMEBREW_INSTALLATION.md)** - Install via Homebrew tap
 - **[Migration Guide](MIGRATION_GUIDE.md)** - Transition from Python to Rust CLI
 
 ## Architecture & Design
 
-- **[Architecture (Current State)](ARCHITECTURE_CURRENT.md)** ⭐ - **Current Python/Rust dual architecture with data flows**
+- **[Architecture (Current State)](ARCHITECTURE_CURRENT.md)**  - **Current Python/Rust dual architecture with data flows**
 - **[Architecture (Planned)](ARCHITECTURE.md)** - Long-term system design and architecture diagrams
 - **[Supply Chain Security](SUPPLY_CHAIN.md)** - SBOM/SCA architecture and usage
 - **[Threat Model](THREAT_MODEL.md)** - Security assets, risks, and controls
@@ -29,7 +29,7 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 ## Advanced Features
 
-- **[Advanced Bazel Features](guides/ADVANCED_BAZEL_FEATURES.md)** ⭐ - **Query optimization, caching, performance tuning, and custom workflows**
+- **[Advanced Bazel Features](guides/ADVANCED_BAZEL_FEATURES.md)**  - **Query optimization, caching, performance tuning, and custom workflows**
 - **[Orchestrated Scanning](ORCHESTRATED_SCAN.md)** - Integrate Semgrep and CodeQL with merged SARIF output
 - **[IDE Integration](IDE_INTEGRATION.md)** - Real-time vulnerability scanning in your IDE
 - **[Vulnerability Enrichment](VULNERABILITY_ENRICHMENT.md)** - KEV, EPSS, GHSA, and risk scoring
@@ -63,10 +63,10 @@ Welcome to the BazBOM documentation! This directory contains comprehensive guide
 
 Essential resources for tracking BazBOM development:
 
-- **[Master Roadmap (ROADMAP.md)](ROADMAP.md)** 📋 - **Complete feature tracking checklist with all phases and distribution channels**
-- **[Implementation Roadmap](copilot/IMPLEMENTATION_ROADMAP.md)** 🚀 - **8-week UX sprint: Interactive init, TUI explorer, web dashboard, team features**
-- **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)** ⭐ - **Comprehensive audit of actual vs. documented capabilities**
-- **[Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md)** 🎯 - **12-18 month vision and market leadership plan**
+- **[Master Roadmap (ROADMAP.md)](ROADMAP.md)**  - **Complete feature tracking checklist with all phases and distribution channels**
+- **[Implementation Roadmap](copilot/IMPLEMENTATION_ROADMAP.md)**  - **8-week UX sprint: Interactive init, TUI explorer, web dashboard, team features**
+- **[Implementation Status](copilot/IMPLEMENTATION_STATUS.md)**  - **Comprehensive audit of actual vs. documented capabilities**
+- **[Strategic Roadmap](copilot/STRATEGIC_ROADMAP.md)**  - **12-18 month vision and market leadership plan**
 - **[Copilot Directory](copilot/)** - All phase specifications and planning documents
 - **[Developer Guides](developer/)** - Internal development documentation
 

@@ -51,22 +51,22 @@ BazBOM targets **SLSA Level 3**:
     <tr>
       <td>SLSA 1</td>
       <td>Provenance exists</td>
-      <td>✅ Implemented</td>
+      <td> Implemented</td>
     </tr>
     <tr>
       <td>SLSA 2</td>
       <td>Signed provenance</td>
-      <td>✅ Implemented (Sigstore)</td>
+      <td> Implemented (Sigstore)</td>
     </tr>
     <tr>
       <td>SLSA 3</td>
       <td>Hardened build platform</td>
-      <td>✅ GitHub-hosted runners</td>
+      <td> GitHub-hosted runners</td>
     </tr>
     <tr>
       <td>SLSA 4</td>
       <td>Two-party review</td>
-      <td>🚧 Optional (via CODEOWNERS)</td>
+      <td> Optional (via CODEOWNERS)</td>
     </tr>
   </tbody>
 </table>
@@ -271,9 +271,9 @@ ACTUAL_SHA=$(sha256sum bazel-bin/app/app.jar | awk '{print $1}')
 
 # Compare
 if [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ]; then
-  echo "✓ Provenance matches artifact"
+  echo " Provenance matches artifact"
 else
-  echo "✗ Provenance mismatch!"
+  echo " Provenance mismatch!"
   exit 1
 fi
 ```
@@ -411,7 +411,7 @@ SIGNATURE="${PROVENANCE}.sig"
 
 # Check files exist
 if [ ! -f "$PROVENANCE" ] || [ ! -f "$SIGNATURE" ]; then
-  echo "✗ Missing provenance or signature"
+  echo " Missing provenance or signature"
   exit 1
 fi
 
@@ -423,11 +423,11 @@ EXPECTED=$(jq -r '.subject[0].digest.sha256' "$PROVENANCE")
 ACTUAL=$(sha256sum "$ARTIFACT" | awk '{print $1}')
 
 if [ "$EXPECTED" != "$ACTUAL" ]; then
-  echo "✗ Artifact digest mismatch"
+  echo " Artifact digest mismatch"
   exit 1
 fi
 
-echo "✓ Provenance verified"
+echo " Provenance verified"
 ```
 
 ### SLSA Verifier (Official Tool)
@@ -491,7 +491,7 @@ bazel build //:provenance_all --define build_timestamp=$SOURCE_DATE_EPOCH
 
 ## SBOM Attestation & Transparency Logs
 
-**Status:** ✅ Implemented (Phase 1)
+**Status:**  Implemented (Phase 1)
 
 BazBOM now provides comprehensive SBOM attestation with cryptographic signing and transparency logging using Sigstore.
 
@@ -528,9 +528,9 @@ bazel run //tools/supplychain:verify_sbom -- \
   --cert-oidc-issuer "https://token.actions.githubusercontent.com"
 
 # Output:
-# ✓ Signature verification PASSED
-# ✓ Rekor entry verified
-# ✓ Attestation structure valid
+#  Signature verification PASSED
+#  Rekor entry verified
+#  Attestation structure valid
 ```
 
 ### Signing Workflow
@@ -680,9 +680,9 @@ SBOM: bazel-bin/workspace.spdx.json
 Overall Status: PASSED
 
 Verification Steps:
-  Signature:    ✓ PASS
-  Rekor Log:    ✓ PASS
-  Attestation:  ✓ PASS
+  Signature:     PASS
+  Rekor Log:     PASS
+  Attestation:   PASS
 ============================================================
 ```
 

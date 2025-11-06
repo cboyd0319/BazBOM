@@ -36,7 +36,7 @@ Real-time vulnerability scanning for Java projects using Maven, Gradle, or Bazel
    ```
 
 2. Install in IntelliJ IDEA:
-   - Go to **Settings/Preferences** → **Plugins** → **⚙️** → **Install Plugin from Disk...**
+   - Go to **Settings/Preferences** → **Plugins** → **** → **Install Plugin from Disk...**
    - Select `build/distributions/bazbom-intellij-plugin-1.0.0.zip`
    - Restart IntelliJ IDEA
 
@@ -71,9 +71,9 @@ Real-time vulnerability scanning for Java projects using Maven, Gradle, or Bazel
 **Tool Window:**
 1. Click **BazBOM** in the right sidebar
 2. View dependency tree with security indicators:
-   - ✅ Green: No vulnerabilities
-   - ⚠️ Yellow: Medium severity
-   - 🔴 Red: High/Critical severity
+   -  Green: No vulnerabilities
+   -  Yellow: Medium severity
+   -  Red: High/Critical severity
 
 **Inline Warnings:**
 - Vulnerabilities appear as editor warnings in build files

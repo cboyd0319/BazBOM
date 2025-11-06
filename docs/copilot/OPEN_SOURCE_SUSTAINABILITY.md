@@ -60,9 +60,9 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 **Program:** Funds critical open source security tools
 
 **Eligibility:**
-- Security-focused project ✅
+- Security-focused project 
 - Significant user base (>1K users target)
-- Active development ✅
+- Active development 
 - Community governance
 
 **Grant Size:** $50K-250K/year
@@ -416,10 +416,10 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 **Examples:** GitLab, Grafana, Sentry
 
 **Why We Reject:**
-- ❌ Splits community (free vs. paid users)
-- ❌ Creates misaligned incentives (hold back features for revenue)
-- ❌ Undermines "best open source SCA" positioning
-- ❌ Competes with our own free tier
+-  Splits community (free vs. paid users)
+-  Creates misaligned incentives (hold back features for revenue)
+-  Undermines "best open source SCA" positioning
+-  Competes with our own free tier
 
 **Our Approach:** Everything is free, sell expertise/support instead
 
@@ -430,10 +430,10 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 **Examples:** Snyk, Dependabot, WhiteSource
 
 **Why We Reject:**
-- ❌ BazBOM's differentiator is privacy (offline-first)
-- ❌ SaaS requires infrastructure costs (expensive to scale)
-- ❌ Users explicitly want air-gapped deployments
-- ❌ Loses "no vendor lock-in" positioning
+-  BazBOM's differentiator is privacy (offline-first)
+-  SaaS requires infrastructure costs (expensive to scale)
+-  Users explicitly want air-gapped deployments
+-  Loses "no vendor lock-in" positioning
 
 **Our Approach:** Self-hosted forever, optional paid support
 
@@ -444,10 +444,10 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 **Examples:** MySQL, Qt, MongoDB (SSPL)
 
 **Why We Reject:**
-- ❌ Confusing for users ("Is it really open source?")
-- ❌ Incompatible with MIT license promise
-- ❌ Limits adoption (enterprises won't touch AGPL/SSPL)
-- ❌ Community backlash (see MongoDB, Elastic)
+-  Confusing for users ("Is it really open source?")
+-  Incompatible with MIT license promise
+-  Limits adoption (enterprises won't touch AGPL/SSPL)
+-  Community backlash (see MongoDB, Elastic)
 
 **Our Approach:** Pure MIT, no restrictions, forever
 
@@ -565,7 +565,7 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 |--------|---------|----------|----------|
 | **Monthly Revenue** | $5K | $25K | $70K |
 | **Runway (months)** | 3 | 12 | 24+ |
-| **Break-Even?** | ❌ No | ✅ Yes | ✅ Yes |
+| **Break-Even?** |  No |  Yes |  Yes |
 | **Team Size (FTE)** | 1 | 2-3 | 5 |
 
 ### Community Indicators (Sustainability Signals)
@@ -624,9 +624,9 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 ## Immediate Next Steps
 
 **This Week:**
-1. ✅ Enable GitHub Sponsors (30 minutes)
-2. ✅ Add "Sponsor" buttons to README
-3. ✅ Write blog post: "Supporting BazBOM Development"
+1.  Enable GitHub Sponsors (30 minutes)
+2.  Add "Sponsor" buttons to README
+3.  Write blog post: "Supporting BazBOM Development"
 
 **Month 1:**
 1. Apply for OpenSSF Alpha-Omega grant
@@ -669,7 +669,7 @@ $2K/month  - Platinum Sponsor (logo + bi-weekly calls + dedicated support channe
 
 ---
 
-**Ready to build sustainable open source?** Let's fund BazBOM the right way. 🚀
+**Ready to build sustainable open source?** Let's fund BazBOM the right way. 
 
 ---
 

@@ -1,7 +1,7 @@
 # Phase 7: Supply Chain Threat Intelligence
 
 **Status:** Planned
-**Priority:** 🟡 P1 - High Impact
+**Priority:**  P1 - High Impact
 **Timeline:** Months 4-6 (10 weeks)
 **Team Size:** 1 security researcher + 1 developer
 **Dependencies:** Phase 0-3 complete, Phase 4 (IDE integration) recommended
@@ -21,10 +21,10 @@
 - Continuous monitoring (`bazbom watch` command)
 
 **Success Metrics:**
-- ✅ Detect 95% of known supply chain attacks (test against historical incidents)
-- ✅ Mean time to detection (MTTD) < 4 hours for new CVEs
-- ✅ False positive rate < 5%
-- ✅ Zero missed typosquatting in top 1000 Maven packages
+-  Detect 95% of known supply chain attacks (test against historical incidents)
+-  Mean time to detection (MTTD) < 4 hours for new CVEs
+-  False positive rate < 5%
+-  Zero missed typosquatting in top 1000 Maven packages
 
 **Competitive Context:** Checkmarx SCA and Socket.dev lead in this area. BazBOM should match their detection capabilities.
 
@@ -305,7 +305,7 @@ impl FileSystemAnalyzer {
 bazbom scan --detect-malicious
 
 # Output:
-# ⚠️ MALICIOUS PACKAGE DETECTED!
+#  MALICIOUS PACKAGE DETECTED!
 # Package: org.xz:xz-java@5.6.0
 # Reason: Backdoor in compression library (CVE-2024-3094)
 # Risk: CRITICAL
@@ -367,9 +367,9 @@ curl https://search.maven.org/stats/top-packages > maven-top-10k.txt
 ```
 
 **Example Detections:**
-- `commons-io` → `common-io` (edit distance = 1) ⚠️ HIGH RISK
-- `log4j-core` → `log4jj-core` (edit distance = 1) ⚠️ HIGH RISK
-- `jackson-databind` → `jakson-databind` (edit distance = 2) ⚠️ MEDIUM RISK
+- `commons-io` → `common-io` (edit distance = 1)  HIGH RISK
+- `log4j-core` → `log4jj-core` (edit distance = 1)  HIGH RISK
+- `jackson-databind` → `jakson-databind` (edit distance = 2)  MEDIUM RISK
 
 ---
 
@@ -495,7 +495,7 @@ impl WatchCommand {
             let new_vulnerabilities = self.diff_scans(&last_scan_results, &current_scan_results);
 
             if !new_vulnerabilities.is_empty() {
-                println!("⚠️ Found {} new vulnerabilities!", new_vulnerabilities.len());
+                println!(" Found {} new vulnerabilities!", new_vulnerabilities.len());
 
                 for vuln in &new_vulnerabilities {
                     println!("  - {} in {} ({})", vuln.id, vuln.package, vuln.severity);
@@ -504,7 +504,7 @@ impl WatchCommand {
                 // Send notifications
                 self.notify(&new_vulnerabilities).await?;
             } else {
-                println!("✅ No new vulnerabilities detected.");
+                println!(" No new vulnerabilities detected.");
             }
 
             last_scan_results = current_scan_results;
@@ -515,7 +515,7 @@ impl WatchCommand {
         match &self.notification_channel {
             NotificationChannel::Slack(webhook) => {
                 let message = format!(
-                    "⚠️ BazBOM Alert: {} new vulnerabilities detected!\n\n{}",
+                    " BazBOM Alert: {} new vulnerabilities detected!\n\n{}",
                     vulns.len(),
                     vulns.iter()
                         .map(|v| format!("• {} in {} ({})", v.id, v.package, v.severity))
@@ -626,7 +626,7 @@ impl UpgradeAdvisor {
 
         if target_version.major > current_version.major {
             score -= 0.3;
-            reasons.push("⚠️ Major version upgrade (may have breaking changes)");
+            reasons.push(" Major version upgrade (may have breaking changes)");
         } else if target_version.minor > current_version.minor {
             score -= 0.1;
             reasons.push("Minor version upgrade (check release notes)");
@@ -680,7 +680,7 @@ bazbom upgrade-advisor
 #    Decision: UPGRADE SOON (score: 0.65)
 #    Reasons:
 #      - HIGH severity (CVE-2024-xxxx)
-#      - ⚠️ Major version upgrade (may have breaking changes)
+#      -  Major version upgrade (may have breaking changes)
 #      - 35% of users already upgraded
 #    Recommendation: Review Spring 6.0 migration guide first
 ```
@@ -733,10 +733,10 @@ bazbom upgrade-advisor
 
 | Feature | Checkmarx SCA | Socket.dev | BazBOM |
 |---------|--------------|------------|--------|
-| **Malicious Package Detection** | ✅ Advanced | ✅ Advanced | ✅ Good |
-| **Typosquatting** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Behavioral Analysis** | ✅ Advanced | ✅ Advanced | ✅ Basic |
-| **Continuous Monitoring** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Malicious Package Detection** |  Advanced |  Advanced |  Good |
+| **Typosquatting** |  Yes |  Yes |  Yes |
+| **Behavioral Analysis** |  Advanced |  Advanced |  Basic |
+| **Continuous Monitoring** |  Yes |  Yes |  Yes |
 | **Cost** | $200+/dev/year | $50/dev/year | **FREE** |
 
 **BazBOM Advantage:** Only open source tool with comprehensive threat intelligence.

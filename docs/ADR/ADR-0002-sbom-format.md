@@ -15,23 +15,23 @@ We will use **SPDX 2.3 in JSON format** as our primary SBOM format.
 ### Options Considered
 
 1. **SPDX 2.3 (Chosen)**
-   - ✅ ISO/IEC standard (5962:2021)
-   - ✅ Strong license compliance features
-   - ✅ Excellent tooling ecosystem
-   - ✅ Government/regulatory acceptance
-   - ✅ Well-defined JSON schema
-   - ✅ Comprehensive package metadata
+   -  ISO/IEC standard (5962:2021)
+   -  Strong license compliance features
+   -  Excellent tooling ecosystem
+   -  Government/regulatory acceptance
+   -  Well-defined JSON schema
+   -  Comprehensive package metadata
 
 2. **CycloneDX**
-   - ✅ Purpose-built for security
-   - ✅ Good vulnerability metadata
-   - ❌ Weaker license compliance features
-   - ❌ Less mature standard
+   -  Purpose-built for security
+   -  Good vulnerability metadata
+   -  Weaker license compliance features
+   -  Less mature standard
 
 3. **SWID (Software Identification Tags)**
-   - ❌ XML-focused (less developer-friendly)
-   - ❌ Limited security metadata
-   - ❌ Less tooling support
+   -  XML-focused (less developer-friendly)
+   -  Limited security metadata
+   -  Less tooling support
 
 ## Comparison Matrix
 
@@ -47,15 +47,15 @@ We will use **SPDX 2.3 in JSON format** as our primary SBOM format.
   <tbody>
     <tr>
       <td>License Compliance</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐⭐</td>
-      <td>⭐</td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <td>Security Metadata</td>
-      <td>⭐⭐</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐</td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <td>Standard Status</td>
@@ -65,21 +65,21 @@ We will use **SPDX 2.3 in JSON format** as our primary SBOM format.
     </tr>
     <tr>
       <td>Tooling Ecosystem</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐⭐</td>
-      <td>⭐</td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <td>JSON Support</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐</td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
     <tr>
       <td>Adoption</td>
-      <td>⭐⭐⭐</td>
-      <td>⭐⭐</td>
-      <td>⭐</td>
+      <td></td>
+      <td></td>
+      <td></td>
     </tr>
   </tbody>
 </table>

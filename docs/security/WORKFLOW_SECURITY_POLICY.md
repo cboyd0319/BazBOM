@@ -100,13 +100,13 @@ permissions:
 
 **VULNERABLE:**
 ```yaml
-# ❌ WRONG - Command injection risk
+#  WRONG - Command injection risk
 - run: echo "Title: ${{ github.event.issue.title }}"
 ```
 
 **SECURE:**
 ```yaml
-# ✅ CORRECT - Use environment variables
+#  CORRECT - Use environment variables
 - name: Safe example
   env:
     ISSUE_TITLE: ${{ github.event.issue.title }}

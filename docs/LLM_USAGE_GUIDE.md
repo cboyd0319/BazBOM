@@ -132,10 +132,10 @@ The command generates:
 **Privacy Protection:**
 
 BazBOM enforces privacy-first defaults:
-- ✅ **Ollama (default)**: No warnings, 100% local processing
-- ⚠️ **External APIs**: Requires `BAZBOM_ALLOW_EXTERNAL_API=1` environment variable
-- 🛡️ **API Key validation**: Checks for API keys before attempting external calls
-- 📊 **Usage tracking**: Token usage and cost estimates displayed
+-  **Ollama (default)**: No warnings, 100% local processing
+-  **External APIs**: Requires `BAZBOM_ALLOW_EXTERNAL_API=1` environment variable
+-  **API Key validation**: Checks for API keys before attempting external calls
+-  **Usage tracking**: Token usage and cost estimates displayed
 
 ---
 
@@ -143,17 +143,17 @@ BazBOM enforces privacy-first defaults:
 
 | Provider | Privacy | Cost | Speed | Quality | Recommended For |
 |----------|---------|------|-------|---------|----------------|
-| **Ollama (Local)** | ✅ 100% Private | 🆓 Free | ⚡ Fast | ⭐⭐⭐⭐ Good | **Everyone (Default)** |
-| **OpenAI GPT-4** | ⚠️ External | 💰 $0.03-0.06/1K tokens | 🐢 Slow | ⭐⭐⭐⭐⭐ Excellent | Complex fixes, high budget |
-| **OpenAI GPT-3.5** | ⚠️ External | 💵 $0.0015-0.002/1K tokens | ⚡ Fast | ⭐⭐⭐⭐ Good | Simple fixes, cost-conscious |
-| **Claude 3 Opus** | ⚠️ External | 💰 $15-75/1M tokens | 🐢 Slow | ⭐⭐⭐⭐⭐ Excellent | Complex analysis |
-| **Claude 3 Sonnet** | ⚠️ External | 💵 $3-15/1M tokens | ⚡ Fast | ⭐⭐⭐⭐ Good | Balanced performance |
-| **Claude 3 Haiku** | ⚠️ External | 💸 $0.25-1.25/1M tokens | ⚡⚡ Very Fast | ⭐⭐⭐ Decent | High volume, low cost |
+| **Ollama (Local)** |  100% Private | 🆓 Free |  Fast |  Good | **Everyone (Default)** |
+| **OpenAI GPT-4** |  External |  $0.03-0.06/1K tokens |  Slow |  Excellent | Complex fixes, high budget |
+| **OpenAI GPT-3.5** |  External |  $0.0015-0.002/1K tokens |  Fast |  Good | Simple fixes, cost-conscious |
+| **Claude 3 Opus** |  External |  $15-75/1M tokens |  Slow |  Excellent | Complex analysis |
+| **Claude 3 Sonnet** |  External |  $3-15/1M tokens |  Fast |  Good | Balanced performance |
+| **Claude 3 Haiku** |  External |  $0.25-1.25/1M tokens |  Very Fast |  Decent | High volume, low cost |
 
 ### Privacy Levels
 
-- ✅ **100% Private**: Ollama (data never leaves your machine)
-- ⚠️ **External**: OpenAI/Anthropic (data sent to external servers)
+-  **100% Private**: Ollama (data never leaves your machine)
+-  **External**: OpenAI/Anthropic (data sent to external servers)
 
 ---
 
@@ -170,7 +170,7 @@ bazbom fix --llm
 
 # Example output:
 # 
-# 🤖 AI-Powered Fix Recommendation
+#  AI-Powered Fix Recommendation
 # 
 # Vulnerability: CVE-2021-44228 (Log4Shell)
 # Current Version: log4j-core 2.14.1
@@ -206,7 +206,7 @@ bazbom fix --llm --interactive
 
 # Example interaction:
 # 
-# 🤖 I found 3 vulnerabilities. Let's fix them together.
+#  I found 3 vulnerabilities. Let's fix them together.
 # 
 # [1/3] CVE-2021-44228 in log4j-core:2.14.1
 # 
@@ -236,7 +236,7 @@ bazbom policy query "What severity threshold should I use for a Spring Boot micr
 
 # Example response:
 # 
-# 🤖 AI Policy Recommendation
+#  AI Policy Recommendation
 # 
 # For Spring Boot microservices, I recommend:
 # 
@@ -349,7 +349,7 @@ bazbom fix --llm
 
 # Output includes:
 # 
-# 🤖 AI Fix Generation Complete
+#  AI Fix Generation Complete
 # 
 # Token Usage:
 #   Prompt tokens: 1,234
@@ -379,9 +379,9 @@ bazbom fix --llm
 
 | Provider | Data Sent | Data Retention | Privacy Level |
 |----------|-----------|----------------|---------------|
-| **Ollama** | None (local only) | Local only | ✅ 100% Private |
-| **OpenAI** | Vulnerability info, code snippets | 30 days | ⚠️ External API |
-| **Anthropic** | Vulnerability info, code snippets | Per policy | ⚠️ External API |
+| **Ollama** | None (local only) | Local only |  100% Private |
+| **OpenAI** | Vulnerability info, code snippets | 30 days |  External API |
+| **Anthropic** | Vulnerability info, code snippets | Per policy |  External API |
 
 ### Privacy Best Practices
 
@@ -396,9 +396,9 @@ bazbom fix --llm
 BazBOM displays clear warnings when using external APIs:
 
 ```
-⚠ WARNING: Using OpenAI API (external service)
-⚠ Data will be sent to OpenAI servers
-⚠ For privacy-preserving AI, use Ollama (local)
+ WARNING: Using OpenAI API (external service)
+ Data will be sent to OpenAI servers
+ For privacy-preserving AI, use Ollama (local)
 ```
 
 ---
@@ -438,7 +438,7 @@ bazbom fix --llm --batch
 
 # Example:
 # 
-# 🤖 Batch Fix Generation (10 vulnerabilities)
+#  Batch Fix Generation (10 vulnerabilities)
 # 
 # Estimated cost:
 #   OpenAI GPT-4: $1.20

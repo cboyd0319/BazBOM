@@ -36,10 +36,10 @@ bazbom init
 ```
 
 This will:
-- ✅ Detect your build system (Maven, Gradle, Bazel, Ant, Buildr, sbt)
-- ✅ Guide you through policy template selection
-- ✅ Run your first security scan
-- ✅ Show vulnerability summary
+-  Detect your build system (Maven, Gradle, Bazel, Ant, Buildr, sbt)
+-  Guide you through policy template selection
+-  Run your first security scan
+-  Show vulnerability summary
 
 ### 2. Scan Your Project
 
@@ -172,14 +172,14 @@ bazbom-scan:
 
 | Feature | Command | Output |
 |---------|---------|--------|
-| 🔍 **SBOM Generation** | `bazbom scan .` | SPDX 2.3, CycloneDX 1.5 |
-| 🛡️ **Vulnerability Scan** | `bazbom scan .` | SARIF 2.1.0, JSON |
-| 📊 **Interactive Dashboard** | `bazbom dashboard` | Web UI (D3.js graphs) |
-| 📈 **Reports** | `bazbom report all` | HTML (executive, developer, compliance, trend) |
-| 🎯 **Policy Enforcement** | `bazbom policy check` | YAML/Rego/OPA |
-| 🔧 **Auto-Fix** | `bazbom fix --apply` | Automated remediation |
-| 📜 **License Compliance** | `bazbom license obligations` | License report |
-| 🌳 **Dependency Explorer** | `bazbom explore` | Terminal UI (TUI) |
+|  **SBOM Generation** | `bazbom scan .` | SPDX 2.3, CycloneDX 1.5 |
+|  **Vulnerability Scan** | `bazbom scan .` | SARIF 2.1.0, JSON |
+|  **Interactive Dashboard** | `bazbom dashboard` | Web UI (D3.js graphs) |
+|  **Reports** | `bazbom report all` | HTML (executive, developer, compliance, trend) |
+|  **Policy Enforcement** | `bazbom policy check` | YAML/Rego/OPA |
+|  **Auto-Fix** | `bazbom fix --apply` | Automated remediation |
+|  **License Compliance** | `bazbom license obligations` | License report |
+|  **Dependency Explorer** | `bazbom explore` | Terminal UI (TUI) |
 
 ---
 
@@ -187,12 +187,12 @@ bazbom-scan:
 
 BazBOM automatically detects and supports:
 
-- ✅ **Maven** - pom.xml
-- ✅ **Gradle** - build.gradle, build.gradle.kts
-- ✅ **Bazel** - BUILD.bazel, WORKSPACE, MODULE.bazel
-- ✅ **Ant** - build.xml
-- ✅ **Buildr** - buildfile, Rakefile
-- ✅ **sbt** - build.sbt (Scala Build Tool)
+-  **Maven** - pom.xml
+-  **Gradle** - build.gradle, build.gradle.kts
+-  **Bazel** - BUILD.bazel, WORKSPACE, MODULE.bazel
+-  **Ant** - build.xml
+-  **Buildr** - buildfile, Rakefile
+-  **sbt** - build.sbt (Scala Build Tool)
 
 ---
 
@@ -241,28 +241,28 @@ bazbom fix --help
 ```
 
 **Documentation:**
-- 📖 [Full Documentation](README.md)
-- 📊 [Report Generation Guide](REPORT_GENERATION_GUIDE.md)
-- 🎛️ [Dashboard Guide](DASHBOARD_GUIDE.md)
-- 🔒 [Policy Guide](POLICY_GUIDE.md)
+-  [Full Documentation](README.md)
+-  [Report Generation Guide](REPORT_GENERATION_GUIDE.md)
+-  [Dashboard Guide](DASHBOARD_GUIDE.md)
+-  [Policy Guide](POLICY_GUIDE.md)
 
 **Community:**
-- 💬 [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
-- 🐛 [Issue Tracker](https://github.com/cboyd0319/BazBOM/issues)
-- 🌟 [Star on GitHub](https://github.com/cboyd0319/BazBOM)
+-  [GitHub Discussions](https://github.com/cboyd0319/BazBOM/discussions)
+-  [Issue Tracker](https://github.com/cboyd0319/BazBOM/issues)
+-  [Star on GitHub](https://github.com/cboyd0319/BazBOM)
 
 ---
 
 ## Next Steps
 
-1. ✅ Install BazBOM
-2. ✅ Run `bazbom init` in your project
-3. ✅ Explore results with `bazbom dashboard`
-4. ✅ Fix vulnerabilities with `bazbom fix --apply`
-5. ✅ Install pre-commit hooks: `bazbom install-hooks`
-6. ✅ Generate reports: `bazbom report all`
-7. ✅ Integrate with CI/CD
+1.  Install BazBOM
+2.  Run `bazbom init` in your project
+3.  Explore results with `bazbom dashboard`
+4.  Fix vulnerabilities with `bazbom fix --apply`
+5.  Install pre-commit hooks: `bazbom install-hooks`
+6.  Generate reports: `bazbom report all`
+7.  Integrate with CI/CD
 
 ---
 
-**Happy scanning! 🚀**
+**Happy scanning! **

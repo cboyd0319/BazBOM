@@ -15,21 +15,21 @@ We will use `rules_jvm_external` with pinned versions and lockfiles (`maven_inst
 ### Options Considered
 
 1. **Direct HTTP downloads**
-   - ❌ No caching
-   - ❌ No checksum verification
-   - ❌ Manual dependency resolution
+   -  No caching
+   -  No checksum verification
+   -  Manual dependency resolution
 
 2. **Maven CLI (mvn)**
-   - ❌ Non-deterministic
-   - ❌ Requires Maven installation
-   - ❌ Not Bazel-native
+   -  Non-deterministic
+   -  Requires Maven installation
+   -  Not Bazel-native
 
 3. **rules_jvm_external** (Chosen)
-   - ✅ Bazel-native integration
-   - ✅ Automatic checksum verification
-   - ✅ Lockfile support for reproducibility
-   - ✅ Built-in caching
-   - ✅ Transitive dependency resolution
+   -  Bazel-native integration
+   -  Automatic checksum verification
+   -  Lockfile support for reproducibility
+   -  Built-in caching
+   -  Transitive dependency resolution
 
 ## Implementation
 

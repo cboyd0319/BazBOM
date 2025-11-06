@@ -14,17 +14,17 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 **Overall Completion:** ~45% toward market leadership
 
-- **Phase 0-3:** ✅ **COMPLETE** - Core infrastructure, Rust CLI, plugins, advisory system
-- **Phase 4:** 🚧 **95% COMPLETE** - IDE integration (needs marketplace publishing)
-- **Phase 5:** ✅ **COMPLETE** - Enterprise policy templates
-- **Phase 1 (Quick Wins):** 🚧 **75% COMPLETE** - Init, TUI, dashboard, batch fixing
-- **Phase 2 (Visual Excellence):** 🚧 **40% COMPLETE** - Dashboard functional, reports pending
+- **Phase 0-3:**  **COMPLETE** - Core infrastructure, Rust CLI, plugins, advisory system
+- **Phase 4:**  **95% COMPLETE** - IDE integration (needs marketplace publishing)
+- **Phase 5:**  **COMPLETE** - Enterprise policy templates
+- **Phase 1 (Quick Wins):**  **75% COMPLETE** - Init, TUI, dashboard, batch fixing
+- **Phase 2 (Visual Excellence):**  **40% COMPLETE** - Dashboard functional, reports pending
 
 ---
 
 ## Feature Status
 
-### ✅ Fully Implemented and Working
+###  Fully Implemented and Working
 
 #### Core Infrastructure
 - [x] Rust workspace with 8 crates
@@ -115,7 +115,7 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 ---
 
-### 🚧 In Progress
+###  In Progress
 
 #### IDE Integration (Phase 4)
 **Status:** 95% complete - Code ready, needs testing & publishing
@@ -146,7 +146,7 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 ---
 
-### 📋 Planned (Not Started)
+###  Planned (Not Started)
 
 #### Phase 2: Visual Excellence
 - [ ] Advanced visualizations
@@ -201,7 +201,7 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 ## Commands Status
 
-### ✅ Fully Functional
+###  Fully Functional
 - `bazbom scan` - Project scanning with SBOM generation
 - `bazbom explore` - Interactive TUI dependency viewer
 - `bazbom dashboard` - Web dashboard server
@@ -216,10 +216,10 @@ This document tracks the implementation status of BazBOM roadmap features as def
 - `bazbom db sync` - Sync advisory database
 - `bazbom license check` - License compliance check
 
-### 🚧 Partially Implemented
+###  Partially Implemented
 - `bazbom dashboard --export` - Static HTML export (stub)
 
-### 📋 Not Yet Implemented
+###  Not Yet Implemented
 - Advanced team coordination commands
 - Report generation commands
 
@@ -231,31 +231,31 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 | Crate | Tests | Status |
 |-------|-------|--------|
-| bazbom | 93 | ✅ All passing |
-| bazbom-core | 59 | ✅ All passing |
-| bazbom-advisories | 1 | ✅ All passing |
-| bazbom-formats | 35 | ✅ All passing |
-| bazbom-graph | 3 | ✅ All passing |
-| bazbom-policy | 42 | ✅ All passing |
-| bazbom-tui | 3 | ✅ All passing |
-| bazbom-dashboard | 0 | ⚠️ Need tests |
-| bazbom-lsp | 0 | ⚠️ Need tests |
+| bazbom | 93 |  All passing |
+| bazbom-core | 59 |  All passing |
+| bazbom-advisories | 1 |  All passing |
+| bazbom-formats | 35 |  All passing |
+| bazbom-graph | 3 |  All passing |
+| bazbom-policy | 42 |  All passing |
+| bazbom-tui | 3 |  All passing |
+| bazbom-dashboard | 0 |  Need tests |
+| bazbom-lsp | 0 |  Need tests |
 
 ---
 
 ## Distribution Status
 
-### ✅ Available
+###  Available
 - Homebrew tap (macOS/Linux)
 - GitHub Releases (signed binaries)
 - Source builds (Cargo)
 - GitHub Action
 
-### 🚧 Ready for Publishing
+###  Ready for Publishing
 - VS Code Marketplace (extension built)
 - JetBrains Marketplace (plugin built)
 
-### 📋 Planned
+###  Planned
 - Chocolatey (Windows)
 - winget (Windows)
 - APT/DEB packages
@@ -269,12 +269,12 @@ This document tracks the implementation status of BazBOM roadmap features as def
 
 | Operation | Current | Target | Status |
 |-----------|---------|--------|--------|
-| First scan (small project) | ~30s | <60s | ✅ |
-| TUI startup | <1s | <2s | ✅ |
-| Dashboard load | ~2s | <2s | ✅ |
-| Fix suggestion | <5s | <10s | ✅ |
-| Batch fix (10 vulns) | ~2min | <5min | ✅ |
-| IDE plugin scan | ~10s | <10s | ✅ |
+| First scan (small project) | ~30s | <60s |  |
+| TUI startup | <1s | <2s |  |
+| Dashboard load | ~2s | <2s |  |
+| Fix suggestion | <5s | <10s |  |
+| Batch fix (10 vulns) | ~2min | <5min |  |
+| IDE plugin scan | ~10s | <10s |  |
 
 ---
 

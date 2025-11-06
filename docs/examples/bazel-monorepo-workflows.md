@@ -76,7 +76,7 @@ bazbom scan . --bazel-targets-query 'kind(java_binary, //services/auth/...)'
   - //services/auth:migration_tool
 [bazbom] extracted 87 Bazel components and 142 edges
 [bazbom] wrote sbom.spdx.json
-⏱️  Completed in 2.3 seconds
+  Completed in 2.3 seconds
 ```
 
 ### Step 2: Check for Vulnerabilities
@@ -423,7 +423,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## 🔒 Security Scan Results\n\n` +
+              body: `##  Security Scan Results\n\n` +
                     `Critical vulnerabilities: ${critical}\n` +
                     `See artifacts for detailed SBOM.`
             });

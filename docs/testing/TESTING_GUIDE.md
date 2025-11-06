@@ -351,26 +351,26 @@ The workflow:
 
 ### DO
 
-✅ Use Rust's built-in test framework
-✅ Follow AAA pattern
-✅ Write descriptive test names
-✅ Test happy path and error paths
-✅ Use fixtures for shared setup
-✅ Mock external dependencies
-✅ Use parametrization for similar tests
-✅ Keep tests fast (< 100ms each)
-✅ Make tests deterministic
+ Use Rust's built-in test framework
+ Follow AAA pattern
+ Write descriptive test names
+ Test happy path and error paths
+ Use fixtures for shared setup
+ Mock external dependencies
+ Use parametrization for similar tests
+ Keep tests fast (< 100ms each)
+ Make tests deterministic
 
 ### DON'T
 
-❌ Use unsafe code in tests without justification
-❌ Share state between tests
-❌ Make real network calls
-❌ Write to source tree
-❌ Use time.sleep()
-❌ Write multiple assertions for different concerns
-❌ Copy-paste test code (use parametrization)
-❌ Test implementation details
+ Use unsafe code in tests without justification
+ Share state between tests
+ Make real network calls
+ Write to source tree
+ Use time.sleep()
+ Write multiple assertions for different concerns
+ Copy-paste test code (use parametrization)
+ Test implementation details
 
 ## Troubleshooting
 
@@ -470,7 +470,7 @@ pytest --profile
 
 | Test Category | Target Time | Current |
 |--------------|-------------|---------|
-| Unit Tests | < 100ms | ✓ 95% under 100ms |
+| Unit Tests | < 100ms |  95% under 100ms |
 | Fast Suite | < 2.0s | 2.78s (1.5s with -n auto) |
 | Full Suite | < 3.0s | 3.05s (2.0s with -n auto) |
 | Slow Tests | < 500ms each | 5 tests marked |

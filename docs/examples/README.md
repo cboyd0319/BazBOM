@@ -2,7 +2,7 @@
 
 This directory contains examples demonstrating BazBOM usage with real-world scenarios.
 
-## Orchestrated Scan Quickstart ⭐ NEW
+## Orchestrated Scan Quickstart  NEW
 
 The **`orchestrated-scan-quickstart.sh`** script demonstrates BazBOM's comprehensive security scanning capabilities:
 
@@ -45,11 +45,11 @@ All artifacts are generated in `/tmp/` for inspection.
 
 BazBOM now leverages **maven_install.json** as the source of truth, providing:
 
-✅ **Complete Transitive Dependencies** - All 7 dependencies (not just direct)
-✅ **SHA256 Checksums** - Verification for all artifacts
-✅ **Dependency Relationships** - Full parent→child mapping
-✅ **Depth Tracking** - Blast radius analysis (max depth: 2)
-✅ **Direct vs Transitive** - Clear classification
+ **Complete Transitive Dependencies** - All 7 dependencies (not just direct)
+ **SHA256 Checksums** - Verification for all artifacts
+ **Dependency Relationships** - Full parent→child mapping
+ **Depth Tracking** - Blast radius analysis (max depth: 2)
+ **Direct vs Transitive** - Clear classification
 
 ### Example Output
 
@@ -92,13 +92,13 @@ For Bazel projects, you need:
 ```
 
 **What BazBOM extracts:**
-- ✅ Complete dependency graph from maven_install.json
-- ✅ Maven coordinates (group:artifact:version)
-- ✅ Package URLs (PURLs) for all artifacts
-- ✅ SHA256 checksums for verification
-- ✅ Dependency relationships (DEPENDS_ON edges)
-- ✅ Repository URLs
-- ✅ SPDX 2.3 compliant SBOM
+-  Complete dependency graph from maven_install.json
+-  Maven coordinates (group:artifact:version)
+-  Package URLs (PURLs) for all artifacts
+-  SHA256 checksums for verification
+-  Dependency relationships (DEPENDS_ON edges)
+-  Repository URLs
+-  SPDX 2.3 compliant SBOM
 
 **Output files:**
 - `sbom.spdx.json` - SPDX 2.3 document with packages and relationships
@@ -172,14 +172,14 @@ python3 tools/supplychain/write_sbom.py \
 
 ## What Each Tool Does
 
-### extract_maven_deps.py ⭐ ENHANCED
+### extract_maven_deps.py  ENHANCED
 **NEW:** Now reads from maven_install.json (preferred) or WORKSPACE (fallback).
 
 Extracts complete dependency information:
-- ✅ All transitive dependencies from lockfile
-- ✅ SHA256 checksums for verification
-- ✅ Dependency relationships (parent→child)
-- ✅ Direct vs transitive classification
+-  All transitive dependencies from lockfile
+-  SHA256 checksums for verification
+-  Dependency relationships (parent→child)
+-  Direct vs transitive classification
 
 **Usage:**
 ```bash
@@ -196,16 +196,16 @@ python3 tools/supplychain/extract_maven_deps.py \
   --prefer-lockfile=false
 ```
 
-### write_sbom.py ⭐ ENHANCED
+### write_sbom.py  ENHANCED
 **NEW:** Generates SPDX SBOMs with complete transitive relationships.
 
 Converts dependency JSON into SPDX 2.3 compliant SBOM:
-- ✅ SHA256 checksums for all packages
-- ✅ Proper DEPENDS_ON relationships
-- ✅ Distinguishes direct from transitive deps
-- ✅ Package URLs (PURLs) for all artifacts
+-  SHA256 checksums for all packages
+-  Proper DEPENDS_ON relationships
+-  Distinguishes direct from transitive deps
+-  Package URLs (PURLs) for all artifacts
 
-### graph_generator.py ⭐ ENHANCED
+### graph_generator.py  ENHANCED
 **NEW:** Calculates dependency depth for blast radius analysis.
 
 Creates dependency graph visualizations:

@@ -1447,7 +1447,7 @@ fn main() -> Result<()> {
                         .unwrap_or(false);
 
                     if apply_batch {
-                        println!("\n⏳ Applying {} updates...", batch.updates.len());
+                        println!("\nApplying {} updates...", batch.updates.len());
 
                         // Convert batch updates back to suggestions for remediation
                         let batch_suggestions: Vec<_> = report

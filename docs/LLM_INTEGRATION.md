@@ -1,7 +1,7 @@
 # LLM Integration for AI-Powered Features
 
 **Status:** Phase 10 - In Development  
-**Privacy Level:** 🔒 **100% LOCAL BY DEFAULT** (External APIs are **OPT-IN ONLY**)
+**Privacy Level:**  **100% LOCAL BY DEFAULT** (External APIs are **OPT-IN ONLY**)
 
 ---
 
@@ -9,10 +9,10 @@
 
 BazBOM supports AI-powered fix generation and policy recommendations using Large Language Models (LLMs). **BazBOM is privacy-first**, which means:
 
-- ✅ **Local LLMs are the default and recommended option**
-- ✅ **No data is sent externally without explicit opt-in**
-- ✅ **All external API calls require explicit API key configuration**
-- ✅ **Users are warned when data is being sent to external services**
+-  **Local LLMs are the default and recommended option**
+-  **No data is sent externally without explicit opt-in**
+-  **All external API calls require explicit API key configuration**
+-  **Users are warned when data is being sent to external services**
 
 ---
 
@@ -30,18 +30,18 @@ BazBOM **NEVER** sends data to external services without explicit configuration.
 
 When you run `bazbom fix --llm`, BazBOM checks for LLM providers in this order:
 
-1. **OLLAMA_BASE_URL** → Local Ollama (✅ Privacy-safe, recommended)
-2. **ANTHROPIC_API_KEY** → Anthropic Claude (⚠️ External, opt-in)
-3. **OPENAI_API_KEY** → OpenAI GPT (⚠️ External, opt-in)
+1. **OLLAMA_BASE_URL** → Local Ollama ( Privacy-safe, recommended)
+2. **ANTHROPIC_API_KEY** → Anthropic Claude ( External, opt-in)
+3. **OPENAI_API_KEY** → OpenAI GPT ( External, opt-in)
 4. **Error** → No provider configured
 
 ---
 
 ## Supported LLM Providers
 
-### 1. Ollama (RECOMMENDED) 🔒
+### 1. Ollama (RECOMMENDED) 
 
-**Privacy Level:** ✅ **LOCAL - No data leaves your machine**
+**Privacy Level:**  **LOCAL - No data leaves your machine**
 
 Ollama runs LLMs locally on your machine. This is the **recommended** option for privacy-conscious users.
 
@@ -82,9 +82,9 @@ bazbom fix --llm --suggest
 
 ---
 
-### 2. Anthropic Claude (OPT-IN) ⚠️
+### 2. Anthropic Claude (OPT-IN) 
 
-**Privacy Level:** ⚠️ **EXTERNAL - Data sent to Anthropic servers**
+**Privacy Level:**  **EXTERNAL - Data sent to Anthropic servers**
 
 Anthropic Claude provides high-quality responses but requires sending data to external servers.
 
@@ -110,7 +110,7 @@ bazbom fix --llm --suggest
 
 **Output:**
 ```
-⚠ Using Anthropic Claude API (OPT-IN: data sent to external service)
+ Using Anthropic Claude API (OPT-IN: data sent to external service)
 ```
 
 #### Available Models
@@ -129,9 +129,9 @@ bazbom fix --llm --suggest
 
 ---
 
-### 3. OpenAI GPT (OPT-IN) ⚠️
+### 3. OpenAI GPT (OPT-IN) 
 
-**Privacy Level:** ⚠️ **EXTERNAL - Data sent to OpenAI servers**
+**Privacy Level:**  **EXTERNAL - Data sent to OpenAI servers**
 
 OpenAI GPT models provide high-quality responses but require sending data to external servers.
 
@@ -157,7 +157,7 @@ bazbom fix --llm --suggest
 
 **Output:**
 ```
-⚠ Using OpenAI API (OPT-IN: data sent to external service)
+ Using OpenAI API (OPT-IN: data sent to external service)
 ```
 
 #### Available Models
@@ -278,7 +278,7 @@ export OLLAMA_MODEL=llama2
 
 # Use
 bazbom fix --llm --suggest
-# ✓ Using local Ollama at http://localhost:11434 (privacy-preserving)
+#  Using local Ollama at http://localhost:11434 (privacy-preserving)
 ```
 
 ### External API (Opt-In)
@@ -291,7 +291,7 @@ export OPENAI_API_KEY=sk-...
 
 # Use
 bazbom fix --llm --suggest
-# ⚠ Using Anthropic Claude API (OPT-IN: data sent to external service)
+#  Using Anthropic Claude API (OPT-IN: data sent to external service)
 ```
 
 ### Checking Privacy Level

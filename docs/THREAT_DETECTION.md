@@ -1,6 +1,6 @@
 # Threat Detection & Supply Chain Security
 
-**Status:** ✅ Available in BazBOM v0.5.1+  
+**Status:**  Available in BazBOM v0.5.1+  
 **Phase:** 7 - Threat Intelligence (95% Complete)
 
 ---
@@ -53,9 +53,9 @@ Identifies packages with names suspiciously similar to popular libraries:
 
 ```bash
 # Example detections:
-❌ commons-io-typo  → Similar to: commons-io (popular library)
-❌ log4jj          → Similar to: log4j (popular library)
-❌ springboot      → Similar to: spring-boot (popular library)
+ commons-io-typo  → Similar to: commons-io (popular library)
+ log4jj          → Similar to: log4j (popular library)
+ springboot      → Similar to: spring-boot (popular library)
 ```
 
 **Algorithm:**
@@ -69,7 +69,7 @@ Detects potential namespace hijacking:
 
 ```bash
 # Example:
-⚠️  Package: com.internal.mycompany:common-utils:1.0.0
+  Package: com.internal.mycompany:common-utils:1.0.0
     Found public package with same name: com.internal.mycompany:common-utils
     Risk: Internal namespace may be hijacked by public registry
 ```
@@ -94,7 +94,7 @@ Monitors for signs of compromised packages:
 
 ```bash
 # Examples:
-⚠️  Package: popular-library:1.2.3
+  Package: popular-library:1.2.3
     - Sudden version jump (1.2.2 → 1.2.3 released within 1 hour)
     - Maintainer change detected
     - Binary size increased by >300%
@@ -171,7 +171,7 @@ bazbom team-config --github-issues --github-token ghp_xxxx --github-repo owner/r
 
 **Slack/Teams Example:**
 ```
-🚨 BazBOM Threat Detected
+ BazBOM Threat Detected
 
 Severity: HIGH
 Package: suspicious-package:1.0.0
@@ -190,7 +190,7 @@ Scan Date: 2024-11-04 19:00:00 UTC
 
 **GitHub Issue Example:**
 ```markdown
-## 🚨 Threat Detection Alert
+##  Threat Detection Alert
 
 **Severity:** HIGH  
 **Package:** suspicious-package:1.0.0  

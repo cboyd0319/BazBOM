@@ -302,10 +302,10 @@ bazbom report all --output-dir release-reports/
 
 # Check for critical vulnerabilities
 if grep -q "CRITICAL" release-reports/developer-report.html; then
-    echo "❌ CRITICAL vulnerabilities found - release blocked"
+    echo " CRITICAL vulnerabilities found - release blocked"
     exit 1
 else
-    echo "✅ Compliance checks passed"
+    echo " Compliance checks passed"
     exit 0
 fi
 ```
