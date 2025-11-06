@@ -580,15 +580,44 @@ fn main() -> Result<()> {
                             })
                             .unwrap_or(0);
 
+                        // Calculate vulnerability age in days from published date
+                        let age_days = vuln
+                            .published
+                            .as_ref()
+                            .and_then(|pub_date| {
+                                // Parse RFC3339 timestamp (ISO 8601 subset, e.g., "2024-01-15T10:30:00Z")
+                                chrono::DateTime::parse_from_rfc3339(pub_date)
+                                    .ok()
+                                    .map(|dt| {
+                                        let now = chrono::Utc::now();
+                                        let duration = now.signed_duration_since(dt.with_timezone(&chrono::Utc));
+                                        duration.num_days().max(0) as u32
+                                    })
+                            })
+                            .unwrap_or(0);
+
+                        // Check for known exploits via KEV presence
+                        // KEV (Known Exploited Vulnerabilities) catalog explicitly lists vulnerabilities
+                        // with confirmed exploits in the wild
+                        let has_exploit = in_kev;
+
+                        // Map vulnerability type to numeric (based on severity and KEV)
+                        // 0 = Unknown/Low risk, 1 = Medium, 2 = High, 3 = Critical with exploit
+                        let vuln_type = if in_kev {
+                            3 // Active exploits elevate to highest risk type
+                        } else {
+                            severity_level
+                        };
+
                         // Create features
                         let features = VulnerabilityFeatures {
                             cvss_score,
-                            age_days: 0, // FIXME: Calculate from published date (need vulnerability.published_date field)
-                            has_exploit: false, // FIXME: Check exploit database (requires exploit-db integration)
+                            age_days,
+                            has_exploit,
                             epss,
                             in_kev,
                             severity_level,
-                            vuln_type: 0, // FIXME: Map vulnerability type to numeric (CWE-based categorization needed)
+                            vuln_type,
                             is_reachable,
                         };
 
@@ -1027,15 +1056,45 @@ fn main() -> Result<()> {
                             })
                             .unwrap_or(0);
 
+                        // Calculate vulnerability age in days from published date
+                        let age_days = vuln
+                            .published
+                            .as_ref()
+                            .and_then(|pub_date| {
+                                chrono::DateTime::parse_from_rfc3339(pub_date)
+                                    .ok()
+                                    .map(|dt| {
+                                        let now = chrono::Utc::now();
+                                        let duration = now.signed_duration_since(dt.with_timezone(&chrono::Utc));
+                                        duration.num_days().max(0) as u32
+                                    })
+                            })
+                            .unwrap_or(0);
+
+                        // Check for known exploits via KEV presence
+                        let has_exploit = in_kev;
+
+                        // Map vulnerability type based on severity and KEV
+                        let vuln_type = if in_kev {
+                            3 // Active exploits elevate to highest risk type
+                        } else {
+                            severity_level
+                        };
+
+                        // Note: is_reachable would require integration with reachability analysis results
+                        // Default to false (unknown) rather than assuming reachability
+                        // This avoids false positives in prioritization
+                        let is_reachable = false; // TODO: Integrate with reachability analyzer output
+
                         let features = VulnerabilityFeatures {
                             cvss_score,
-                            age_days: 0,
-                            has_exploit: false,
+                            age_days,
+                            has_exploit,
                             epss,
                             in_kev,
                             severity_level,
-                            vuln_type: 0,
-                            is_reachable: false, // FIXME: Load from scan results (requires reachability analyzer integration)
+                            vuln_type,
+                            is_reachable,
                         };
 
                         let cve = vuln.id.clone();
@@ -1044,7 +1103,45 @@ fn main() -> Result<()> {
                             .first()
                             .map(|a| a.package.clone())
                             .unwrap_or_else(|| "unknown".to_string());
-                        let version = "unknown".to_string(); // FIXME: Extract from affected.ranges field
+                        
+                        // Extract version from affected ranges
+                        // Prioritize: Introduced > Fixed > LastAffected
+                        let version = vuln
+                            .affected
+                            .first()
+                            .and_then(|affected| {
+                                affected.ranges.first().and_then(|range| {
+                                    // First, look for "introduced" events
+                                    range.events.iter().find_map(|event| {
+                                        if let bazbom_advisories::VersionEvent::Introduced { introduced } = event {
+                                            Some(introduced.clone())
+                                        } else {
+                                            None
+                                        }
+                                    }).or_else(|| {
+                                        // If no "introduced" found, look for "fixed"
+                                        // Format: "<version" indicates "fixed in this version" (versions before this are affected)
+                                        range.events.iter().find_map(|event| {
+                                            if let bazbom_advisories::VersionEvent::Fixed { fixed } = event {
+                                                Some(format!("<{}", fixed))
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                    }).or_else(|| {
+                                        // Finally, look for "last_affected"
+                                        // Format: "<=version" indicates "last affected version" (this and earlier versions affected)
+                                        range.events.iter().find_map(|event| {
+                                            if let bazbom_advisories::VersionEvent::LastAffected { last_affected } = event {
+                                                Some(format!("<={}", last_affected))
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                    })
+                                })
+                            })
+                            .unwrap_or_else(|| "unknown".to_string());
 
                         (features, cve, package, version)
                     })
@@ -1195,6 +1292,16 @@ fn main() -> Result<()> {
 
                 for suggestion in report.suggestions.iter().take(max_guides) {
                     if let Some(fixed_version) = &suggestion.fixed_version {
+                        // Look up the vulnerability to extract CVSS score
+                        let cvss_score = prioritized_vulnerabilities
+                            .iter()
+                            .find(|v| v.id == suggestion.vulnerability_id || v.aliases.contains(&suggestion.vulnerability_id))
+                            .and_then(|vuln| {
+                                vuln.severity
+                                    .as_ref()
+                                    .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                            });
+
                         let build_system_str = format!("{:?}", system);
                         let context = FixContext {
                             cve: suggestion.vulnerability_id.clone(),
@@ -1203,7 +1310,7 @@ fn main() -> Result<()> {
                             fixed_version: fixed_version.clone(),
                             build_system: build_system_str,
                             severity: suggestion.severity.clone(),
-                            cvss_score: None, // FIXME: Extract from vulnerability.cvss field (requires advisory lookup)
+                            cvss_score,
                             breaking_changes: suggestion
                                 .breaking_changes
                                 .as_ref()

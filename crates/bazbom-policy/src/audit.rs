@@ -145,7 +145,23 @@ impl AuditLogger {
                 AuditResult::Fail
             },
             violation_count: result.violations.len(),
-            warning_count: 0, // FIXME: separate warnings from violations (requires PolicyViolation.severity field)
+            // Count warnings as violations with severity <= Medium
+            // Note: Policy violations with Low/Medium severity are treated as warnings
+            warning_count: result
+                .violations
+                .iter()
+                .filter(|v| {
+                    v.vulnerability
+                        .as_ref()
+                        .map(|vuln| {
+                            matches!(
+                                vuln.severity,
+                                crate::SeverityLevel::Low | crate::SeverityLevel::Medium
+                            )
+                        })
+                        .unwrap_or(false)
+                })
+                .count(),
             policy_source: policy_source.map(String::from),
             context,
         };
