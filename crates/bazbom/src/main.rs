@@ -1082,7 +1082,8 @@ fn main() -> Result<()> {
                         };
 
                         // Note: is_reachable would require integration with reachability analysis results
-                        // For now, conservatively assume all vulnerabilities are reachable
+                        // Default to false (unknown) rather than assuming reachability
+                        // This avoids false positives in prioritization
                         let is_reachable = false; // TODO: Integrate with reachability analyzer output
 
                         let features = VulnerabilityFeatures {
@@ -1104,23 +1105,38 @@ fn main() -> Result<()> {
                             .unwrap_or_else(|| "unknown".to_string());
                         
                         // Extract version from affected ranges
+                        // Prioritize: Introduced > Fixed > LastAffected
                         let version = vuln
                             .affected
                             .first()
                             .and_then(|affected| {
                                 affected.ranges.first().and_then(|range| {
-                                    // Look for "introduced" or "fixed" version events
-                                    range.events.iter().map(|event| match event {
-                                        bazbom_advisories::VersionEvent::Introduced { introduced } => {
-                                            introduced.clone()
+                                    // First, look for "introduced" events
+                                    range.events.iter().find_map(|event| {
+                                        if let bazbom_advisories::VersionEvent::Introduced { introduced } = event {
+                                            Some(introduced.clone())
+                                        } else {
+                                            None
                                         }
-                                        bazbom_advisories::VersionEvent::Fixed { fixed } => {
-                                            format!("<{}", fixed)
-                                        }
-                                        bazbom_advisories::VersionEvent::LastAffected { last_affected } => {
-                                            format!("<={}", last_affected)
-                                        }
-                                    }).next()
+                                    }).or_else(|| {
+                                        // If no "introduced" found, look for "fixed"
+                                        range.events.iter().find_map(|event| {
+                                            if let bazbom_advisories::VersionEvent::Fixed { fixed } = event {
+                                                Some(format!("<{}", fixed))
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                    }).or_else(|| {
+                                        // Finally, look for "last_affected"
+                                        range.events.iter().find_map(|event| {
+                                            if let bazbom_advisories::VersionEvent::LastAffected { last_affected } = event {
+                                                Some(format!("<={}", last_affected))
+                                            } else {
+                                                None
+                                            }
+                                        })
+                                    })
                                 })
                             })
                             .unwrap_or_else(|| "unknown".to_string());

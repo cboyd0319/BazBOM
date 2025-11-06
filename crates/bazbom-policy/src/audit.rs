@@ -146,6 +146,7 @@ impl AuditLogger {
             },
             violation_count: result.violations.len(),
             // Count warnings as violations with severity <= Medium
+            // Note: Policy violations with Low/Medium severity are treated as warnings
             warning_count: result
                 .violations
                 .iter()
@@ -155,9 +156,7 @@ impl AuditLogger {
                         .map(|vuln| {
                             matches!(
                                 vuln.severity,
-                                crate::SeverityLevel::None
-                                    | crate::SeverityLevel::Low
-                                    | crate::SeverityLevel::Medium
+                                crate::SeverityLevel::Low | crate::SeverityLevel::Medium
                             )
                         })
                         .unwrap_or(false)
