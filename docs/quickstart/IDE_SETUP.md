@@ -60,7 +60,7 @@ ls build/distributions/bazbom-intellij-plugin-*.zip
 **Install in IntelliJ:**
 1. Open IntelliJ IDEA
 2. **Settings/Preferences** → **Plugins**
-3. Click ⚙️ → **Install Plugin from Disk...**
+3. Click  → **Install Plugin from Disk...**
 4. Select `build/distributions/bazbom-intellij-plugin-*.zip`
 5. Click **OK** and **Restart IDE**
 

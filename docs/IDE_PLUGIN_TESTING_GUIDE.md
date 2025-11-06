@@ -110,7 +110,7 @@ cd ../..
    - BazBOM commands are available in command palette
    - No error messages in Output panel (View → Output → BazBOM Language Server)
 
-**Expected Result:** ✅ Extension installs without errors
+**Expected Result:**  Extension installs without errors
 
 ---
 
@@ -123,7 +123,7 @@ cd ../..
 3. Check Output panel (View → Output → BazBOM Language Server)
 4. Look for "LSP server started" message
 
-**Expected Result:** ✅ LSP server connects and starts successfully
+**Expected Result:**  LSP server connects and starts successfully
 
 ---
 
@@ -142,7 +142,7 @@ cd ../..
 4. Wait 5-10 seconds
 5. Check Problems panel (View → Problems)
 
-**Expected Result:** ✅ Vulnerability appears as a problem with CVE-2021-44228 (Log4Shell)
+**Expected Result:**  Vulnerability appears as a problem with CVE-2021-44228 (Log4Shell)
 
 **Screenshot Location:** `docs/images/vscode-vulnerability-detection.png` (placeholder)
 
@@ -178,9 +178,9 @@ cd ../..
 3. Check Problems panel
 
 **Expected Result:**
-- ✅ Critical/High: Red error markers
-- ✅ Medium: Yellow warning markers
-- ✅ Low: Blue info markers
+-  Critical/High: Red error markers
+-  Medium: Yellow warning markers
+-  Low: Blue info markers
 
 ---
 
@@ -192,7 +192,7 @@ cd ../..
 4. Check for progress indicator
 5. Verify results appear in Problems panel
 
-**Expected Result:** ✅ Manual scan completes and displays results
+**Expected Result:**  Manual scan completes and displays results
 
 ---
 
@@ -203,7 +203,7 @@ cd ../..
 3. Execute command
 4. Check Output panel for sync progress
 
-**Expected Result:** ✅ Database syncs successfully with progress messages
+**Expected Result:**  Database syncs successfully with progress messages
 
 ---
 
@@ -220,7 +220,7 @@ cd ../..
 5. Re-scan project
 6. Verify only high/critical vulnerabilities appear
 
-**Expected Result:** ✅ All settings work correctly
+**Expected Result:**  All settings work correctly
 
 ---
 
@@ -230,17 +230,17 @@ Test with different build files:
 
 | File | Should Activate | Test Result |
 |------|----------------|-------------|
-| `pom.xml` | ✅ Yes | |
-| `build.gradle` | ✅ Yes | |
-| `build.gradle.kts` | ✅ Yes | |
-| `BUILD` | ✅ Yes | |
-| `BUILD.bazel` | ✅ Yes | |
-| `WORKSPACE` | ✅ Yes | |
-| `MODULE.bazel` | ✅ Yes | |
-| `package.json` | ❌ No | |
-| `pom.xml.bak` | ❌ No | |
+| `pom.xml` |  Yes | |
+| `build.gradle` |  Yes | |
+| `build.gradle.kts` |  Yes | |
+| `BUILD` |  Yes | |
+| `BUILD.bazel` |  Yes | |
+| `WORKSPACE` |  Yes | |
+| `MODULE.bazel` |  Yes | |
+| `package.json` |  No | |
+| `pom.xml.bak` |  No | |
 
-**Expected Result:** ✅ Extension activates only for supported build files
+**Expected Result:**  Extension activates only for supported build files
 
 ---
 
@@ -253,7 +253,7 @@ Test with different build files:
 2. Open VS Code and try to scan
 3. Check for user-friendly error message
 
-**Expected Result:** ✅ Clear error message explaining BazBOM CLI not found
+**Expected Result:**  Clear error message explaining BazBOM CLI not found
 
 ---
 
@@ -277,7 +277,7 @@ Test scan times with different project sizes:
 4. Save file to trigger scan
 5. Note time when diagnostics appear
 
-**Expected Result:** ✅ All scans complete within expected times
+**Expected Result:**  All scans complete within expected times
 
 ---
 
@@ -290,7 +290,7 @@ Test scan times with different project sizes:
 5. Scan multiple projects
 6. Note peak memory usage
 
-**Expected Result:** ✅ Extension adds <100MB to VS Code memory footprint
+**Expected Result:**  Extension adds <100MB to VS Code memory footprint
 
 ---
 
@@ -302,9 +302,9 @@ Test with different VS Code versions:
 
 | Version | Status | Test Result |
 |---------|--------|-------------|
-| Latest Stable (1.84+) | ✅ Primary Target | |
-| Previous Stable (1.83) | ✅ Should Work | |
-| Insiders | ⚠️ Nice to Have | |
+| Latest Stable (1.84+) |  Primary Target | |
+| Previous Stable (1.83) |  Should Work | |
+| Insiders |  Nice to Have | |
 
 ---
 
@@ -321,7 +321,7 @@ Test with different VS Code versions:
    ```
 
 2. Install in IntelliJ:
-   - Settings → Plugins → ⚙️ → Install Plugin from Disk
+   - Settings → Plugins →  → Install Plugin from Disk
    - Select `build/distributions/bazbom-intellij-plugin-1.0.0.zip`
    - Restart IntelliJ
 
@@ -330,7 +330,7 @@ Test with different VS Code versions:
    - BazBOM tool window appears on right sidebar
    - BazBOM menu items appear in Tools menu
 
-**Expected Result:** ✅ Plugin installs and activates without errors
+**Expected Result:**  Plugin installs and activates without errors
 
 ---
 
@@ -348,7 +348,7 @@ Test with different VS Code versions:
    - Scope labels (compile, test, runtime)
    - Vulnerability indicators (color-coded)
 
-**Expected Result:** ✅ Dependency tree displays correctly with all information
+**Expected Result:**  Dependency tree displays correctly with all information
 
 **Screenshot Location:** `docs/images/intellij-dependency-tree.png` (placeholder)
 
@@ -370,9 +370,9 @@ Test with different VS Code versions:
 5. Hover over warning
 
 **Expected Result:** 
-- ✅ Warning appears inline next to dependency
-- ✅ Hover shows CVE details, severity, and fixed version
-- ✅ Warning color matches severity (red for critical, yellow for high)
+-  Warning appears inline next to dependency
+-  Hover shows CVE details, severity, and fixed version
+-  Warning color matches severity (red for critical, yellow for high)
 
 ---
 
@@ -386,7 +386,7 @@ Test with different VS Code versions:
 3. Wait 2-3 seconds
 4. Verify inline warning appears
 
-**Expected Result:** ✅ Same behavior as Maven annotation
+**Expected Result:**  Same behavior as Maven annotation
 
 ---
 
@@ -404,7 +404,7 @@ Test with different VS Code versions:
 3. Wait 2-3 seconds
 4. Verify inline warning appears
 
-**Expected Result:** ✅ Same behavior as Maven/Gradle annotation
+**Expected Result:**  Same behavior as Maven/Gradle annotation
 
 ---
 
@@ -421,10 +421,10 @@ Test with different VS Code versions:
    - Notification
 
 **Expected Result:**
-- ✅ Dependency version upgrades correctly
-- ✅ Tests run in background
-- ✅ Success notification appears
-- ✅ If tests fail, rollback occurs with warning notification
+-  Dependency version upgrades correctly
+-  Tests run in background
+-  Success notification appears
+-  If tests fail, rollback occurs with warning notification
 
 **Screenshot Location:** `docs/images/intellij-quick-fix.png` (placeholder)
 
@@ -443,7 +443,7 @@ Test with different VS Code versions:
 4. Restart IntelliJ
 5. Verify settings persist
 
-**Expected Result:** ✅ All settings work and persist correctly
+**Expected Result:**  All settings work and persist correctly
 
 ---
 
@@ -454,7 +454,7 @@ Test with different VS Code versions:
 3. Open IntelliJ with a project
 4. Check for automatic scan initiation
 
-**Expected Result:** ✅ Scan starts automatically without user interaction
+**Expected Result:**  Scan starts automatically without user interaction
 
 ---
 
@@ -465,7 +465,7 @@ Test with different VS Code versions:
 3. Check tool window updates with results
 4. Verify notification appears on completion
 
-**Expected Result:** ✅ Manual scan works and updates UI
+**Expected Result:**  Manual scan works and updates UI
 
 ---
 
@@ -476,7 +476,7 @@ Test with different VS Code versions:
 3. Check for completion notification
 4. Verify no UI blocking
 
-**Expected Result:** ✅ Database sync completes in background
+**Expected Result:**  Database sync completes in background
 
 ---
 
@@ -493,7 +493,7 @@ Test with different VS Code versions:
 
 **Note:** First scan is slower due to dependency graph building.
 
-**Expected Result:** ✅ Subsequent scans are significantly faster (cached)
+**Expected Result:**  Subsequent scans are significantly faster (cached)
 
 ---
 
@@ -506,7 +506,7 @@ Test with different VS Code versions:
    - Open dialogs
    - Resize windows
 
-**Expected Result:** ✅ All UI operations remain responsive during scan
+**Expected Result:**  All UI operations remain responsive during scan
 
 ---
 
@@ -518,7 +518,7 @@ Test with different VS Code versions:
 4. Scan multiple large projects
 5. Note peak memory usage
 
-**Expected Result:** ✅ Plugin adds <200MB to IntelliJ memory footprint
+**Expected Result:**  Plugin adds <200MB to IntelliJ memory footprint
 
 ---
 
@@ -530,11 +530,11 @@ Test with different IntelliJ versions:
 
 | Version | Edition | Status | Test Result |
 |---------|---------|--------|-------------|
-| 2024.1+ | Community | ✅ Primary | |
-| 2024.1+ | Ultimate | ✅ Primary | |
-| 2023.3 | Community | ✅ Minimum | |
-| 2023.3 | Ultimate | ✅ Minimum | |
-| 2023.2 | Any | ❌ Not Supported | |
+| 2024.1+ | Community |  Primary | |
+| 2024.1+ | Ultimate |  Primary | |
+| 2023.3 | Community |  Minimum | |
+| 2023.3 | Ultimate |  Minimum | |
+| 2023.2 | Any |  Not Supported | |
 
 ---
 
@@ -557,7 +557,7 @@ Test with different IntelliJ versions:
 2. Open Android project
 3. Test all features
 
-**Expected Result:** ✅ Plugin works in Android Studio (may have limitations for Android-specific Gradle)
+**Expected Result:**  Plugin works in Android Studio (may have limitations for Android-specific Gradle)
 
 ---
 
@@ -577,7 +577,7 @@ Scenario: New user installing plugin for the first time
    - Settings are discoverable
    - Documentation is accessible
 
-**Expected Result:** ✅ New user can get started without external help
+**Expected Result:**  New user can get started without external help
 
 ---
 
@@ -592,10 +592,10 @@ Scenario: Developer using plugin during daily work
 5. Commit changes
 
 **Expected Result:**
-- ✅ Plugin does not interfere with normal workflow
-- ✅ Warnings appear at appropriate times
-- ✅ Quick fixes are convenient (Alt+Enter)
-- ✅ No annoying popups or interruptions
+-  Plugin does not interfere with normal workflow
+-  Warnings appear at appropriate times
+-  Quick fixes are convenient (Alt+Enter)
+-  No annoying popups or interruptions
 
 ---
 
@@ -610,7 +610,7 @@ Scenario: Developer using plugin during daily work
    - Diagnostics are readable
    - Tool window is navigable
 
-**Expected Result:** ✅ Plugin is screen-reader accessible
+**Expected Result:**  Plugin is screen-reader accessible
 
 ---
 
@@ -623,7 +623,7 @@ Scenario: Developer using plugin during daily work
    - Apply quick fix
    - Change settings
 
-**Expected Result:** ✅ All features accessible via keyboard
+**Expected Result:**  All features accessible via keyboard
 
 ---
 
@@ -634,7 +634,7 @@ Scenario: Developer using plugin during daily work
    - Dark (Darcula, VS Code Dark)
    - High Contrast (VS Code High Contrast)
 
-**Expected Result:** ✅ Severity indicators visible in all themes
+**Expected Result:**  Severity indicators visible in all themes
 
 ---
 
@@ -757,12 +757,12 @@ When filing bugs, include:
 
 To consider testing complete and ready for marketplace publishing:
 
-1. ✅ All critical tests pass (Tests 1-22)
-2. ✅ Performance meets expectations (Tests 10, 11, 23-25)
-3. ✅ No critical bugs found
-4. ✅ Compatibility verified on primary platforms
-5. ✅ User acceptance tests pass
-6. ✅ Accessibility minimum requirements met
+1.  All critical tests pass (Tests 1-22)
+2.  Performance meets expectations (Tests 10, 11, 23-25)
+3.  No critical bugs found
+4.  Compatibility verified on primary platforms
+5.  User acceptance tests pass
+6.  Accessibility minimum requirements met
 
 **Sign-Off:**
 

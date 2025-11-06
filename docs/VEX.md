@@ -309,7 +309,7 @@ jq '.suppressed[] | {cve, reason}' bazel-bin/sca_findings_filtered.json
   run: |
     CRITICAL=$(jq '.summary.by_severity.critical' bazel-bin/sca_findings_filtered.json)
     if [ "$CRITICAL" -gt 0 ]; then
-      echo "❌ $CRITICAL critical vulnerabilities found after VEX filtering"
+      echo " $CRITICAL critical vulnerabilities found after VEX filtering"
       exit 1
     fi
 
@@ -330,7 +330,7 @@ jq '.suppressed[] | {cve, reason}' bazel-bin/sca_findings_filtered.json
       if [ "$STATUS" = "known_not_affected" ]; then
         JUSTIFICATION=$(jq -r '.vulnerabilities[0].flags[0].label' "$vex")
         if [ -z "$JUSTIFICATION" ]; then
-          echo "❌ $vex missing justification"
+          echo " $vex missing justification"
           exit 1
         fi
       fi
@@ -555,9 +555,9 @@ VEX_PURL=$(jq -r '.vulnerabilities[0].product_tree.purl' vex/statements/CVE-2023
 
 # Compare (must match exactly)
 if [ "$FINDING_PURL" = "$VEX_PURL" ]; then
-  echo "✓ PURL matches"
+  echo " PURL matches"
 else
-  echo "✗ PURL mismatch: $FINDING_PURL != $VEX_PURL"
+  echo " PURL mismatch: $FINDING_PURL != $VEX_PURL"
 fi
 ```
 

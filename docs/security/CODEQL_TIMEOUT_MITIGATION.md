@@ -147,11 +147,11 @@ The CodeQL optimizations complement the new deps.dev breaking changes integratio
 ## Validation
 
 The optimizations have been validated through:
-- ✅ Successful build with no warnings
-- ✅ All tests passing (88 tests)
-- ✅ No breaking changes to existing functionality
-- ✅ Documentation complete
-- ✅ Code review feedback addressed
+-  Successful build with no warnings
+-  All tests passing (88 tests)
+-  No breaking changes to existing functionality
+-  Documentation complete
+-  Code review feedback addressed
 
 ## Notes
 

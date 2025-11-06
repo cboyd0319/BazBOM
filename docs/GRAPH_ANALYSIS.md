@@ -386,7 +386,7 @@ bazel run //tools/supplychain:graph_query -- \
   --product-license=Apache-2.0
 
 # Output:
-# ⚠️  Potential conflicts:
+#   Potential conflicts:
 # pkg:maven/org.gnu/some-lib@1.0.0 (GPL-3.0)
 #   Used by: pkg:maven/com.example/app@1.0.0
 #   Conflict: GPL-3.0 incompatible with Apache-2.0

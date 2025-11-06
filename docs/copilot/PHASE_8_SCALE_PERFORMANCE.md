@@ -1,7 +1,7 @@
 # Phase 8: Scale & Performance
 
 **Status:** Planned
-**Priority:** 🔴 P0 - Critical Path
+**Priority:**  P0 - Critical Path
 **Timeline:** Months 5-7 (10 weeks)
 **Team Size:** 1-2 developers
 **Dependencies:** Phase 0-3 (Complete), Phase 4 (helps with testing)
@@ -21,10 +21,10 @@
 - Memory usage <4GB for typical workloads
 
 **Success Metrics:**
-- ✅ 50K target monorepo analyzed in <10 minutes (incremental)
-- ✅ Full scan completes in <30 minutes (vs. hours)
-- ✅ Memory usage <4GB (vs. EndorLabs' 64GB requirement)
-- ✅ Zero performance regressions vs. Phase 3 baseline
+-  50K target monorepo analyzed in <10 minutes (incremental)
+-  Full scan completes in <30 minutes (vs. hours)
+-  Memory usage <4GB (vs. EndorLabs' 64GB requirement)
+-  Zero performance regressions vs. Phase 3 baseline
 
 **Competitive Benchmark:** Match EndorLabs' scale while using 16x less memory.
 
@@ -466,14 +466,14 @@ impl AdvisoryDb {
                            │
         ┌──────────────────┼──────────────────┐
         │                  │                  │
-   ┌────▼────┐       ┌────▼────┐       ┌────▼────┐
+   ┌────────┐       ┌────────┐       ┌────────┐
    │ Worker 1│       │ Worker 2│       │ Worker 3│
    │ (Pod)   │       │ (Pod)   │       │ (Pod)   │
    └────┬────┘       └────┬────┘       └────┬────┘
         │                  │                  │
         └──────────────────┼──────────────────┘
                            │
-                    ┌──────▼───────┐
+                    ┌─────────────┐
                     │    Redis     │
                     │  (Work Queue)│
                     └──────────────┘

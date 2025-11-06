@@ -1,7 +1,7 @@
 # Phase 4: Developer Experience Revolution
 
 **Status:** Planned (Not Started)
-**Priority:** 🔴 P0 - Critical Path
+**Priority:**  P0 - Critical Path
 **Timeline:** Months 1-3 (12 weeks)
 **Team Size:** 2-3 developers
 **Dependencies:** Phase 0-3 (Complete)
@@ -18,10 +18,10 @@
 **Target State:** Developers get real-time vulnerability warnings in their editor, fix CVEs with one click, and never leave their development environment.
 
 **Success Metrics:**
-- ✅ 500+ IntelliJ plugin downloads in first month
-- ✅ <10 second scan time in IDE
-- ✅ 90% of P0/P1 vulnerabilities auto-fixable
-- ✅ 80% developer satisfaction score (user survey)
+-  500+ IntelliJ plugin downloads in first month
+-  <10 second scan time in IDE
+-  90% of P0/P1 vulnerabilities auto-fixable
+-  80% developer satisfaction score (user survey)
 
 **Competitive Benchmark:** Match Snyk's IDE integration quality while adding unique advantages (Bazel support, build-time accuracy, privacy-preserving).
 
@@ -45,10 +45,10 @@
 9. Commit if tests pass
 
 **Pain Points:**
-- ❌ Context switching (editor → terminal → browser → editor)
-- ❌ Slow feedback (30-60 seconds after saving)
-- ❌ Manual fix research (requires security expertise)
-- ❌ No automated testing (might break application)
+-  Context switching (editor → terminal → browser → editor)
+-  Slow feedback (30-60 seconds after saving)
+-  Manual fix research (requires security expertise)
+-  No automated testing (might break application)
 
 ### Desired Developer Workflow (Target)
 
@@ -56,17 +56,17 @@
 
 **Tomorrow's Experience (BazBOM with Phase 4):**
 1. Start typing `log4j-core` in `pom.xml`
-2. **Inline warning appears:** "⚠️ log4j-core 2.14.1 has CVE-2021-44228 (CRITICAL, CISA KEV, reachable)"
+2. **Inline warning appears:** " log4j-core 2.14.1 has CVE-2021-44228 (CRITICAL, CISA KEV, reachable)"
 3. Click "Quick Fix" → "Upgrade to safe version 2.21.1"
 4. BazBOM updates version, runs tests in background
-5. **Notification:** "✅ Tests passed. Safe to commit."
+5. **Notification:** " Tests passed. Safe to commit."
 6. Developer continues coding (never left editor)
 
 **Improvements:**
-- ✅ Zero context switching (stays in editor)
-- ✅ Instant feedback (<1 second inline warning)
-- ✅ One-click fixes (no security expertise required)
-- ✅ Automated testing (safety verification built-in)
+-  Zero context switching (stays in editor)
+-  Instant feedback (<1 second inline warning)
+-  One-click fixes (no security expertise required)
+-  Automated testing (safety verification built-in)
 
 ---
 
@@ -123,19 +123,19 @@
 ├─────────────────────────────────────────┤
 │ Dependencies (247 total)                 │
 │                                          │
-│ ▼ Compile (189)                          │
-│   ├── ✅ com.google.guava:guava:32.1.1  │
-│   ├── ⚠️ log4j-core:2.17.0             │
+│  Compile (189)                          │
+│   ├──  com.google.guava:guava:32.1.1  │
+│   ├──  log4j-core:2.17.0             │
 │   │     CVE-2021-44832 (MEDIUM)        │
 │   │     [Quick Fix]                     │
-│   ├── 🔴 spring-web:5.3.20             │
+│   ├──  spring-web:5.3.20             │
 │   │     CVE-2024-xxxx (CRITICAL, KEV)  │
 │   │     Reachable                       │
 │   │     [Quick Fix] [Details]          │
-│   └── ✅ jackson-databind:2.15.2       │
+│   └──  jackson-databind:2.15.2       │
 │                                          │
-│ ▼ Test (58)                              │
-│   └── ✅ junit:junit:4.13.2             │
+│  Test (58)                              │
+│   └──  junit:junit:4.13.2             │
 │                                          │
 │ Vulnerabilities: 2 (1 CRITICAL, 1 MED) │
 └─────────────────────────────────────────┘
@@ -180,8 +180,8 @@ class DependencyTreeWindow(project: Project) : SimpleToolWindowPanel(true, true)
 <dependency>
     <groupId>org.apache.logging.log4j</groupId>
     <artifactId>log4j-core</artifactId>
-    <version>2.17.0</version>  ⚠️ CVE-2021-44832 (MEDIUM): RCE via JDBC Appender
-</dependency>                      💡 Quick Fix: Upgrade to 2.21.1
+    <version>2.17.0</version>   CVE-2021-44832 (MEDIUM): RCE via JDBC Appender
+</dependency>                       Quick Fix: Upgrade to 2.21.1
 ```
 
 **Implementation:**
@@ -225,13 +225,13 @@ class MavenDependencyAnnotator : Annotator {
 **Description:** IntelliJ Quick Fix actions to upgrade vulnerable dependencies
 
 **User Experience:**
-1. Developer sees inline warning: "⚠️ log4j-core 2.17.0 has CVE-2021-44832"
+1. Developer sees inline warning: " log4j-core 2.17.0 has CVE-2021-44832"
 2. Presses `Alt+Enter` (quick fix shortcut)
 3. Menu appears: "Upgrade to safe version 2.21.1"
 4. Selects option
 5. IntelliJ updates version in `pom.xml`, runs Maven reload
 6. Background task runs tests
-7. Notification: "✅ Tests passed. Dependency upgraded."
+7. Notification: " Tests passed. Dependency upgraded."
 
 **Implementation:**
 ```kotlin
@@ -263,11 +263,11 @@ class UpgradeDependencyQuickFix(
                     val result = runTests(project)
                     if (result.success) {
                         Notifications.Bus.notify(
-                            Notification("BazBOM", "Upgrade Successful", "✅ Tests passed. Safe to commit.", NotificationType.INFORMATION)
+                            Notification("BazBOM", "Upgrade Successful", " Tests passed. Safe to commit.", NotificationType.INFORMATION)
                         )
                     } else {
                         Notifications.Bus.notify(
-                            Notification("BazBOM", "Upgrade Failed", "❌ Tests failed. Reverting changes.", NotificationType.ERROR)
+                            Notification("BazBOM", "Upgrade Failed", " Tests failed. Reverting changes.", NotificationType.ERROR)
                         )
                         rollbackChanges()
                     }
@@ -293,21 +293,21 @@ class UpgradeDependencyQuickFix(
 ┌─────────────────────────────────────────┐
 │ BazBOM Settings                          │
 ├─────────────────────────────────────────┤
-│ ☑ Enable real-time scanning             │
-│ ☑ Show inline warnings                  │
-│ ☑ Auto-scan on file save                │
-│ ☐ Auto-scan on project open             │
+│  Enable real-time scanning             │
+│  Show inline warnings                  │
+│  Auto-scan on file save                │
+│  Auto-scan on project open             │
 │                                          │
 │ Severity Thresholds:                     │
-│   ☑ Show CRITICAL (error)               │
-│   ☑ Show HIGH (warning)                 │
-│   ☑ Show MEDIUM (warning)               │
-│   ☐ Show LOW (info)                     │
+│    Show CRITICAL (error)               │
+│    Show HIGH (warning)                 │
+│    Show MEDIUM (warning)               │
+│    Show LOW (info)                     │
 │                                          │
-│ Policy File: [bazbom.yml          ] 📁  │
+│ Policy File: [bazbom.yml          ]   │
 │                                          │
 │ BazBOM CLI Path:                         │
-│   [/usr/local/bin/bazbom          ] 📁  │
+│   [/usr/local/bin/bazbom          ]   │
 │                                          │
 │ [Test Connection]  [Reset to Defaults]  │
 └─────────────────────────────────────────┘
@@ -530,12 +530,12 @@ object BazBomCache {
 **Architecture:**
 ```
 ┌─────────────────┐         ┌──────────────────┐         ┌─────────────┐
-│   VS Code       │◄───────►│  BazBOM LSP      │◄───────►│  bazbom CLI │
+│   VS Code       │───────│  BazBOM LSP      │───────│  bazbom CLI │
 │   Extension     │   LSP   │  Server (Rust)   │   exec  │             │
 └─────────────────┘         └──────────────────┘         └─────────────┘
       │                              │                            │
       │                              │                            │
-      ▼                              ▼                            ▼
+                                                                
    UI Layer                   Protocol Handler              Security Engine
    (TypeScript)               (tower-lsp crate)            (Existing code)
 ```
@@ -1073,7 +1073,7 @@ pub fn apply_fixes_with_testing(fixes: Vec<Fix>, config: &FixConfig) -> Result<(
     let test_result = run_tests(&config.build_system)?;
 
     if test_result.success {
-        println!("✅ Tests passed. Fixes applied successfully.");
+        println!(" Tests passed. Fixes applied successfully.");
 
         // Step 4: Commit if requested
         if config.auto_commit {
@@ -1082,7 +1082,7 @@ pub fn apply_fixes_with_testing(fixes: Vec<Fix>, config: &FixConfig) -> Result<(
 
         Ok(())
     } else {
-        println!("❌ Tests failed. Rolling back changes.");
+        println!(" Tests failed. Rolling back changes.");
         rollback_backup()?;
         Err(anyhow!("Fixes broke tests. Rolled back changes.\n\nTest output:\n{}", test_result.output))
     }
@@ -1146,7 +1146,7 @@ pub async fn create_pr(fixes: &[Fix], config: &PrConfig) -> Result<String> {
 
     let pr = octocrab
         .pulls(&config.repo_owner, &config.repo_name)
-        .create(&format!("🔒 Fix {} vulnerabilities", fixes.len()), &branch_name, "main")
+        .create(&format!(" Fix {} vulnerabilities", fixes.len()), &branch_name, "main")
         .body(&generate_pr_body(fixes))
         .send()
         .await?;
@@ -1155,7 +1155,7 @@ pub async fn create_pr(fixes: &[Fix], config: &PrConfig) -> Result<String> {
 }
 
 fn generate_pr_body(fixes: &[Fix]) -> String {
-    let mut body = String::from("## 🔒 Security Fixes\n\n");
+    let mut body = String::from("##  Security Fixes\n\n");
     body.push_str("This PR automatically upgrades vulnerable dependencies.\n\n");
     body.push_str("### Vulnerabilities Fixed:\n\n");
 
@@ -1168,19 +1168,19 @@ fn generate_pr_body(fixes: &[Fix]) -> String {
             fix.cve_ids.join(", "),
             fix.severity,
             fix.cvss_score.unwrap_or(0.0),
-            if fix.cisa_kev { "⚠️ YES" } else { "No" },
-            if fix.reachable { "⚠️ YES" } else { "No" }
+            if fix.cisa_kev { " YES" } else { "No" },
+            if fix.reachable { " YES" } else { "No" }
         ));
     }
 
     body.push_str("\n### Test Results:\n\n");
-    body.push_str("✅ All tests passed after applying fixes.\n\n");
+    body.push_str(" All tests passed after applying fixes.\n\n");
     body.push_str("### How to Review:\n\n");
     body.push_str("1. Check the diff to ensure only version numbers changed\n");
     body.push_str("2. Review CVE details linked above\n");
     body.push_str("3. Merge if changes look correct\n\n");
     body.push_str("---\n");
-    body.push_str("🤖 Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)\n");
+    body.push_str(" Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)\n");
 
     body
 }
@@ -1191,7 +1191,7 @@ fn generate_commit_message(fixes: &[Fix]) -> String {
         .collect();
 
     format!(
-        "fix: upgrade dependencies to fix {}\n\nFixes: {}\n\n🤖 Generated with BazBOM\nCo-Authored-By: BazBOM <noreply@bazbom.io>",
+        "fix: upgrade dependencies to fix {}\n\nFixes: {}\n\n Generated with BazBOM\nCo-Authored-By: BazBOM <noreply@bazbom.io>",
         if cve_ids.len() == 1 {
             cve_ids[0].clone()
         } else {
@@ -1204,7 +1204,7 @@ fn generate_commit_message(fixes: &[Fix]) -> String {
 
 **Example PR:**
 ```markdown
-## 🔒 Security Fixes
+##  Security Fixes
 
 This PR automatically upgrades vulnerable dependencies.
 
@@ -1214,17 +1214,17 @@ This PR automatically upgrades vulnerable dependencies.
   - **Severity:** MEDIUM
   - **CVSS:** 6.6
   - **CISA KEV:** No
-  - **Reachable:** ⚠️ YES
+  - **Reachable:**  YES
 
 - **spring-web**: 5.3.20 → 5.3.31 (fixes CVE-2024-xxxx)
   - **Severity:** CRITICAL
   - **CVSS:** 9.8
-  - **CISA KEV:** ⚠️ YES
-  - **Reachable:** ⚠️ YES
+  - **CISA KEV:**  YES
+  - **Reachable:**  YES
 
 ### Test Results:
 
-✅ All tests passed after applying fixes.
+ All tests passed after applying fixes.
 
 ### How to Review:
 
@@ -1233,7 +1233,7 @@ This PR automatically upgrades vulnerable dependencies.
 3. Merge if changes look correct
 
 ---
-🤖 Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)
+ Generated with [BazBOM](https://github.com/cboyd0319/BazBOM)
 ```
 
 ---
@@ -1247,17 +1247,17 @@ This PR automatically upgrades vulnerable dependencies.
 # Install hooks
 $ bazbom install-hooks
 
-✅ Installed pre-commit hook: .git/hooks/pre-commit
-✅ Configured fast scan mode (policy enforcement)
+ Installed pre-commit hook: .git/hooks/pre-commit
+ Configured fast scan mode (policy enforcement)
 
 # Developer makes commit
 $ git commit -m "Add new feature"
 
-🔍 Scanning dependencies with BazBOM...
-⚠️ Found 1 CRITICAL vulnerability:
+ Scanning dependencies with BazBOM...
+ Found 1 CRITICAL vulnerability:
   - CVE-2024-xxxx in spring-web 5.3.20 (reachable)
 
-❌ Commit blocked by BazBOM policy.
+ Commit blocked by BazBOM policy.
 
 Fix with: bazbom fix --apply --cve=CVE-2024-xxxx
 Or bypass with: git commit --no-verify
@@ -1289,7 +1289,7 @@ pub fn install_hooks(config: &HooksConfig) -> Result<()> {
         fs::set_permissions(&pre_commit_hook, perms)?;
     }
 
-    println!("✅ Installed pre-commit hook: {}", pre_commit_hook.display());
+    println!(" Installed pre-commit hook: {}", pre_commit_hook.display());
     Ok(())
 }
 
@@ -1300,7 +1300,7 @@ fn generate_hook_script(config: &HooksConfig) -> String {
 
 set -e
 
-echo "🔍 Scanning dependencies with BazBOM..."
+echo " Scanning dependencies with BazBOM..."
 
 # Fast scan mode (skip reachability for speed)
 bazbom scan --fast --format json . > /tmp/bazbom-scan.json
@@ -1310,14 +1310,14 @@ bazbom policy check --findings /tmp/bazbom-scan.json
 
 if [ $? -ne 0 ]; then
   echo ""
-  echo "❌ Commit blocked by BazBOM policy."
+  echo " Commit blocked by BazBOM policy."
   echo ""
   echo "Fix with: bazbom fix --apply"
   echo "Or bypass with: git commit --no-verify"
   exit 1
 fi
 
-echo "✅ No policy violations. Proceeding with commit."
+echo " No policy violations. Proceeding with commit."
 exit 0
 "#)
 }
@@ -1390,13 +1390,13 @@ impl ScanCommand {
 
 | Metric | Target | Measured | Status |
 |--------|--------|----------|--------|
-| IntelliJ scan time (10K deps) | <1 second | TBD | ⏳ |
-| VS Code scan time (10K deps) | <2 seconds | TBD | ⏳ |
-| `bazbom fix --apply` (Maven) | <30 seconds | TBD | ⏳ |
-| `bazbom fix --apply` (Gradle) | <45 seconds | TBD | ⏳ |
-| `bazbom fix --apply` (Bazel) | <60 seconds | TBD | ⏳ |
-| Pre-commit scan (fast mode) | <10 seconds | TBD | ⏳ |
-| PR generation time | <2 minutes | TBD | ⏳ |
+| IntelliJ scan time (10K deps) | <1 second | TBD |  |
+| VS Code scan time (10K deps) | <2 seconds | TBD |  |
+| `bazbom fix --apply` (Maven) | <30 seconds | TBD |  |
+| `bazbom fix --apply` (Gradle) | <45 seconds | TBD |  |
+| `bazbom fix --apply` (Bazel) | <60 seconds | TBD |  |
+| Pre-commit scan (fast mode) | <10 seconds | TBD |  |
+| PR generation time | <2 minutes | TBD |  |
 
 ### User Acceptance Testing
 
@@ -1504,17 +1504,17 @@ impl ScanCommand {
 
 | Feature | Snyk | BazBOM (Phase 4) | Advantage |
 |---------|------|------------------|-----------|
-| **IntelliJ Plugin** | ✅ Excellent | ✅ Good (v1.0) | Snyk (mature) |
-| **VS Code Extension** | ✅ Excellent | ✅ Good (v1.0) | Snyk (mature) |
-| **Real-Time Scanning** | ✅ <1 sec | ✅ <1 sec | **PARITY** |
-| **Quick Fixes** | ✅ One-click | ✅ One-click | **PARITY** |
-| **Automated Testing** | ⚠️ Manual | ✅ Automatic | **BazBOM** |
-| **PR Generation** | ✅ Advanced | ✅ Basic (v1.0) | Snyk (richer UI) |
-| **Pre-Commit Hooks** | ✅ Native | ✅ Native | **PARITY** |
-| **Bazel Support** | ❌ None | ✅ Full | **BazBOM** |
-| **Build-Time Accuracy** | ❌ Post-build | ✅ Build-native | **BazBOM** |
-| **Reachability Analysis** | ⚠️ Basic | ✅ ASM call graph | **BazBOM** |
-| **Privacy** | ❌ Cloud-required | ✅ Offline-capable | **BazBOM** |
+| **IntelliJ Plugin** |  Excellent |  Good (v1.0) | Snyk (mature) |
+| **VS Code Extension** |  Excellent |  Good (v1.0) | Snyk (mature) |
+| **Real-Time Scanning** |  <1 sec |  <1 sec | **PARITY** |
+| **Quick Fixes** |  One-click |  One-click | **PARITY** |
+| **Automated Testing** |  Manual |  Automatic | **BazBOM** |
+| **PR Generation** |  Advanced |  Basic (v1.0) | Snyk (richer UI) |
+| **Pre-Commit Hooks** |  Native |  Native | **PARITY** |
+| **Bazel Support** |  None |  Full | **BazBOM** |
+| **Build-Time Accuracy** |  Post-build |  Build-native | **BazBOM** |
+| **Reachability Analysis** |  Basic |  ASM call graph | **BazBOM** |
+| **Privacy** |  Cloud-required |  Offline-capable | **BazBOM** |
 | **Cost** | $99-529/dev/year | **FREE** | **BazBOM** |
 
 **Analysis:** After Phase 4, BazBOM achieves parity with Snyk on developer experience while maintaining unique advantages (Bazel, reachability, privacy, cost).
@@ -1660,4 +1660,4 @@ impl ScanCommand {
 **Next Review:** After Phase 4 Sprint 3 completion
 **Owner:** BazBOM Maintainers
 
-**Ready to revolutionize developer experience?** Let's build it! 🚀
+**Ready to revolutionize developer experience?** Let's build it! 

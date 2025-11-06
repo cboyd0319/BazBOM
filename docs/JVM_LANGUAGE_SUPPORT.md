@@ -11,14 +11,14 @@
 BazBOM provides comprehensive support for all JVM-based languages across Maven, Gradle, and Bazel build systems. This document details the support for Java, Kotlin, and Scala projects.
 
 **Supported JVM Languages:**
-- ✅ Java (all versions)
-- ✅ Kotlin (1.x, 2.x)
-- ✅ Scala (2.x, 3.x)
+-  Java (all versions)
+-  Kotlin (1.x, 2.x)
+-  Scala (2.x, 3.x)
 
 **Supported Build Systems:**
-- ✅ Maven (3.x, 4.x)
-- ✅ Gradle (7.x, 8.x)
-- ✅ Bazel (6.x, 7.x)
+-  Maven (3.x, 4.x)
+-  Gradle (7.x, 8.x)
+-  Bazel (6.x, 7.x)
 
 ---
 
@@ -751,9 +751,9 @@ let query = get_jvm_rule_query("//java/...");
 
 | Language | Maven | Gradle | Bazel | Version Support |
 |----------|-------|--------|-------|-----------------|
-| Java     | ✅ Full | ✅ Full | ✅ Full | 8, 11, 17, 21+ |
-| Kotlin   | ✅ Full | ✅ Full | ✅ Full | 1.x, 2.x |
-| Scala    | ✅ Full | ✅ Full | ✅ Full | 2.11, 2.12, 2.13, 3.x |
+| Java     |  Full |  Full |  Full | 8, 11, 17, 21+ |
+| Kotlin   |  Full |  Full |  Full | 1.x, 2.x |
+| Scala    |  Full |  Full |  Full | 2.11, 2.12, 2.13, 3.x |
 
 ---
 

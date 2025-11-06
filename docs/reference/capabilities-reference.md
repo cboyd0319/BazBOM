@@ -2,11 +2,11 @@
 
 **Complete catalog of BazBOM features and integrations with implementation status.**
 
-> **⚠️ Transition Phase:** BazBOM is actively migrating from Python to Rust. This document uses status indicators:
-> - ✅ **Complete** - Fully implemented and tested
-> - ⚠️ **Partial** - Working but requires plugins or Python backend
-> - 🚧 **In Progress** - Under active development
-> - 📋 **Planned** - Documented but not yet implemented
+> ** Transition Phase:** BazBOM is actively migrating from Python to Rust. This document uses status indicators:
+> -  **Complete** - Fully implemented and tested
+> -  **Partial** - Working but requires plugins or Python backend
+> -  **In Progress** - Under active development
+> -  **Planned** - Documented but not yet implemented
 >
 > See [Implementation Status](../copilot/IMPLEMENTATION_STATUS.md) for comprehensive details.
 
@@ -16,16 +16,16 @@
 
 | Category | Count | Implementation Status |
 |----------|-------|----------------------|
-| **Rust Crates** | 7 | ✅ All Build Successfully |
-| **Python Files** | 101 | ✅ Production (Being Ported) |
-| **Lines of Code** | 60,000+ | ✅ Rust + Python Combined |
-| **Rust Tests** | 74+ | ✅ All Passing |
-| **Test Coverage (Rust)** | 90%+ | 🎯 Maintained |
-| **Build Systems** | 3 | ⚠️ CLI + Plugins |
-| **SBOM Formats** | 2 | ✅ SPDX 2.3, CycloneDX 1.5 |
-| **Vulnerability Sources** | 5+ | ✅ OSV, NVD, GHSA, KEV, EPSS |
-| **SLSA Level** | 3 | ⚠️ Infrastructure Ready |
-| **GitHub Action** | ✅ Native | ✅ Full Integration |
+| **Rust Crates** | 7 |  All Build Successfully |
+| **Python Files** | 101 |  Production (Being Ported) |
+| **Lines of Code** | 60,000+ |  Rust + Python Combined |
+| **Rust Tests** | 74+ |  All Passing |
+| **Test Coverage (Rust)** | 90%+ |  Maintained |
+| **Build Systems** | 3 |  CLI + Plugins |
+| **SBOM Formats** | 2 |  SPDX 2.3, CycloneDX 1.5 |
+| **Vulnerability Sources** | 5+ |  OSV, NVD, GHSA, KEV, EPSS |
+| **SLSA Level** | 3 |  Infrastructure Ready |
+| **GitHub Action** |  Native |  Full Integration |
 
 ---
 
@@ -39,12 +39,12 @@ BazBOM is a JVM supply chain security toolkit that generates SBOMs, performs vul
 - **Python Backend** (Being Ported) - Advanced features and Bazel support
 
 **Key Differentiators:**
-- Universal build system support (Maven, Gradle, Bazel) with auto-detection ✅
-- Zero-config installation via single-line installer ✅
-- SLSA Level 3 provenance with Sigstore signing ⚠️ (Documented)
-- VEX support for false positive management ⚠️ (Documented)
-- Offline/air-gapped mode for secure environments ✅
-- Risk scoring with CISA KEV and EPSS integration ✅
+- Universal build system support (Maven, Gradle, Bazel) with auto-detection 
+- Zero-config installation via single-line installer 
+- SLSA Level 3 provenance with Sigstore signing  (Documented)
+- VEX support for false positive management  (Documented)
+- Offline/air-gapped mode for secure environments 
+- Risk scoring with CISA KEV and EPSS integration 
 
 ## Table of Contents
 
@@ -64,22 +64,22 @@ BazBOM is a JVM supply chain security toolkit that generates SBOMs, performs vul
 ## 1. Build System Support
 
 **Status Overview:**
-- ✅ Build system detection (Maven, Gradle, Bazel)
-- ⚠️ Full dependency extraction (requires plugins for Maven/Gradle)
-- ✅ Bazel query support (CLI flags)
-- ⚠️ Bazel aspects (Python implementation)
+-  Build system detection (Maven, Gradle, Bazel)
+-  Full dependency extraction (requires plugins for Maven/Gradle)
+-  Bazel query support (CLI flags)
+-  Bazel aspects (Python implementation)
 
 **Build Systems:**
-- Maven (pom.xml) ⚠️ **Requires bazbom-maven-plugin**
-- Gradle (build.gradle / build.gradle.kts) ⚠️ **Requires bazbom-gradle-plugin**
-- Bazel (WORKSPACE/MODULE.bazel) ⚠️ **Uses Python tools**
-- Auto-detection ✅ **Fully functional**: `bazbom scan .`
+- Maven (pom.xml)  **Requires bazbom-maven-plugin**
+- Gradle (build.gradle / build.gradle.kts)  **Requires bazbom-gradle-plugin**
+- Bazel (WORKSPACE/MODULE.bazel)  **Uses Python tools**
+- Auto-detection  **Fully functional**: `bazbom scan .`
 
-**Bazel Monorepo Features:** ✅ **CLI Support** + ⚠️ **Python Backend**
-- Bazel query integration for selective target scanning ✅
-- Incremental scanning with `rdeps()` (scan only affected targets) ✅
-- Scalable for large-scale monorepos ⚠️ (Documented, needs verification)
-- Faster PR scans with incremental mode ⚠️ (Claimed, needs benchmarking)
+**Bazel Monorepo Features:**  **CLI Support** +  **Python Backend**
+- Bazel query integration for selective target scanning 
+- Incremental scanning with `rdeps()` (scan only affected targets) 
+- Scalable for large-scale monorepos  (Documented, needs verification)
+- Faster PR scans with incremental mode  (Claimed, needs benchmarking)
 
 Examples:
 ```bash
@@ -98,13 +98,13 @@ bazbom scan . --bazel-targets //src/java:app //src/java:lib
 
 ## 2. SBOM Generation
 
-**Status:** ⚠️ **Formats Complete, Full Data Requires Plugins**
+**Status:**  **Formats Complete, Full Data Requires Plugins**
 
-- SPDX 2.3 JSON (primary) ✅ **Format implemented**
-- CycloneDX 1.5 (optional) ✅ **Format implemented**
-- Per-target or workspace-wide ⚠️ **Requires build plugins**
-- Container SBOMs (Docker/Podman images) 📋 **Documented**
-- License and hash extraction ⚠️ **Requires build plugins**
+- SPDX 2.3 JSON (primary)  **Format implemented**
+- CycloneDX 1.5 (optional)  **Format implemented**
+- Per-target or workspace-wide  **Requires build plugins**
+- Container SBOMs (Docker/Podman images)  **Documented**
+- License and hash extraction  **Requires build plugins**
 
 **Current Behavior:**
 - Rust CLI generates valid SPDX/CycloneDX structure
@@ -128,14 +128,14 @@ bazel run //tools/supplychain:scan_container -- myimage:latest
 
 ## 3. Vulnerability Scanning
 
-**Status:** ✅ **Advisory System Complete** + ⚠️ **Requires Dependency Data**
+**Status:**  **Advisory System Complete** +  **Requires Dependency Data**
 
-- Data sources: OSV, NVD, GHSA, CISA KEV, EPSS ✅ **Fully functional**
-- SARIF 2.1.0 output for GitHub Code Scanning ✅ **Format complete**
-- Policy enforcement with thresholds (CRITICAL/HIGH/...) ✅ **Fully functional**
-- Offline mode (air-gapped) ✅ **via `bazbom db sync`**
+- Data sources: OSV, NVD, GHSA, CISA KEV, EPSS  **Fully functional**
+- SARIF 2.1.0 output for GitHub Code Scanning  **Format complete**
+- Policy enforcement with thresholds (CRITICAL/HIGH/...)  **Fully functional**
+- Offline mode (air-gapped)  **via `bazbom db sync`**
 
-**Advisory Database Features:** ✅ **Production Ready**
+**Advisory Database Features:**  **Production Ready**
 - Sync: `bazbom db sync` downloads all 5 sources
 - Cache location: `.bazbom/cache/advisories/`
 - Enrichment: KEV flags, EPSS scores, severity canonicalization
@@ -208,7 +208,7 @@ bazel build //:dep_graph_all
 - Class fingerprinting with Blake3 bytecode hashing
 - Relocation pattern matching and reverse mapping
 - Accurate vulnerability attribution for shaded dependencies
-- **✅ Integrated into scan command** - Automatic detection and output generation
+- ** Integrated into scan command** - Automatic detection and output generation
 
 **Features:**
 - Automatic detection of shading configurations during `bazbom scan`
@@ -406,14 +406,14 @@ merge_strategy: "strict"  # Options: strict, permissive, override
 ## 9. Developer Experience
 
 **Status Overview:**
-- ✅ Interactive setup wizard (`bazbom init`)
-- ✅ Terminal UI dependency explorer (`bazbom explore`)
-- ✅ Smart batch fixing with conflict detection
-- ✅ 19 policy templates (regulatory, industry, framework, stage)
-- ✅ Pre-commit hooks with fast mode
-- 🚧 IDE plugins (VS Code, IntelliJ - 95% complete, needs publishing)
-- ⚠️ Watch mode (documented but needs verification)
-- ⚠️ Security badges (documented but needs implementation)
+-  Interactive setup wizard (`bazbom init`)
+-  Terminal UI dependency explorer (`bazbom explore`)
+-  Smart batch fixing with conflict detection
+-  19 policy templates (regulatory, industry, framework, stage)
+-  Pre-commit hooks with fast mode
+-  IDE plugins (VS Code, IntelliJ - 95% complete, needs publishing)
+-  Watch mode (documented but needs verification)
+-  Security badges (documented but needs implementation)
 
 ### 9.1 Interactive Setup (`bazbom init`)
 
@@ -430,9 +430,9 @@ Examples:
 bazbom init
 
 # Output:
-# ✨ Welcome to BazBOM! ✨
-# 🔍 Found: Maven project
-# 📋 Choose a policy template:
+#  Welcome to BazBOM! 
+#  Found: Maven project
+#  Choose a policy template:
 #   1. PCI-DSS v4.0 Compliance
 #   2. HIPAA Security Rule
 #   3. Spring Boot Microservices
@@ -593,16 +593,16 @@ BazBOM is the **universal JVM supply chain security solution** for modern develo
 
 | Category | Features | Status |
 |----------|----------|--------|
-| **Core** | 99 Python files, 45,000+ lines, 49 tests | ✅ Production |
-| **Build Systems** | Maven, Gradle, Bazel (auto-detect) | ✅ Complete |
-| **SBOM Generation** | SPDX 2.3, CycloneDX 1.5, CSV export | ✅ Complete |
-| **Vulnerability Scanning** | OSV, NVD, GHSA, CISA KEV, EPSS | ✅ Complete |
-| **Supply Chain** | SLSA L3, Sigstore, VEX, license compliance | ✅ Complete |
-| **CI/CD** | GitHub Action, SARIF output, policy gates | ✅ Complete |
-| **Analysis** | Dependency graphs, conflict detection | ✅ Complete |
-| **Performance** | Incremental, parallel, remote cache, 5K+ targets | ✅ Complete |
-| **Developer Experience** | Zero-config, watch mode, interactive fixes | ✅ Complete |
-| **Testing** | 49 test files, 90%+ coverage | 🎯 Target |
+| **Core** | 99 Python files, 45,000+ lines, 49 tests |  Production |
+| **Build Systems** | Maven, Gradle, Bazel (auto-detect) |  Complete |
+| **SBOM Generation** | SPDX 2.3, CycloneDX 1.5, CSV export |  Complete |
+| **Vulnerability Scanning** | OSV, NVD, GHSA, CISA KEV, EPSS |  Complete |
+| **Supply Chain** | SLSA L3, Sigstore, VEX, license compliance |  Complete |
+| **CI/CD** | GitHub Action, SARIF output, policy gates |  Complete |
+| **Analysis** | Dependency graphs, conflict detection |  Complete |
+| **Performance** | Incremental, parallel, remote cache, 5K+ targets |  Complete |
+| **Developer Experience** | Zero-config, watch mode, interactive fixes |  Complete |
+| **Testing** | 49 test files, 90%+ coverage |  Target |
 
 ### Key Advantages
 
@@ -616,16 +616,16 @@ BazBOM is the **universal JVM supply chain security solution** for modern develo
 
 ### Production Ready
 
-- ✅ 99 production-ready Python files
-- ✅ 45,000+ lines of analysis code
-- ✅ 49 comprehensive test files
-- ✅ 90%+ test coverage target
-- ✅ SLSA Level 3 compliant
-- ✅ Sigstore signed releases
-- ✅ Comprehensive documentation
-- ✅ GitHub Action native integration
-- ✅ SARIF 2.1.0 compliant
-- ✅ Active maintenance and development
+-  99 production-ready Python files
+-  45,000+ lines of analysis code
+-  49 comprehensive test files
+-  90%+ test coverage target
+-  SLSA Level 3 compliant
+-  Sigstore signed releases
+-  Comprehensive documentation
+-  GitHub Action native integration
+-  SARIF 2.1.0 compliant
+-  Active maintenance and development
 
 **BazBOM provides accurate, standards-compliant SBOMs and vulnerability scanning for any JVM project.**
 

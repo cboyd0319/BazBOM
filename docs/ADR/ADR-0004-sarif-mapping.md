@@ -192,7 +192,7 @@ assert map_severity_to_sarif_level('HIGH', 7.5) == 'error'
 assert map_severity_to_sarif_level('MEDIUM', 5.0) == 'warning'
 assert map_severity_to_sarif_level('LOW', 2.0) == 'note'
 assert map_severity_to_sarif_level(None, 8.5) == 'error'  # Fallback to CVSS
-print('✓ All mapping tests passed')
+print(' All mapping tests passed')
 "
 ```
 

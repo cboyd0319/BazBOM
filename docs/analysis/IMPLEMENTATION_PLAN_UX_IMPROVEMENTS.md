@@ -29,7 +29,7 @@ pub struct InitCommand {
 
 impl InitCommand {
     pub async fn execute(&self) -> Result<()> {
-        println!("Welcome to BazBOM! 🎯\n");
+        println!("Welcome to BazBOM! \n");
         println!("Let's get your first scan running in under 5 minutes.\n");
         
         // Step 1: Detect build system
@@ -85,7 +85,7 @@ impl InitCommand {
         
         let scan_result = scan::run_scan(ScanOptions::default()).await?;
         
-        pb.finish_with_message("✓ Scan complete!");
+        pb.finish_with_message(" Scan complete!");
         
         self.display_scan_summary(&scan_result)?;
         
@@ -97,19 +97,19 @@ impl InitCommand {
         println!("Found {} vulnerabilities:\n", result.total_vulnerabilities);
         
         if result.critical > 0 {
-            println!("  🔴 CRITICAL ({}): {}", 
+            println!("   CRITICAL ({}): {}", 
                 result.critical, 
                 result.critical_cves.join(", "));
             println!("     Fix available: bazbom fix --apply");
         }
         
         if result.high > 0 {
-            println!("  🟡 HIGH ({}): View with bazbom findings --interactive", 
+            println!("   HIGH ({}): View with bazbom findings --interactive", 
                 result.high);
         }
         
         if result.medium > 0 {
-            println!("  🟠 MEDIUM ({}): View full report in sca_findings.json", 
+            println!("   MEDIUM ({}): View full report in sca_findings.json", 
                 result.medium);
         }
         
@@ -207,7 +207,7 @@ impl PolicyInitCommand {
         let output_path = self.output.join("bazbom.yml");
         config.save(&output_path)?;
         
-        println!("✓ Policy initialized: {}", output_path.display());
+        println!(" Policy initialized: {}", output_path.display());
         println!("\nTemplate: {}", template.name);
         println!("Description: {}", template.description);
         
@@ -398,7 +398,7 @@ impl GraphCommand {
             "┌─ {} ────────────────────────────────────────┐\n\
              │  Runtime: JVM 11                           │\n\
              │  Dependencies: {} ({} direct, {} transitive)│\n\
-             │  Vulnerabilities: {} ⚠️                     │\n\
+             │  Vulnerabilities: {}                      │\n\
              └────────────────────────────────────────────┘",
             app.root_package,
             app.total_deps,
@@ -445,11 +445,11 @@ impl GraphCommand {
     
     fn status_icon(&self, node: &DependencyNode) -> &str {
         match node.status {
-            NodeStatus::Critical => "🔴",
-            NodeStatus::High => "🟡",
-            NodeStatus::Medium => "🟠",
-            NodeStatus::Low => "🔵",
-            NodeStatus::Safe => "✓",
+            NodeStatus::Critical => "",
+            NodeStatus::High => "",
+            NodeStatus::Medium => "",
+            NodeStatus::Low => "",
+            NodeStatus::Safe => "",
         }
     }
     
@@ -618,7 +618,7 @@ impl FixCommand {
         println!("• Impact: {}", finding.impact);
         
         if !finding.breaking_changes.is_empty() {
-            println!("\n⚠️  BREAKING CHANGES:");
+            println!("\n  BREAKING CHANGES:");
             for change in &finding.breaking_changes {
                 println!("  • {}", change);
             }
@@ -627,7 +627,7 @@ impl FixCommand {
         }
         
         println!("COMPATIBILITY: {} Compatible with your {} version", 
-            if finding.compatible { "✓" } else { "✗" },
+            if finding.compatible { "" } else { "" },
             finding.framework);
         
         Ok(())
@@ -639,7 +639,7 @@ impl FixCommand {
         
         self.update_dependency(finding).await?;
         
-        println!("✓");
+        println!("");
         
         print!("Running tests... ");
         io::stdout().flush()?;
@@ -652,9 +652,9 @@ impl FixCommand {
         pb.finish_and_clear();
         
         if test_result.passed {
-            println!("✓ Tests passed! ({:.1}s)", test_result.duration.as_secs_f64());
+            println!(" Tests passed! ({:.1}s)", test_result.duration.as_secs_f64());
         } else {
-            println!("✗ Tests failed!");
+            println!(" Tests failed!");
             println!("\nFailed tests:");
             for failure in &test_result.failures {
                 println!("  • {}", failure);
@@ -667,7 +667,7 @@ impl FixCommand {
             
             if rollback {
                 self.rollback_changes(finding).await?;
-                println!("✓ Changes rolled back");
+                println!(" Changes rolled back");
                 return Err(anyhow!("Tests failed, changes rolled back"));
             }
         }
@@ -733,7 +733,7 @@ impl DashboardCommand {
         
         let addr = SocketAddr::from(([127, 0, 0, 1], self.port));
         
-        println!("🚀 BazBOM Dashboard starting...");
+        println!(" BazBOM Dashboard starting...");
         println!("   URL: http://localhost:{}", self.port);
         
         if self.open_browser {
@@ -760,7 +760,7 @@ impl DashboardCommand {
         
         fs::write(&output_path, html)?;
         
-        println!("✓ Dashboard saved to: {}", output_path.display());
+        println!(" Dashboard saved to: {}", output_path.display());
         println!("\nShare this file:");
         println!("  • Open in browser: file://{}", output_path.canonicalize()?.display());
         println!("  • Send via email");

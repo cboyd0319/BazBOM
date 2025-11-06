@@ -25,13 +25,13 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 
 ---
 
-> **✅ Rust-First Implementation**
+> **Rust-First Implementation**
 > 
 > BazBOM has completed its transition to a 100% Rust implementation:
-> - ✅ **Memory-Safe Rust CLI** - Fully functional for all commands, policy, and orchestration
-> - ✅ **Zero Python Dependencies** - No runtime Python requirements
-> - ✅ **Build Plugins** - Maven and Gradle plugins provide deep integration (Java/Kotlin)
-> - ✅ **Single Binary** - Easy installation and distribution
+> - **Memory-Safe Rust CLI** - Fully functional for all commands, policy, and orchestration
+> - **Zero Python Dependencies** - No runtime Python requirements
+> - **Build Plugins** - Maven and Gradle plugins provide deep integration (Java/Kotlin)
+> - **Single Binary** - Easy installation and distribution
 > 
 > **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
 > See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for detailed feature breakdown.
@@ -72,10 +72,10 @@ BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software
 ### Scope
 
 **BazBOM is exclusively for JVM ecosystems:**
-- ✅ **Languages:** Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
-- ✅ **Build Systems:** Ant, Maven, Gradle, Bazel (with JVM rules), Buildr, sbt
-- ✅ **Containers:** JVM artifact detection in Docker/OCI images
-- ❌ **Out of scope:** Node.js, Python, Go, Rust, C++, or any non-JVM languages
+- **Languages:** Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
+- **Build Systems:** Ant, Maven, Gradle, Bazel (with JVM rules), Buildr, sbt
+- **Containers:** JVM artifact detection in Docker/OCI images
+- **Out of scope:** Node.js, Python, Go, Rust, C++, or any non-JVM languages
 
 **Philosophy:** World-class depth for JVM ecosystems rather than shallow breadth across many languages.
 
@@ -92,31 +92,31 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 
 ### What's New (November 2025)
 
-#### 🎯 Developer Experience (Phase 4 - 95% Complete)
-- **Interactive Init Wizard** ⭐: `bazbom init` with guided setup, 20+ policy templates, and first scan
-- **Smart Batch Fixing** ⭐: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
-- **TUI Dependency Explorer** ⭐: `bazbom explore` for interactive terminal-based dependency browsing
-- **Web Dashboard** ⭐: `bazbom dashboard` with real-time security score and vulnerability visualization
+#### Developer Experience (Phase 4 - 95% Complete)
+- **Interactive Init Wizard**: `bazbom init` with guided setup, 20+ policy templates, and first scan
+- **Smart Batch Fixing**: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
+- **TUI Dependency Explorer**: `bazbom explore` for interactive terminal-based dependency browsing
+- **Web Dashboard**: `bazbom dashboard` with real-time security score and vulnerability visualization
 - **IDE Integration**: IntelliJ IDEA and VS Code plugins with real-time warnings, one-click fixes (code complete, needs marketplace)
 - **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
 - **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
 
-#### 🔒 Threat Intelligence (Phase 7 - 95% Complete)
-- **Supply Chain Attack Detection** ⭐: Proactive detection of malicious packages and typosquatting
+#### Threat Intelligence (Phase 7 - 95% Complete)
+- **Supply Chain Attack Detection**: Proactive detection of malicious packages and typosquatting
 - **Typosquatting Detection**: Identifies packages with names similar to popular libraries (e.g., log4jj vs log4j)
 - **Dependency Confusion**: Detects potential internal namespace hijacking
 - **Threat Intelligence Feeds**: OSV, GHSA, and curated threat database integration
 - **Team Notifications**: Alert via Slack, email, Teams, or GitHub Issues on threat detection
 - **[Full Documentation](docs/THREAT_DETECTION.md)**: Complete guide to threat detection features
 
-#### 📦 Container Scanning (Phase 9 - 60% Complete)
-- **OCI Image Analysis** ⭐: Scan Docker/OCI container images for Java dependencies
+#### Container Scanning (Phase 9 - 60% Complete)
+- **OCI Image Analysis**: Scan Docker/OCI container images for Java dependencies
 - **Layer-by-Layer Scanning**: Analyze each container layer independently
 - **Maven Metadata Extraction**: Extract groupId:artifactId:version from JARs
 - **Container SBOM Generation**: Create SBOMs for containerized applications
 - **[Full Documentation](docs/CONTAINER_SCANNING.md)**: Complete guide to container scanning
 
-#### ✅ Core Features (Complete)
+#### Core Features (Complete)
 - **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
 - **Homebrew Support**: One-command installation via brew tap
@@ -312,9 +312,9 @@ bazel build //:sca_scan
 That's it. No configuration files, no manual dependency lists.
 
 **New to BazBOM?**
-- ⚡ **[90-Second Quickstart](docs/90-SECOND-QUICKSTART.md)** - Fastest path from zero to first scan
-- 📖 **[5-Minute Tutorial](docs/QUICKSTART.md)** - Comprehensive getting started guide
-- 🎯 **[Interactive Demo](docs/examples/orchestrated-scan-quickstart.sh)** - Try all scan modes
+-  **[90-Second Quickstart](docs/90-SECOND-QUICKSTART.md)** - Fastest path from zero to first scan
+-  **[5-Minute Tutorial](docs/QUICKSTART.md)** - Comprehensive getting started guide
+-  **[Interactive Demo](docs/examples/orchestrated-scan-quickstart.sh)** - Try all scan modes
 
 ---
 
@@ -327,25 +327,25 @@ That's it. No configuration files, no manual dependency lists.
 $ cd my-spring-boot-app
 $ bazbom scan .
 
-🔍 Detecting build system...
-✓ Detected: Maven (pom.xml)
+ Detecting build system...
+ Detected: Maven (pom.xml)
 
-📦 Analyzing dependencies...
-✓ Found 247 dependencies (189 direct, 58 transitive)
+ Analyzing dependencies...
+ Found 247 dependencies (189 direct, 58 transitive)
 
-🛡️ Scanning for vulnerabilities...
-✓ Queried: OSV, NVD, GHSA, CISA KEV
-⚠️ Found 3 vulnerabilities:
+ Scanning for vulnerabilities...
+ Queried: OSV, NVD, GHSA, CISA KEV
+ Found 3 vulnerabilities:
   - CVE-2024-1234 (CRITICAL) - log4j-core 2.17.0
   - CVE-2024-5678 (HIGH) - spring-web 5.3.20
   - CVE-2023-9999 (MEDIUM) - commons-io 2.11.0
 
-📋 Generated outputs:
-✓ sbom.spdx.json (SPDX 2.3 format)
-✓ sca_findings.json (vulnerability details)
-✓ sca_findings.sarif (GitHub Security format)
+ Generated outputs:
+ sbom.spdx.json (SPDX 2.3 format)
+ sca_findings.json (vulnerability details)
+ sca_findings.sarif (GitHub Security format)
 
-⏱️ Completed in 12.4 seconds
+ Completed in 12.4 seconds
 ```
 
 ### Gradle Project
@@ -353,22 +353,22 @@ $ bazbom scan .
 $ cd my-android-app
 $ bazbom scan .
 
-🔍 Detecting build system...
-✓ Detected: Gradle (build.gradle.kts)
+ Detecting build system...
+ Detected: Gradle (build.gradle.kts)
 
-📦 Analyzing dependencies...
-✓ Found 189 dependencies (142 direct, 47 transitive)
+ Analyzing dependencies...
+ Found 189 dependencies (142 direct, 47 transitive)
 
-🛡️ Scanning for vulnerabilities...
-✓ Queried: OSV, NVD, GHSA, CISA KEV
-✅ No vulnerabilities found!
+ Scanning for vulnerabilities...
+ Queried: OSV, NVD, GHSA, CISA KEV
+ No vulnerabilities found!
 
-📋 Generated outputs:
-✓ sbom.spdx.json (SPDX 2.3 format)
-✓ sbom.cyclonedx.json (CycloneDX 1.5 format)
-✓ sca_findings.json (clean scan)
+ Generated outputs:
+ sbom.spdx.json (SPDX 2.3 format)
+ sbom.cyclonedx.json (CycloneDX 1.5 format)
+ sca_findings.json (clean scan)
 
-⏱️ Completed in 8.2 seconds
+ Completed in 8.2 seconds
 ```
 
 ### Bazel Monorepo (5000+ targets) - Incremental Scanning
@@ -376,26 +376,26 @@ $ bazbom scan .
 $ cd my-large-monorepo
 $ bazbom scan . --bazel-affected-by-files $(git diff --name-only HEAD~1)
 
-🔍 Detecting build system...
-✓ Detected: Bazel (MODULE.bazel)
+ Detecting build system...
+ Detected: Bazel (MODULE.bazel)
 
-📦 Analyzing dependencies (incremental mode)...
+ Analyzing dependencies (incremental mode)...
 [bazbom] finding targets affected by 8 files
 [bazel-query] found 58 affected targets
-✓ Total unique dependencies: 312
+ Total unique dependencies: 312
 
-🛡️ Scanning for vulnerabilities...
-✓ Risk scoring with EPSS + CISA KEV
-⚠️ Found 12 vulnerabilities (2 CRITICAL, 4 HIGH, 6 MEDIUM)
+ Scanning for vulnerabilities...
+ Risk scoring with EPSS + CISA KEV
+ Found 12 vulnerabilities (2 CRITICAL, 4 HIGH, 6 MEDIUM)
 
-📋 Generated outputs:
-✓ SBOM for 58 affected targets
-✓ workspace-wide SBOM (deduplicated)
-✓ SLSA provenance (signed)
-✓ VEX statements applied (3 false positives filtered)
+ Generated outputs:
+ SBOM for 58 affected targets
+ workspace-wide SBOM (deduplicated)
+ SLSA provenance (signed)
+ VEX statements applied (3 false positives filtered)
 
-⏱️ Completed in 8 minutes 14 seconds (incremental)
-⏱️ Full scan would take: ~45 minutes (6x faster)
+ Completed in 8 minutes 14 seconds (incremental)
+ Full scan would take: ~45 minutes (6x faster)
 ```
 
 ### Bazel Monorepo - Selective Target Scanning
@@ -411,8 +411,8 @@ $ bazbom scan . --bazel-targets-query 'kind(java_binary, //src/java/...)'
   - //src/java:get_top_x_repos
   - //src/java:analytics_service
 
-✓ Scanned 3 targets in 2.1 seconds
-✓ Found 247 dependencies
+ Scanned 3 targets in 2.1 seconds
+ Found 247 dependencies
 
 # Scan only targets affected by changed files (perfect for PRs)
 $ bazbom scan . --bazel-affected-by-files src/java/lib/top_x.java
@@ -422,7 +422,7 @@ $ bazbom scan . --bazel-affected-by-files src/java/lib/top_x.java
   - //src/java:get_top_x_repos
   - //src/java:lib
 
-⏱️ Completed in 3.8 seconds
+ Completed in 3.8 seconds
 ```
 
 **Result:** Accurate, standards-compliant SBOMs for any JVM project. Just works.
@@ -607,7 +607,7 @@ See [Orchestrated Scanning Guide](docs/ORCHESTRATED_SCAN.md) for details and [ex
 - Works on Linux, macOS (x86_64/arm64)
 - Homebrew tap for easy installation
 
-**IDE Integration** ⭐ NEW
+**IDE Integration**  NEW
 - IntelliJ IDEA plugin (real-time warnings)
 - VS Code extension (LSP-based)
 - One-click vulnerability fixes
@@ -845,7 +845,7 @@ bazbom --version
 # Test auto-detection on a sample project
 cd /path/to/your/jvm/project
 bazbom scan . --dry-run
-# Output: ✓ Detected: Maven/Gradle/Bazel
+# Output:  Detected: Maven/Gradle/Bazel
 
 # For Bazel projects, verify build integration
 bazel build //:sbom_all
@@ -861,7 +861,7 @@ cat bazel-bin/sbom_all.spdx.json | jq '.packages | length'
 
 ---
 
-## 📖 Usage Examples
+##  Usage Examples
 
 ### Generate SBOM for Single Target
 
@@ -986,7 +986,7 @@ See [Usage Guide](docs/USAGE.md) for full reference.
 
 ---
 
-## ⚡ Performance
+##  Performance
 
 Expected times with **remote cache enabled**:
 
@@ -1062,10 +1062,10 @@ See [Threat Model](docs/THREAT_MODEL.md) for complete analysis.
 ### SLSA Compliance
 
 BazBOM targets **SLSA Level 3**:
-- ✅ Provenance generated for all builds
-- ✅ Provenance signed with Sigstore
-- ✅ GitHub-hosted runners (hardened platform)
-- ✅ Build logs retained (90 days)
+-  Provenance generated for all builds
+-  Provenance signed with Sigstore
+-  GitHub-hosted runners (hardened platform)
+-  Build logs retained (90 days)
 
 See [Provenance Guide](docs/PROVENANCE.md) for verification steps.
 
@@ -1134,7 +1134,7 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ## Roadmap
 
-> **📋 Complete Product Roadmap**
+> ** Complete Product Roadmap**
 > 
 > See [**Master Roadmap (docs/ROADMAP.md)**](docs/ROADMAP.md) for the complete feature tracking checklist with all phases, distribution channels, and milestones.
 >
@@ -1146,7 +1146,7 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 **Current Status (v0.5.1): ~40% Complete**
 
-### ✅ Completed (Phases 0-3, 5)
+###  Completed (Phases 0-3, 5)
 - [x] **Rust single-binary CLI** - Memory-safe, signed releases
 - [x] **Build system plugins** - Maven & Gradle deep integration
 - [x] **Advisory intelligence** - OSV/NVD/GHSA + KEV + EPSS enrichment
@@ -1159,14 +1159,14 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 - [x] **Homebrew distribution** - `brew tap cboyd0319/bazbom`
 - [x] **GitHub Action** - Native CI/CD integration
 
-### 🚧 In Progress (Phase 4: 95% Complete)
+###  In Progress (Phase 4: 95% Complete)
 - [x] **IDE plugins** - IntelliJ & VS Code ready, needs publishing
 - [x] **Auto-remediation** - `bazbom fix --apply` & `--pr` implemented
 - [x] **Pre-commit hooks** - `bazbom install-hooks` functional
 - [ ] **Marketplace publishing** - VS Code & JetBrains (P0)
 - [ ] **Real-world testing** - Needs validation with live projects
 
-### 📋 Planned (Phases 6-11)
+###  Planned (Phases 6-11)
 - [ ] **GitHub Marketplace** - Actions marketplace listing (P0)
 - [ ] **Windows support** - Chocolatey, winget, MSI installer (P0)
 - [ ] **Web dashboard** - Interactive D3.js graphs, executive reports (P1)
@@ -1185,31 +1185,31 @@ See [Performance Guide](docs/PERFORMANCE.md) for more optimizations.
 
 ## Current State & Architecture
 
-### 100% Rust Implementation ✅
+### 100% Rust Implementation 
 
 BazBOM has completed its transition to Rust. See [Implementation Status](docs/copilot/IMPLEMENTATION_STATUS.md) for complete details.
 
 **Core Features (Production Ready):**
-- ✅ Rust CLI with all commands functional
-- ✅ Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
-- ✅ Policy system with enterprise templates
-- ✅ Pre-commit hooks installation
-- ✅ Build system detection
-- ✅ LSP server for IDE integration
-- ✅ SBOM/SARIF/VEX format generation
-- ✅ Remediation suggestions
+-  Rust CLI with all commands functional
+-  Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
+-  Policy system with enterprise templates
+-  Pre-commit hooks installation
+-  Build system detection
+-  LSP server for IDE integration
+-  SBOM/SARIF/VEX format generation
+-  Remediation suggestions
 
 **Build System Integration:**
-- ✅ **Maven projects:** Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
-- ✅ **Gradle projects:** Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
-- ✅ **Bazel projects:** Native Bazel aspects for dependency extraction
+-  **Maven projects:** Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
+-  **Gradle projects:** Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
+-  **Bazel projects:** Native Bazel aspects for dependency extraction
 
 **Features in Beta (Needs Real-World Testing):**
-- ⚠️ `bazbom fix --apply` - Automated dependency upgrades with testing
-- ⚠️ `bazbom fix --pr` - GitHub PR generation with fixes
-- ⚠️ IDE plugins - Code complete, needs marketplace publishing
-- ⚠️ Reachability analysis - ASM-based bytecode analysis
-- ⚠️ Orchestrated scanning - Semgrep/CodeQL integration
+-  `bazbom fix --apply` - Automated dependency upgrades with testing
+-  `bazbom fix --pr` - GitHub PR generation with fixes
+-  IDE plugins - Code complete, needs marketplace publishing
+-  Reachability analysis - ASM-based bytecode analysis
+-  Orchestrated scanning - Semgrep/CodeQL integration
 
 ### Installation Workflows
 
@@ -1307,11 +1307,11 @@ Contributions are welcome! BazBOM is open-source and community-driven.
 ### Who Uses BazBOM?
 
 BazBOM serves organizations that demand:
-- ✅ **SLSA compliance** for supply chain security (Level 3 certified)
-- ✅ **VEX workflows** for enterprise vulnerability management
-- ✅ **Monorepo support** at scale (5000+ targets validated)
-- ✅ **Air-gapped environments** with full offline capabilities
-- ✅ **Multi-build-system** projects (Maven + Gradle + Bazel together)
+-  **SLSA compliance** for supply chain security (Level 3 certified)
+-  **VEX workflows** for enterprise vulnerability management
+-  **Monorepo support** at scale (5000+ targets validated)
+-  **Air-gapped environments** with full offline capabilities
+-  **Multi-build-system** projects (Maven + Gradle + Bazel together)
 
 ### Industry Use Cases
 

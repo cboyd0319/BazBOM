@@ -1,7 +1,7 @@
 # Phase 5: Enterprise Policy & Compliance
 
-**Status:** ✅ **COMPLETE** (as of 2025-10-31)
-**Priority:** 🔴 P0 - Critical Path
+**Status:**  **COMPLETE** (as of 2025-10-31)
+**Priority:**  P0 - Critical Path
 **Timeline:** Months 2-4 (10 weeks)
 **Team Size:** 1-2 developers
 **Dependencies:** Phase 2 (Policy engine basics complete)
@@ -24,10 +24,10 @@
 - Audit trails and exception management
 
 **Success Metrics:**
-- ✅ 5+ compliance templates ready to use
-- ✅ Pass legal review for Fortune 500 procurement
-- ✅ 90% license detection accuracy
-- ✅ Policy violations prevent CI/CD deployments
+-  5+ compliance templates ready to use
+-  Pass legal review for Fortune 500 procurement
+-  90% license detection accuracy
+-  Policy violations prevent CI/CD deployments
 
 ---
 
@@ -47,11 +47,11 @@
 
 | Feature | Sonatype | BazBOM (Phase 2) | Phase 5 Target |
 |---------|----------|------------------|----------------|
-| **Rule Composition** | AND/OR/NOT logic | Simple thresholds | ✅ Rego/OPA support |
-| **Policy Inheritance** | Org → Team → Project | Single file | ✅ Multi-level |
-| **Approval Workflows** | Quarantine, review, approve | Manual exceptions | ✅ Expiring exceptions |
-| **Audit Trail** | Full (who/when/why) | None | ✅ Changelog-based |
-| **Templates** | 10+ regulatory | None | ✅ 5+ templates |
+| **Rule Composition** | AND/OR/NOT logic | Simple thresholds |  Rego/OPA support |
+| **Policy Inheritance** | Org → Team → Project | Single file |  Multi-level |
+| **Approval Workflows** | Quarantine, review, approve | Manual exceptions |  Expiring exceptions |
+| **Audit Trail** | Full (who/when/why) | None |  Changelog-based |
+| **Templates** | 10+ regulatory | None |  5+ templates |
 
 ### 5.1.1 Policy Templates Library
 
@@ -258,7 +258,7 @@ impl PolicyTemplateLibrary {
         let dest = project_path.join("bazbom.yml");
 
         fs::write(dest, source)?;
-        println!("✅ Initialized policy template: {}", template.name);
+        println!(" Initialized policy template: {}", template.name);
         Ok(())
     }
 }
@@ -676,11 +676,11 @@ bazbom license obligations
 | Feature | Sonatype | BazBOM (Phase 5) | Gap |
 |---------|----------|------------------|-----|
 | **Policy Templates** | 10+ | 5+ | Sonatype (more) |
-| **Rego/OPA Support** | ❌ Proprietary | ✅ Rego | **BazBOM** |
+| **Rego/OPA Support** |  Proprietary |  Rego | **BazBOM** |
 | **License Detection** | 200+ | 200+ (SPDX) | **PARITY** |
-| **Compatibility Check** | ✅ Advanced | ✅ Matrix-based | **PARITY** |
-| **Obligations Tracking** | ✅ Advanced | ✅ Basic | Minor gap |
-| **Audit Trail** | ✅ Database | ✅ File-based | Sonatype (richer) |
+| **Compatibility Check** |  Advanced |  Matrix-based | **PARITY** |
+| **Obligations Tracking** |  Advanced |  Basic | Minor gap |
+| **Audit Trail** |  Database |  File-based | Sonatype (richer) |
 | **Cost** | $60-120/dev/year | **FREE** | **BazBOM** |
 
 ---

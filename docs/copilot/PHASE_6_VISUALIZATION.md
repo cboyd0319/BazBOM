@@ -1,7 +1,7 @@
 # Phase 6: Visualization & Observability
 
 **Status:** Planned
-**Priority:** 🟡 P1 - High Impact
+**Priority:**  P1 - High Impact
 **Timeline:** Months 3-5 (8 weeks)
 **Team Size:** 2 developers (1 Rust backend, 1 frontend)
 **Dependencies:** Phase 0-3 complete
@@ -17,10 +17,10 @@
 **Target:** Self-hosted web dashboard showing vulnerability trends, dependency graphs, compliance status.
 
 **Success Metrics:**
-- ✅ CISO understands security posture in <5 minutes
-- ✅ Zero manual report generation
-- ✅ Dashboard loads in <2 seconds
-- ✅ Works offline (no external dependencies)
+-  CISO understands security posture in <5 minutes
+-  Zero manual report generation
+-  Dashboard loads in <2 seconds
+-  Works offline (no external dependencies)
 
 ---
 
@@ -41,14 +41,14 @@
 │   (HTMX)        │
 └────────┬────────┘
          │ HTTP
-┌────────▼────────┐
+┌────────────────┐
 │  Axum Server    │  (Rust)
 │  - Routes       │
 │  - Templates    │
 │  - API          │
 └────────┬────────┘
          │
-┌────────▼────────┐
+┌────────────────┐
 │ .bazbom/cache/  │  (Local files)
 │ - sbom.json     │
 │ - findings.json │

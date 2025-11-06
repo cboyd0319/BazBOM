@@ -14,12 +14,12 @@ This document provides detailed specifications for creating and preparing market
 
 | Asset Type | VS Code | JetBrains | Purpose |
 |------------|---------|-----------|---------|
-| Icon/Logo | ✅ Required | ✅ Required | Plugin identification |
-| Screenshots | ✅ Required | ✅ Required | Feature demonstration |
-| Demo Video/GIF | ⭐ Recommended | ⭐ Recommended | Quick feature overview |
-| Banner | ⭐ Optional | ❌ Not used | Marketplace header |
-| README | ✅ Required | ✅ Required | Plugin documentation |
-| CHANGELOG | ✅ Required | ✅ Required | Version history |
+| Icon/Logo |  Required |  Required | Plugin identification |
+| Screenshots |  Required |  Required | Feature demonstration |
+| Demo Video/GIF |  Recommended |  Recommended | Quick feature overview |
+| Banner |  Optional |  Not used | Marketplace header |
+| README |  Required |  Required | Plugin documentation |
+| CHANGELOG |  Required |  Required | Version history |
 
 ---
 
@@ -370,7 +370,7 @@ Real-time vulnerability scanner for Java projects (Maven, Gradle, Bazel)
 
 **World-class SBOM and vulnerability scanning for JVM projects**, now available directly in VS Code!
 
-### ✨ Features
+###  Features
 
 - **Real-Time Scanning**: Instant feedback as you edit build files
 - **Privacy-First**: All scanning happens locally, no data leaves your machine
@@ -378,14 +378,14 @@ Real-time vulnerability scanner for Java projects (Maven, Gradle, Bazel)
 - **Fast**: <10 second scans with smart caching
 - **Actionable**: Quick fix actions to upgrade vulnerable dependencies
 
-### 🚀 Quick Start
+###  Quick Start
 
 1. Install extension
 2. Open Java project
 3. Edit `pom.xml` or `build.gradle`
 4. Vulnerabilities appear automatically!
 
-### 🔒 Security & Privacy
+###  Security & Privacy
 
 - Zero telemetry
 - Offline-first operation

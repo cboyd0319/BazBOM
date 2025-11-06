@@ -11,20 +11,20 @@
 BazBOM provides world-class SBOM, SCA, and dependency graph analysis for **JVM ecosystems only**. This document covers the three supported build systems and their capabilities.
 
 ### Supported Languages
-- ✅ **Java** (all versions)
-- ✅ **Kotlin** (JVM targets only)
-- ✅ **Scala** (JVM targets only)
+-  **Java** (all versions)
+-  **Kotlin** (JVM targets only)
+-  **Scala** (JVM targets only)
 
 ### Supported Build Systems
-- ✅ **Maven** (100% production ready)
-- ✅ **Gradle** (100% production ready)
-- ✅ **Bazel** (100% production ready with JVM rules)
+-  **Maven** (100% production ready)
+-  **Gradle** (100% production ready)
+-  **Bazel** (100% production ready with JVM rules)
 
 ---
 
 ## Maven Support
 
-### Status: ✅ Production Ready (100%)
+### Status:  Production Ready (100%)
 
 Maven is fully supported with comprehensive dependency resolution and SBOM generation.
 
@@ -103,7 +103,7 @@ bazbom scan /path/to/maven/project --cyclonedx
 
 ## Gradle Support
 
-### Status: ✅ Production Ready (100%)
+### Status:  Production Ready (100%)
 
 Gradle projects are fully supported with comprehensive configuration-based analysis.
 
@@ -173,7 +173,7 @@ dependencies {
 
 ## Bazel Support
 
-### Status: ✅ Production Ready (100%)
+### Status:  Production Ready (100%)
 
 Bazel is fully supported with advanced monorepo optimizations.
 

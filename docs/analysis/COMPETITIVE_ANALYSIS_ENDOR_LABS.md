@@ -53,7 +53,7 @@ BazBOM is positioned as the **ultimate easy-to-use, free, and privacy-preserving
 bazbom init
 
 # Output:
-Welcome to BazBOM! 🎯
+Welcome to BazBOM! 
 
 Let's get your first scan running in under 5 minutes.
 
@@ -71,14 +71,14 @@ Let's get your first scan running in under 5 minutes.
 
 Scanning... ━━━━━━━━━━━━━━━━ 100% (47 dependencies found)
 
-✓ Scan complete in 8.2 seconds!
+ Scan complete in 8.2 seconds!
 
 Found 3 vulnerabilities:
-  🔴 CRITICAL (1): CVE-2021-44228 in log4j-core:2.17.0
+   CRITICAL (1): CVE-2021-44228 in log4j-core:2.17.0
      Fix available: Upgrade to 2.21.1
      → Run: bazbom fix --apply
      
-  🟡 HIGH (2): View with bazbom findings --interactive
+   HIGH (2): View with bazbom findings --interactive
 
 Next steps:
   1. Review findings: bazbom findings --interactive
@@ -112,17 +112,17 @@ bazbom graph --interactive
 ┌─ my-app:1.0.0 ────────────────────────────────────────┐
 │  Runtime: JVM 11                                       │
 │  Dependencies: 247 (189 direct, 58 transitive)        │
-│  Vulnerabilities: 3 ⚠️                                 │
+│  Vulnerabilities: 3                                  │
 └────────────────────────────────────────────────────────┘
 
 Direct Dependencies:                      
-├── org.springframework.boot:spring-boot-starter-web:2.7.0 ⚠️ 
-│   ├── org.springframework:spring-web:5.3.20 🔴 CVE-2024-xxxx
+├── org.springframework.boot:spring-boot-starter-web:2.7.0  
+│   ├── org.springframework:spring-web:5.3.20  CVE-2024-xxxx
 │   ├── org.springframework:spring-webmvc:5.3.20
 │   └── com.fasterxml.jackson.core:jackson-databind:2.13.3
-├── org.apache.logging.log4j:log4j-core:2.17.0 🔴 CVE-2021-44832
-├── com.google.guava:guava:31.1-jre ✓
-└── org.postgresql:postgresql:42.3.3 ✓
+├── org.apache.logging.log4j:log4j-core:2.17.0  CVE-2021-44832
+├── com.google.guava:guava:31.1-jre 
+└── org.postgresql:postgresql:42.3.3 
 
 Commands: [↑↓] Navigate [Enter] Expand [v] View details [f] Filter [/] Search [q] Quit
 ```
@@ -159,7 +159,7 @@ Found 8 fixable vulnerabilities. Let's fix them together!
 
 1/8: CVE-2021-44228 (log4j-core)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Severity: 🔴 CRITICAL | Priority: P0-IMMEDIATE
+Severity:  CRITICAL | Priority: P0-IMMEDIATE
 Current: 2.17.0 → Fixed: 2.21.1
 
 WHY THIS MATTERS:
@@ -169,7 +169,7 @@ WHY THIS MATTERS:
 • Impact: Remote code execution
 
 BREAKING CHANGES: None
-COMPATIBILITY: ✓ Compatible with your Spring Boot version
+COMPATIBILITY:  Compatible with your Spring Boot version
 
 ? What would you like to do?
   > Apply fix and test
@@ -177,9 +177,9 @@ COMPATIBILITY: ✓ Compatible with your Spring Boot version
     Skip for now
     View details
     
-Applying fix... ✓
+Applying fix... 
 Running tests... ━━━━━━━━━━━━━━━━ 100%
-✓ Tests passed! (45.2s)
+ Tests passed! (45.2s)
 
 Fixed 1/8 vulnerabilities. Continue? (Y/n): Y
 ```
@@ -236,12 +236,12 @@ Fixed 1/8 vulnerabilities. Continue? (Y/n): Y
 
 | Feature | BazBOM | Endor Labs |
 |---------|--------|------------|
-| **Basic Bazel Support** | ✅ Yes | ✅ Yes |
+| **Basic Bazel Support** |  Yes |  Yes |
 | **Target Selection** | Query + Targets | Query + Targets |
-| **Incremental Scanning** | ✅ Git-aware (`--bazel-affected-by-files`) | ❌ Manual target specification required |
-| **Auto Detection** | ✅ Automatic affected target discovery | ❌ Must specify query or targets |
-| **Workspace Discovery** | ✅ Automatic | ✅ Automatic (with `--bazel-workspace-path` for non-root) |
-| **Build Integration** | ✅ Native | ✅ Native |
+| **Incremental Scanning** |  Git-aware (`--bazel-affected-by-files`) |  Manual target specification required |
+| **Auto Detection** |  Automatic affected target discovery |  Must specify query or targets |
+| **Workspace Discovery** |  Automatic |  Automatic (with `--bazel-workspace-path` for non-root) |
+| **Build Integration** |  Native |  Native |
 | **Performance (PR scans)** | 6x faster (8s vs 45min for affected targets) | Full workspace scan required |
 
 **BazBOM's Bazel Advantage:**

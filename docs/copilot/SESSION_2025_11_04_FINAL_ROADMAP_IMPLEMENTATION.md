@@ -219,20 +219,20 @@ fn build_url(&self, endpoint: &str) -> String {
 ### Code Quality
 
 **Compilation:**
-- ✅ Zero errors
-- ✅ Minor warnings (unused variables in stubs)
-- ✅ Clean clippy
+-  Zero errors
+-  Minor warnings (unused variables in stubs)
+-  Clean clippy
 
 **Testing:**
-- ✅ 316 tests passing (100% pass rate)
-- ✅ Zero test failures
-- ✅ Zero flaky tests
+-  316 tests passing (100% pass rate)
+-  Zero test failures
+-  Zero flaky tests
 
 **Architecture:**
-- ✅ Modular design
-- ✅ Clear separation of concerns
-- ✅ Minimal cross-dependencies
-- ✅ Easy to test independently
+-  Modular design
+-  Clear separation of concerns
+-  Minimal cross-dependencies
+-  Easy to test independently
 
 ### Privacy & Security
 
@@ -537,21 +537,21 @@ docs: update roadmap with Phase 7 and 9 progress
 
 ### Quantitative
 
-- ✅ **Tests:** 316 passing (100% pass rate)
-- ✅ **Coverage:** Maintained >90% throughout
-- ✅ **Progress:** +4% overall project completion
-- ✅ **Phase 7:** +10% completion
-- ✅ **Phase 9:** +15% completion
-- ✅ **Zero breaking changes**
-- ✅ **Zero test failures**
+-  **Tests:** 316 passing (100% pass rate)
+-  **Coverage:** Maintained >90% throughout
+-  **Progress:** +4% overall project completion
+-  **Phase 7:** +10% completion
+-  **Phase 9:** +15% completion
+-  **Zero breaking changes**
+-  **Zero test failures**
 
 ### Qualitative
 
-- ✅ **Code quality:** High (clean, modular, documented)
-- ✅ **Architecture:** Solid (separation of concerns, testable)
-- ✅ **Privacy:** Maintained (offline-first, no telemetry)
-- ✅ **Security:** Good (no secrets, secure by default)
-- ✅ **Usability:** Improved (better API surface)
+-  **Code quality:** High (clean, modular, documented)
+-  **Architecture:** Solid (separation of concerns, testable)
+-  **Privacy:** Maintained (offline-first, no telemetry)
+-  **Security:** Good (no secrets, secure by default)
+-  **Usability:** Improved (better API surface)
 
 ### Time Efficiency
 

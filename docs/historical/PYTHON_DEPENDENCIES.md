@@ -8,7 +8,7 @@
 
 ## Rust Transition Status
 
-### ✅ Completed: Core Binary (100% Rust)
+###  Completed: Core Binary (100% Rust)
 
 The following critical components have been fully ported to Rust:
 
@@ -17,7 +17,7 @@ The following critical components have been fully ported to Rust:
    - No Python execution required
 
 2. **Build System Integration** (`crates/bazbom/src/bazel.rs`)
-   - ✅ **NEWLY PORTED**: Bazel query functionality (previously `bazel_query.py`)
+   -  **NEWLY PORTED**: Bazel query functionality (previously `bazel_query.py`)
    - Direct `bazel query` command execution
    - Query generation for kind filtering and rdeps analysis
    - Zero Python dependency for Bazel operations
@@ -95,16 +95,16 @@ When users install BazBOM via:
 - Docker image
 
 They receive:
-- ✅ Single Rust binary
-- ✅ Zero Python requirement
-- ✅ Zero external dependencies (except Bazel/Maven/Gradle if using those build systems)
-- ✅ Works offline after initial advisory sync
+-  Single Rust binary
+-  Zero Python requirement
+-  Zero external dependencies (except Bazel/Maven/Gradle if using those build systems)
+-  Works offline after initial advisory sync
 
 ### What Users Don't Need
 
-- ❌ Python runtime
-- ❌ Python packages (requests, jsonschema, etc.)
-- ❌ Any scripts from `tools/supplychain/`
+-  Python runtime
+-  Python packages (requests, jsonschema, etc.)
+-  Any scripts from `tools/supplychain/`
 
 ## Verification
 
@@ -151,9 +151,9 @@ If desired, the remaining CI/CD Python scripts could be ported to Rust, but this
 
 ### Recommended Approach
 
-- ✅ Keep current state: 100% Rust for shipped binary
-- ✅ Python CI tools are acceptable for automation
-- ❌ Do not port CI tools unless specific requirements emerge
+-  Keep current state: 100% Rust for shipped binary
+-  Python CI tools are acceptable for automation
+-  Do not port CI tools unless specific requirements emerge
 
 ## Conclusion
 

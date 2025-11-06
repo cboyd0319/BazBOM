@@ -6,7 +6,7 @@
 **Status:** Active Development Plan  
 **Horizon:** 8 Weeks  
 
-> **📋 Related Planning Documents:**
+> ** Related Planning Documents:**
 > - **[Master Roadmap (../ROADMAP.md)](../ROADMAP.md)** - Complete feature tracking checklist for all phases
 > - **[Strategic Roadmap (STRATEGIC_ROADMAP.md)](STRATEGIC_ROADMAP.md)** - 12-18 month market leadership vision
 > - **[Phase 4 Progress (PHASE_4_PROGRESS.md)](PHASE_4_PROGRESS.md)** - Current IDE integration status
@@ -28,11 +28,11 @@ This roadmap outlines the path to making BazBOM the most developer-friendly, eas
 
 ### Success Criteria
 
-- ✅ New users can scan a project in <60 seconds from first install
-- ✅ Non-technical stakeholders understand security posture instantly
-- ✅ Development teams adopt BazBOM voluntarily (not mandated)
-- ✅ 95% of vulnerability remediation requires <5 minutes
-- ✅ Security teams coordinate without external tools
+-  New users can scan a project in <60 seconds from first install
+-  Non-technical stakeholders understand security posture instantly
+-  Development teams adopt BazBOM voluntarily (not mandated)
+-  95% of vulnerability remediation requires <5 minutes
+-  Security teams coordinate without external tools
 
 ---
 
@@ -40,10 +40,10 @@ This roadmap outlines the path to making BazBOM the most developer-friendly, eas
 
 | Phase | Duration | Focus Area | Priority |
 |-------|----------|------------|----------|
-| **Phase 1: Quick Wins** | Weeks 1-2 | Developer onboarding & UX | 🔴 P0 |
-| **Phase 2: Visual Excellence** | Weeks 3-4 | Web dashboard & reports | 🔴 P0 |
-| **Phase 3: IDE Polish** | Weeks 5-6 | IDE integration maturity | 🟡 P1 |
-| **Phase 4: Team Features** | Weeks 7-8 | Collaboration & coordination | 🟡 P1 |
+| **Phase 1: Quick Wins** | Weeks 1-2 | Developer onboarding & UX |  P0 |
+| **Phase 2: Visual Excellence** | Weeks 3-4 | Web dashboard & reports |  P0 |
+| **Phase 3: IDE Polish** | Weeks 5-6 | IDE integration maturity |  P1 |
+| **Phase 4: Team Features** | Weeks 7-8 | Collaboration & coordination |  P1 |
 
 ---
 
@@ -62,10 +62,10 @@ Remove all friction from getting started with BazBOM. Make the first scan experi
 
 ```bash
 $ bazbom init
-🎉 Welcome to BazBOM! Let's get your project secured.
+ Welcome to BazBOM! Let's get your project secured.
 
-🔍 Detecting build system...
-✅ Found: Maven project (pom.xml)
+ Detecting build system...
+ Found: Maven project (pom.xml)
 
 �� Choose a policy template:
   1. Development (Permissive)
@@ -78,26 +78,26 @@ $ bazbom init
 
 Your choice [1-7]: 2
 
-✅ Created bazbom.yml with Corporate Standard policy
+ Created bazbom.yml with Corporate Standard policy
 
-🔍 Running first scan...
-⏳ Scanning dependencies... (this may take a minute)
-✅ Found 127 dependencies
-⚠️  Detected 3 vulnerabilities (1 CRITICAL, 2 HIGH)
+ Running first scan...
+ Scanning dependencies... (this may take a minute)
+ Found 127 dependencies
+  Detected 3 vulnerabilities (1 CRITICAL, 2 HIGH)
 
-📊 Summary:
+ Summary:
   Total dependencies: 127
   Direct: 15
   Transitive: 112
   Vulnerabilities: 3
   License issues: 0
 
-💡 Next steps:
+ Next steps:
   1. Review findings: bazbom scan . --format json
   2. Fix vulnerabilities: bazbom fix --suggest
   3. Add to git hooks: bazbom install-hooks
 
-📖 Full documentation: https://github.com/cboyd0319/BazBOM
+ Full documentation: https://github.com/cboyd0319/BazBOM
 ```
 
 #### Implementation Details
@@ -124,7 +124,7 @@ indicatif = "0.17"   # For progress bars
 - Integration tests for full init workflow
 - Test with sample Maven, Gradle, and Bazel projects
 
-#### Acceptance Criteria ✅ COMPLETE
+#### Acceptance Criteria  COMPLETE
 - [x] Detects Maven, Gradle, and Bazel projects correctly
 - [x] Presents 7+ policy templates with descriptions (21 templates implemented)
 - [x] Generates valid `bazbom.yml` configuration
@@ -144,10 +144,10 @@ indicatif = "0.17"   # For progress bars
 #### New Templates
 
 **Regulatory Compliance:**
-- ✅ PCI-DSS v4.0 (existing)
-- ✅ HIPAA Security Rule (existing)
-- ✅ FedRAMP Moderate (existing)
-- ✅ SOC 2 Type II (existing)
+-  PCI-DSS v4.0 (existing)
+-  HIPAA Security Rule (existing)
+-  FedRAMP Moderate (existing)
+-  SOC 2 Type II (existing)
 - 🆕 GDPR Data Protection
 - 🆕 ISO 27001
 - 🆕 NIST Cybersecurity Framework
@@ -283,27 +283,27 @@ templates/
 ┌─ BazBOM Dependency Explorer ─────────────────────────────────────────────────┐
 │ Project: my-spring-app v1.0.0                          [F1: Help] [Q: Quit]  │
 ├───────────────────────────────────────────────────────────────────────────────┤
-│ Search: [log4j____________________]  Filter: [ALL ▼]  Sort: [Severity ▼]    │
+│ Search: [log4j____________________]  Filter: [ALL ]  Sort: [Severity ]    │
 ├───────────────────────────────────────────────────────────────────────────────┤
 │                                                                               │
-│ ▼ Direct Dependencies (15)                                                   │
-│   ├─⚠️  org.springframework.boot:spring-boot-starter-web:2.7.0              │
+│  Direct Dependencies (15)                                                   │
+│   ├─  org.springframework.boot:spring-boot-starter-web:2.7.0              │
 │   │   │  2 vulnerabilities (1 HIGH, 1 MEDIUM)                               │
-│   │   ├─ org.springframework:spring-web:5.3.20 ⚠️ CVE-2024-xxxx            │
+│   │   ├─ org.springframework:spring-web:5.3.20  CVE-2024-xxxx            │
 │   │   ├─ org.springframework:spring-webmvc:5.3.20                           │
 │   │   └─ org.apache.tomcat.embed:tomcat-embed-core:9.0.60                   │
 │   │                                                                           │
-│   ├─🔴 org.apache.logging.log4j:log4j-core:2.14.1 CRITICAL                  │
+│   ├─ org.apache.logging.log4j:log4j-core:2.14.1 CRITICAL                  │
 │   │   │  CVE-2021-44228 (Log4Shell) | CISA KEV | CVSS 10.0                 │
 │   │   │  → Upgrade to: 2.21.1                                               │
 │   │   │  [Press ENTER to apply fix]                                         │
 │   │   │                                                                       │
-│   ├─✅ com.google.guava:guava:31.1-jre                                      │
+│   ├─ com.google.guava:guava:31.1-jre                                      │
 │   │   │  No known vulnerabilities                                            │
 │   │   ├─ com.google.guava:failureaccess:1.0.1                               │
 │   │   └─ com.google.guava:listenablefuture:9999.0                           │
 │                                                                               │
-│ ▶ Transitive Dependencies (112)                                              │
+│  Transitive Dependencies (112)                                              │
 │                                                                               │
 ├───────────────────────────────────────────────────────────────────────────────┤
 │ Selected: org.apache.logging.log4j:log4j-core:2.14.1                        │
@@ -392,7 +392,7 @@ bazbom explore --sbom=sbom.spdx.json
 bazbom explore --findings=sca_findings.json
 ```
 
-#### Acceptance Criteria ✅ COMPLETE
+#### Acceptance Criteria  COMPLETE
 - [x] Tree view displays all dependencies (list view implemented)
 - [x] Expand/collapse works correctly (navigation via up/down)
 - [x] Search finds dependencies by name (filter implemented)
@@ -417,10 +417,10 @@ bazbom explore --findings=sca_findings.json
 
 ```bash
 $ bazbom fix --interactive
-🔍 Found 12 fixable vulnerabilities
+ Found 12 fixable vulnerabilities
 
-📊 Grouping by impact analysis...
-✅ Safe batch groups identified: 3
+ Grouping by impact analysis...
+ Safe batch groups identified: 3
 
 ┌─ Batch 1: Low-Risk Updates (8 vulnerabilities) ──────────────────────────────┐
 │ These updates are independent and safe to apply together:                    │
@@ -442,33 +442,33 @@ $ bazbom fix --interactive
 
 Apply this batch? [Y/n]: y
 
-⏳ Applying 8 updates...
-✅ 1/8 Updated log4j-core
-✅ 2/8 Updated spring-web
-✅ 3/8 Updated jackson-databind
-✅ 4/8 Updated guava
-✅ 5/8 Updated commons-io
-✅ 6/8 Updated commons-codec
-✅ 7/8 Updated httpclient
-✅ 8/8 Updated slf4j-api
+ Applying 8 updates...
+ 1/8 Updated log4j-core
+ 2/8 Updated spring-web
+ 3/8 Updated jackson-databind
+ 4/8 Updated guava
+ 5/8 Updated commons-io
+ 6/8 Updated commons-codec
+ 7/8 Updated httpclient
+ 8/8 Updated slf4j-api
 
-🧪 Running tests...
-⏳ mvn test (127 tests)...
-✅ All tests passed! (45.3 seconds)
+ Running tests...
+ mvn test (127 tests)...
+ All tests passed! (45.3 seconds)
 
-✅ Batch 1 complete! 8 vulnerabilities fixed.
+ Batch 1 complete! 8 vulnerabilities fixed.
 
 ┌─ Batch 2: Moderate-Risk Updates (3 vulnerabilities) ─────────────────────────┐
 │ These updates may have breaking changes:                                     │
 │                                                                               │
-│  9. spring-boot: 2.7.0 → 3.2.0 (HIGH) ⚠️ Major version upgrade              │
+│  9. spring-boot: 2.7.0 → 3.2.0 (HIGH)  Major version upgrade              │
 │     Breaking: Spring Boot 3 requires Java 17+                                │
 │     Migration guide: https://spring.io/blog/2022/...                         │
 │                                                                               │
-│ 10. hibernate-core: 5.6.0 → 6.3.1 (MEDIUM) ⚠️ Major version upgrade        │
+│ 10. hibernate-core: 5.6.0 → 6.3.1 (MEDIUM)  Major version upgrade        │
 │     Breaking: API changes in Session interface                               │
 │                                                                               │
-│ 11. junit: 4.13.2 → 5.10.0 (LOW) ⚠️ Major version upgrade                  │
+│ 11. junit: 4.13.2 → 5.10.0 (LOW)  Major version upgrade                  │
 │     Breaking: Package name change (org.junit → org.junit.jupiter)           │
 │                                                                               │
 │ [Enter] Review individually  [S] Skip batch  [L] Learn more  [Q] Quit       │
@@ -480,7 +480,7 @@ Skip batch 2? [y/N]: y
 │ This update conflicts with other dependencies:                               │
 │                                                                               │
 │ 12. netty-codec: 4.1.70 → 4.1.100 (CRITICAL)                               │
-│     ⚠️ Conflicts with:                                                       │
+│      Conflicts with:                                                       │
 │       - spring-boot-starter-web requires netty-codec:4.1.70-4.1.85          │
 │       - grpc-netty requires netty-codec:4.1.70                              │
 │                                                                               │
@@ -492,16 +492,16 @@ Skip batch 2? [y/N]: y
 │ [1/2/3] Choose option or [S] Skip: 3                                        │
 └───────────────────────────────────────────────────────────────────────────────┘
 
-📊 Summary:
+ Summary:
   Fixed: 8 vulnerabilities
   Skipped: 4 vulnerabilities (requires manual review)
   
-💡 Next steps:
+ Next steps:
   1. Commit changes: git commit -m "fix: upgrade vulnerable dependencies"
   2. Create PR: bazbom fix --pr
   3. Review skipped: Review Batch 2 and 3 manually
 
-🎉 Great job! Your project is more secure.
+ Great job! Your project is more secure.
 ```
 
 #### Implementation Details
@@ -592,7 +592,7 @@ impl BatchFixer {
 - Gradle: Use `gradle dependencies --configuration runtime`
 - Bazel: Analyze maven_install.json
 
-#### Acceptance Criteria ✅ COMPLETE
+#### Acceptance Criteria  COMPLETE
 - [x] Groups vulnerabilities into safe batches (3 risk levels)
 - [x] Detects breaking changes (major version bumps via semver)
 - [x] Identifies dependency conflicts (common packages heuristic)
@@ -784,20 +784,20 @@ bazbom dashboard --export dashboard.html
 bazbom dashboard --open
 
 # Output:
-🚀 BazBOM Dashboard running at http://localhost:3000
-📊 Security Score: 78/100
-⚠️  3 HIGH vulnerabilities require attention
+ BazBOM Dashboard running at http://localhost:3000
+ Security Score: 78/100
+  3 HIGH vulnerabilities require attention
 ```
 
 #### Acceptance Criteria
-- [x] Dashboard loads in <2 seconds ✅
-- [x] D3.js graph renders with force-directed layout ✅
-- [x] All charts are interactive (D3.js + Chart.js) ✅
-- [x] Responsive design (mobile, tablet, desktop) ✅
-- [x] Accessible (WCAG 2.1 AA compliant) ✅
-- [x] Works with all three build systems ✅
-- [x] No external API calls (privacy-preserving) ✅
-- [x] Auto-refresh capability (30s interval) ✅
+- [x] Dashboard loads in <2 seconds 
+- [x] D3.js graph renders with force-directed layout 
+- [x] All charts are interactive (D3.js + Chart.js) 
+- [x] Responsive design (mobile, tablet, desktop) 
+- [x] Accessible (WCAG 2.1 AA compliant) 
+- [x] Works with all three build systems 
+- [x] No external API calls (privacy-preserving) 
+- [x] Auto-refresh capability (30s interval) 
 - [ ] Export static HTML works offline (future)
 - [ ] Generate PDF reports (future)
 - [ ] Live reload on new scans (future)
@@ -1137,8 +1137,8 @@ bazbom team-config --email smtp://mail.company.com
 bazbom scan . --notify-team
 
 # Output:
-✅ Scan complete
-📧 Notified 3 team members:
+ Scan complete
+ Notified 3 team members:
    - alice@company.com (2 CRITICAL vulnerabilities)
    - bob@company.com (1 HIGH vulnerability)
    - security-team Slack channel
@@ -1364,29 +1364,29 @@ bazbom audit export --output audit.csv
 ### Success Metrics
 
 **Phase 1 (Quick Wins):**
-- ✅ 80% of new users complete `bazbom init` successfully
-- ✅ 50% of users try TUI dependency explorer
-- ✅ Batch fixing saves 50%+ time vs individual fixes
-- ✅ Policy templates cover 90% of use cases
+-  80% of new users complete `bazbom init` successfully
+-  50% of users try TUI dependency explorer
+-  Batch fixing saves 50%+ time vs individual fixes
+-  Policy templates cover 90% of use cases
 
 **Phase 2 (Visual Excellence):**
-- ✅ Dashboard loads <2 seconds
-- ✅ 75% of executives prefer dashboard over CLI
-- ✅ Reports used in 50%+ of compliance audits
-- ✅ Static HTML export used for sharing
+-  Dashboard loads <2 seconds
+-  75% of executives prefer dashboard over CLI
+-  Reports used in 50%+ of compliance audits
+-  Static HTML export used for sharing
 
 **Phase 3 (IDE Polish):**
-- ✅ 1000+ VS Code extension installs
-- ✅ 500+ IntelliJ plugin downloads
-- ✅ 4.5+ star rating on both marketplaces
-- ✅ <10 second scan time in IDE
-- ✅ 95% fix success rate
+-  1000+ VS Code extension installs
+-  500+ IntelliJ plugin downloads
+-  4.5+ star rating on both marketplaces
+-  <10 second scan time in IDE
+-  95% fix success rate
 
 **Phase 4 (Team Features):**
-- ✅ 50% of teams use assignment system
-- ✅ 75% of teams configure notifications
-- ✅ Audit logs used in security reviews
-- ✅ Team dashboard accessed weekly
+-  50% of teams use assignment system
+-  75% of teams configure notifications
+-  Audit logs used in security reviews
+-  Team dashboard accessed weekly
 
 ### Timeline Summary
 
@@ -1449,7 +1449,7 @@ This roadmap will transform BazBOM from a powerful CLI tool into the ultimate ea
 **Deliverables:** 15+ major features  
 **Impact:** 10x improvement in developer productivity  
 
-Let's build something amazing. 🚀
+Let's build something amazing. 
 
 ---
 

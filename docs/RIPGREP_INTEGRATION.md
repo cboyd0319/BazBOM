@@ -694,10 +694,10 @@ Update `install.sh`:
 ```bash
 # Check for ripgrep (optional but recommended)
 if ! command -v rg &> /dev/null; then
-    echo "⚠️  RipGrep not found - fast scanning disabled"
+    echo "  RipGrep not found - fast scanning disabled"
     echo "   Install: https://github.com/BurntSushi/ripgrep#installation"
 else
-    echo "✅ RipGrep detected - enabling fast mode"
+    echo " RipGrep detected - enabling fast mode"
     FAST_MODE=true
 fi
 ```

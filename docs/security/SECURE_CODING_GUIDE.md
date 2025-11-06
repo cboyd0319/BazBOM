@@ -15,7 +15,7 @@ This guide provides security best practices for contributors to BazBOM, followin
 ### Input Validation
 
 ```python
-# ✅ GOOD: Validate all inputs
+#  GOOD: Validate all inputs
 def process_package_name(name: str) -> bool:
     if not isinstance(name, str):
         raise TypeError("Package name must be a string")
@@ -30,7 +30,7 @@ def process_package_name(name: str) -> bool:
     
     return True
 
-# ❌ BAD: No validation
+#  BAD: No validation
 def process_package_name(name):
     # Directly use untrusted input
     return name
@@ -39,14 +39,14 @@ def process_package_name(name):
 ### XML Parsing
 
 ```python
-# ✅ GOOD: Use defusedxml
+#  GOOD: Use defusedxml
 from defusedxml import ElementTree as ET
 
 def parse_pom(path: str):
     tree = ET.parse(path)  # Protected against XXE
     return tree
 
-# ❌ BAD: Vulnerable to XXE
+#  BAD: Vulnerable to XXE
 import xml.etree.ElementTree as ET
 
 def parse_pom(path: str):
@@ -57,7 +57,7 @@ def parse_pom(path: str):
 ### Subprocess Execution
 
 ```python
-# ✅ GOOD: Use list arguments, no shell=True
+#  GOOD: Use list arguments, no shell=True
 import subprocess
 import shlex
 
@@ -76,7 +76,7 @@ def run_bazel_build(target: str):
     )
     return result.stdout
 
-# ❌ BAD: Shell injection vulnerability
+#  BAD: Shell injection vulnerability
 def run_bazel_build(target: str):
     # NEVER do this!
     cmd = f"bazel build {target}"  # Shell injection!
@@ -86,7 +86,7 @@ def run_bazel_build(target: str):
 ### File Operations
 
 ```python
-# ✅ GOOD: Safe file operations
+#  GOOD: Safe file operations
 from pathlib import Path
 
 def read_config(config_path: str) -> dict:
@@ -100,7 +100,7 @@ def read_config(config_path: str) -> dict:
     with open(config_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-# ❌ BAD: Path traversal vulnerability
+#  BAD: Path traversal vulnerability
 def read_config(config_path: str) -> dict:
     # No validation - path traversal!
     with open(config_path, 'r') as f:
@@ -110,7 +110,7 @@ def read_config(config_path: str) -> dict:
 ### URL Handling
 
 ```python
-# ✅ GOOD: Validate URL schemes
+#  GOOD: Validate URL schemes
 from urllib.parse import urlparse
 
 def fetch_url(url: str) -> bytes:
@@ -127,7 +127,7 @@ def fetch_url(url: str) -> bytes:
     with urllib.request.urlopen(url, timeout=5) as response:
         return response.read()
 
-# ❌ BAD: SSRF vulnerability
+#  BAD: SSRF vulnerability
 def fetch_url(url: str) -> bytes:
     # Allows file:/, ftp:/, any scheme!
     with urllib.request.urlopen(url) as response:
@@ -137,7 +137,7 @@ def fetch_url(url: str) -> bytes:
 ### Secrets Management
 
 ```python
-# ✅ GOOD: Never log secrets
+#  GOOD: Never log secrets
 import logging
 
 def authenticate(token: str) -> bool:
@@ -154,7 +154,7 @@ def authenticate(token: str) -> bool:
     
     return result
 
-# ❌ BAD: Secrets in logs
+#  BAD: Secrets in logs
 def authenticate(token: str) -> bool:
     logger = logging.getLogger(__name__)
     logger.info(f"Authenticating with token: {token}")  # LEAKED!
@@ -164,7 +164,7 @@ def authenticate(token: str) -> bool:
 ### SQL/NoSQL Queries
 
 ```python
-# ✅ GOOD: Parameterized queries
+#  GOOD: Parameterized queries
 import sqlite3
 
 def get_package_info(package_name: str) -> dict:
@@ -179,7 +179,7 @@ def get_package_info(package_name: str) -> dict:
     
     return cursor.fetchone()
 
-# ❌ BAD: SQL injection
+#  BAD: SQL injection
 def get_package_info(package_name: str) -> dict:
     conn = sqlite3.connect('packages.db')
     cursor = conn.cursor()
@@ -196,11 +196,11 @@ def get_package_info(package_name: str) -> dict:
 ### Action Pinning
 
 ```yaml
-# ✅ GOOD: Pin to full SHA with version comment
+#  GOOD: Pin to full SHA with version comment
 - name: Checkout code
   uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
-# ❌ BAD: Using version tags (mutable)
+#  BAD: Using version tags (mutable)
 - name: Checkout code
   uses: actions/checkout@v5
 ```
@@ -208,7 +208,7 @@ def get_package_info(package_name: str) -> dict:
 ### Workflow Permissions
 
 ```yaml
-# ✅ GOOD: Minimal permissions
+#  GOOD: Minimal permissions
 permissions:
   contents: read
 
@@ -218,7 +218,7 @@ jobs:
       contents: read
       packages: write  # Only what's needed
 
-# ❌ BAD: Excessive permissions
+#  BAD: Excessive permissions
 permissions:
   contents: write
   packages: write
@@ -228,13 +228,13 @@ permissions:
 ### Preventing Workflow Injection
 
 ```yaml
-# ✅ GOOD: Use environment variables
+#  GOOD: Use environment variables
 - name: Process issue title
   env:
     ISSUE_TITLE: ${{ github.event.issue.title }}
   run: echo "Title: $ISSUE_TITLE"
 
-# ❌ BAD: Direct interpolation
+#  BAD: Direct interpolation
 - name: Process issue title
   run: echo "Title: ${{ github.event.issue.title }}"
 ```
@@ -244,7 +244,7 @@ permissions:
 ### Test Isolation
 
 ```python
-# ✅ GOOD: Clean state for each test
+#  GOOD: Clean state for each test
 import pytest
 
 @pytest.fixture(autouse=True)
@@ -261,7 +261,7 @@ def test_something():
 ### Coverage for Security Code
 
 ```python
-# ✅ GOOD: Test security validations
+#  GOOD: Test security validations
 def test_input_validation_rejects_path_traversal():
     with pytest.raises(ValueError, match="path separator"):
         process_package_name("../etc/passwd")
@@ -275,14 +275,14 @@ def test_url_validation_rejects_file_scheme():
 
 Before committing code, ensure:
 
-- ✅ No secrets or credentials in code
-- ✅ All inputs are validated
-- ✅ No shell=True in subprocess calls
-- ✅ No string concatenation in SQL/commands
-- ✅ Secrets not logged
-- ✅ Tests cover security validations
-- ✅ Bandit scan passes
-- ✅ Pre-commit hooks pass
+-  No secrets or credentials in code
+-  All inputs are validated
+-  No shell=True in subprocess calls
+-  No string concatenation in SQL/commands
+-  Secrets not logged
+-  Tests cover security validations
+-  Bandit scan passes
+-  Pre-commit hooks pass
 
 ## Tools
 

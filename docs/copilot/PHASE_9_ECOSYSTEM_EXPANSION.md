@@ -1,7 +1,7 @@
 # Phase 9: Container & JVM Ecosystem Expansion
 
 **Status:** Planned
-**Priority:** 🟡 P1 - Strategic Depth
+**Priority:**  P1 - Strategic Depth
 **Timeline:** Months 6-9 (12 weeks)
 **Team Size:** 2-3 developers
 **Dependencies:** Phase 0-3 complete, Phase 4 recommended (IDE integration reusable)
@@ -19,13 +19,13 @@
 4. **Kotlin Multiplatform** - JVM targets in multiplatform projects
 5. **Additional Scala Tooling** - sbt (Scala Build Tool)
 
-> **⚠️ SCOPE CLARIFICATION:** BazBOM is **JVM-ONLY**. Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE**. This ensures world-class depth for JVM ecosystems rather than shallow breadth across many languages.
+> ** SCOPE CLARIFICATION:** BazBOM is **JVM-ONLY**. Multi-language support (Node.js, Python, Go, Rust) is **OUT OF SCOPE**. This ensures world-class depth for JVM ecosystems rather than shallow breadth across many languages.
 
 **Success Metrics:**
-- ✅ Comprehensive JVM build system coverage (Ant, Maven, Gradle, Bazel, Buildr)
-- ✅ All JVM languages supported (Java, Kotlin, Scala, Groovy, Clojure)
-- ✅ Container scanning detects JVM artifacts with 99%+ accuracy
-- ✅ Support largest JVM monorepos (5000+ targets)
+-  Comprehensive JVM build system coverage (Ant, Maven, Gradle, Bazel, Buildr)
+-  All JVM languages supported (Java, Kotlin, Scala, Groovy, Clojure)
+-  Container scanning detects JVM artifacts with 99%+ accuracy
+-  Support largest JVM monorepos (5000+ targets)
 
 **Strategic Rationale:** Become the definitive tool for **all** JVM projects, regardless of build system or language variant.
 
@@ -557,15 +557,15 @@ impl ScanOrchestrator {
 
 | Feature | Checkmarx | Snyk | BazBOM |
 |---------|-----------|------|--------|
-| **Maven** | ✅ | ✅ | ✅ |
-| **Gradle** | ✅ | ✅ | ✅ |
-| **Bazel (JVM)** | ❌ | ⚠️ | ✅ |
-| **Ant + Ivy** | ⚠️ | ❌ | ✅ |
-| **Buildr** | ❌ | ❌ | ✅ |
-| **sbt (Scala)** | ✅ | ✅ | ✅ |
-| **Groovy (@Grab)** | ⚠️ | ⚠️ | ✅ |
-| **Clojure (tools.deps)** | ⚠️ | ⚠️ | ✅ |
-| **Containers (JVM artifacts)** | ✅ | ✅ | ✅ |
+| **Maven** |  |  |  |
+| **Gradle** |  |  |  |
+| **Bazel (JVM)** |  |  |  |
+| **Ant + Ivy** |  |  |  |
+| **Buildr** |  |  |  |
+| **sbt (Scala)** |  |  |  |
+| **Groovy (@Grab)** |  |  |  |
+| **Clojure (tools.deps)** |  |  |  |
+| **Containers (JVM artifacts)** |  |  |  |
 | **JVM Language Coverage** | Partial | Good | **Complete** |
 | **JVM Build Systems** | 3-4 | 3-4 | **8+** |
 | **Cost** | $200+/dev/year | $99+/dev/year | **FREE** |

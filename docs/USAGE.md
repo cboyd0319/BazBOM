@@ -139,10 +139,10 @@ BazBOM directly parses `maven_install.json` (no external scripts required) to ex
 - Package URLs (PURLs) following the pkg:maven specification
 
 **Supported Bazel Features:**
-- ✅ rules_jvm_external (maven_install)
-- ✅ WORKSPACE-based configuration
-- ⚠️ bzlmod/MODULE.bazel (partial - requires maven_install.json)
-- ⚠️ Custom repository rules (not yet supported)
+-  rules_jvm_external (maven_install)
+-  WORKSPACE-based configuration
+-  bzlmod/MODULE.bazel (partial - requires maven_install.json)
+-  Custom repository rules (not yet supported)
 
 **Performance:**
 - Small projects (< 50 deps): < 1 second
@@ -220,8 +220,8 @@ $ bazbom scan . --bazel-affected-by-files src/java/main/lib/top_x.java
   - //src/java:get_top_x_repos
   - //src/java:lib
 
-⏱️  Completed in 8.2 seconds (vs 45 minutes for full scan)
-📊 6x faster than full scan
+  Completed in 8.2 seconds (vs 45 minutes for full scan)
+ 6x faster than full scan
 ```
 
 **Performance comparison:**
@@ -661,7 +661,7 @@ bazbom policy validate .bazbom/policies/org-policy.yml
 **Output:**
 
 ```
-✓ Policy file is valid
+ Policy file is valid
 
 Policy Configuration:
   Severity threshold: Some(High)
@@ -771,35 +771,35 @@ bazbom license compatibility --project-license GPL-3.0-only
 ```
 # License Compatibility Report
 
-✓ jackson-databind (Apache-2.0) - Risk: Safe
-✓ slf4j-api (MIT) - Risk: Safe
-⚠ commons-io (Apache-2.0) - Risk: Safe
-✗ mysql-connector-j (GPL-2.0-only) - Risk: Critical
-✗✗ jooq-codegen (AGPL-3.0-only) - Risk: Critical
+ jackson-databind (Apache-2.0) - Risk: Safe
+ slf4j-api (MIT) - Risk: Safe
+ commons-io (Apache-2.0) - Risk: Safe
+ mysql-connector-j (GPL-2.0-only) - Risk: Critical
+ jooq-codegen (AGPL-3.0-only) - Risk: Critical
 ```
 
 **Risk Levels:**
 
-- **Safe** (✓) - Licenses are compatible, no issues
-- **Low** (⚠) - Minor compatibility concerns, review recommended
-- **Medium** (⚠) - Moderate risk, legal review suggested
-- **High** (✗) - Significant incompatibility, likely violation
-- **Critical** (✗✗) - Severe incompatibility, must resolve before release
+- **Safe** () - Licenses are compatible, no issues
+- **Low** () - Minor compatibility concerns, review recommended
+- **Medium** () - Moderate risk, legal review suggested
+- **High** () - Significant incompatibility, likely violation
+- **Critical** () - Severe incompatibility, must resolve before release
 
 **Compatibility Rules:**
 
 **MIT Projects:**
-- ✓ Can use: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
-- ✗ Cannot use: GPL-2.0, GPL-3.0, AGPL-3.0 (copyleft incompatible)
+-  Can use: MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, 0BSD
+-  Cannot use: GPL-2.0, GPL-3.0, AGPL-3.0 (copyleft incompatible)
 
 **Apache-2.0 Projects:**
-- ✓ Can use: MIT, Apache-2.0, BSD licenses, permissive licenses
-- ⚠ Caution: GPL-2.0 (patent clause incompatible)
-- ✗ High risk: AGPL-3.0 (strong copyleft)
+-  Can use: MIT, Apache-2.0, BSD licenses, permissive licenses
+-  Caution: GPL-2.0 (patent clause incompatible)
+-  High risk: AGPL-3.0 (strong copyleft)
 
 **GPL-3.0 Projects:**
-- ✓ Can use: Any license (GPL is "one-way compatible")
-- ⚠ Note: Entire project becomes GPL-3.0 (copyleft contamination)
+-  Can use: Any license (GPL is "one-way compatible")
+-  Note: Entire project becomes GPL-3.0 (copyleft contamination)
 
 ### `bazbom license contamination` - Copyleft Contamination Detection
 
@@ -829,15 +829,15 @@ bazbom license contamination sbom.cyclonedx.json
 ```
 # Copyleft Contamination Report
 
-⚠ HIGH RISK: Found 2 copyleft dependencies
+ HIGH RISK: Found 2 copyleft dependencies
 Found 2 copyleft dependencies. Your entire project may be subject to copyleft terms.
 Affected licenses: GPL-3.0-only, MPL-2.0
 
-✗ CRITICAL RISK: Found 1 strong copyleft (AGPL) dependencies
+ CRITICAL RISK: Found 1 strong copyleft (AGPL) dependencies
 Found 1 strong copyleft (AGPL) dependencies. Network use may trigger source disclosure.
 Affected licenses: AGPL-3.0-only
 
-⚠ Found 1 dependencies with unknown licenses
+ Found 1 dependencies with unknown licenses
 Legal risk unclear.
 Affected licenses: Unknown
 ```
@@ -978,8 +978,8 @@ bazbom fix --llm --pr
 ```bash
 # Apply all available fixes
 bazbom fix --apply
-  ✓ Updated log4j-core: 2.17.0 → 2.21.1
-  ✓ Updated spring-web: 5.3.20 → 5.3.31
+   Updated log4j-core: 2.17.0 → 2.21.1
+   Updated spring-web: 5.3.20 → 5.3.31
   
 [bazbom] Apply Results:
   Applied: 2
@@ -1010,7 +1010,7 @@ bazbom fix --pr
 7. **PR Creation:** Opens GitHub pull request via API
 
 **PR Content:**
-- **Title:** "🔒 Fix N security vulnerabilities"
+- **Title:** " Fix N security vulnerabilities"
 - **Body:** Markdown table with vulnerability details
   - Package name and version changes
   - Severity and CVE IDs
@@ -1024,11 +1024,11 @@ bazbom fix --pr
 [bazbom] Creating branch: bazbom/fix-vulnerabilities-20251031-142030
 [bazbom] Creating backup before applying fixes...
 [bazbom] Applying fixes...
-  ✓ Updated log4j-core: 2.17.0 → 2.21.1
-  ✓ Updated spring-web: 5.3.20 → 5.3.31
+   Updated log4j-core: 2.17.0 → 2.21.1
+   Updated spring-web: 5.3.20 → 5.3.31
 
 [bazbom] Running tests to verify fixes...
-✅ Tests passed! Fixes applied successfully.
+ Tests passed! Fixes applied successfully.
    Duration: 45.23s
 
 [bazbom] Staging changes...
@@ -1036,7 +1036,7 @@ bazbom fix --pr
 [bazbom] Pushing branch to remote...
 [bazbom] Creating pull request...
 
-✅ Pull request created successfully!
+ Pull request created successfully!
    URL: https://github.com/owner/repo/pull/123
 ```
 
@@ -1083,14 +1083,14 @@ bazbom install-hooks [OPTIONS]
 ```bash
 # Install with default settings
 bazbom install-hooks
-✅ Installed pre-commit hook: .git/hooks/pre-commit
-✅ Configured full scan mode
-✅ Using policy file: bazbom.yml
+ Installed pre-commit hook: .git/hooks/pre-commit
+ Configured full scan mode
+ Using policy file: bazbom.yml
 
 # Install with fast mode (recommended for most projects)
 bazbom install-hooks --fast
-✅ Installed pre-commit hook: .git/hooks/pre-commit
-✅ Configured fast scan mode
+ Installed pre-commit hook: .git/hooks/pre-commit
+ Configured fast scan mode
 
 # Install with custom policy
 bazbom install-hooks --policy custom-policy.yml
@@ -1109,18 +1109,18 @@ bazbom install-hooks --policy custom-policy.yml
 # Developer makes a commit
 $ git commit -m "Add new feature"
 
-🔍 Scanning dependencies with BazBOM...
-📋 Checking policy: bazbom.yml...
+ Scanning dependencies with BazBOM...
+ Checking policy: bazbom.yml...
 
 # If violations found:
-❌ Commit blocked by BazBOM policy violations
+ Commit blocked by BazBOM policy violations
 
 Run 'bazbom scan' to see details
 Run 'bazbom fix --suggest' for remediation guidance
 Or bypass with: git commit --no-verify
 
 # If no violations:
-✅ No policy violations. Proceeding with commit.
+ No policy violations. Proceeding with commit.
 [main abc1234] Add new feature
 ```
 
@@ -1365,7 +1365,7 @@ Findings are mapped to original artifacts:
 
 **Implementation Status:**
 
-✅ **Implemented:**
+ **Implemented:**
 - Maven Shade plugin XML parsing (using quick-xml parser)
 - Gradle Shadow plugin DSL parsing (pattern matching for relocate statements)
 - Nested JAR extraction from fat JARs (using zip library)
@@ -1377,7 +1377,7 @@ Findings are mapped to original artifacts:
 - **SARIF integration**: Shading info included in security reports
 - **Findings integration**: Shading metadata in sca_findings.json
 
-🔄 **Future Enhancements:**
+ **Future Enhancements:**
 - Detailed method/field signature extraction (currently uses bytecode hash for matching)
 - JAR fingerprinting for runtime attribution
 - Advanced Gradle DSL parsing for complex configurations
@@ -1506,15 +1506,15 @@ chmod +x install.sh
 ./install.sh
 ```
 
-**⚠️ Security Note**: Always review scripts before running them, especially when using pipe-to-bash (`| bash`). The recommended approach is to download, inspect, and then execute.
+** Security Note**: Always review scripts before running them, especially when using pipe-to-bash (`| bash`). The recommended approach is to download, inspect, and then execute.
 
 The installer will:
-- ✅ Detect your platform (Linux/macOS, amd64/arm64)
-- ✅ Check prerequisites (Python 3, Git)
-- ✅ Check for RipGrep (optional, enables 100x faster scanning)
-- ✅ Install BazBOM to `~/.bazbom`
-- ✅ Add `bazbom` command to your PATH
-- ✅ Auto-configure Bazel projects (if detected)
+-  Detect your platform (Linux/macOS, amd64/arm64)
+-  Check prerequisites (Python 3, Git)
+-  Check for RipGrep (optional, enables 100x faster scanning)
+-  Install BazBOM to `~/.bazbom`
+-  Add `bazbom` command to your PATH
+-  Auto-configure Bazel projects (if detected)
 
 ### Optional: Install RipGrep for 100x Faster Scanning
 
@@ -1622,7 +1622,7 @@ License distribution:
   Proprietary: 154 files
   GPL-3.0: 0 files
 
-✅ License report saved to: licenses.csv
+ License report saved to: licenses.csv
 ```
 
 ### Container Image Scanning
@@ -1645,7 +1645,7 @@ Extracting myapp:latest layers...
 Scanning for JAR files...
 Scanning for OS packages...
 
-✅ Scan complete:
+ Scan complete:
   JAR files found: 127
   OS package systems: dpkg, apk
 
@@ -1686,7 +1686,7 @@ Dependency Usage Report:
   Undeclared dependencies: 0
   Dependency usage rate: 85.9%
 
-⚠️  49 unused dependencies found
+  49 unused dependencies found
 ```
 
 ### CVE Reference Tracking
@@ -1951,18 +1951,18 @@ Access scan results in subsequent steps:
 The action automatically comments on pull requests with scan results:
 
 ```markdown
-## 🔴 BazBOM Security Scan Results
+##  BazBOM Security Scan Results
 
 **Status:** 2 CRITICAL vulnerabilities found
 
-### 🔴 Critical Issues (2)
+###  Critical Issues (2)
 Review the SARIF report for details.
 
 **Total vulnerabilities:** 5
 - CRITICAL: 2
 - HIGH: 3
 
-📊 View detailed findings in the Security tab
+ View detailed findings in the Security tab
 ```
 
 ## Container Image SBOM Scanning
@@ -2050,7 +2050,7 @@ bazel run //tools/supplychain:interactive_fix -- \
 ### Example Session
 
 ```
-🔍 Found 3 fixable vulnerabilities
+ Found 3 fixable vulnerabilities
 
 Build system: maven
 ============================================================
@@ -2073,16 +2073,16 @@ Generated fix:
 </dependency>
 
 Apply fix? [y/N/skip all] y
-✅ Fix queued for application
+ Fix queued for application
 
 ...
 
 ============================================================
 Applying 2 fixes...
 ============================================================
-✓ Updated pom.xml
+ Updated pom.xml
 
-✅ Successfully applied 2 fixes
+ Successfully applied 2 fixes
 
 Next steps:
   1. Review changes in pom.xml
@@ -2268,7 +2268,7 @@ bazel run //tools/supplychain:sbom_diff -- \
 
 **Example output:**
 ```
-📦 SBOM DIFF REPORT
+ SBOM DIFF REPORT
 ================================================================================
 
 Comparing:
@@ -2322,7 +2322,7 @@ bazel run //tools/supplychain:drift_detector -- \
 
 **Example output:**
 ```
-⚠️  STATUS: WARNING (non-critical issues found)
+  STATUS: WARNING (non-critical issues found)
 
 Summary:
   Total violations:  2
@@ -2331,10 +2331,10 @@ Summary:
   Warning:           2
 
 DRIFT VIOLATIONS:
-⚠️ [WARNING] DRIFT-001: Unexpected Dependency Additions
+ [WARNING] DRIFT-001: Unexpected Dependency Additions
    Found 7 new dependencies (threshold: 5)
 
-⚠️ [WARNING] DRIFT-003: License Changes Detected
+ [WARNING] DRIFT-003: License Changes Detected
    org.apache.commons:commons-text@1.9
       Apache-2.0 → GPL-3.0
 ```
@@ -2368,24 +2368,24 @@ bazel run //tools/supplychain:changelog_generator -- \
 ```markdown
 # Release Notes: v1.0.0 → v1.1.0
 
-## 📊 Summary
+##  Summary
 
 | Metric | Count |
 |--------|-------|
 | Total Dependencies (old) | 150 |
 | Total Dependencies (new) | 152 |
-| ➕ Added | 3 |
-| ➖ Removed | 1 |
-| ⬆️ Upgraded | 5 |
-| ⬇️ Downgraded | 0 |
+|  Added | 3 |
+|  Removed | 1 |
+|  Upgraded | 5 |
+|  Downgraded | 0 |
 
-## ➕ New Dependencies (3)
+##  New Dependencies (3)
 
 - **io.grpc:grpc-netty** `1.50.0`
   - License: `Apache-2.0`
   - PURL: `pkg:maven/io.grpc/grpc-netty@1.50.0`
 
-## ⬆️ Upgraded Dependencies (5)
+##  Upgraded Dependencies (5)
 
 - **com.google.guava:guava**: `30.1-jre` → `31.1-jre`
 - **org.slf4j:slf4j-api**: `1.7.32` → `2.0.0`
@@ -2489,12 +2489,12 @@ Enriched findings include:
 #### Priority Summary
 
 ```bash
-📊 Priority Summary:
-  🚨 P0 - IMMEDIATE (KEV):     2  ← FIX NOW
-  🔴 P1 - CRITICAL:            5  ← This week
-  🟠 P2 - HIGH:                8  ← This sprint
-  🟡 P3 - MEDIUM:              6  ← Next quarter
-  🟢 P4 - LOW:                 2  ← Backlog
+ Priority Summary:
+   P0 - IMMEDIATE (KEV):     2  ← FIX NOW
+   P1 - CRITICAL:            5  ← This week
+   P2 - HIGH:                8  ← This sprint
+   P3 - MEDIUM:              6  ← Next quarter
+   P4 - LOW:                 2  ← Backlog
 ```
 
 #### Advanced Enrichment Options
@@ -3256,7 +3256,7 @@ Get instant vulnerability warnings and fixes without leaving IntelliJ IDEA.
    cd crates/bazbom-intellij-plugin
    ./gradlew buildPlugin
    ```
-2. In IntelliJ IDEA: **Settings** → **Plugins** → **⚙️** → **Install Plugin from Disk**
+2. In IntelliJ IDEA: **Settings** → **Plugins** → **** → **Install Plugin from Disk**
 3. Select `build/distributions/bazbom-intellij-plugin-*.zip`
 4. Restart IDE
 
@@ -3268,9 +3268,9 @@ View your project's dependency tree with security status indicators:
 
 - **Tool Window**: Access via **View** → **Tool Windows** → **BazBOM**
 - **Color-coded dependencies**:
-  - 🔴 Red = CRITICAL vulnerabilities
-  - 🟡 Yellow = HIGH/MEDIUM vulnerabilities
-  - 🟢 Green = No known vulnerabilities
+  -  Red = CRITICAL vulnerabilities
+  -  Yellow = HIGH/MEDIUM vulnerabilities
+  -  Green = No known vulnerabilities
 - **Grouped by scope**: Compile, Runtime, Test
 - **Quick actions**: Right-click for details, fixes, or VEX exceptions
 
@@ -3283,8 +3283,8 @@ Get inline warnings as you edit build files:
 <dependency>
     <groupId>org.apache.logging.log4j</groupId>
     <artifactId>log4j-core</artifactId>
-    <version>2.17.0</version>  ⚠️ CVE-2021-44832 (MEDIUM): RCE via JDBC Appender
-</dependency>                      💡 Quick Fix: Upgrade to 2.21.1
+    <version>2.17.0</version>   CVE-2021-44832 (MEDIUM): RCE via JDBC Appender
+</dependency>                       Quick Fix: Upgrade to 2.21.1
 ```
 
 Supported files:
@@ -3320,10 +3320,10 @@ Configure plugin behavior:
 
 1. Open **Settings/Preferences** → **Tools** → **BazBOM**
 2. Available options:
-   - ☑ Enable real-time scanning
-   - ☑ Show inline warnings
-   - ☑ Auto-scan on file save
-   - ☑ Auto-scan on project open
+   -  Enable real-time scanning
+   -  Show inline warnings
+   -  Auto-scan on file save
+   -  Auto-scan on project open
    - Severity thresholds (CRITICAL, HIGH, MEDIUM, LOW)
    - Policy file path
    - BazBOM CLI path
@@ -3436,7 +3436,7 @@ Vulnerabilities appear in:
 
 Fix vulnerabilities with Quick Fix:
 1. Click on warning squiggle
-2. Click **Quick Fix** (💡 icon) or press `Ctrl+.`
+2. Click **Quick Fix** ( icon) or press `Ctrl+.`
 3. Select **"Upgrade to safe version X.Y.Z"**
 
 **3. Commands**
@@ -3548,12 +3548,12 @@ lspconfig.bazbom.setup{}
 
 # 4. Open pom.xml
 # 5. See inline warnings:
-#    <version>2.17.0</version> ⚠️ CVE-2021-44832 (MEDIUM)
+#    <version>2.17.0</version>  CVE-2021-44832 (MEDIUM)
 
 # 6. Press Alt+Enter on warning
 # 7. Select "Upgrade to safe version 2.21.1"
 # 8. Plugin updates version, reloads Maven, runs tests
-# 9. Notification: "✅ Tests passed. Dependency upgraded."
+# 9. Notification: " Tests passed. Dependency upgraded."
 
 # 10. Commit changes
 # 11. Pre-commit hook validates no policy violations
@@ -3568,10 +3568,10 @@ lspconfig.bazbom.setup{}
 
 # 3. Open build.gradle
 # 4. See Problems panel:
-#    ⚠️ spring-web:5.3.20 has CVE-2024-xxxx (CRITICAL)
+#     spring-web:5.3.20 has CVE-2024-xxxx (CRITICAL)
 
 # 5. Click on problem in file
-# 6. Click Quick Fix (💡)
+# 6. Click Quick Fix ()
 # 7. Select "Upgrade to safe version 5.3.31"
 
 # 8. Run tests: ./gradlew test

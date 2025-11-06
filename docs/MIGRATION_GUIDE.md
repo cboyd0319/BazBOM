@@ -167,7 +167,7 @@ rm -rf ~/.bazbom
 
 The Rust CLI has achieved feature parity with the Python version for core functionality:
 
-### Available in Rust CLI ✅
+### Available in Rust CLI 
 
 - Build system detection (Maven, Gradle, Bazel)
 - SPDX 2.3 output
@@ -178,7 +178,7 @@ The Rust CLI has achieved feature parity with the Python version for core functi
 - Offline mode
 - Basic reachability analysis (via OPAL)
 
-### Coming Soon 🔄
+### Coming Soon 
 
 - Advanced reachability analysis
 - VEX auto-generation
@@ -187,7 +187,7 @@ The Rust CLI has achieved feature parity with the Python version for core functi
 - KEV enrichment
 - CSV export enhancements
 
-### Not Yet Implemented ⏸️
+### Not Yet Implemented 
 
 - Watch mode (continuous scanning)
 - Container SBOM generation
