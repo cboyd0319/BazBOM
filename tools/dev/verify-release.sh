@@ -18,7 +18,7 @@ error() {
 }
 
 success() {
-    echo -e "${GREEN}✓ $1${NC}"
+    echo -e "${GREEN}[OK] $1${NC}"
 }
 
 warn() {
@@ -178,7 +178,7 @@ main() {
     echo "========================================="
     
     if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
-        echo -e "${GREEN}✓ Ready for release!${NC}"
+        echo -e "${GREEN}[OK] Ready for release!${NC}"
         echo ""
         echo "Next steps:"
         echo "  1. git tag -a v$version -m 'Release v$version'"

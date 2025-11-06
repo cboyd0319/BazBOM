@@ -28,7 +28,7 @@ check_dependencies() {
     fi
     
     if [ ${#missing_tools[@]} -gt 0 ]; then
-        echo -e "${YELLOW}⚠️  Missing tools: ${missing_tools[*]}${NC}" >&2
+        echo -e "${YELLOW}WARNING: Missing tools: ${missing_tools[*]}${NC}" >&2
         echo "" >&2
         echo "Installation instructions:" >&2
         for tool in "${missing_tools[@]}"; do
@@ -108,7 +108,7 @@ parse_args() {
 
 # Main watch loop
 watch_dependencies() {
-    echo -e "${BLUE}🔍 BazBOM Watch Mode${NC}"
+    echo -e "${BLUE}BazBOM Watch Mode${NC}"
     echo -e "Workspace: ${GREEN}$WORKSPACE_ROOT${NC}"
     echo -e "Command: ${GREEN}$SCAN_COMMAND${NC}"
     echo ""
@@ -141,7 +141,7 @@ main() {
     
     # Verify workspace exists
     if [ ! -d "$WORKSPACE_ROOT" ]; then
-        echo -e "${YELLOW}⚠️  Workspace directory not found: $WORKSPACE_ROOT${NC}" >&2
+        echo -e "${YELLOW}WARNING: Workspace directory not found: $WORKSPACE_ROOT${NC}" >&2
         exit 1
     fi
     

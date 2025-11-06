@@ -25,7 +25,7 @@ echo ""
 
 # Check if bazbom is available
 if ! command -v bazbom >/dev/null 2>&1; then
-    echo "❌ Error: bazbom not found in PATH"
+    echo "ERROR: Error: bazbom not found in PATH"
     echo ""
     echo "Install options:"
     echo "  1. Homebrew: brew tap cboyd0319/bazbom && brew install bazbom"
@@ -35,13 +35,13 @@ if ! command -v bazbom >/dev/null 2>&1; then
     exit 1
 fi
 
-echo "✓ Found bazbom: $(which bazbom)"
+echo "OK: Found bazbom: $(which bazbom)"
 echo "  Version: $(bazbom --version)"
 echo ""
 
 # Navigate to project directory
 cd "$PROJECT_DIR"
-echo "📁 Project directory: $(pwd)"
+echo "Directory: Project directory: $(pwd)"
 echo ""
 
 # Detect build system
@@ -55,7 +55,7 @@ else
     BUILD_SYSTEM="Unknown"
 fi
 
-echo "🔍 Detected build system: $BUILD_SYSTEM"
+echo "Detected: Detected build system: $BUILD_SYSTEM"
 echo ""
 
 # Check for optional tools
@@ -64,16 +64,16 @@ CODEQL_AVAILABLE=false
 
 if command -v semgrep >/dev/null 2>&1; then
     SEMGREP_AVAILABLE=true
-    echo "✓ Semgrep available: $(semgrep --version | head -1)"
+    echo "OK: Semgrep available: $(semgrep --version | head -1)"
 else
-    echo "⚠️ Semgrep not found (install: pipx install semgrep)"
+    echo "WARNING: Semgrep not found (install: pipx install semgrep)"
 fi
 
 if command -v codeql >/dev/null 2>&1; then
     CODEQL_AVAILABLE=true
-    echo "✓ CodeQL available: $(codeql version --format=terse 2>/dev/null || echo 'unknown')"
+    echo "OK: CodeQL available: $(codeql version --format=terse 2>/dev/null || echo 'unknown')"
 else
-    echo "⚠️ CodeQL not found (optional for deep analysis)"
+    echo "WARNING: CodeQL not found (optional for deep analysis)"
 fi
 
 echo ""
@@ -91,7 +91,7 @@ bazbom scan . \
     --no-upload
 
 echo ""
-echo "✓ Fast scan complete!"
+echo "OK: Fast scan complete!"
 echo "  Outputs in: $OUTPUT_DIR/fast-scan/"
 echo "  - sbom/spdx.json - SPDX 2.3 SBOM"
 echo "  - findings/sca.sarif - SCA findings"
@@ -122,7 +122,7 @@ if [ "$SEMGREP_AVAILABLE" = true ]; then
         --no-upload
     
     echo ""
-    echo "✓ Comprehensive scan complete!"
+    echo "OK: Comprehensive scan complete!"
     echo "  Outputs in: $OUTPUT_DIR/comprehensive-scan/"
     echo "  - sbom/spdx.json - SPDX 2.3 SBOM"
     echo "  - sbom/cyclonedx.json - CycloneDX 1.5 SBOM"
@@ -138,7 +138,7 @@ if [ "$SEMGREP_AVAILABLE" = true ]; then
         echo "  Total findings: $TOTAL_FINDINGS"
     fi
 else
-    echo "⚠️ Skipping comprehensive scan (Semgrep not available)"
+    echo "WARNING: Skipping comprehensive scan (Semgrep not available)"
 fi
 
 echo ""
@@ -161,7 +161,7 @@ if [ "$CODEQL_AVAILABLE" = true ]; then
         --no-upload
     
     echo ""
-    echo "✓ Deep security scan complete!"
+    echo "OK: Deep security scan complete!"
     echo "  Outputs in: $OUTPUT_DIR/deep-scan/"
     echo "  - sbom/ - Both SPDX and CycloneDX SBOMs"
     echo "  - findings/ - SCA, Semgrep, CodeQL findings"
@@ -176,7 +176,7 @@ if [ "$CODEQL_AVAILABLE" = true ]; then
         echo "  Total findings: $TOTAL_FINDINGS"
     fi
 else
-    echo "⚠️ Skipping deep scan (CodeQL not available)"
+    echo "WARNING: Skipping deep scan (CodeQL not available)"
 fi
 
 echo ""
@@ -204,4 +204,4 @@ echo "  - docs/ORCHESTRATED_SCAN.md - Complete guide"
 echo "  - docs/copilot/BAZBOM_INTEGRATION_PLAN.md - Integration plan"
 echo "  - docs/USAGE.md - Command reference"
 echo ""
-echo "✓ Quickstart demo complete!"
+echo "OK: Quickstart demo complete!"

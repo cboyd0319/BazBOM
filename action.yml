@@ -306,7 +306,7 @@ runs:
           exit 1
         fi
         
-        echo "::notice::All policy checks passed ✓"
+        echo "::notice::All policy checks passed"
     
     - name: Comment on PR
       if: github.event_name == 'pull_request'
@@ -317,29 +317,29 @@ runs:
           const criticalCount = ${{ steps.scan.outputs.critical-count }};
           const highCount = ${{ steps.scan.outputs.high-count }};
           
-          let statusEmoji = '✅';
+          let statusIcon = '[PASS]';
           let statusText = 'No vulnerabilities found';
           
           if (criticalCount > 0) {
-            statusEmoji = '🔴';
+            statusIcon = '[CRITICAL]';
             statusText = `${criticalCount} CRITICAL vulnerabilities found`;
           } else if (highCount > 0) {
-            statusEmoji = '🟠';
+            statusIcon = '[WARNING]';
             statusText = `${highCount} HIGH vulnerabilities found`;
           } else if (vulnsFound > 0) {
-            statusEmoji = '🟡';
+            statusIcon = '[INFO]';
             statusText = `${vulnsFound} vulnerabilities found (MEDIUM/LOW)`;
           }
           
-          const comment = `## ${statusEmoji} BazBOM Security Scan Results
+          const comment = `## ${statusIcon} BazBOM Security Scan Results
           
           **Status:** ${statusText}
           
-          ${criticalCount > 0 ? `### 🔴 Critical Issues (${criticalCount})
+          ${criticalCount > 0 ? `### CRITICAL Issues (${criticalCount})
           Review the SARIF report for details.
           ` : ''}
           
-          ${highCount > 0 ? `### 🟠 High Issues (${highCount})
+          ${highCount > 0 ? `### HIGH Issues (${highCount})
           Review the SARIF report for details.
           ` : ''}
           
@@ -347,7 +347,7 @@ runs:
           - CRITICAL: ${criticalCount}
           - HIGH: ${highCount}
           
-          📊 View detailed findings in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)
+          View detailed findings in the [Security tab](https://github.com/${{ github.repository }}/security/code-scanning)
           `;
           
           github.rest.issues.createComment({
