@@ -21,6 +21,7 @@ pub struct RelocationMapping {
 
 /// Represents configuration for a shaded JAR
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 #[allow(non_snake_case)]
 pub struct ShadingConfiguration {
     pub source: String, // "maven-shade-plugin" or "gradle-shadow"
@@ -92,6 +93,7 @@ impl RelocationMapping {
     }
 }
 
+#[allow(dead_code)]
 /// Parse Maven Shade Plugin configuration from pom.xml
 pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfiguration>> {
     if !pom_path.exists() {
@@ -241,6 +243,7 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
 }
 
 /// Parse Gradle Shadow Plugin configuration from build.gradle or build.gradle.kts
+#[allow(dead_code)]
 pub fn parse_gradle_shadow_config(build_file: &Path) -> Result<Option<ShadingConfiguration>> {
     if !build_file.exists() {
         return Ok(None);
@@ -492,6 +495,7 @@ pub fn detect_shading_in_jar(
 
 // Helper functions
 
+#[allow(dead_code)]
 fn parse_gradle_relocate_line(line: &str) -> Option<(String, String)> {
     // Parse patterns like:
     // relocate 'org.apache', 'myapp.shaded.apache'

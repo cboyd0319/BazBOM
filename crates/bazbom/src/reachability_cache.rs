@@ -11,6 +11,7 @@ pub struct CacheMetadata {
     pub timestamp: String,
 }
 
+#[allow(dead_code)]
 /// Generate a cache key from classpath and entrypoints
 pub fn generate_cache_key(classpath: &str, entrypoints: &str) -> String {
     let mut hasher = blake3::Hasher::new();
@@ -20,11 +21,13 @@ pub fn generate_cache_key(classpath: &str, entrypoints: &str) -> String {
     hasher.finalize().to_hex().to_string()
 }
 
+#[allow(dead_code)]
 /// Get the cache directory for reachability results
 pub fn get_cache_dir() -> PathBuf {
     PathBuf::from(".bazbom/cache/reachability")
 }
 
+#[allow(dead_code)]
 /// Load cached reachability result if it exists and is valid
 pub fn load_cached_result(
     cache_dir: &Path,
@@ -61,6 +64,7 @@ pub fn load_cached_result(
     Ok(Some(result))
 }
 
+#[allow(dead_code)]
 /// Save reachability result to cache
 pub fn save_cached_result(
     cache_dir: &Path,

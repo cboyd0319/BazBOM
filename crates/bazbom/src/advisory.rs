@@ -8,6 +8,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
+#[allow(dead_code)]
 /// Load and enrich vulnerabilities from the advisory cache
 pub fn load_advisories<P: AsRef<Path>>(cache_dir: P) -> Result<Vec<Vulnerability>> {
     let cache_dir = cache_dir.as_ref();

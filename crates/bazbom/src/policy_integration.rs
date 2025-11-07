@@ -68,6 +68,7 @@ pub fn convert_to_policy_vuln_with_reachability(
     }
 }
 
+#[allow(dead_code)]
 /// Load policy configuration from a YAML file
 pub fn load_policy_config<P: AsRef<Path>>(path: P) -> Result<PolicyConfig> {
     let path = path.as_ref();
@@ -85,11 +86,13 @@ pub fn load_policy_config<P: AsRef<Path>>(path: P) -> Result<PolicyConfig> {
     Ok(config)
 }
 
+#[allow(dead_code)]
 /// Check vulnerabilities against policy and return violations
 pub fn check_policy(advisory_vulns: &[AdvisoryVuln], policy: &PolicyConfig) -> PolicyResult {
     check_policy_with_reachability(advisory_vulns, policy, None)
 }
 
+#[allow(dead_code)]
 /// Check vulnerabilities against policy with optional reachability information
 pub fn check_policy_with_reachability(
     advisory_vulns: &[AdvisoryVuln],

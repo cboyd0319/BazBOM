@@ -5,6 +5,7 @@
 
 use anyhow::Result;
 
+#[allow(dead_code)]
 #[allow(clippy::too_many_arguments)]
 pub fn handle_legacy_scan(
     _path: String,
