@@ -17,7 +17,7 @@
 Rust provides memory safety by default. Follow these guidelines:
 
 ```rust
-// ✅ GOOD: Use safe Rust APIs
+// GOOD: Use safe Rust APIs
 fn process_package(name: &str) -> Result<(), Error> {
     // String validation with safe Rust
     if !name.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == '_') {
@@ -26,7 +26,7 @@ fn process_package(name: &str) -> Result<(), Error> {
     Ok(())
 }
 
-// ❌ BAD: Avoid unsafe blocks unless absolutely necessary
+// BAD: Avoid unsafe blocks unless absolutely necessary
 unsafe fn risky_operation() {
     // Only use unsafe when required for FFI or performance-critical code
     // Always document why unsafe is necessary
@@ -38,13 +38,13 @@ unsafe fn risky_operation() {
 ```rust
 use anyhow::{Context, Result};
 
-// ✅ GOOD: Validate inputs at boundaries
+// GOOD: Validate inputs at boundaries
 pub fn parse_version(version: &str) -> Result<Version> {
     Version::parse(version)
         .context("Invalid version string")
 }
 
-// ✅ GOOD: Use strong types
+// GOOD: Use strong types
 pub struct PackageName(String);
 
 impl PackageName {
@@ -65,7 +65,7 @@ impl PackageName {
 ```rust
 use quick_xml::de::from_str;
 
-// ✅ GOOD: Use safe XML parsers
+// GOOD: Use safe XML parsers
 fn parse_pom(content: &str) -> Result<Pom> {
     from_str(content).context("Failed to parse POM")
 }
