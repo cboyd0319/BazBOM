@@ -18,7 +18,6 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – zero to first scan with defaults
 - [Quick Start Guide](getting-started/quickstart.md) – five-minute walkthrough with CI tips
 - [Homebrew Installation](getting-started/homebrew-installation.md) – signed packages and tap management
-- [Migration Guide](getting-started/migration-guide.md) – Python legacy → Rust CLI transition
 - [IDE Setup Checklist](getting-started/ide-setup.md) – configure IntelliJ / VS Code extensions
 
 ## User Guide & How-tos
@@ -55,7 +54,6 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 - **[Architecture Overview](ARCHITECTURE.md)** - High-level components, data flow, mini-ADRs
 - [Detailed Architecture](architecture/architecture.md) - Complete implementation details
-- [Current Implementation Notes](architecture/architecture-current.md)
 - [Dependency Graph Analysis](architecture/graph-analysis.md)
 - [ADR Index](ADR/) - Architecture Decision Records
 - [Reference: JVM Build Systems](reference/jvm-build-systems.md), [JVM Language Support](reference/jvm-language-support.md), [ML Features](reference/ml-features.md)
@@ -79,8 +77,6 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Test Plan](development/test-plan.md) and [Testing Guide](development/testing-guide.md)
 - [Test Fixtures](development/test-fixtures.md)
 
-
-
 ## Examples, Benchmarks & Reference Material
 
 - [Examples](examples/) – sample workflows and CI automation
@@ -96,8 +92,6 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 - **[SPDX 2.3 Format](FORMAT_SPDX.md)** - Field mapping, examples, validation, known gaps
 - [Schemas Reference](reference/schemas/README.md)
-
-
 
 ## Quality & Style Standards
 

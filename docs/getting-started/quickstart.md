@@ -28,7 +28,7 @@ Alternative installation routes:
   cargo build --release
   export PATH="$PWD/target/release:$PATH"
   ```
-- **Detailed install notes:** See [Homebrew Installation](./homebrew-installation.md) and [Migration Guide](./migration-guide.md).
+- **Detailed install notes:** See [Homebrew Installation](./homebrew-installation.md).
 
 ## 2. Initialise a workspace
 
