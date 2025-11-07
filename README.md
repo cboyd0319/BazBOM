@@ -92,7 +92,7 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 
 ### What's New (November 2025)
 
-#### Developer Experience (IDE integrations – 95% complete)
+#### Developer Experience (IDE Integrations)
 - **Interactive Init Wizard**: `bazbom init` with guided setup, 20+ policy templates, and first scan
 - **Smart Batch Fixing**: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
 - **TUI Dependency Explorer**: `bazbom explore` for interactive terminal-based dependency browsing
@@ -101,7 +101,7 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 - **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
 - **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
 
-#### Threat Intelligence (95% complete)
+#### Threat Intelligence
 - **Supply Chain Attack Detection**: Proactive detection of malicious packages and typosquatting
 - **Typosquatting Detection**: Identifies packages with names similar to popular libraries (e.g., log4jj vs log4j)
 - **Dependency Confusion**: Detects potential internal namespace hijacking
@@ -109,14 +109,14 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 - **Team Notifications**: Alert via Slack, email, Teams, or GitHub Issues on threat detection
 - **[Full Documentation](docs/security/threat-detection.md)**: Complete guide to threat detection features
 
-#### Container Scanning (60% complete)
+#### Container Scanning (Beta)
 - **OCI Image Analysis**: Scan Docker/OCI container images for Java dependencies
 - **Layer-by-Layer Scanning**: Analyze each container layer independently
 - **Maven Metadata Extraction**: Extract groupId:artifactId:version from JARs
 - **Container SBOM Generation**: Create SBOMs for containerized applications
 - **[Full Documentation](docs/integrations/container-scanning.md)**: Complete guide to container scanning
 
-#### Core Features (Complete)
+#### Core Features
 - **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
 - **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
 - **Homebrew Support**: One-command installation via brew tap
@@ -784,12 +784,7 @@ No external tools. No network access during build (hermetic). Fully reproducible
     <tr>
       <td><strong>Java</strong></td>
       <td>≥ 11</td>
-      <td>JVM runtime</td>
-    </tr>
-    <tr>
-      <td><strong>Python</strong></td>
-      <td>≥ 3.9</td>
-      <td>SBOM generation scripts</td>
+      <td>JVM runtime (for reachability analysis)</td>
     </tr>
     <tr>
       <td><strong>Git</strong></td>
@@ -1144,16 +1139,13 @@ See [Performance Guide](docs/operations/performance.md) for more optimizations.
 - ✅ Reachability analysis, shading detection, SPDX / CycloneDX / SARIF exporters
 - ✅ Homebrew distribution and GitHub Action integration
 
-**In Progress**
-- 🟡 Publish IntelliJ & VS Code extensions to their marketplaces
-- 🟡 Expand real-world testing on large JVM monorepos
-- 🟡 Polish dashboard visuals and documentation ahead of 1.0 GA
-
-**Planned**
+**Future Enhancements**
+- Publish IntelliJ & VS Code extensions to their marketplaces
+- Expand real-world testing on large JVM monorepos
 - GitHub Marketplace publishing and Windows packages (Chocolatey / winget / MSI)
 - Web dashboard refinements and executive reporting
 - Supply-chain threat intelligence alerts and scale/performance work
-- Container scanning hardening, broader language coverage, AI-assisted workflows
+- Container scanning hardening
 - Enterprise distribution bundles (Kubernetes operator, air-gapped tooling)
 
 **Have Input?** [Vote on Features](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
