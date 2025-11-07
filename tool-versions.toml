@@ -2,8 +2,8 @@
 # This file defines the pinned versions of external tools used by BazBOM
 
 # Note: Semgrep is distributed via PyPI and should be installed using:
-# pipx install semgrep==1.141.0
-# or: pip install semgrep==1.141.0
+# pipx install semgrep==1.142.0
+# or: pip install semgrep==1.142.0
 # See: https://semgrep.dev/docs/getting-started/
 [semgrep]
 version = "1.142.0"
