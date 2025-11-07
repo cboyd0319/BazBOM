@@ -208,15 +208,15 @@ where
                         Some(item) => {
                             let result = f(item);
                             {
-                                let mut results = results
-                                    .lock()
-                                    .map_err(|e| anyhow::anyhow!("Results mutex poisoned: {:?}", e))?;
+                                let mut results = results.lock().map_err(|e| {
+                                    anyhow::anyhow!("Results mutex poisoned: {:?}", e)
+                                })?;
                                 results.push(result);
                             }
                             {
-                                let mut completed = completed
-                                    .lock()
-                                    .map_err(|e| anyhow::anyhow!("Completed mutex poisoned: {:?}", e))?;
+                                let mut completed = completed.lock().map_err(|e| {
+                                    anyhow::anyhow!("Completed mutex poisoned: {:?}", e)
+                                })?;
                                 *completed += 1;
                             }
                         }
@@ -420,13 +420,15 @@ mod tests {
         let processor = ParallelProcessor::new(config);
 
         let items = vec![1, 2, 3, 4, 5];
-        let results = processor.process(items, |x| {
-            if x == 3 {
-                Err(anyhow::anyhow!("Error on 3"))
-            } else {
-                Ok(x * 2)
-            }
-        }).unwrap();
+        let results = processor
+            .process(items, |x| {
+                if x == 3 {
+                    Err(anyhow::anyhow!("Error on 3"))
+                } else {
+                    Ok(x * 2)
+                }
+            })
+            .unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -446,16 +448,18 @@ mod tests {
         let progress_updates = Arc::new(Mutex::new(Vec::new()));
         let progress_clone = Arc::clone(&progress_updates);
 
-        let results = processor.process_with_progress(
-            items,
-            |x| {
-                thread::sleep(std::time::Duration::from_millis(10));
-                Ok(x * 2)
-            },
-            move |completed, total| {
-                progress_clone.lock().unwrap().push((completed, total));
-            },
-        ).unwrap();
+        let results = processor
+            .process_with_progress(
+                items,
+                |x| {
+                    thread::sleep(std::time::Duration::from_millis(10));
+                    Ok(x * 2)
+                },
+                move |completed, total| {
+                    progress_clone.lock().unwrap().push((completed, total));
+                },
+            )
+            .unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -529,7 +533,8 @@ mod tests {
             } else {
                 Ok(x * 2)
             }
-        }).unwrap();
+        })
+        .unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -555,7 +560,8 @@ mod tests {
             move |completed, total| {
                 progress_clone.lock().unwrap().push((completed, total));
             },
-        ).unwrap();
+        )
+        .unwrap();
 
         assert_eq!(results.len(), 8);
 
@@ -576,7 +582,8 @@ mod tests {
         let results = process_batched(items, chunk_size, |chunk| {
             // Process each chunk
             chunk.into_iter().map(|x| Ok(x * 2)).collect()
-        }).unwrap();
+        })
+        .unwrap();
 
         assert_eq!(results.len(), 10);
 

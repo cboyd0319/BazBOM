@@ -1,7 +1,7 @@
 use anyhow::Result;
 
 /// Handle the `bazbom fix` command
-/// 
+///
 /// This is a placeholder - the full implementation will be extracted from main.rs
 /// in a subsequent refactoring pass to keep this module under 500 lines.
 #[allow(clippy::too_many_arguments)]

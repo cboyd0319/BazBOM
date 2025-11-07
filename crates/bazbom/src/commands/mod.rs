@@ -3,27 +3,27 @@
 //! This module contains the implementation of all CLI commands, extracted from main.rs
 //! to improve modularity and maintainability.
 
-pub mod scan;
-pub mod policy;
-pub mod fix;
-pub mod license;
+pub mod dashboard;
 pub mod db;
+pub mod explore;
+pub mod fix;
 pub mod hooks;
 pub mod init;
-pub mod explore;
-pub mod dashboard;
-pub mod team;
+pub mod license;
+pub mod policy;
 pub mod report;
+pub mod scan;
+pub mod team;
 
 // Re-export command handlers for convenience
-pub use scan::handle_scan;
-pub use policy::handle_policy;
-pub use fix::handle_fix;
-pub use license::handle_license;
+pub use dashboard::handle_dashboard;
 pub use db::handle_db;
+pub use explore::handle_explore;
+pub use fix::handle_fix;
 pub use hooks::handle_install_hooks;
 pub use init::handle_init;
-pub use explore::handle_explore;
-pub use dashboard::handle_dashboard;
-pub use team::handle_team;
+pub use license::handle_license;
+pub use policy::handle_policy;
 pub use report::handle_report;
+pub use scan::handle_scan;
+pub use team::handle_team;
