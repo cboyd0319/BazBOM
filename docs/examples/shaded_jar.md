@@ -90,7 +90,7 @@ Embedded JARs may lose:
 
 ### Dependency Reconstruction
 
-```python
+```starlark
 # BazBOM analyzes shaded JAR and reconstructs:
 {
   "artifact": "app.jar",

@@ -72,7 +72,7 @@ For the Mermaid source, see [diagrams/architecture.mmd](diagrams/architecture.mm
 The primary user interface and orchestration layer. Responsibilities include:
 
 - **Command parsing & validation** (`clap`) for `scan`, `policy check`, `fix`, `db sync`, `install-hooks`, `report`, and more
-- **Build system detection** across Maven, Gradle, Bazel (with Ant/sbt detection planned)
+- **Build system detection** across Maven, Gradle, Bazel, Ant, and sbt
 - **Workflow orchestration** to wire advisory sync, plugins, policy enforcement, and report generation
 - **Output management** for SBOM (SPDX/CycloneDX), SARIF, HTML dashboard exports
 - **Configuration bootstrapping** (`bazbom init`) including policy templates and first-run scanning
@@ -621,16 +621,6 @@ Integrate with other vulnerability databases:
 - Zero runtime dependencies for core functionality
 - Optional: Build system tools (Maven, Gradle, Bazel) for scanning their respective projects
 - Optional: OPAL JVM helper (included) for bytecode reachability analysis
-
-## Future Enhancements
-
-See [ADR/](ADR/) for architectural decisions and future directions:
-
-- SPDX 3.0 support
-- CycloneDX format support
-- Additional vulnerability databases (Snyk, Grype)
-- License compliance checking
-- Dependency update automation
 
 ### 7. IDE & LSP Tooling
 

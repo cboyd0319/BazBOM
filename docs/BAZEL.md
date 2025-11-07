@@ -54,7 +54,7 @@ brew install bazbom
 
 **Requirement:** `rules_jvm_external` with `maven_install.json`
 
-```python
+```starlark
 # WORKSPACE or MODULE.bazel
 load("@rules_jvm_external//:defs.bzl", "maven_install")
 
@@ -156,7 +156,7 @@ bazbom scan .
 
 **Define custom rule in BUILD file:**
 
-```python
+```starlark
 load("//tools/supplychain:defs.bzl", "sbom_target")
 
 java_binary(
@@ -201,7 +201,7 @@ cat bazel-bin/src/java/app_sbom.spdx.json
 
 ### Example BUILD File
 
-```python
+```starlark
 # src/java/BUILD
 
 java_binary(
@@ -252,7 +252,7 @@ bazbom scan . --bazel-targets //src/java:server --include-test-deps
 
 **Define in tools/supplychain/defs.bzl:**
 
-```python
+```starlark
 def sbom_all(name = "sbom_all"):
     """Generate SBOMs for all JVM targets"""
     native.filegroup(
@@ -263,7 +263,7 @@ def sbom_all(name = "sbom_all"):
 
 **Use in BUILD:**
 
-```python
+```starlark
 load("//tools/supplychain:defs.bzl", "sbom_all")
 
 sbom_all()
@@ -287,7 +287,7 @@ cd bazel-example
 
 **Step 2:** Add WORKSPACE
 
-```python
+```starlark
 # WORKSPACE
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
@@ -309,7 +309,7 @@ maven_install(
 
 **Step 3:** Add BUILD file
 
-```python
+```starlark
 # src/main/java/com/example/BUILD
 
 java_binary(

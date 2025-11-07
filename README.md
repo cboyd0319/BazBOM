@@ -54,7 +54,7 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 - [Performance](#performance)
 - [Security](#security)
 - [Troubleshooting](#troubleshooting)
-- [Roadmap](#roadmap)
+- [Architecture](#architecture)
 - [Documentation](#documentation)
 - [Contributing](#contributing)
 - [Industry Adoption & Use Cases](#industry-adoption--use-cases)
@@ -89,50 +89,6 @@ For multi-language SBOM generation, use specialized tools for each ecosystem.
 - **DevSecOps engineers** automating vulnerability scanning in CI/CD for Java/Kotlin/Scala projects
 - **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
 - **Organizations** with large JVM monorepos (5000+ targets) or multi-repo setups
-
-### What's New (November 2025)
-
-#### Developer Experience (IDE Integrations)
-- **Interactive Init Wizard**: `bazbom init` with guided setup, 20+ policy templates, and first scan
-- **Smart Batch Fixing**: `bazbom fix --interactive` groups fixes by risk, detects conflicts, runs tests
-- **TUI Dependency Explorer**: `bazbom explore` for interactive terminal-based dependency browsing
-- **Web Dashboard**: `bazbom dashboard` with real-time security score and vulnerability visualization
-- **IDE Integration**: IntelliJ IDEA and VS Code plugins with real-time warnings, one-click fixes (code complete, needs marketplace)
-- **Automated Remediation**: `bazbom fix --apply` and `--pr` for automatic dependency upgrades with GitHub PR generation
-- **Pre-Commit Hooks**: Block vulnerable commits with `bazbom install-hooks` (fast mode <10 seconds)
-
-#### Threat Intelligence
-- **Supply Chain Attack Detection**: Proactive detection of malicious packages and typosquatting
-- **Typosquatting Detection**: Identifies packages with names similar to popular libraries (e.g., log4jj vs log4j)
-- **Dependency Confusion**: Detects potential internal namespace hijacking
-- **Threat Intelligence Feeds**: OSV, GHSA, and curated threat database integration
-- **Team Notifications**: Alert via Slack, email, Teams, or GitHub Issues on threat detection
-- **[Full Documentation](docs/security/threat-detection.md)**: Complete guide to threat detection features
-
-#### Container Scanning (Beta)
-- **OCI Image Analysis**: Scan Docker/OCI container images for Java dependencies
-- **Layer-by-Layer Scanning**: Analyze each container layer independently
-- **Maven Metadata Extraction**: Extract groupId:artifactId:version from JARs
-- **Container SBOM Generation**: Create SBOMs for containerized applications
-- **[Full Documentation](docs/integrations/container-scanning.md)**: Complete guide to container scanning
-
-#### Core Features
-- **20+ Policy Templates**: PCI-DSS, HIPAA, FedRAMP, SOC 2, GDPR, ISO 27001, Spring Boot, Android, Kubernetes, and more
-- **Rust-first CLI**: Memory-safe single binary with signed releases and Homebrew distribution
-- **Homebrew Support**: One-command installation via brew tap
-- **Signed Binaries**: All releases signed with Sigstore cosign for supply chain security
-- **SLSA Level 3 Provenance**: Verifiable build integrity
-- **Bytecode Reachability Analysis**: ASM-based call graphs to identify reachable vulnerabilities
-- **Shading Detection**: Automatic detection and attribution of shaded/relocated dependencies
-- **Enterprise Policy System**: YAML + Rego/OPA support with multi-level inheritance and CI gating
-- **License Compliance**: 200+ SPDX licenses, compatibility matrix, obligations tracking, copyleft detection
-- **Zero Telemetry**: No background network calls; explicit offline DB sync
-- **GitHub Action**: Automated security scanning in CI/CD pipelines
-- **Vulnerability Intelligence**: OSV, NVD, GHSA integration with CISA KEV and EPSS enrichment
-- **Universal Build System Support**: Works with Maven, Gradle, and Bazel
-- **Orchestrated Static Analysis**: Optional integration with Semgrep and CodeQL
-- **CSV Export**: Export SBOMs, vulnerabilities, and licenses to spreadsheets
-
 
 ---
 
@@ -1127,57 +1083,26 @@ See [Performance Guide](docs/operations/performance.md) for more optimizations.
 
 ---
 
-## Roadmap
-
-### Current Status (v1.0 candidate)
-
-**Production Ready**
-- ✅ Rust single-binary CLI with signed releases
-- ✅ Build-system plugins for Maven and Gradle (Bazel support via aspects)
-- ✅ Advisory intelligence: OSV / NVD / GHSA with KEV & EPSS enrichment
-- ✅ Policy-as-code with enterprise templates and license compliance
-- ✅ Reachability analysis, shading detection, SPDX / CycloneDX / SARIF exporters
-- ✅ Homebrew distribution and GitHub Action integration
-
-**Future Enhancements**
-- Publish IntelliJ & VS Code extensions to their marketplaces
-- Expand real-world testing on large JVM monorepos
-- GitHub Marketplace publishing and Windows packages (Chocolatey / winget / MSI)
-- Web dashboard refinements and executive reporting
-- Supply-chain threat intelligence alerts and scale/performance work
-- Container scanning hardening
-- Enterprise distribution bundles (Kubernetes operator, air-gapped tooling)
-
-**Have Input?** [Vote on Features](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
-
-
-## Current State & Architecture
+## Architecture
 
 ### 100% Rust Implementation 
 
 BazBOM is fully implemented in Rust. See [Architecture Overview](docs/ARCHITECTURE.md) for complete details.
 
-**Core Features (Production Ready):**
--  Rust CLI with all commands functional
--  Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
--  Policy system with enterprise templates
--  Pre-commit hooks installation
--  Build system detection
--  LSP server for IDE integration
--  SBOM/SARIF/VEX format generation
--  Remediation suggestions
+**Core Components:**
+- Rust CLI with all commands functional
+- Advisory database sync (OSV, NVD, GHSA, KEV, EPSS)
+- Policy system with enterprise templates
+- Pre-commit hooks installation
+- Build system detection
+- LSP server for IDE integration
+- SBOM/SARIF/VEX format generation
+- Remediation suggestions
 
 **Build System Integration:**
--  **Maven projects:** Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
--  **Gradle projects:** Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
--  **Bazel projects:** Native Bazel aspects for dependency extraction
-
-**Features in Beta (Needs Real-World Testing):**
--  `bazbom fix --apply` - Automated dependency upgrades with testing
--  `bazbom fix --pr` - GitHub PR generation with fixes
--  IDE plugins - Code complete, needs marketplace publishing
--  Reachability analysis - ASM-based bytecode analysis
--  Orchestrated scanning - Semgrep/CodeQL integration
+- **Maven projects:** Use `bazbom-maven-plugin` in `plugins/bazbom-maven-plugin/`
+- **Gradle projects:** Use `bazbom-gradle-plugin` in `plugins/bazbom-gradle-plugin/`
+- **Bazel projects:** Native Bazel aspects for dependency extraction
 
 ### Installation Workflows
 

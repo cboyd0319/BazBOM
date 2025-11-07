@@ -41,15 +41,15 @@ This will:
 
 All artifacts are generated in `/tmp/` for inspection.
 
-## What's New: Enhanced Dependency Analysis
+## Dependency Analysis
 
-BazBOM now leverages **maven_install.json** as the source of truth, providing:
+BazBOM leverages **maven_install.json** as the source of truth, providing:
 
- **Complete Transitive Dependencies** - All 7 dependencies (not just direct)
- **SHA256 Checksums** - Verification for all artifacts
- **Dependency Relationships** - Full parent→child mapping
- **Depth Tracking** - Blast radius analysis (max depth: 2)
- **Direct vs Transitive** - Clear classification
+- **Complete Transitive Dependencies** - All dependencies (not just direct)
+- **SHA256 Checksums** - Verification for all artifacts
+- **Dependency Relationships** - Full parent→child mapping
+- **Depth Tracking** - Blast radius analysis
+- **Direct vs Transitive** - Clear classification
 
 ### Example Output
 
@@ -117,8 +117,8 @@ cargo build --release
 ./target/release/bazbom scan . --out-dir ./reports
 
 # View results
-cat ./reports/sbom.spdx.json | python3 -m json.tool | head -50
-cat ./reports/bazel_deps.json | python3 -m json.tool
+cat ./reports/sbom.spdx.json | jq . | head -50
+cat ./reports/bazel_deps.json | jq .
 ```
 
 **Expected output:**
@@ -147,43 +147,36 @@ bazel build :app
 bazel run :app
 ```
 
-## What Each Tool Does
+## BazBOM CLI Features
 
-### extract_maven_deps.py  ENHANCED
-**NEW:** Now reads from maven_install.json (preferred) or WORKSPACE (fallback).
+The `bazbom` CLI provides all functionality for dependency extraction and analysis:
+
+### Dependency Extraction
 
 Extracts complete dependency information:
--  All transitive dependencies from lockfile
--  SHA256 checksums for verification
--  Dependency relationships (parent→child)
--  Direct vs transitive classification
+- All transitive dependencies from lockfile
+- SHA256 checksums for verification
+- Dependency relationships (parent→child)
+- Direct vs transitive classification
 
 **Usage:**
 ```bash
-# With maven_install.json (recommended)
-python3 tools/supplychain/extract_maven_deps.py \
-  --workspace WORKSPACE \
-  --maven-install-json maven_install.json \
-  --output deps.json
+# Scan any project
+bazbom scan . --out-dir ./output
 
-# Fallback to WORKSPACE only
-python3 tools/supplychain/extract_maven_deps.py \
-  --workspace WORKSPACE \
-  --output deps.json \
-  --prefer-lockfile=false
+# Specify build system
+bazbom scan . --build-system bazel --out-dir ./output
 ```
 
-### write_sbom.py  ENHANCED
-**NEW:** Generates SPDX SBOMs with complete transitive relationships.
+### SBOM Generation
 
-Converts dependency JSON into SPDX 2.3 compliant SBOM:
--  SHA256 checksums for all packages
--  Proper DEPENDS_ON relationships
--  Distinguishes direct from transitive deps
--  Package URLs (PURLs) for all artifacts
+Generates SPDX 2.3 compliant SBOMs with complete transitive relationships:
+- SHA256 checksums for all packages
+- Proper DEPENDS_ON relationships
+- Distinguishes direct from transitive deps
+- Package URLs (PURLs) for all artifacts
 
-### graph_generator.py  ENHANCED
-**NEW:** Calculates dependency depth for blast radius analysis.
+### Dependency Graph Analysis
 
 Creates dependency graph visualizations:
 - **JSON format**: Machine-readable graph with depth info
@@ -193,35 +186,34 @@ Creates dependency graph visualizations:
 
 **Usage:**
 ```bash
-# From workspace_deps.json (recommended - has full info)
-python3 tools/supplychain/graph_generator.py \
-  --deps bazel-bin/workspace_deps.json \
-  --output-json /tmp/graph.json \
-  --output-graphml /tmp/graph.graphml
-
-# From SBOM (fallback)
-python3 tools/supplychain/graph_generator.py \
-  --sbom bazel-bin/workspace_sbom.spdx.json \
-  --output-json /tmp/graph.json
+# Generate dependency graph
+bazbom scan . --format graph --out-dir ./output
 ```
 
-### provenance_builder.py
-Generates SLSA provenance v1.0 attestations.
-Documents build environment, inputs, and materials.
+### Provenance Generation
 
-### osv_query.py
-Queries OSV (Open Source Vulnerabilities) database.
-Checks each package for known security vulnerabilities.
+The BazBOM CLI generates SLSA provenance v1.0 attestations:
+- Build environment details
+- Input materials
+- Build timestamps
 
-### sarif_adapter.py
-Converts vulnerability findings into SARIF 2.1.0 format.
-Enables upload to GitHub Code Scanning for security alerts.
+### Vulnerability Scanning
+
+BazBOM queries vulnerability databases:
+- OSV (Open Source Vulnerabilities)
+- NVD (National Vulnerability Database)
+- GHSA (GitHub Security Advisories)
+- CISA KEV (Known Exploited Vulnerabilities)
+
+### SARIF Output
+
+Converts vulnerability findings into SARIF 2.1.0 format for GitHub Code Scanning integration.
 
 ## Viewing Generated Artifacts
 
 ### SBOM (SPDX)
 ```bash
-cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool | less
+cat bazel-bin/workspace_sbom.spdx.json | jq . | less
 ```
 
 Key sections:
@@ -229,13 +221,13 @@ Key sections:
 - `packages`: List of all dependencies with PURLs and checksums
 - `relationships`: Complete dependency graph (DEPENDS_ON)
 
-**NEW:** Each package now includes:
+Each package includes:
 - `checksums`: SHA256 for verification
 - `externalRefs`: PURLs for ecosystem identification
 
 ### Dependency Graph (JSON)
 ```bash
-cat /tmp/demo_graph.json | python3 -m json.tool | less
+cat /tmp/demo_graph.json | jq . | less
 ```
 
 Structure:
@@ -250,7 +242,7 @@ Import into visualization tools:
 
 ### SLSA Provenance
 ```bash
-cat /tmp/demo_provenance.json | python3 -m json.tool | less
+cat /tmp/demo_provenance.json | jq . | less
 ```
 
 Contains:
