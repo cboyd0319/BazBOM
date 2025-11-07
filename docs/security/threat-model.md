@@ -314,7 +314,7 @@ jobs:
 - HTTPS certificate validation
 - OSV response schema validation
 - Manual review of high-severity alerts
-- Multiple vulnerability sources (future)
+- Multiple vulnerability sources (OSV, NVD, GHSA, KEV, EPSS)
 
 ### Scenario 3: SBOM Tampering
 

@@ -23,8 +23,6 @@ BazBOM has undergone comprehensive security hardening following PYSEC_OMEGA stan
 |--------|-------|-------------|
 |  FIXED | 2 | Critical security vulnerabilities addressed |
 |  MITIGATED | 8 | False positives suppressed with justification |
-|  IN PROGRESS | 0 | Currently being addressed |
-|  PLANNED | 0 | Scheduled for future releases |
 |  HARDENED | 15+ | Additional security controls implemented |
 
 ## Recent Security Enhancements (2025-10-20)

@@ -97,7 +97,7 @@ add-snippets: ${{ github.event_name != 'pull_request' }}
 - Timeout errors despite optimizations
 - Large SARIF files (>10MB)
 
-## Future Optimizations
+## Additional Optimizations
 
 ### If Timeouts Persist
 

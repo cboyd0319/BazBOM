@@ -606,20 +606,6 @@ bazbom scan . --target //my/package:*
 
 ---
 
-## Future Enhancements
-
-### Scale & Performance
-- [ ] Memory optimization for 50K+ target Bazel monorepos
-- [ ] Profile-guided optimization (PGO)
-- [ ] Advanced query caching
-
-### Distribution
-- [ ] Windows binary optimization
-- [ ] GitHub Marketplace listing
-- [ ] Homebrew bottles
-
----
-
 ## References
 
 - [Maven Documentation](https://maven.apache.org/guides/)

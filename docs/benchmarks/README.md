@@ -14,8 +14,6 @@ The benchmark suite measures:
 
 - **bazbom** - This tool (BazBOM)
 - **syft** - Anchore Syft
-- **trivy** - Aqua Security Trivy (planned)
-- **cdxgen** - CycloneDX Generator (planned)
 
 ## Repository Sizes
 
