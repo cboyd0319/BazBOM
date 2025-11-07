@@ -1,8 +1,8 @@
 # BazBOM Secure Coding Guide
 
-This guide provides security best practices for contributors to BazBOM, following PYSEC_OMEGA standards.
+> **NOTE**: This guide contains both current Rust best practices and historical Python security patterns from the legacy implementation. BazBOM is now 100% memory-safe Rust.
 
-## General Principles
+## General Principles (Universal)
 
 1. **Never trust user input** - Validate and sanitize all external data
 2. **Fail securely** - Default deny, explicit allow
@@ -10,7 +10,70 @@ This guide provides security best practices for contributors to BazBOM, followin
 4. **Least privilege** - Minimal permissions required
 5. **Secure defaults** - Safe by default, opt-in to risky behavior
 
-## Python Security Patterns
+## Rust Security Patterns (Current)
+
+### Memory Safety
+
+Rust provides memory safety by default. Follow these guidelines:
+
+```rust
+// ✅ GOOD: Use safe Rust APIs
+fn process_package(name: &str) -> Result<(), Error> {
+    // String validation with safe Rust
+    if !name.chars().all(|c| c.is_alphanumeric() || c == '.' || c == '-' || c == '_') {
+        return Err(Error::InvalidPackageName(name.to_string()));
+    }
+    Ok(())
+}
+
+// ❌ BAD: Avoid unsafe blocks unless absolutely necessary
+unsafe fn risky_operation() {
+    // Only use unsafe when required for FFI or performance-critical code
+    // Always document why unsafe is necessary
+}
+```
+
+### Input Validation
+
+```rust
+use anyhow::{Context, Result};
+
+// ✅ GOOD: Validate inputs at boundaries
+pub fn parse_version(version: &str) -> Result<Version> {
+    Version::parse(version)
+        .context("Invalid version string")
+}
+
+// ✅ GOOD: Use strong types
+pub struct PackageName(String);
+
+impl PackageName {
+    pub fn new(name: String) -> Result<Self> {
+        if name.is_empty() {
+            anyhow::bail!("Package name cannot be empty");
+        }
+        if name.contains("..") || name.contains('/') {
+            anyhow::bail!("Package name contains invalid characters");
+        }
+        Ok(PackageName(name))
+    }
+}
+```
+
+### XML Parsing
+
+```rust
+use quick_xml::de::from_str;
+
+// ✅ GOOD: Use safe XML parsers
+fn parse_pom(content: &str) -> Result<Pom> {
+    from_str(content).context("Failed to parse POM")
+}
+```
+
+## Historical: Python Security Patterns
+
+> **Note**: The following patterns are from the legacy Python implementation and are kept for historical reference.
 
 ### Input Validation
 

@@ -1,6 +1,14 @@
 # Dependency Management Guide
 
-This document describes how BazBOM manages Python dependencies following PYSEC_OMEGA security standards.
+> **HISTORICAL DOCUMENT**: This document describes Python dependency management from the legacy implementation. BazBOM is now 100% Rust. For current dependency management, see `Cargo.toml` and `Cargo.lock` files in the repository root and crate directories.
+>
+> **Rust Dependencies**: Managed via Cargo with `Cargo.lock` ensuring reproducible builds. Run `cargo update` to update dependencies, `cargo audit` for security scanning.
+
+---
+
+## Historical: Python Dependency Management
+
+This section describes how BazBOM previously managed Python dependencies following PYSEC_OMEGA security standards.
 
 ## Overview
 
