@@ -648,7 +648,7 @@ When filing bugs, include:
 - OS: macOS 13.5 / Windows 11 / Ubuntu 22.04
 - IDE: VS Code 1.84 / IntelliJ IDEA 2024.1 Community
 - Plugin Version: 1.0.0
-- BazBOM CLI Version: 0.5.1
+- BazBOM CLI Version: 1.0.0
 
 **Steps to Reproduce:**
 1. [Step 1]

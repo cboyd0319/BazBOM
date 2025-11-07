@@ -873,8 +873,8 @@ bazbom policy check --default-policy
 
 ```bash
 # Download both files
-curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz
-curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz.sig
+curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz
+curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz.sig
 
 # Install cosign
 brew install cosign

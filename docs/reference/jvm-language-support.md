@@ -758,4 +758,4 @@ let query = get_jvm_rule_query("//java/...");
 ---
 
 **Last Verified:** 2025-11-04  
-**BazBOM Version:** 0.5.1+
+**BazBOM Version:** 1.0.0+

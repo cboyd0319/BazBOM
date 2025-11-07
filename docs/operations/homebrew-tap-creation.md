@@ -56,25 +56,25 @@ homebrew-bazbom/
    class Bazbom < Formula
      desc "Build-time SBOM, SCA, and dependency graph for JVM projects"
      homepage "https://github.com/cboyd0319/BazBOM"
-     version "0.1.0"
+     version "1.0.0"
      license "MIT"
 
      on_macos do
        if Hardware::CPU.arm?
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-aarch64-apple-darwin.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-aarch64-apple-darwin.tar.gz"
          sha256 "INSERT_AARCH64_MACOS_SHA256_HERE"
        else
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz"
          sha256 "INSERT_X86_64_MACOS_SHA256_HERE"
        end
      end
 
      on_linux do
        if Hardware::CPU.arm?
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-aarch64-unknown-linux-gnu.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-aarch64-unknown-linux-gnu.tar.gz"
          sha256 "INSERT_AARCH64_LINUX_SHA256_HERE"
        else
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-unknown-linux-gnu.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-unknown-linux-gnu.tar.gz"
          sha256 "INSERT_X86_64_LINUX_SHA256_HERE"
        end
      end
@@ -310,7 +310,7 @@ brew install --verbose bazbom
 brew fetch bazbom --force
 
 # Check download URLs
-curl -I https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz
+curl -I https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz
 ```
 
 ### Binary Not Found After Install

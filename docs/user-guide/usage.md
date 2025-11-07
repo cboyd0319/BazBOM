@@ -1162,13 +1162,13 @@ cd tools/reachability
 mvn clean package
 ```
 
-This creates `target/bazbom-reachability-0.1.0-SNAPSHOT.jar` (~690KB).
+This creates `target/bazbom-reachability-1.0.0.jar` (~690KB).
 
 **Usage:**
 
 ```bash
 # Set environment variable
-export BAZBOM_REACHABILITY_JAR=/path/to/BazBOM/tools/reachability/target/bazbom-reachability-0.1.0-SNAPSHOT.jar
+export BAZBOM_REACHABILITY_JAR=/path/to/BazBOM/tools/reachability/target/bazbom-reachability-1.0.0.jar
 
 # Run scan with reachability analysis
 bazbom scan . --reachability --out-dir ./reports

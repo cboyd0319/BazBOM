@@ -1,6 +1,6 @@
 # Threat Detection & Supply Chain Security
 
-**Status:** Production Ready (Available in BazBOM v0.5.1+)
+**Status:** Production Ready (Available in BazBOM v1.0.0+)
 
 ---
 
@@ -216,7 +216,7 @@ This package has a name suspiciously similar to `popular-package`, which has ove
 
 - **Project:** myapp
 - **Scan Date:** 2024-11-04 19:00:00 UTC
-- **BazBOM Version:** 0.5.1
+- **BazBOM Version:** 1.0.0
 
 ---
 *This issue was automatically created by BazBOM*

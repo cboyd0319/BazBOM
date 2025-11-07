@@ -1,6 +1,6 @@
 # JVM Build Systems Support
 
-**BazBOM Version:** 0.5.1+  
+**BazBOM Version:** 1.0.0+  
 **Last Updated:** 2025-11-04  
 **Status:** Production Ready
 
