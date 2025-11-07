@@ -364,9 +364,9 @@ fi
 - **Staged Rollout**: Start with reporting, gradually enforce
 - **Developer Training**: Educate on supply chain security practices
 
-## Future Enhancements
+## Implementation
 
-### 1. Policy-as-Code
+### Policy-as-Code
 
 YAML/JSON configuration files for policies:
 

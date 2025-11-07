@@ -236,7 +236,7 @@ How BazBOM maps JVM dependency data to SPDX 2.3 specification.
 | Timestamp | `creationInfo.created` | ✅ ISO 8601 |
 | Unique ID | `documentNamespace` | ✅ UUID-based |
 
-### Future Enhancements
+### Additional Features
 
 - **File-level hashes** - For shaded/fat JARs
 - **Annotations** - For VEX statements

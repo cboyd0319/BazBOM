@@ -195,7 +195,7 @@ cat bazel-bin/src/java/app_sbom.spdx.json
 | `scala_binary` | ✅ Full | Via `rules_scala` |
 | `scala_library` | ✅ Full | Via `rules_scala` |
 | `android_binary` | ⚠️ Partial | JVM deps only |
-| `groovy_*` | 🔜 Planned | Not yet |
+| `groovy_*` | ⚠️ Partial | Limited support |
 
 **Default:** Scans all `java_*`, `kotlin_*`, `scala_*` rules
 
