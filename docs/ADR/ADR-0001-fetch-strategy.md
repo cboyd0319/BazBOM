@@ -129,12 +129,6 @@ git commit -m "chore: update dependencies"
 
 Dependencies fetched via rules_jvm_external are automatically included in SBOM generation via aspects.
 
-### Future Enhancements
-
-- Consider supporting private Maven repositories with authentication
-- Explore mirroring strategy for air-gapped environments
-- Evaluate dependency update automation (e.g., Renovate, Dependabot)
-
 ## References
 
 - [rules_jvm_external Documentation](https://github.com/bazelbuild/rules_jvm_external)

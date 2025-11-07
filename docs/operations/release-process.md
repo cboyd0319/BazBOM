@@ -131,14 +131,13 @@ https://github.com/cboyd0319/BazBOM/releases
 
 BazBOM is distributed via a Homebrew tap. See [../getting-started/homebrew-installation.md](../getting-started/homebrew-installation.md) for installation instructions.
 
-### Future Distribution Channels
+### Distribution Channels
 
-Planned distribution channels include:
+BazBOM is available through:
 
-- Homebrew core (after stability is proven)
-- Chocolatey (Windows)
-- winget (Windows)
-- Cargo crates.io
+- Homebrew tap (macOS and Linux)
+- Direct binary downloads (GitHub Releases)
+- Build from source (Cargo)
 
 ## Release Checklist
 

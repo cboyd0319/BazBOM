@@ -172,16 +172,6 @@ println!("Score: {:.2}", score.overall_score);
 println!("Explanation: {}", score.explanation);
 ```
 
-## Future Capabilities
-
-- **Custom Exploit Prediction**: Train models on your specific environment
-- **LLM Migration Guides**: Generate migration guides for breaking changes
-- **Natural Language Policy**: Query policies in natural language
-- **Intelligent Triage**: Auto-categorize vulnerabilities
-- **False Positive Prediction**: Learn from your false positive patterns
-- **Semantic Search**: Find dependencies by semantic similarity
-- **Smart Batch Fixing**: Predict dependency conflicts before fixing
-
 ## Privacy & Security
 
 ### Local-Only Processing

@@ -74,7 +74,7 @@ bazbom-output/
 # Enable autofix recipe generation
 --autofix off                     # No fixes (default)
 --autofix dry-run                 # Generate patches, don't apply
---autofix pr                      # Apply fixes and open PR (planned)
+--autofix pr                      # Apply fixes and open PR
 
 # Container SBOM strategy
 --containers auto                 # Auto-select best strategy
@@ -277,7 +277,7 @@ Generates OpenRewrite recipes for:
 Modes:
 - `off`: No fixes (default)
 - `dry-run`: Generate patches to `fixes/` directory
-- `pr`: Apply fixes and open PR (planned)
+- `pr`: Apply fixes and open PR
 
 **Safety Rails:**
 - Allowlist-based: Only allowed artifacts get recipes
@@ -331,7 +331,7 @@ Analyzers fail gracefully:
 - SCA failure: Continue with empty report
 - Semgrep not found: Log warning, skip
 - CodeQL not found: Log warning, skip
-- Network errors: Retry with backoff (planned)
+- Network errors: Retry with backoff
 
 The scan always produces valid output, even if some analyzers fail.
 

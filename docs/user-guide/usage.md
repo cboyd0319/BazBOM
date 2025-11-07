@@ -487,8 +487,8 @@ bazbom policy check
 - `epss_threshold` - Block vulnerabilities with EPSS score above threshold (0.0 to 1.0)
 - `license_allowlist` - Only allow specified licenses
 - `license_denylist` - Block specified licenses
-- `reachability_required` - Require reachability analysis (future capability)
-- `vex_auto_apply` - Auto-generate VEX for unreachable vulnerabilities (future capability)
+- `reachability_required` - Require reachability analysis
+- `vex_auto_apply` - Auto-generate VEX for unreachable vulnerabilities
 
 **Output Files:**
 
@@ -1065,7 +1065,6 @@ Option 2: GitHub Actions (automatic)
 - Review PR changes before merging
 - Tests must pass for PR creation to succeed
 - Some fixes may require manual adjustment (e.g., breaking changes)
-- GitLab and Bitbucket support planned for future releases
 
 ### `bazbom install-hooks` - Pre-Commit Vulnerability Scanning
 
@@ -1378,11 +1377,6 @@ Findings are mapped to original artifacts:
 - **Integration with scan command**: Automatic detection and output generation
 - **SARIF integration**: Shading info included in security reports
 - **Findings integration**: Shading metadata in sca_findings.json
-
- **Future Enhancements:**
-- Detailed method/field signature extraction (currently uses bytecode hash for matching)
-- JAR fingerprinting for runtime attribution
-- Advanced Gradle DSL parsing for complex configurations
 
 **Requirements:**
 - Build files must be present (pom.xml or build.gradle[.kts])

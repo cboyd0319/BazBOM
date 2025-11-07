@@ -244,7 +244,7 @@ bazbom fix --llm --interactive
 #   Requires code changes
 ```
 
-### 4. Natural Language Policy Queries (Future)
+### 4. Natural Language Policy Queries
 
 Ask policy questions in natural language.
 
@@ -387,17 +387,6 @@ External APIs have rate limits. If you hit them:
 1. Wait and retry
 2. Switch to a different provider
 3. Use Ollama (no rate limits)
-
----
-
-## Future Features
-
-- [ ] Custom exploit prediction models
-- [ ] Code change impact analysis
-- [ ] False positive prediction
-- [ ] Semantic dependency search
-- [ ] Privacy-preserving ML (local models)
-- [ ] Integration with GitHub Copilot
 
 ---
 

@@ -142,18 +142,6 @@ SPDX license identifiers from the [SPDX License List](https://spdx.org/licenses/
 
 - **Format Choice**: JSON chosen over RDF/XML for developer friendliness
 
-## Future Considerations
-
-### SPDX 3.0 Migration
-
-SPDX 3.0 is in development with:
-
-- Improved security metadata
-- Better link integrity
-- Enhanced relationship modeling
-
-**Action**: Monitor SPDX 3.0 spec; plan migration when stable and tools mature.
-
 ### Multi-Format Support
 
 **UPDATE (2025-10-17)**: Multi-format support has been implemented.
