@@ -5,6 +5,7 @@ use bazbom_core::{detect_build_system, write_stub_sbom};
 use std::path::PathBuf;
 
 /// Handle legacy scan command
+#[allow(dead_code)]  // Used from commands module
 #[allow(clippy::too_many_arguments)]
 pub fn handle_legacy_scan(
     path: String,
