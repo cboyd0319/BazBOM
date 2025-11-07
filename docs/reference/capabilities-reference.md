@@ -429,7 +429,7 @@ bazel run //tools/supplychain:scan_container -- myimage:latest
 - Batch query optimization: Efficient for large dependency lists
 
 **Implementation:**
-- `bazbom-advisories` crate: 683 tests, full coverage
+- `bazbom-advisories` crate: Multiple modules, comprehensive coverage
 - OSV batch API integration
 - NVD CPE matching
 - GHSA GraphQL queries
@@ -1154,7 +1154,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - ProGuard/R8 configuration awareness
 - Multi-variant support (debug, release)
 
-**Code:** `crates/bazbom/src/android.rs` (18KB, comprehensive)
+**Code:** `crates/bazbom/src/android.rs` (comprehensive implementation)
 
 ### Kotlin Multiplatform
 
@@ -1170,7 +1170,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Common/platform-specific separation
 - Source set awareness
 
-**Code:** `crates/bazbom/src/kotlin_multiplatform.rs` (15KB)
+**Code:** `crates/bazbom/src/kotlin_multiplatform.rs`
 
 ### Sbt (Scala Build Tool)
 
@@ -1185,7 +1185,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Cross-building support
 - Plugin dependency tracking
 
-**Code:** `crates/bazbom/src/sbt.rs` (12KB)
+**Code:** `crates/bazbom/src/sbt.rs`
 
 ### Apache Ant
 
@@ -1200,7 +1200,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Maven Ant Tasks support
 - Manual dependency tracking
 
-**Code:** `crates/bazbom/src/ant.rs` (14KB)
+**Code:** `crates/bazbom/src/ant.rs`
 
 ### Buildr (Ruby-based Build Tool)
 
@@ -1215,7 +1215,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Gem dependency detection
 - Maven repository support
 
-**Code:** `crates/bazbom/src/buildr.rs` (14KB)
+**Code:** `crates/bazbom/src/buildr.rs`
 
 ### Clojure Projects
 
@@ -1231,7 +1231,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Maven Central integration
 - Git dependencies
 
-**Code:** `crates/bazbom/src/clojure.rs` (15KB)
+**Code:** `crates/bazbom/src/clojure.rs`
 
 ### Groovy Projects
 
@@ -1246,7 +1246,7 @@ Beyond the primary Maven/Gradle/Bazel support, BazBOM includes specialized detec
 - Grape dependency resolution
 - Maven/Ivy support
 
-**Code:** `crates/bazbom/src/groovy.rs` (16KB)
+**Code:** `crates/bazbom/src/groovy.rs`
 
 ---
 
@@ -1367,7 +1367,7 @@ BazBOM is the **universal JVM supply chain security solution** for modern develo
 - This document is the **single source of truth** for BazBOM capabilities
 - When adding or changing features, update this file AND the README feature list
 - Validate examples and links: `pre-commit run --all-files`
-- Verify statistics: Run `cargo test --workspace | grep "test result"` for test count
+- Verify statistics: Run `cargo test --workspace --all-features` for current test count
 
 **Version**: 1.0  
 **Last Updated**: 2025-11-07  
