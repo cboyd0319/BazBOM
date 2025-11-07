@@ -9,7 +9,7 @@ repository = "https://github.com/cboyd0319/BazBOM"
 
 [dependencies]
 # Terminal UI framework
-ratatui = "0.28"
+ratatui = "0.29"
 crossterm = "0.29"
 
 # Data structures and serialization
@@ -21,4 +21,4 @@ anyhow = "1.0"
 bazbom-core = { path = "../bazbom-core", version = "1.0.0" }
 
 # Utilities
-unicode-width = "0.1"
+unicode-width = "0.2"

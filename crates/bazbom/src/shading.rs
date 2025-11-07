@@ -106,7 +106,7 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
     }
 
     let mut reader = Reader::from_str(&content);
-    reader.trim_text(true);
+    reader.config_mut().trim_text(true);
 
     let mut relocations = Vec::new();
     let mut in_shade_plugin = false;
@@ -137,7 +137,8 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
                     b"artifactId" => {
                         // Check if this is maven-shade-plugin
                         if let Ok(Event::Text(text)) = reader.read_event_into(&mut buf) {
-                            if text.unescape().ok().as_deref() == Some("maven-shade-plugin") {
+                            let text_str = reader.decoder().decode(text.as_ref()).ok();
+                            if text_str.as_deref() == Some("maven-shade-plugin") {
                                 in_shade_plugin = true;
                             }
                         }
@@ -163,7 +164,7 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
                 }
             }
             Ok(Event::Text(e)) => {
-                let text = e.unescape().unwrap_or_default().to_string();
+                let text = reader.decoder().decode(e.as_ref()).unwrap_or_default().to_string();
                 if in_pattern {
                     current_pattern = text;
                 } else if in_shaded_pattern {
