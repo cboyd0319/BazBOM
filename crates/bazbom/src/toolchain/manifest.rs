@@ -117,7 +117,7 @@ mod tests {
         let result = loader.get_descriptor("codeql");
         if let Ok(desc) = result {
             assert_eq!(desc.name, "codeql");
-            assert_eq!(desc.version, "2.19.4");
+            assert_eq!(desc.version, "2.23.3");
             assert!(desc.archive);
             assert!(desc.executable_path.is_some());
         }

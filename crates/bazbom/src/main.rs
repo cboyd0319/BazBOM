@@ -590,7 +590,8 @@ fn main() -> Result<()> {
                                     .ok()
                                     .map(|dt| {
                                         let now = chrono::Utc::now();
-                                        let duration = now.signed_duration_since(dt.with_timezone(&chrono::Utc));
+                                        let duration = now
+                                            .signed_duration_since(dt.with_timezone(&chrono::Utc));
                                         duration.num_days().max(0) as u32
                                     })
                             })
@@ -1103,7 +1104,7 @@ fn main() -> Result<()> {
                             .first()
                             .map(|a| a.package.clone())
                             .unwrap_or_else(|| "unknown".to_string());
-                        
+
                         // Extract version from affected ranges
                         // Prioritize: Introduced > Fixed > LastAffected
                         let version = vuln
@@ -1295,11 +1296,12 @@ fn main() -> Result<()> {
                         // Look up the vulnerability to extract CVSS score
                         let cvss_score = prioritized_vulnerabilities
                             .iter()
-                            .find(|v| v.id == suggestion.vulnerability_id || v.aliases.contains(&suggestion.vulnerability_id))
+                            .find(|v| {
+                                v.id == suggestion.vulnerability_id
+                                    || v.aliases.contains(&suggestion.vulnerability_id)
+                            })
                             .and_then(|vuln| {
-                                vuln.severity
-                                    .as_ref()
-                                    .and_then(|s| s.cvss_v3.or(s.cvss_v4))
+                                vuln.severity.as_ref().and_then(|s| s.cvss_v3.or(s.cvss_v4))
                             });
 
                         let build_system_str = format!("{:?}", system);
