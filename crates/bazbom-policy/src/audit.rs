@@ -131,7 +131,7 @@ impl AuditLogger {
         // Create audit log entry
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards");
+            .map_err(|e| std::io::Error::other(format!("Failed to get current time: {}", e)))?;
 
         let entry = AuditLogEntry {
             timestamp: chrono::DateTime::<chrono::Utc>::from(SystemTime::now()).to_rfc3339(),
@@ -204,7 +204,7 @@ impl AuditLogger {
     fn rotate_log_file(&self) -> std::io::Result<()> {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
+            .map_err(std::io::Error::other)?
             .as_secs();
 
         let rotated_name = format!(
@@ -277,7 +277,7 @@ impl AuditLogger {
 
         let cutoff_timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
+            .map_err(std::io::Error::other)?
             .as_secs()
             - (self.config.retention_days as u64 * 86400); // days to seconds
 

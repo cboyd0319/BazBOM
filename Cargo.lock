@@ -344,6 +344,7 @@ dependencies = [
  "tempfile",
  "tokio",
  "toml",
+ "tracing",
  "ureq 3.1.2",
  "urlencoding",
  "walkdir",
@@ -475,6 +476,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -501,6 +503,7 @@ dependencies = [
 name = "bazbom-policy"
 version = "1.0.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "regorus",
  "serde",
