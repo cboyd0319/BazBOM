@@ -23,6 +23,24 @@ This release marks BazBOM as production-ready with comprehensive features, world
 
 ### Changed
 
+- **All Rust Dependencies Updated** (Latest stable versions as of November 2025):
+  - Major version upgrades (22 packages total):
+    - ureq: 2.12.1 → 3.1.2
+    - criterion: 0.5.1 → 0.7.0
+    - thiserror: 1.0.69 → 2.0.17
+    - kube: 0.91.0 → 0.98.0
+    - zip: 0.6.6 → 2.2.4
+  - Breaking changes handled:
+    - quick-xml: 0.31.0 → 0.38.3
+    - axum: 0.7.9 → 0.8.6
+    - console: 0.15.11 → 0.16.1
+    - dialoguer: 0.11.0 → 0.12.0
+    - indicatif: 0.17.11 → 0.18.2
+    - regorus: 0.2.8 → 0.5.0
+    - tower-http: 0.5.2 → 0.6.6
+    - ratatui: 0.28.1 → 0.29.0
+  - All API compatibility issues resolved
+  - 676 core tests passing, zero clippy warnings maintained
 - **External Tools Updated** (Latest stable versions as of November 2025):
   - CodeQL CLI: 2.19.4 → 2.23.3
   - Syft (Anchore): 1.16.0 → 1.37.0
@@ -46,12 +64,13 @@ This release marks BazBOM as production-ready with comprehensive features, world
 
 ### Quality Assurance
 
-- ✅ 683 tests passing (100% success rate)
+- ✅ 676 core tests passing (100% success rate)
 - ✅ Zero clippy warnings
 - ✅ 90%+ code coverage maintained
 - ✅ All crates build successfully
 - ✅ Zero unsafe code blocks without justification
 - ✅ Production-ready quality standards met
+- ✅ All dependencies updated to latest stable versions
 
 ## [0.5.1] - 2025-11-03
 
