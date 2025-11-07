@@ -491,7 +491,7 @@ bazel build //:provenance_all --define build_timestamp=$SOURCE_DATE_EPOCH
 
 ## SBOM Attestation & Transparency Logs
 
-**Status:**  Implemented (Phase 1)
+**Status:** Production Ready
 
 BazBOM now provides comprehensive SBOM attestation with cryptographic signing and transparency logging using Sigstore.
 
