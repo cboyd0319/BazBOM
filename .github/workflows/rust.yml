@@ -32,7 +32,7 @@ jobs:
       
       - uses: dtolnay/rust-toolchain@stable
       
-      - uses: Swatinem/rust-cache@v2.8.1
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
           shared-key: "rust-build"
       
@@ -62,18 +62,20 @@ jobs:
         with:
           components: llvm-tools-preview
       
-      - uses: Swatinem/rust-cache@v2.8.1
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
           shared-key: "rust-coverage"
       
       - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
+        uses: taiki-e/install-action@0ef486444ebe65689986d037f4b61d8292b5a4ed # v2 (Nov 7, 2025)
+        with:
+          tool: cargo-llvm-cov
       
       - name: Generate coverage
         run: cargo llvm-cov --workspace --all-features --lcov --output-path lcov.info
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5.5.1
+        uses: codecov/codecov-action@5a10915e8d2fb18b09c7bb74c9b9dd9dcfb07e25 # v5.5.1
         with:
           files: ./lcov.info
           flags: rust
