@@ -6,59 +6,59 @@
 # or: pip install semgrep==1.141.0
 # See: https://semgrep.dev/docs/getting-started/
 [semgrep]
-version = "1.141.0"
+version = "1.142.0"
 install_method = "pypi"  # Not downloaded by BazBOM - user must install via pip/pipx
 
 [codeql]
-version = "2.19.4"
+version = "2.23.3"
 
 [codeql.linux_x86_64]
-url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-linux64.zip"
-sha256 = "1bdc1f9c1d0938dc3c88b826b33e75a5fcd089127bc388b5a430947e2ee7daad"
+url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.23.3/codeql-linux64.zip"
+sha256 = "9866d7c40aa182b950f99ad4594c9fe36c2172ee9673da1d302dc56fe82183e5"
 archive = true
 executable = "codeql/codeql"
 
 [codeql.macos_x86_64]
-url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-osx64.zip"
-sha256 = "eb283e7f3bde288a7a35269570174c647b2ca997a67c4c50affa053b21f08a34"
+url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.23.3/codeql-osx64.zip"
+sha256 = "37d8e06c3fe21f0a61283c6e95458440cecfef681da539375a8fd2614668b338"
 archive = true
 executable = "codeql/codeql"
 
 [codeql.macos_aarch64]
-url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-osx64.zip"
-sha256 = "eb283e7f3bde288a7a35269570174c647b2ca997a67c4c50affa053b21f08a34"
+url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.23.3/codeql-osx64.zip"
+sha256 = "37d8e06c3fe21f0a61283c6e95458440cecfef681da539375a8fd2614668b338"
 archive = true
 executable = "codeql/codeql"
 
 [codeql.windows_x86_64]
-url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.19.4/codeql-win64.zip"
-sha256 = "95bca559e0ffac8134b0d26ee7ccf2ee3e078b9e592201e699dc1c0fc50b9164"
+url = "https://github.com/github/codeql-cli-binaries/releases/download/v2.23.3/codeql-win64.zip"
+sha256 = "4fd0a039438ddc66f7f178cee9008686fe689f9e06e2cb7adc4bc73622220378"
 archive = true
 executable = "codeql/codeql.exe"
 
 [syft]
-version = "1.16.0"
+version = "1.37.0"
 
 [syft.linux_x86_64]
-url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_linux_amd64.tar.gz"
-sha256 = "38bf84931e898d4d01c39fc806f89ae3eebac56313978dacd96156f1f9f85bc7"
+url = "https://github.com/anchore/syft/releases/download/v1.37.0/syft_1.37.0_linux_amd64.tar.gz"
+sha256 = "b81a0dc81b92265f4597659bba5509e014c78228182804bb1bc97856af26e326"
 archive = true
 executable = "syft"
 
 [syft.linux_aarch64]
-url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_linux_arm64.tar.gz"
-sha256 = "26f4cfd4cf712c24ed208566fb564ace629f5f069c068b8130f2e88e4b58912a"
+url = "https://github.com/anchore/syft/releases/download/v1.37.0/syft_1.37.0_linux_arm64.tar.gz"
+sha256 = "52980b7fd4829ab9561527c775c5adc7ece43eb7f9026e456351cd5b5252fdda"
 archive = true
 executable = "syft"
 
 [syft.macos_x86_64]
-url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_darwin_amd64.tar.gz"
-sha256 = "f654b10a7ab4b18779586450d3b0f9e447017d9c74f1122495e281762d5799e9"
+url = "https://github.com/anchore/syft/releases/download/v1.37.0/syft_1.37.0_darwin_amd64.tar.gz"
+sha256 = "70e00d20e3d0a72d90fdee607986f680cfaccc50c51a66e12030b96df62770cf"
 archive = true
 executable = "syft"
 
 [syft.macos_aarch64]
-url = "https://github.com/anchore/syft/releases/download/v1.16.0/syft_1.16.0_darwin_arm64.tar.gz"
-sha256 = "0b6afa3b2f9448e96b7855e8341445690d0d60b5f6189672f9beab2bbc4250f2"
+url = "https://github.com/anchore/syft/releases/download/v1.37.0/syft_1.37.0_darwin_arm64.tar.gz"
+sha256 = "b676cb2e112fcf5ec25638cca129f5de92f4786a6c4628cd3c307992f1a6a50d"
 archive = true
 executable = "syft"
