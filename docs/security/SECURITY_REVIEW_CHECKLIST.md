@@ -192,11 +192,10 @@ After merge to main:
 
 ## References
 
-- [PYSEC_OMEGA Standards](../docs/strategy/product-roadmap/PYSEC.md)
 - [Secure Coding Guide](SECURE_CODING_GUIDE.md)
 - [Workflow Security Policy](WORKFLOW_SECURITY_POLICY.md)
 - [Risk Ledger](RISK_LEDGER.md)
-- [Threat Model](../docs/security/threat-model.md)
+- [Threat Model](threat-model.md)
 
 ## Checklist Usage
 

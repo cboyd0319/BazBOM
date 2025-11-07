@@ -49,4 +49,4 @@ bazbom-output/
 - Merged SARIF 2.1.0 output
 - deps.dev enrichment
 
-See `docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md` for complete integration details.
+See [Orchestrated Scan Guide](../../docs/integrations/orchestrated-scan.md) for complete integration details.

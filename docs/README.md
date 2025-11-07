@@ -79,12 +79,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Test Plan](development/test-plan.md) and [Testing Guide](development/testing-guide.md)
 - [Test Fixtures](development/test-fixtures.md)
 
-## Strategy & Roadmap
 
-- [Product Roadmap](strategy/roadmap.md)
-- [Implementation Status](strategy/implementation-status.md)
-- [Market Analysis](strategy/market-analysis/)
-- [Product Roadmap Resources](strategy/product-roadmap/) – integration plans, documentation standards, release packaging
 
 ## Examples, Benchmarks & Reference Material
 
@@ -102,15 +97,10 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - **[SPDX 2.3 Format](FORMAT_SPDX.md)** - Field mapping, examples, validation, known gaps
 - [Schemas Reference](reference/schemas/README.md)
 
-## Archive & Historical Notes
 
-- [Archive Index](archive/README.md)
-- [Documentation Consolidation Plan](archive/documentation-consolidation-plan.md)
-- [Phase Documentation](archive/phases/) - Historical roadmap phases
 
 ## Quality & Style Standards
 
-- [Documentation Standards](strategy/product-roadmap/DOCUMENTATION_STANDARDS.md)
 - [Tech Writer Persona](tech_writer_persona.md)
 - Style references: Google Developer Style, Microsoft Writing Style, Diátaxis
 - CI checks: `markdownlint`, `vale`, broken-link checks, example validation

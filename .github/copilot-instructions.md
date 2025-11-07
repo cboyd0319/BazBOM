@@ -39,9 +39,10 @@ Target OS: macOS → Linux → Windows.
 - All canonical docs live under `docs/` only.
 - Allowed root stubs (minimal link‑only): `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `MAINTAINERS.md`.
 - This file (`.github/copilot-instructions.md`) is an operational exception.
-- Standards: see `docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md`.
+- Documentation standards:
   - markdownlint + Vale enforced; active voice; consistent terminology; relative links.
   - ADRs in `docs/ADR/`; images in `docs/images/`; diagrams in `docs/diagrams/`.
+  - Follow tech writer persona guidance in `docs/tech_writer_persona.md`
 
 ## Testing & Coverage Requirements
 
@@ -70,7 +71,7 @@ Target OS: macOS → Linux → Windows.
    - `docs/reference/capabilities-reference.md`
    - `docs/user-guide/usage.md` for CLI changes; examples for Maven/Gradle/Bazel
    - `docs/operations/provenance.md`, `docs/security/vex.md`, `docs/operations/performance.md` as needed
-   - `docs/archive/phases/PHASE_4_PROGRESS.md` for Phase 4 IDE/remediation features
+   - `docs/integrations/ide/ide-integration.md` for IDE/remediation features
 2) Update root `README.md` where applicable (Features bullets, Quickstart snippets, performance table).
 3) If outputs/schemas change: bump schema versions; update JSON Schemas and golden tests.
 4) If GitHub Action changes: update `action.yml`, README snippets, and docs examples.
@@ -104,7 +105,7 @@ Target OS: macOS → Linux → Windows.
 ## Homebrew Tap and Distribution
 
 - Create and use a user‑owned tap before upstreaming to homebrew‑core.
-- See `docs/strategy/product-roadmap/HOMEBREW_TAP.md` for formula template and steps.
+- See `docs/operations/homebrew-tap-creation.md` for formula template and steps.
 - Release assets: macOS (x86_64/arm64), Linux (x86_64/aarch64); signatures + provenance.
 
 ## Sanity Checks Before Merge
@@ -126,9 +127,9 @@ Target OS: macOS → Linux → Windows.
 - [ ] Docs only under `docs/` (except allowed stubs and this file); links valid
 - [ ] Action examples tested; pre‑commit, tests, and build pipelines green
 
-## Phase 4: Developer Experience (IDE Integration)
+## Developer Experience (IDE Integration)
 
-**Status:** In Progress (30% Complete) - See `docs/archive/phases/PHASE_4_PROGRESS.md`
+**Status:** In Progress - See `docs/integrations/ide/ide-integration.md`
 
 ### IDE Plugin Development Rules
 
@@ -207,14 +208,9 @@ Target OS: macOS → Linux → Windows.
 
 ## Additional Sources
 
-- Documentation standards: `docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md`
-- Rust packaging: `docs/strategy/product-roadmap/RUST_PACKAGING_PLAN.md`
-- OPAL reachability plan: `docs/strategy/product-roadmap/REACHABILITY_OPAL.md`
-- Python→Rust porting plan: `docs/strategy/product-roadmap/EPICS_PORTING.md`
-- Repo reorg checklist: `docs/strategy/product-roadmap/REPO_REORG_RECOMMENDATIONS.md`
-- **Phase 4 specification:** `docs/archive/phases/PHASE_4_DEVELOPER_EXPERIENCE.md`
-- **Phase 4 progress:** `docs/archive/phases/PHASE_4_PROGRESS.md`
-- **Implementation roadmap:** `docs/strategy/product-roadmap/IMPLEMENTATION_../docs/strategy/roadmap.md` - 8-week plan for ultimate UX
-- **Strategic roadmap:** `docs/strategy/product-roadmap/STRATEGIC_../docs/strategy/roadmap.md` - 12-18 month vision
+- Tech writer persona: `docs/tech_writer_persona.md`
+- IDE integration: `docs/integrations/ide/ide-integration.md`
+- Architecture documentation: `docs/ARCHITECTURE.md`
+- Development guide: `docs/development/README.md`
 
 Questions? Open a docs issue and tag `@cboyd0319`.

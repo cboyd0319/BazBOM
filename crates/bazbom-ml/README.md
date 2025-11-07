@@ -179,8 +179,8 @@ fn analyze_vulnerability(vuln_data: VulnerabilityData) {
 ## Documentation
 
 - [ML Features Guide](../../docs/reference/ml-features.md) - Complete feature documentation
-- [Phase 10 Spec](../../docs/archive/phases/PHASE_10_AI_INTELLIGENCE.md) - Detailed roadmap
 - [API Documentation](https://docs.rs/bazbom-ml) - API reference (coming soon)
+- [Security Threat Detection](../../docs/security/threat-detection.md) - ML security applications
 
 ## Contributing
 
@@ -201,5 +201,4 @@ Apache 2.0 - See [LICENSE](../../LICENSE) for details.
 ---
 
 **Part of the BazBOM project** - JVM SBOM, SCA, and dependency graph tool  
-**Repository**: https://github.com/cboyd0319/BazBOM  
-**Phase 10 Status**: 5% Complete (Infrastructure established)
+**Repository**: https://github.com/cboyd0319/BazBOM

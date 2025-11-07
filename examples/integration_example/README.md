@@ -103,6 +103,6 @@ cargo test --test orchestration_test
 
 ## Further Reading
 
-- [Integration Plan](../../docs/strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md) - Complete specification
 - [Orchestrated Scan Guide](../../docs/integrations/orchestrated-scan.md) - Usage documentation
-- [Usage Guide](../../docs/user-guide/usage.md) - Command reference
+- [Usage Guide](../../docs/USAGE.md) - Command reference
+- [CI Integration Guide](../../docs/CI.md) - CI/CD workflows
