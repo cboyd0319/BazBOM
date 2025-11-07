@@ -11,7 +11,7 @@ BazBOM now integrates directly into your IDE, providing real-time vulnerability 
 
 ### What's New
 
-BazBOM Phase 4 brings the security scanning experience into your IDE:
+BazBOM brings the security scanning experience into your IDE:
 
 - **Real-time vulnerability warnings** as you edit build files
 - **One-click fixes** to upgrade vulnerable dependencies
@@ -429,12 +429,7 @@ cargo test -p bazbom-lsp
 - [x] Automated testing after upgrades
 - [x] Notification system
 
-### In Progress 
-- [ ] Manual testing with real projects
-- [ ] Performance optimization
-- [ ] Marketplace publishing
-
-### Planned 
+### Future Enhancements 
 - [ ] User analytics (privacy-preserving, opt-in)
 - [ ] Enhanced settings panels
 - [ ] Vulnerability details panel with links

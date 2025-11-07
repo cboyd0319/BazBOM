@@ -47,7 +47,7 @@
 
 ## VS Code Marketplace Checklist
 
-### Phase 1: Asset Preparation (NOT STARTED)
+### Asset Preparation
 
 - [ ] **Icon Created**
   - File: `crates/bazbom-vscode-extension/assets/icon.png`
@@ -100,7 +100,7 @@
   - Store securely (GitHub Secrets)
   - Export: `export VSCE_PAT="..."`
 
-### Phase 3: Package Configuration (PARTIAL)
+### Package Configuration
 
 - [ ] **package.json Updated**
   - [x] Name: `bazbom`
@@ -120,7 +120,7 @@
   npm install -g @vscode/vsce
   ```
 
-### Phase 4: Local Testing (NOT STARTED)
+### Local Testing
 
 - [ ] **Build Extension**
   ```bash
@@ -151,7 +151,7 @@
   - Verify clean installation
   - Check all features again
 
-### Phase 5: Marketplace Publishing (NOT STARTED)
+### Marketplace Publishing
 
 - [ ] **Login to VSCE**
   ```bash
@@ -174,7 +174,7 @@
   - Verify screenshots appear
   - Test "Install" button
 
-### Phase 6: Post-Publishing (NOT STARTED)
+### Post-Publishing
 
 - [ ] **Announcement**
   - [ ] GitHub Release created
@@ -198,7 +198,7 @@
 
 ## IntelliJ Marketplace Checklist
 
-### Phase 1: Asset Preparation (NOT STARTED)
+### Asset Preparation
 
 - [ ] **Icon Created**
   - File: `crates/bazbom-intellij-plugin/src/main/resources/META-INF/pluginIcon.svg`
@@ -231,7 +231,7 @@
   - [ ] Version 1.0.0 entry
   - [ ] Features documented
 
-### Phase 2: Publisher Setup (NOT STARTED)
+### Publisher Setup
 
 - [ ] **JetBrains Account**
   - Create at https://account.jetbrains.com/
@@ -248,7 +248,7 @@
   - Store securely
   - Export: `export JB_TOKEN="..."`
 
-### Phase 3: Plugin Configuration (COMPLETE)
+### Plugin Configuration
 
 - [x] **build.gradle.kts Configured**
   - [x] Plugin name
@@ -266,7 +266,7 @@
   - [x] Extensions registered
   - [x] Actions registered
 
-### Phase 4: Local Testing (NOT STARTED)
+### Local Testing
 
 - [ ] **Build Plugin**
   ```bash
@@ -296,7 +296,7 @@
   - [ ] IntelliJ IDEA Ultimate 2023.3
   - [ ] Android Studio (latest)
 
-### Phase 5: Marketplace Publishing (NOT STARTED)
+### Marketplace Publishing
 
 - [ ] **Publish via Gradle**
   ```bash
@@ -324,7 +324,7 @@
     - Security
   - Respond to feedback if requested
 
-### Phase 6: Post-Publishing (NOT STARTED)
+### Post-Publishing
 
 - [ ] **Announcement**
   - [ ] GitHub Release

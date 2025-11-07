@@ -5,8 +5,7 @@
 > **Implementation Status:** This document uses status indicators:
 > -  **Complete** - Fully implemented and tested
 > -  **Partial** - Working but requires plugins
-> -  **In Progress** - Under active development
-> -  **Planned** - Documented but not yet implemented
+> -  **Beta** - Feature complete, needs real-world testing
 >
 > See [Architecture Overview](../ARCHITECTURE.md) for comprehensive implementation details.
 
