@@ -1,5 +1,7 @@
 # Architecture
 
+> **Quick Reference:** See [../ARCHITECTURE.md](../ARCHITECTURE.md) for a concise architecture overview with mini-ADRs and quick navigation. This document provides comprehensive implementation details.
+
 This document describes the high-level architecture of BazBOM and how its components interact.
 
 ## Overview

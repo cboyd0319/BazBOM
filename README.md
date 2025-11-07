@@ -1232,32 +1232,48 @@ If something doesn't work as documented:
 
 ## Documentation
 
+### Essential Guides (Start Here)
+
+- **[ARCHITECTURE](docs/ARCHITECTURE.md)** - Components, data flow, boundaries, mini-ADRs
+- **[USAGE](docs/USAGE.md)** - Common tasks: generate SBOM locally, in CI, per-target, per-image
+- **[BAZEL](docs/BAZEL.md)** - Aspects, rules, targets, macros, minimal reproducible examples
+- **[CI](docs/CI.md)** - CI recipes for GitHub Actions, GitLab, Jenkins, CircleCI
+- **[FORMAT_SPDX](docs/FORMAT_SPDX.md)** - SPDX 2.3 mapping, fields, known gaps
+- **[INTEGRATIONS](docs/INTEGRATIONS.md)** - Syft/OSV/Dependency-Track/GUAC recipes
+- **[TROUBLESHOOTING](docs/TROUBLESHOOTING.md)** - Top 20 failures with exact error text + fix
+
 ### Getting Started
+
 - **[Quickstart](docs/getting-started/quickstart.md)** - 5-minute setup
-- **[Usage Guide](docs/user-guide/usage.md)** - All commands and workflows
-- **[Installation](docs/getting-started/quickstart.md#1-install-bazbom)** - Detailed setup
+- **[90-Second Quickstart](docs/getting-started/quickstart-90-seconds.md)** - Fastest path to first scan
+- **[Homebrew Installation](docs/getting-started/homebrew-installation.md)** - One-command install
 
 ### Architecture & Design
-- **[Architecture](docs/architecture/architecture.md)** - System design and data flow
+
+- **[Architecture Overview](docs/ARCHITECTURE.md)** - High-level components and decisions
+- **[Detailed Architecture](docs/architecture/architecture.md)** - Complete implementation details
 - **[Supply Chain](docs/security/supply-chain.md)** - SBOM/SCA implementation
 - **[Threat Model](docs/security/threat-model.md)** - Security analysis
 - **[ADRs](docs/ADR/)** - Architecture Decision Records
-- **[Strategic Roadmap](docs/strategy/product-roadmap/STRATEGIC_ROADMAP.md)** - Complete vision and roadmap
 
 ### Advanced Features
-- **[Performance](docs/operations/performance.md)** - Large monorepo optimization
+
+- **[Bazel Monorepo Workflows](docs/examples/bazel-monorepo-workflows.md)** - Large-scale optimization
+- **[Performance](docs/operations/performance.md)** - Tuning for 5000+ targets
 - **[Threat Detection](docs/security/threat-detection.md)** - Supply chain attack detection
 - **[Container Scanning](docs/integrations/container-scanning.md)** - Docker/OCI image analysis
 - **[Provenance](docs/operations/provenance.md)** - SLSA Level 3 attestation
 - **[VEX](docs/security/vex.md)** - False positive management
-- **[Dependency Graphs](docs/architecture/graph-analysis.md)** - Visualization and queries
 
 ### Operations
+
+- **[CI/CD Integration](docs/CI.md)** - Complete CI recipes
 - **[Validation](docs/operations/validation.md)** - SBOM/SARIF schema validation
-- **[Troubleshooting](docs/user-guide/troubleshooting.md)** - Common issues and fixes
-- **[Versioning](docs/operations/versioning.md)** - Release process and semantic versioning
+- **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Quick fixes by symptom
+- **[Versioning](docs/operations/versioning.md)** - Release process
 
 ### Full Documentation Index
+
 See [docs/README.md](docs/README.md) for the complete documentation map.
 
 Documentation Standards
