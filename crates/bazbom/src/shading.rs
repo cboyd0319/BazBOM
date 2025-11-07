@@ -164,7 +164,11 @@ pub fn parse_maven_shade_config(pom_path: &Path) -> Result<Option<ShadingConfigu
                 }
             }
             Ok(Event::Text(e)) => {
-                let text = reader.decoder().decode(e.as_ref()).unwrap_or_default().to_string();
+                let text = reader
+                    .decoder()
+                    .decode(e.as_ref())
+                    .unwrap_or_default()
+                    .to_string();
                 if in_pattern {
                     current_pattern = text;
                 } else if in_shaded_pattern {

@@ -127,14 +127,15 @@ impl DepsDevClient {
             .timeout_global(Some(std::time::Duration::from_secs(10)))
             .build()
             .new_agent();
-        let response = agent.get(&url)
+        let response = agent
+            .get(&url)
             .call()
             .context("deps.dev API request failed")?;
 
         let mut resp = response;
         let json_text = resp.body_mut().read_to_string()?;
-        let deps_dev_resp: DepsDevResponse = serde_json::from_str(&json_text)
-            .context("failed to parse deps.dev response")?;
+        let deps_dev_resp: DepsDevResponse =
+            serde_json::from_str(&json_text).context("failed to parse deps.dev response")?;
 
         // Extract information
         let licenses = deps_dev_resp
@@ -226,7 +227,8 @@ impl DepsDevClient {
             .timeout_global(Some(std::time::Duration::from_secs(10)))
             .build()
             .new_agent();
-        let response = agent.get(&url)
+        let response = agent
+            .get(&url)
             .call()
             .context("deps.dev API request failed for breaking changes")?;
 

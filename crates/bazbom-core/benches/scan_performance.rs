@@ -5,7 +5,7 @@
 
 use bazbom_core::BuildSystem;
 use bazbom_graph::DependencyGraph;
-use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
 /// Benchmark build system detection
 fn bench_build_system_detection(c: &mut Criterion) {

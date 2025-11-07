@@ -52,7 +52,7 @@ impl ToolCache {
         let mut file = fs::File::create(tmp_path).context("create temp file")?;
         let mut hasher = Sha256::new();
         let buffer = resp.body_mut().read_to_vec()?;
-        
+
         file.write_all(&buffer).context("write to temp file")?;
         hasher.update(&buffer);
 
