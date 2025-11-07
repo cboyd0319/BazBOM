@@ -81,7 +81,7 @@
   - [ ] Features documented
   - [ ] Follows Keep a Changelog format
 
-### Phase 2: Publisher Setup (NOT STARTED)
+### Publisher Setup
 
 - [ ] **Azure DevOps Account**
   - Create at https://dev.azure.com/
