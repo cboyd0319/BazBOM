@@ -425,10 +425,9 @@ A: Yes. Set `OLLAMA_MODEL=your-model-name` for any Ollama-compatible model.
 
 ## Related Documentation
 
-- [Phase 10: AI Intelligence](../archive/phases/PHASE_10_AI_INTELLIGENCE.md)
-- [Privacy Policy](../PRIVACY.md)
+- [ML Features](../reference/ml-features.md)
 - [Usage Guide](../user-guide/usage.md)
-- [Installation](INSTALLATION.md)
+- [Threat Detection](../security/threat-detection.md)
 
 ---
 

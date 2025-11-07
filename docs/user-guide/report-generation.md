@@ -574,10 +574,9 @@ tar czf prod-compliance-v2.0.tar.gz prod-compliance-v2.0/
 
 ## Related Documentation
 
-- **[Dashboard Guide](DASHBOARD_GUIDE.md)** - Interactive web dashboard
-- **[Policy Templates](POLICY_TEMPLATES.md)** - Policy configuration
-- **[CLI Reference](CLI_REFERENCE.md)** - Complete command reference
-- **[Phase 6 Specification](../archive/phases/PHASE_6_VISUALIZATION.md)** - Technical details
+- **[Usage Guide](usage.md)** - Core command reference
+- **[Policy Integration](policy-integration.md)** - Policy configuration
+- **[Capabilities Reference](../reference/capabilities-reference.md)** - Complete feature catalog
 
 ---
 

@@ -229,9 +229,9 @@ Bandit flagged hardcoded `/tmp/` paths in test files as insecure temporary file 
 
 ## References
 
-- [PYSEC_OMEGA Documentation](../strategy/product-roadmap/PYSEC.md)
 - [SECURITY.md](../../SECURITY.md)
 - [Threat Model](threat-model.md)
+- [Secure Coding Guide](SECURE_CODING_GUIDE.md)
 
 ---
 

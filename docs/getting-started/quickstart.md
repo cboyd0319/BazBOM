@@ -28,7 +28,7 @@ Alternative installation routes:
   cargo build --release
   export PATH="$PWD/target/release:$PATH"
   ```
-- **Detailed install notes:** See [Homebrew Installation](./homebrew-installation.md) and [Migration Guide](./migration-guide.md).
+- **Detailed install notes:** See [Homebrew Installation](./homebrew-installation.md).
 
 ## 2. Initialise a workspace
 
@@ -89,6 +89,6 @@ More examples are available under [`examples/github-actions`](../../examples) an
 - Explore [IDE integration](../integrations/ide/ide-integration.md) or the [LLM workflow](../integrations/llm-integration.md)
 - Review your organisation’s exposure with the [Threat Model](../security/threat-model.md) and [Threat Detection guide](../security/threat-detection.md)
 - Prepare for release with [Release Process](../operations/release-process.md) and [Versioning](../operations/versioning.md)
-- Keep strategy artefacts in view through the [Product Roadmap](../strategy/roadmap.md)
+- Review the [Capabilities Reference](../reference/capabilities-reference.md) for complete feature catalog
 
 BazBOM is opinionated but flexible—start with the defaults, then layer on reachability, policy enforcement, or orchestrated scans as your maturity grows.

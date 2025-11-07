@@ -137,10 +137,10 @@ BazBOM adheres to:
 
 Comprehensive security documentation:
 
-- [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) - Python security best practices
+- [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) - Security best practices
 - [Risk Ledger](docs/security/RISK_LEDGER.md) - Current security posture and findings
 - [Threat Model](docs/security/threat-model.md) - Attack vectors and mitigations
-- [PYSEC_OMEGA Guide](docs/strategy/product-roadmap/PYSEC.md) - Security standards reference
+- [Workflow Security Policy](docs/security/WORKFLOW_SECURITY_POLICY.md) - CI/CD security
 
 ## Security Metrics
 

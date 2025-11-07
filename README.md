@@ -12,13 +12,13 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 [![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
-[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/strategy/product-roadmap/JVM_FOCUSED_PRIORITIES.md)
+[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/reference/jvm-language-support.md)
 
 [Quickstart](#quickstart) •
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Documentation](docs/README.md) •
-[Docs Standards](docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md) •
+[Tech Writer Persona](docs/tech_writer_persona.md) •
 [Contributing](CONTRIBUTING.md)
 
 </div>
@@ -27,14 +27,14 @@ Universal support for Maven, Gradle, and Bazel • Memory-safe Rust CLI (preview
 
 > **Rust-First Implementation**
 > 
-> BazBOM has completed its transition to a 100% Rust implementation:
+> BazBOM is implemented in 100% memory-safe Rust:
 > - **Memory-Safe Rust CLI** - Fully functional for all commands, policy, and orchestration
 > - **Zero Python Dependencies** - No runtime Python requirements
 > - **Build Plugins** - Maven and Gradle plugins provide deep integration (Java/Kotlin)
 > - **Single Binary** - Easy installation and distribution
 > 
 > **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
-> See [Implementation Status](docs/strategy/implementation-status.md) for detailed feature breakdown.
+> See [Architecture Overview](docs/ARCHITECTURE.md) for detailed implementation breakdown.
 
 ---
 
@@ -1134,18 +1134,9 @@ See [Performance Guide](docs/operations/performance.md) for more optimizations.
 
 ## Roadmap
 
-> ** Complete Product Roadmap**
-> 
-> See [**Master Roadmap (docs/strategy/roadmap.md)**](docs/strategy/roadmap.md) for the complete feature tracking checklist with all phases, distribution channels, and milestones.
->
-> **Quick Links:**
-> - [Distribution & Marketplaces](docs/strategy/roadmap.md#distribution--marketplaces) – channel readiness
-> - [Implementation Roadmap](docs/strategy/product-roadmap/IMPLEMENTATION_ROADMAP.md) – active delivery tracker
-> - [Strategic Vision](docs/strategy/product-roadmap/STRATEGIC_ROADMAP.md) – medium-term investments
+### Current Status (v1.0 candidate)
 
-### Delivery status (v1.0 candidate)
-
-**Shipping now**
+**Production Ready**
 - ✅ Rust single-binary CLI with signed releases
 - ✅ Build-system plugins for Maven and Gradle (Bazel support via aspects)
 - ✅ Advisory intelligence: OSV / NVD / GHSA with KEV & EPSS enrichment
@@ -1153,19 +1144,17 @@ See [Performance Guide](docs/operations/performance.md) for more optimizations.
 - ✅ Reachability analysis, shading detection, SPDX / CycloneDX / SARIF exporters
 - ✅ Homebrew distribution and GitHub Action integration
 
-**Finishing touches**
+**In Progress**
 - 🟡 Publish IntelliJ & VS Code extensions to their marketplaces
 - 🟡 Expand real-world testing on large JVM monorepos
 - 🟡 Polish dashboard visuals and documentation ahead of 1.0 GA
 
-**Queued backlog**
+**Planned**
 - GitHub Marketplace publishing and Windows packages (Chocolatey / winget / MSI)
 - Web dashboard refinements and executive reporting
 - Supply-chain threat intelligence alerts and scale/performance work
 - Container scanning hardening, broader language coverage, AI-assisted workflows
 - Enterprise distribution bundles (Kubernetes operator, air-gapped tooling)
-
-**Detailed tracking:** [Complete Roadmap](docs/strategy/roadmap.md) | [Implementation Status](docs/strategy/implementation-status.md)
 
 **Have Input?** [Vote on Features](https://github.com/cboyd0319/BazBOM/discussions/categories/feature-requests)
 
@@ -1174,7 +1163,7 @@ See [Performance Guide](docs/operations/performance.md) for more optimizations.
 
 ### 100% Rust Implementation 
 
-BazBOM has completed its transition to Rust. See [Implementation Status](docs/strategy/implementation-status.md) for complete details.
+BazBOM is fully implemented in Rust. See [Architecture Overview](docs/ARCHITECTURE.md) for complete details.
 
 **Core Features (Production Ready):**
 -  Rust CLI with all commands functional
@@ -1223,8 +1212,8 @@ BazBOM has completed its transition to Rust. See [Implementation Status](docs/st
 ### Getting Help
 
 If something doesn't work as documented:
-1. Check [Implementation Status](docs/strategy/implementation-status.md)
-2. Review [Troubleshooting Guide](docs/user-guide/troubleshooting.md)
+1. Check [Architecture Overview](docs/ARCHITECTURE.md) for current feature set
+2. Review [Troubleshooting Guide](docs/TROUBLESHOOTING.md)
 3. Open an issue with `documentation` label if docs are incorrect
 4. Open an issue with `bug` label if functionality is broken
 
@@ -1279,7 +1268,7 @@ See [docs/README.md](docs/README.md) for the complete documentation map.
 Documentation Standards
 - All canonical documentation lives under `docs/`.
 - Root files (like `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `MAINTAINERS.md`) are allowed as stubs/entry points.
-- See standards: [docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md](docs/strategy/product-roadmap/DOCUMENTATION_STANDARDS.md).
+- See tech writer persona: [docs/tech_writer_persona.md](docs/tech_writer_persona.md).
 
 ---
 

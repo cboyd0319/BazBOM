@@ -312,8 +312,8 @@ pre-commit run --all-files
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [CWE Top 25](https://cwe.mitre.org/top25/)
-- [PYSEC_OMEGA Guide](../docs/strategy/product-roadmap/PYSEC.md)
 - [Python Security Best Practices](https://python.readthedocs.io/en/stable/library/security_warnings.html)
+- [Workflow Security Policy](WORKFLOW_SECURITY_POLICY.md)
 
 ## Reporting Security Issues
 

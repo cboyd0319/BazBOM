@@ -495,10 +495,10 @@ fi
 
 ## Related Documentation
 
-- [Phase 7 Specification](../archive/phases/PHASE_7_THREAT_INTELLIGENCE.md) - Complete threat detection specification
-- [Policy Configuration](POLICY.md) - Configure threat detection policies
-- [Team Coordination](TEAM_FEATURES.md) - Setup team notifications and assignments
-- [Advisory Database](ADVISORIES.md) - Understanding the vulnerability and threat databases
+- [ML Features](../reference/ml-features.md) - Machine learning capabilities
+- [Threat Model](threat-model.md) - Security threat model
+- [Vulnerability Enrichment](vulnerability-enrichment.md) - Advisory database details
+- [Supply Chain Security](supply-chain.md) - Supply chain security overview
 
 ---
 

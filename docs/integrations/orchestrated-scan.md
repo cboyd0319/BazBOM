@@ -473,7 +473,7 @@ orchestrator.run()?;
 
 ## References
 
-- [Integration Plan](./strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md)
+- [CI Integration Guide](../CI.md)
 - [GitHub Actions Examples](../examples/github-actions/)
 - [SARIF 2.1.0 Spec](https://docs.oasis-open.org/sarif/sarif/v2.1.0/)
 - [deps.dev API](https://docs.deps.dev/)

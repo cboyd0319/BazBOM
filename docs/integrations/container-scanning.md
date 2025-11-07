@@ -565,10 +565,9 @@ bazbom scan --containers=bazbom --no-hashes
 
 ## Related Documentation
 
-- [Phase 9 Specification](../archive/phases/PHASE_9_ECOSYSTEM_EXPANSION.md) - Complete container scanning specification
 - [OCI Image Format](https://github.com/opencontainers/image-spec) - OCI image specification
 - [Docker Save Format](https://docs.docker.com/engine/reference/commandline/save/) - Docker tar format
-- [Container Security](CONTAINER_SECURITY.md) - Best practices for container security
+- [Security Guide](../security/README.md) - Security best practices
 
 ---
 
