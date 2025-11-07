@@ -9,8 +9,6 @@ BazBOM now integrates directly into your IDE, providing real-time vulnerability 
 
 ## Overview
 
-### What's New
-
 BazBOM brings the security scanning experience into your IDE:
 
 - **Real-time vulnerability warnings** as you edit build files
