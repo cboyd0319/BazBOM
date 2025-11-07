@@ -115,9 +115,10 @@ impl Notifier {
             }]
         });
 
+        let payload_str = serde_json::to_string(&payload)?;
         let response = ureq::post(webhook_url)
-            .set("Content-Type", "application/json")
-            .send_json(&payload)
+            .header("Content-Type", "application/json")
+            .send(&payload_str)
             .context("Failed to send Slack notification")?;
 
         if response.status() != 200 {
@@ -169,9 +170,10 @@ impl Notifier {
             }]
         });
 
+        let payload_str = serde_json::to_string(&payload)?;
         let response = ureq::post(webhook_url)
-            .set("Content-Type", "application/json")
-            .send_json(&payload)
+            .header("Content-Type", "application/json")
+            .send(&payload_str)
             .context("Failed to send Microsoft Teams notification")?;
 
         if response.status() != 200 {

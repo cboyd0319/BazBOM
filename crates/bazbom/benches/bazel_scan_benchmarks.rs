@@ -6,7 +6,7 @@
 //! - Bazel query optimization and caching
 //! - Component serialization and deserialization
 
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
 
 /// Benchmark parsing maven_install.json files of various sizes
@@ -20,7 +20,7 @@ fn bench_maven_install_parsing(c: &mut Criterion) {
             b.iter(|| {
                 // Parse JSON
                 let data: serde_json::Value = serde_json::from_str(json).unwrap();
-                black_box(data);
+                std::hint::black_box(data);
             });
         });
     }
@@ -50,7 +50,7 @@ fn bench_spdx_generation(c: &mut Criterion) {
                         relationships.push(format!("DESCRIBES-{}", spdx_id));
                     }
 
-                    black_box((packages, relationships));
+                    std::hint::black_box((packages, relationships));
                 });
             },
         );
@@ -80,7 +80,7 @@ fn bench_query_caching(c: &mut Criterion) {
                     // Simulate cache hits
                     let key = format!("query_{}", cache_size / 2);
                     let result = cache.get(&key);
-                    black_box(result);
+                    std::hint::black_box(result);
                 });
             },
         );
@@ -103,7 +103,7 @@ fn bench_component_serialization(c: &mut Criterion) {
             |b, components| {
                 b.iter(|| {
                     let json = serde_json::to_string(components).unwrap();
-                    black_box(json);
+                    std::hint::black_box(json);
                 });
             },
         );
@@ -114,7 +114,7 @@ fn bench_component_serialization(c: &mut Criterion) {
             |b, json_str| {
                 b.iter(|| {
                     let components: Vec<MockComponent> = serde_json::from_str(json_str).unwrap();
-                    black_box(components);
+                    std::hint::black_box(components);
                 });
             },
         );
@@ -140,7 +140,7 @@ fn bench_dependency_graph_traversal(c: &mut Criterion) {
                     for node in graph.keys() {
                         visited.insert(node.clone());
                     }
-                    black_box(visited.len());
+                    std::hint::black_box(visited.len());
                 });
             },
         );
@@ -157,7 +157,7 @@ fn bench_dependency_graph_traversal(c: &mut Criterion) {
                             all_deps.push((node.clone(), dep.clone()));
                         }
                     }
-                    black_box(all_deps.len());
+                    std::hint::black_box(all_deps.len());
                 });
             },
         );
@@ -189,7 +189,7 @@ fn bench_purl_generation(c: &mut Criterion) {
                             )
                         })
                         .collect();
-                    black_box(purls);
+                    std::hint::black_box(purls);
                 });
             },
         );
@@ -213,7 +213,7 @@ fn bench_parallel_processing(c: &mut Criterion) {
             |b, components| {
                 b.iter(|| {
                     let results: Vec<_> = components.iter().map(simulate_processing).collect();
-                    black_box(results);
+                    std::hint::black_box(results);
                 });
             },
         );
@@ -224,7 +224,7 @@ fn bench_parallel_processing(c: &mut Criterion) {
             |b, components| {
                 b.iter(|| {
                     let results: Vec<_> = components.par_iter().map(simulate_processing).collect();
-                    black_box(results);
+                    std::hint::black_box(results);
                 });
             },
         );

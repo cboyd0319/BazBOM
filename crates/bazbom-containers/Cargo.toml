@@ -17,7 +17,7 @@ log = "0.4"
 tempfile = "3.23"
 reqwest = { version = "0.12", features = ["json", "blocking"] }
 hyperlocal = "0.9"  # For Unix socket support
-zip = "0.6"  # For reading JAR files (which are ZIP archives)
+zip = "2.2"  # For reading JAR files (which are ZIP archives)
 
 [dev-dependencies]
 tempfile = "3.23"

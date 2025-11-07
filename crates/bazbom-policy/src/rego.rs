@@ -130,7 +130,7 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 input.severity == "CRITICAL"
                 msg := "Critical vulnerability detected"
             }
@@ -145,12 +145,12 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 input.severity == "CRITICAL"
                 msg := "Critical vulnerability detected"
             }
             
-            warn[msg] {
+            warn[msg] if {
                 input.severity == "HIGH"
                 msg := "High severity vulnerability"
             }
@@ -173,7 +173,7 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            warn[msg] {
+            warn[msg] if {
                 input.epss > 0.5
                 msg := sprintf("High EPSS score: %v", [input.epss])
             }
@@ -196,12 +196,12 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 input.cve_id
                 msg := sprintf("CVE detected: %s", [input.cve_id])
             }
             
-            allow[msg] {
+            allow[msg] if {
                 input.cve_id == "CVE-2023-12345"
                 input.exception == true
                 msg := "Exception approved for CVE-2023-12345"
@@ -226,7 +226,7 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 vuln := input.vulnerabilities[_]
                 vuln.severity == "CRITICAL"
                 vuln.reachable == true
@@ -262,7 +262,7 @@ mod tests {
         let policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 vuln := input.vulnerabilities[_]
                 vuln.cisa_kev == true
                 msg := sprintf("CISA KEV vulnerability %s must be fixed", [vuln.id])
@@ -292,7 +292,7 @@ mod tests {
         let invalid_policy = r#"
             package bazbom
             
-            deny[msg] {
+            deny[msg] if {
                 this is not valid rego
             }
         "#;

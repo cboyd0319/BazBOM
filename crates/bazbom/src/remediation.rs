@@ -1153,26 +1153,26 @@ fn create_github_pr(
         "base": config.base_branch,
     });
 
-    let response = ureq::post(&api_url)
-        .set("Authorization", &format!("token {}", config.github_token))
-        .set("Accept", "application/vnd.github.v3+json")
-        .set("User-Agent", "BazBOM/0.2.1")
-        .send_json(pr_data)
+    let mut response = ureq::post(&api_url)
+        .header("Authorization", &format!("token {}", config.github_token))
+        .header("Accept", "application/vnd.github.v3+json")
+        .header("User-Agent", "BazBOM/1.0.0")
+        .header("Content-Type", "application/json")
+        .send(&serde_json::to_string(&pr_data)?)
         .context("Failed to create pull request via GitHub API")?;
 
     let status = response.status();
     if status != 201 {
-        let error_body = response
-            .into_string()
-            .unwrap_or_else(|_| "Unknown error".to_string());
+        let error_body = response.body_mut().read_to_string().unwrap_or_default();
         anyhow::bail!("GitHub API returned status {}: {}", status, error_body);
     }
 
-    let pr_response: serde_json::Value = response
-        .into_json()
+    let mut pr_response = response;
+    let json_text = pr_response.body_mut().read_to_string()?;
+    let pr_data: serde_json::Value = serde_json::from_str(&json_text)
         .context("Failed to parse GitHub API response")?;
 
-    let pr_url = pr_response["html_url"]
+    let pr_url = pr_data["html_url"]
         .as_str()
         .ok_or_else(|| anyhow::anyhow!("No html_url in GitHub API response"))?
         .to_string();

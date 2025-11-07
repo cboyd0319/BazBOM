@@ -47,21 +47,14 @@ impl ToolCache {
         let tmp_path = tmp_file.path();
 
         // Download the file
-        let resp = ureq::get(&desc.url).call().context("HTTP request failed")?;
+        let mut resp = ureq::get(&desc.url).call().context("HTTP request failed")?;
 
         let mut file = fs::File::create(tmp_path).context("create temp file")?;
         let mut hasher = Sha256::new();
-        let mut reader = resp.into_reader();
-        let mut buffer = [0; 8192];
-
-        loop {
-            let n = std::io::Read::read(&mut reader, &mut buffer).context("read response body")?;
-            if n == 0 {
-                break;
-            }
-            file.write_all(&buffer[..n]).context("write to temp file")?;
-            hasher.update(&buffer[..n]);
-        }
+        let buffer = resp.body_mut().read_to_vec()?;
+        
+        file.write_all(&buffer).context("write to temp file")?;
+        hasher.update(&buffer);
 
         file.sync_all().context("sync temp file")?;
         drop(file);

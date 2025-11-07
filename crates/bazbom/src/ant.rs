@@ -59,7 +59,7 @@ impl AntProject {
 
         let mut dependencies = Vec::new();
         let mut reader = quick_xml::Reader::from_str(&content);
-        reader.trim_text(true);
+        reader.config_mut().trim_text(true);
 
         let mut buf = Vec::new();
 

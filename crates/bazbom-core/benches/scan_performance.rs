@@ -5,7 +5,7 @@
 
 use bazbom_core::BuildSystem;
 use bazbom_graph::DependencyGraph;
-use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
 
 /// Benchmark build system detection
 fn bench_build_system_detection(c: &mut Criterion) {
@@ -23,7 +23,7 @@ fn bench_build_system_detection(c: &mut Criterion) {
             b.iter(|| {
                 // In a real implementation, would detect from actual project
                 // For benchmark, we just test the detection logic
-                black_box(BuildSystem::Maven)
+                std::hint::black_box(BuildSystem::Maven)
             });
         });
     }
@@ -65,7 +65,7 @@ fn bench_dependency_graph(c: &mut Criterion) {
                     }
                 }
 
-                black_box(graph)
+                std::hint::black_box(graph)
             });
         });
     }
@@ -93,7 +93,7 @@ fn bench_sbom_generation(c: &mut Criterion) {
                         sbom_data.extend_from_slice(entry.as_bytes());
                     }
 
-                    black_box(sbom_data)
+                    std::hint::black_box(sbom_data)
                 });
             },
         );
@@ -126,7 +126,7 @@ fn bench_cache_lookup(c: &mut Criterion) {
                 b.iter(|| {
                     // Lookup random keys
                     let key = format!("cache-key-{}", size / 2);
-                    black_box(cache.get(&key))
+                    std::hint::black_box(cache.get(&key))
                 });
             },
         );
@@ -163,7 +163,7 @@ fn bench_json_parsing(c: &mut Criterion) {
             |b, _count| {
                 b.iter(|| {
                     let _parsed: Value = serde_json::from_str(&json).unwrap();
-                    black_box(_parsed)
+                    std::hint::black_box(_parsed)
                 });
             },
         );
@@ -190,7 +190,7 @@ fn bench_string_hashing(c: &mut Criterion) {
                     let mut hasher = Sha256::new();
                     hasher.update(content.as_bytes());
                     let hash = hasher.finalize();
-                    black_box(hex::encode(hash))
+                    std::hint::black_box(hex::encode(hash))
                 });
             },
         );
