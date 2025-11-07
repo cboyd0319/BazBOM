@@ -147,29 +147,6 @@ bazel build :app
 bazel run :app
 ```
 
-### Legacy: Generating SBOM with Python tools
-
-From the repository root:
-
-```bash
-# Using Bazel (original approach)
-bazel build //:workspace_sbom
-
-# View the SBOM
-cat bazel-bin/workspace_sbom.spdx.json | python3 -m json.tool
-
-# Or manually with Python scripts (from repository root)
-python3 tools/supplychain/bazbom_extract_bazel_deps.py \
-  --workspace /path/to/workspace \
-  --maven-install-json /path/to/workspace/maven_install.json \
-  --output /tmp/deps.json
-
-python3 tools/supplychain/write_sbom.py \
-  --input /tmp/deps.json \
-  --output /tmp/app.spdx.json \
-  --name "minimal-java-app"
-```
-
 ## What Each Tool Does
 
 ### extract_maven_deps.py  ENHANCED

@@ -477,10 +477,7 @@ pytest --profile
 
 ## Resources
 
-- [pytest documentation](https://docs.pytest.org/)
-- [pytest-cov documentation](https://pytest-cov.readthedocs.io/)
-- [pytest-xdist documentation](https://pytest-xdist.readthedocs.io/)
-- [BazBOM PyTest Best Practices](docs/PYTEST_BEST_PRACTICES.md)
-- [BazBOM Test Plan](docs/development/test-plan.md)
-- [Python testing best practices](https://docs.python-guide.org/writing/tests/)
-- [Effective Python Testing](https://realpython.com/pytest-python-testing/)
+- [Rust testing documentation](https://doc.rust-lang.org/book/ch11-00-testing.html)
+- [cargo-llvm-cov documentation](https://github.com/taiki-e/cargo-llvm-cov)
+- [Rust by Example: Testing](https://doc.rust-lang.org/rust-by-example/testing.html)
+- [BazBOM Test Plan](test-plan.md)

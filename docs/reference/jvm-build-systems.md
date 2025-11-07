@@ -606,14 +606,14 @@ bazbom scan . --target //my/package:*
 
 ---
 
-## Roadmap
+## Future Enhancements
 
-### Phase 8: Scale & Performance (90% Complete)
+### Scale & Performance
 - [ ] Memory optimization for 50K+ target Bazel monorepos
 - [ ] Profile-guided optimization (PGO)
 - [ ] Advanced query caching
 
-### Phase 11: Distribution (Planned)
+### Distribution
 - [ ] Windows binary optimization
 - [ ] GitHub Marketplace listing
 - [ ] Homebrew bottles

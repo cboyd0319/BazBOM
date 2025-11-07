@@ -1,7 +1,6 @@
 # Container Image Scanning
 
-**Status:**  Available in BazBOM v0.5.1+  
-**Phase:** 9 - Ecosystem Expansion (60% Complete)
+**Status:** Beta (Available in BazBOM v0.5.1+)
 
 ---
 
@@ -586,7 +585,7 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for more information.
 
 **Last Updated:** 2024-11-04  
 **Version:** 0.5.1  
-**Status:** Beta (Phase 9: 60% Complete)
+**Status:** Beta
 
 **Current Limitations:**
 - Requires manual `docker save` to tar file
