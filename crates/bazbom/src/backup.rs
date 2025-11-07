@@ -5,6 +5,7 @@ use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use tracing::info;
 
 /// Backup strategy to use
 #[derive(Debug, Clone, Copy)]
@@ -37,7 +38,7 @@ impl BackupHandle {
     }
 
     fn create_git_stash(project_root: &Path) -> Result<Self> {
-        println!("[bazbom] Creating git stash backup...");
+        info!("Creating git stash backup");
 
         // Check if git is available and we're in a repo
         let is_git_repo = project_root.join(".git").exists();
@@ -79,7 +80,7 @@ impl BackupHandle {
             .unwrap_or("stash@{0}")
             .to_string();
 
-        println!("[bazbom] Backup created: {}", stash_id);
+        info!(stash_id = %stash_id, "Git stash backup created");
 
         Ok(Self {
             strategy: BackupStrategy::GitStash,
@@ -91,7 +92,7 @@ impl BackupHandle {
     }
 
     fn create_file_copy(project_root: &Path) -> Result<Self> {
-        println!("[bazbom] Creating file copy backup...");
+        info!("Creating file copy backup");
 
         // Create backup directory
         let backup_dir = project_root.join(".bazbom/backup");
@@ -112,7 +113,7 @@ impl BackupHandle {
             if src.exists() {
                 let dst = backup_dir.join(file);
                 fs::copy(&src, &dst).with_context(|| format!("Failed to backup {}", file))?;
-                println!("[bazbom]   Backed up: {}", file);
+                info!(file = %file, "File backed up");
             }
         }
 
@@ -126,7 +127,7 @@ impl BackupHandle {
     }
 
     fn create_git_branch(project_root: &Path) -> Result<Self> {
-        println!("[bazbom] Creating git branch backup...");
+        info!("Creating git branch backup");
 
         let is_git_repo = project_root.join(".git").exists();
         if !is_git_repo {
@@ -147,7 +148,7 @@ impl BackupHandle {
             anyhow::bail!("Git branch creation failed: {}", err);
         }
 
-        println!("[bazbom] Backup branch created: {}", branch_name);
+        info!(branch = %branch_name, "Git branch backup created");
 
         Ok(Self {
             strategy: BackupStrategy::GitBranch,
@@ -168,7 +169,7 @@ impl BackupHandle {
     }
 
     fn restore_git_stash(&self) -> Result<()> {
-        println!("[bazbom] Restoring from git stash...");
+        info!("Restoring from git stash");
 
         let stash_id = self
             .git_stash_id
@@ -194,12 +195,12 @@ impl BackupHandle {
             anyhow::bail!("Git stash apply failed: {}", err);
         }
 
-        println!("[bazbom] Restored from: {}", stash_id);
+        info!(stash_id = %stash_id, "Restored from git stash");
         Ok(())
     }
 
     fn restore_file_copy(&self) -> Result<()> {
-        println!("[bazbom] Restoring from file copy...");
+        info!("Restoring from file copy");
 
         let backup_dir = self
             .backup_dir
@@ -214,14 +215,14 @@ impl BackupHandle {
             let dst = self.project_root.join(&file_name);
 
             fs::copy(&src, &dst).with_context(|| format!("Failed to restore {:?}", file_name))?;
-            println!("[bazbom]   Restored: {:?}", file_name);
+            info!(file = ?file_name, "File restored");
         }
 
         Ok(())
     }
 
     fn restore_git_branch(&self) -> Result<()> {
-        println!("[bazbom] Restoring from git branch...");
+        info!("Restoring from git branch");
 
         let branch_name = self
             .git_branch
@@ -240,7 +241,7 @@ impl BackupHandle {
             anyhow::bail!("Git reset failed: {}", err);
         }
 
-        println!("[bazbom] Restored from branch: {}", branch_name);
+        info!(branch = %branch_name, "Restored from git branch");
         Ok(())
     }
 
@@ -275,7 +276,7 @@ impl BackupHandle {
             }
         }
 
-        println!("[bazbom] Backup cleaned up");
+        info!("Backup cleaned up");
         Ok(())
     }
 }

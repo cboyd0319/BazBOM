@@ -12,6 +12,7 @@
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use tracing::{info, warn};
 
 /// LLM provider type
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -158,19 +159,20 @@ impl LlmClient {
         // PRIVACY FIRST: Check for local Ollama first
         let provider = if let Ok(base_url) = std::env::var("OLLAMA_BASE_URL") {
             let model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "llama2".to_string());
-            eprintln!(
-                "[+] Using local Ollama at {} (privacy-preserving)",
-                base_url
+            info!(
+                base_url = %base_url,
+                model = %model,
+                "Using local Ollama (privacy-preserving)"
             );
             LlmProvider::Ollama { base_url, model }
         } else if let Ok(api_key) = std::env::var("ANTHROPIC_API_KEY") {
             let model = std::env::var("ANTHROPIC_MODEL")
                 .unwrap_or_else(|_| "claude-3-sonnet-20240229".to_string());
-            eprintln!("[!] Using Anthropic Claude API (OPT-IN: data sent to external service)");
+            warn!(model = %model, "Using Anthropic Claude API (OPT-IN: data sent to external service)");
             LlmProvider::Anthropic { api_key, model }
         } else if let Ok(api_key) = std::env::var("OPENAI_API_KEY") {
             let model = std::env::var("OPENAI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
-            eprintln!("[!] Using OpenAI API (OPT-IN: data sent to external service)");
+            warn!(model = %model, "Using OpenAI API (OPT-IN: data sent to external service)");
             LlmProvider::OpenAI { api_key, model }
         } else {
             anyhow::bail!(
@@ -242,7 +244,7 @@ impl LlmClient {
         request: LlmRequest,
     ) -> Result<LlmResponse> {
         // PRIVACY: Warn user that data is being sent externally
-        eprintln!("[!] Sending data to OpenAI API (external service)");
+        warn!("Sending data to OpenAI API (external service)");
 
         // Build OpenAI API request
         let client = reqwest::blocking::Client::builder()
@@ -324,7 +326,7 @@ impl LlmClient {
         request: LlmRequest,
     ) -> Result<LlmResponse> {
         // PRIVACY: Warn user that data is being sent externally
-        eprintln!("[!] Sending data to Anthropic API (external service)");
+        warn!("Sending data to Anthropic API (external service)");
 
         // Build Anthropic API request
         let client = reqwest::blocking::Client::builder()
@@ -415,7 +417,7 @@ impl LlmClient {
         request: LlmRequest,
     ) -> Result<LlmResponse> {
         // PRIVACY: Ollama runs locally - no external data transmission
-        eprintln!("[+] Using local Ollama (privacy-preserving)");
+        info!("Using local Ollama (privacy-preserving)");
 
         // Build Ollama API request
         let client = reqwest::blocking::Client::builder()

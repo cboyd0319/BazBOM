@@ -72,19 +72,22 @@ where
     ///
     /// Distributes work across multiple threads and collects results.
     /// Errors from individual tasks are propagated but don't stop other tasks.
-    pub fn process<F>(&self, items: Vec<T>, f: F) -> Vec<Result<R>>
+    ///
+    /// # Errors
+    /// Returns an error if thread management fails or mutexes are poisoned.
+    pub fn process<F>(&self, items: Vec<T>, f: F) -> Result<Vec<Result<R>>>
     where
         F: Fn(T) -> Result<R> + Send + Sync + 'static,
     {
         let num_threads = self.config.effective_threads();
 
         if items.is_empty() {
-            return vec![];
+            return Ok(vec![]);
         }
 
         // For small workloads, process serially
         if items.len() < num_threads || num_threads == 1 {
-            return items.into_iter().map(f).collect();
+            return Ok(items.into_iter().map(f).collect());
         }
 
         // Distribute work across threads
@@ -99,23 +102,28 @@ where
             let results = Arc::clone(&results);
             let f = Arc::clone(&f);
 
-            let handle = thread::spawn(move || {
+            let handle = thread::spawn(move || -> Result<()> {
                 loop {
                     // Get next item
                     let item = {
-                        let mut items = items.lock().unwrap();
+                        let mut items = items
+                            .lock()
+                            .map_err(|e| anyhow::anyhow!("Items mutex poisoned: {:?}", e))?;
                         items.next()
                     };
 
                     match item {
                         Some(item) => {
                             let result = f(item);
-                            let mut results = results.lock().unwrap();
+                            let mut results = results
+                                .lock()
+                                .map_err(|e| anyhow::anyhow!("Results mutex poisoned: {:?}", e))?;
                             results.push(result);
                         }
                         None => break, // No more work
                     }
                 }
+                Ok(())
             });
 
             handles.push(handle);
@@ -123,25 +131,32 @@ where
 
         // Wait for all threads to complete
         for handle in handles {
-            handle.join().expect("Thread panicked");
+            match handle.join() {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => return Err(e),
+                Err(e) => anyhow::bail!("Worker thread panicked: {:?}", e),
+            }
         }
 
         // Extract results
-        let results = match Arc::try_unwrap(results) {
-            Ok(mutex) => mutex.into_inner().unwrap(),
-            Err(_) => panic!("Results Arc has multiple references"),
-        };
+        let results = Arc::try_unwrap(results)
+            .map_err(|_| anyhow::anyhow!("Results Arc still has multiple references"))?
+            .into_inner()
+            .map_err(|e| anyhow::anyhow!("Mutex poisoned: {:?}", e))?;
 
-        results
+        Ok(results)
     }
 
     /// Process items in parallel with progress tracking
+    ///
+    /// # Errors
+    /// Returns an error if thread management fails or mutexes are poisoned.
     pub fn process_with_progress<F, P>(
         &self,
         items: Vec<T>,
         f: F,
         mut progress_fn: P,
-    ) -> Vec<Result<R>>
+    ) -> Result<Vec<Result<R>>>
     where
         F: Fn(T) -> Result<R> + Send + Sync + 'static,
         P: FnMut(usize, usize) + Send + 'static,
@@ -150,12 +165,12 @@ where
         let num_threads = self.config.effective_threads();
 
         if items.is_empty() {
-            return vec![];
+            return Ok(vec![]);
         }
 
         // For small workloads, process serially with progress
         if items.len() < num_threads || num_threads == 1 {
-            return items
+            return Ok(items
                 .into_iter()
                 .enumerate()
                 .map(|(i, item)| {
@@ -163,7 +178,7 @@ where
                     progress_fn(i + 1, total);
                     result
                 })
-                .collect();
+                .collect());
         }
 
         // Parallel processing with progress
@@ -180,26 +195,35 @@ where
             let completed = Arc::clone(&completed);
             let f = Arc::clone(&f);
 
-            let handle = thread::spawn(move || loop {
-                let item = {
-                    let mut items = items.lock().unwrap();
-                    items.next()
-                };
+            let handle = thread::spawn(move || -> Result<()> {
+                loop {
+                    let item = {
+                        let mut items = items
+                            .lock()
+                            .map_err(|e| anyhow::anyhow!("Items mutex poisoned: {:?}", e))?;
+                        items.next()
+                    };
 
-                match item {
-                    Some(item) => {
-                        let result = f(item);
-                        {
-                            let mut results = results.lock().unwrap();
-                            results.push(result);
+                    match item {
+                        Some(item) => {
+                            let result = f(item);
+                            {
+                                let mut results = results
+                                    .lock()
+                                    .map_err(|e| anyhow::anyhow!("Results mutex poisoned: {:?}", e))?;
+                                results.push(result);
+                            }
+                            {
+                                let mut completed = completed
+                                    .lock()
+                                    .map_err(|e| anyhow::anyhow!("Completed mutex poisoned: {:?}", e))?;
+                                *completed += 1;
+                            }
                         }
-                        {
-                            let mut completed = completed.lock().unwrap();
-                            *completed += 1;
-                        }
+                        None => break,
                     }
-                    None => break,
                 }
+                Ok(())
             });
 
             handles.push(handle);
@@ -208,33 +232,46 @@ where
         // Progress monitoring thread
         let progress_handle = {
             let completed = Arc::clone(&completed);
-            thread::spawn(move || loop {
-                let count = *completed.lock().unwrap();
-                progress_fn(count, total);
+            thread::spawn(move || -> Result<()> {
+                loop {
+                    let count = *completed
+                        .lock()
+                        .map_err(|e| anyhow::anyhow!("Completed mutex poisoned: {:?}", e))?;
+                    progress_fn(count, total);
 
-                if count >= total {
-                    break;
+                    if count >= total {
+                        break;
+                    }
+
+                    thread::sleep(std::time::Duration::from_millis(100));
                 }
-
-                thread::sleep(std::time::Duration::from_millis(100));
+                Ok(())
             })
         };
 
         // Wait for workers
         for handle in handles {
-            handle.join().expect("Worker thread panicked");
+            match handle.join() {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => return Err(e),
+                Err(e) => anyhow::bail!("Worker thread panicked: {:?}", e),
+            }
         }
 
         // Wait for progress thread
-        progress_handle.join().expect("Progress thread panicked");
+        match progress_handle.join() {
+            Ok(Ok(())) => {}
+            Ok(Err(e)) => return Err(e),
+            Err(e) => anyhow::bail!("Progress thread panicked: {:?}", e),
+        }
 
         // Extract results
-        let results = match Arc::try_unwrap(results) {
-            Ok(mutex) => mutex.into_inner().unwrap(),
-            Err(_) => panic!("Results Arc has multiple references"),
-        };
+        let results = Arc::try_unwrap(results)
+            .map_err(|_| anyhow::anyhow!("Results Arc still has multiple references"))?
+            .into_inner()
+            .map_err(|e| anyhow::anyhow!("Mutex poisoned: {:?}", e))?;
 
-        results
+        Ok(results)
     }
 }
 
@@ -255,21 +292,27 @@ pub fn should_parallelize(item_count: usize, thread_count: usize) -> bool {
 ///
 /// This is more efficient than the manual thread pool for most workloads
 /// as it uses a work-stealing scheduler that automatically balances load.
-pub fn process_parallel<T, R, F>(items: Vec<T>, f: F) -> Vec<Result<R>>
+///
+/// # Errors
+/// Returns an error if thread management fails.
+pub fn process_parallel<T, R, F>(items: Vec<T>, f: F) -> Result<Vec<Result<R>>>
 where
     T: Send,
     R: Send,
     F: Fn(T) -> Result<R> + Send + Sync,
 {
-    items.into_par_iter().map(f).collect()
+    Ok(items.into_par_iter().map(f).collect())
 }
 
 /// Process items in parallel with a progress callback
+///
+/// # Errors
+/// Returns an error if thread management fails.
 pub fn process_parallel_with_progress<T, R, F, P>(
     items: Vec<T>,
     f: F,
     progress_fn: P,
-) -> Vec<Result<R>>
+) -> Result<Vec<Result<R>>>
 where
     T: Send,
     R: Send,
@@ -296,14 +339,17 @@ where
         })
         .collect();
 
-    results
+    Ok(results)
 }
 
 /// Batch process items with configurable chunk size
 ///
 /// Splits items into chunks and processes each chunk in parallel.
 /// Useful when processing small items with high overhead.
-pub fn process_batched<T, R, F>(items: Vec<T>, chunk_size: usize, f: F) -> Vec<Result<R>>
+///
+/// # Errors
+/// Returns an error if thread management fails.
+pub fn process_batched<T, R, F>(items: Vec<T>, chunk_size: usize, f: F) -> Result<Vec<Result<R>>>
 where
     T: Send + Clone,
     R: Send,
@@ -315,7 +361,7 @@ where
         .map(|chunk| chunk.to_vec())
         .collect();
 
-    chunks.into_par_iter().flat_map(f).collect()
+    Ok(chunks.into_par_iter().flat_map(f).collect())
 }
 
 #[cfg(test)]
@@ -345,7 +391,7 @@ mod tests {
     #[test]
     fn test_parallel_processor_empty() {
         let processor = ParallelProcessor::<i32, i32>::new(ParallelConfig::default());
-        let results = processor.process(vec![], |x| Ok(x * 2));
+        let results = processor.process(vec![], |x| Ok(x * 2)).unwrap();
         assert_eq!(results.len(), 0);
     }
 
@@ -355,7 +401,7 @@ mod tests {
         let processor = ParallelProcessor::new(config);
 
         let items = vec![1, 2, 3, 4, 5];
-        let results = processor.process(items, |x| Ok(x * 2));
+        let results = processor.process(items, |x| Ok(x * 2)).unwrap();
 
         assert_eq!(results.len(), 5);
         for result in &results {
@@ -380,7 +426,7 @@ mod tests {
             } else {
                 Ok(x * 2)
             }
-        });
+        }).unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -409,7 +455,7 @@ mod tests {
             move |completed, total| {
                 progress_clone.lock().unwrap().push((completed, total));
             },
-        );
+        ).unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -449,7 +495,7 @@ mod tests {
         let processor = ParallelProcessor::new(config);
 
         let items = vec![1, 2, 3];
-        let results = processor.process(items, |x| Ok(x * 2));
+        let results = processor.process(items, |x| Ok(x * 2)).unwrap();
 
         assert_eq!(results.len(), 3);
         // Serial execution preserves order
@@ -461,7 +507,7 @@ mod tests {
     #[test]
     fn test_process_parallel_basic() {
         let items = vec![1, 2, 3, 4, 5, 6, 7, 8];
-        let results = process_parallel(items, |x| Ok(x * 2));
+        let results = process_parallel(items, |x| Ok(x * 2)).unwrap();
 
         assert_eq!(results.len(), 8);
         for result in &results {
@@ -483,7 +529,7 @@ mod tests {
             } else {
                 Ok(x * 2)
             }
-        });
+        }).unwrap();
 
         assert_eq!(results.len(), 5);
 
@@ -509,7 +555,7 @@ mod tests {
             move |completed, total| {
                 progress_clone.lock().unwrap().push((completed, total));
             },
-        );
+        ).unwrap();
 
         assert_eq!(results.len(), 8);
 
@@ -530,7 +576,7 @@ mod tests {
         let results = process_batched(items, chunk_size, |chunk| {
             // Process each chunk
             chunk.into_iter().map(|x| Ok(x * 2)).collect()
-        });
+        }).unwrap();
 
         assert_eq!(results.len(), 10);
 
@@ -542,7 +588,7 @@ mod tests {
     #[test]
     fn test_process_parallel_empty() {
         let items: Vec<i32> = vec![];
-        let results = process_parallel(items, |x| Ok(x * 2));
+        let results = process_parallel(items, |x| Ok(x * 2)).unwrap();
         assert_eq!(results.len(), 0);
     }
 
@@ -550,7 +596,7 @@ mod tests {
     fn test_process_parallel_large_dataset() {
         // Test with a larger dataset to ensure parallelism works
         let items: Vec<i32> = (1..=1000).collect();
-        let results = process_parallel(items, |x| Ok(x * 2));
+        let results = process_parallel(items, |x| Ok(x * 2)).unwrap();
 
         assert_eq!(results.len(), 1000);
         assert!(results.iter().all(|r| r.is_ok()));
