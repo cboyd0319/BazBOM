@@ -97,6 +97,15 @@ fn extract_strings_from_value(value: &regorus::Value, messages: &mut Vec<String>
                 extract_strings_from_value(item, messages);
             }
         }
+        regorus::Value::Object(map) => {
+            // Rego returns sets as objects where keys are the set elements
+            // and values are true (for elements in the set)
+            for (key, _value) in map.iter() {
+                if let regorus::Value::String(s) = key {
+                    messages.push(s.to_string());
+                }
+            }
+        }
         _ => {}
     }
 }
