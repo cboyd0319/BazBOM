@@ -1,8 +1,10 @@
 // Library exports for testing and internal use
+pub mod advisory;
 pub mod analyzers;
 pub mod android;
 pub mod ant;
 pub mod backup;
+pub mod bazel;
 pub mod batch_fixer;
 pub mod buildr;
 pub mod cli;
@@ -21,11 +23,13 @@ pub mod notifications;
 pub mod parallel;
 pub mod performance;
 pub mod pipeline;
+pub mod policy_integration;
 pub mod publish;
 pub mod reachability;
 pub mod reachability_cache;
 pub mod remediation;
 pub mod sbt;
+pub mod scan;
 pub mod scan_cache;
 pub mod scan_orchestrator;
 pub mod shading;
