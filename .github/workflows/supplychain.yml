@@ -45,7 +45,7 @@ jobs:
       
       
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@8d2cb86a3680a820c3e219597279ce3f80d17a47 # 0.15.0
+        uses: bazel-contrib/setup-bazel@4432ac8a2318fb254c5b9fe491b9d21a002d7122 # 0.15.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
