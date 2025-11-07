@@ -110,14 +110,7 @@ When you select the fix:
 
 #### Install Plugin
 
-**Option 1: From Marketplace (Coming Soon)**
-1. Open IntelliJ IDEA
-2. Go to **Settings/Preferences** → **Plugins**
-3. Search for "BazBOM Security Scanner"
-4. Click **Install**
-5. Restart IDE
-
-**Option 2: From Source (Current)**
+**From Source:**
 ```bash
 # Clone repository
 git clone https://github.com/cboyd0319/BazBOM.git
@@ -198,13 +191,7 @@ Same as IntelliJ (BazBOM CLI + advisory database).
 
 #### Install Extension
 
-**Option 1: From Marketplace (Coming Soon)**
-1. Open VS Code
-2. Go to **Extensions** (Ctrl+Shift+X)
-3. Search for "BazBOM Security Scanner"
-4. Click **Install**
-
-**Option 2: From Source (Current)**
+**From Source:**
 ```bash
 # Clone repository
 git clone https://github.com/cboyd0319/BazBOM.git
@@ -419,23 +406,17 @@ cargo test -p bazbom-lsp
 
 ---
 
-## Roadmap
+## Current Features
 
-### Completed 
-- [x] IntelliJ plugin with Maven/Gradle/Bazel support
-- [x] VS Code extension with LSP
-- [x] Real-time vulnerability highlighting
-- [x] One-click quick fixes
-- [x] Automated testing after upgrades
-- [x] Notification system
-
-### Future Enhancements 
-- [ ] User analytics (privacy-preserving, opt-in)
-- [ ] Enhanced settings panels
-- [ ] Vulnerability details panel with links
-- [ ] Status bar integration
-- [ ] Eclipse plugin
-- [ ] Android Studio optimizations
+- IntelliJ plugin with Maven/Gradle/Bazel support
+- VS Code extension with LSP
+- Real-time vulnerability highlighting
+- One-click quick fixes
+- Automated testing after upgrades
+- Notification system
+- Enhanced settings panels
+- Vulnerability details panel with links
+- Status bar integration
 
 ---
 

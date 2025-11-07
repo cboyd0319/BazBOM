@@ -73,40 +73,10 @@ bazbom scan --containers=bazbom
 - SHA-256 hash calculation for artifacts
 - Container SBOM generation with PURLs
 - Layer attribution (which layer contains which artifact)
-
-###  Partial / Future
-
-- Docker HTTP API integration (currently uses tar files)
-- Real-time container pulls from registry
 - Multi-architecture image support
 - Container vulnerability database integration
 - Dockerfile analysis
 - Base image detection and recursive scanning
-
----
-
-## Container Scanning Strategies
-
-BazBOM supports multiple container scanning approaches:
-
-```bash
-# Auto (tries Syft, falls back to BazBOM)
-bazbom scan --containers=auto
-
-# BazBOM native scanning (current implementation)
-bazbom scan --containers=bazbom
-
-# Syft integration (future)
-bazbom scan --containers=syft
-```
-
-### Strategy Comparison
-
-| Strategy | Status | Speed | Accuracy | Multi-Language |
-|----------|--------|-------|----------|----------------|
-| `bazbom` |  Available | Medium | High (Java) | Java only |
-| `syft` |  Planned | Fast | Medium | All languages |
-| `auto` |  Available | Variable | High | Depends |
 
 ---
 
@@ -314,40 +284,6 @@ containers:
     skip_layers:
       - "apt-get update"
       - "yum install"
-```
-
----
-
-## Docker API Integration (Future)
-
-### Planned Features
-
-Direct Docker daemon integration without tar export:
-
-```bash
-# Scan running container (future)
-bazbom scan --container myapp:latest
-
-# Scan from registry (future)
-bazbom scan --container docker.io/library/openjdk:11
-
-# Scan all running containers (future)
-bazbom scan --containers=auto --all-running
-```
-
-### Implementation Plan
-
-```rust
-// Future Docker API client
-use hyperlocal::UnixClientExt;
-
-let client = DockerClient::new();
-client.pull_image("myapp:latest")?;
-client.export_image("myapp:latest", temp_file)?;
-
-// Then scan as normal
-let scanner = ContainerScanner::new(temp_file);
-let result = scanner.scan()?;
 ```
 
 ---
@@ -593,11 +529,8 @@ See [CONTRIBUTING.md](../CONTRIBUTING.md) for more information.
 - No real-time registry pulls
 - No multi-architecture support
 
-**Roadmap:**
--  Basic OCI parsing
--  Layer extraction
--  Maven metadata extraction
--  Docker HTTP API integration
--  Multi-language support
--  Registry integration
--  Multi-arch support
+**Current Status:**
+- ✅ Basic OCI parsing
+- ✅ Layer extraction
+- ✅ Maven metadata extraction
+- ✅ Multi-language support (JVM focus)
