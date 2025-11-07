@@ -99,7 +99,12 @@ fn extract_strings_from_value(value: &regorus::Value, messages: &mut Vec<String>
         }
         regorus::Value::Object(map) => {
             // Rego returns sets as objects where keys are the set elements
-            // and values are true (for elements in the set)
+            // and values are true (for elements in the set).
+            // In BazBOM policy rules, the set members are always simple strings
+            // like deny["Critical vulnerability detected"], so we extract the keys.
+            // We only extract string keys as that's what our policy rules emit.
+            // If complex nested structures are needed in the future, this would
+            // need to recursively process the values as well.
             for (key, _value) in map.iter() {
                 if let regorus::Value::String(s) = key {
                     messages.push(s.to_string());
