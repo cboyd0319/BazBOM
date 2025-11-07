@@ -1180,6 +1180,22 @@ fn create_github_pr(
     Ok(pr_url)
 }
 
+/// Handle the fix command - temporary stub for refactoring
+/// This function will be properly implemented once the full extraction is complete
+#[allow(clippy::too_many_arguments)]
+pub fn handle_fix_command(
+    _suggest: bool,
+    _apply: bool,
+    _pr: bool,
+    _interactive: bool,
+    _ml_prioritize: bool,
+    _llm: bool,
+    _llm_provider: String,
+    _llm_model: Option<String>,
+) -> Result<()> {
+    anyhow::bail!("Fix command temporarily disabled during refactoring")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
