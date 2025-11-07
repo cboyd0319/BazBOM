@@ -1,8 +1,5 @@
-use anyhow::{Context, Result};
-use bazbom_core::{detect_build_system, write_stub_sbom};
+use anyhow::Result;
 use clap::Parser;
-use std::fs;
-use std::path::PathBuf;
 
 mod advisory;
 mod bazel;

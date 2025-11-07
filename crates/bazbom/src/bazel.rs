@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::process::Command;
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BazelComponent {
     pub name: String,
@@ -19,6 +20,7 @@ pub struct BazelComponent {
     pub coordinates: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BazelEdge {
     pub from: String,
@@ -27,6 +29,7 @@ pub struct BazelEdge {
     pub edge_type: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BazelMetadata {
     pub build_system: String,
@@ -34,6 +37,7 @@ pub struct BazelMetadata {
     pub maven_install_version: String,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize, Deserialize)]
 pub struct BazelDependencyGraph {
     pub components: Vec<BazelComponent>,
@@ -42,6 +46,7 @@ pub struct BazelDependencyGraph {
 }
 
 impl BazelDependencyGraph {
+    #[allow(dead_code)]
     /// Convert Bazel dependency graph to SPDX document
     pub fn to_spdx(&self, project_name: &str) -> SpdxDocument {
         let namespace = format!(
@@ -94,6 +99,7 @@ impl BazelDependencyGraph {
     }
 }
 
+#[allow(dead_code)]
 /// Extract dependencies from Bazel project using maven_install.json
 pub fn extract_bazel_dependencies(
     workspace_path: &Path,
@@ -138,6 +144,7 @@ pub fn extract_bazel_dependencies(
     Ok(graph)
 }
 
+#[allow(dead_code)]
 /// Parse maven_install.json directly to extract dependencies
 fn parse_maven_install_json(
     workspace_path: &Path,
@@ -360,6 +367,7 @@ pub fn query_bazel_targets(
     Ok(targets)
 }
 
+#[allow(dead_code)]
 /// Extract dependencies for specific Bazel targets
 pub fn extract_bazel_dependencies_for_targets(
     workspace_path: &Path,

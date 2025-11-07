@@ -37,6 +37,7 @@ impl ReachabilityResult {
     }
 }
 
+#[allow(dead_code)]
 /// Run reachability analysis using the bazbom-reachability.jar tool
 pub fn analyze_reachability(
     jar_path: &Path,
@@ -93,6 +94,7 @@ pub fn analyze_reachability(
     Ok(result)
 }
 
+#[allow(dead_code)]
 /// Extract classpath from Maven project
 pub fn extract_maven_classpath(project_path: &Path) -> Result<String> {
     // Run mvn dependency:build-classpath to get the classpath
@@ -118,6 +120,7 @@ pub fn extract_maven_classpath(project_path: &Path) -> Result<String> {
     Ok(classpath)
 }
 
+#[allow(dead_code)]
 /// Extract classpath from Gradle project
 pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
     // Check if BazBOM Gradle plugin is applied
@@ -155,6 +158,7 @@ pub fn extract_gradle_classpath(project_path: &Path) -> Result<String> {
     }
 }
 
+#[allow(dead_code)]
 /// Extract classpath from Bazel project
 pub fn extract_bazel_classpath(project_path: &Path, target: &str) -> Result<String> {
     // Use the extract_classpath rule from tools/supplychain to get the classpath

@@ -35,11 +35,7 @@ pub fn handle_dashboard(port: u16, open: bool, export: Option<String>) -> Result
 }
 
 fn export_static_dashboard(export_path: &str) -> Result<()> {
-    use bazbom_dashboard::{
-        export_to_html, DashboardSummary, DependencyGraph, Vulnerability,
-        VulnerabilityCounts,
-    };
-    use std::fs;
+    use bazbom_dashboard::export_to_html;
 
     println!(
         "[bazbom] Exporting static HTML dashboard to: {}",
