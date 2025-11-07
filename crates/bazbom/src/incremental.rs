@@ -7,6 +7,7 @@ use anyhow::{Context, Result};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use tracing::info;
 
 /// Incremental analysis engine
 pub struct IncrementalAnalyzer {
@@ -33,25 +34,25 @@ impl IncrementalAnalyzer {
         let changed_files = self.get_changed_files()?;
 
         if changed_files.is_empty() {
-            eprintln!(
-                "[bazbom] No files changed since {}. Using cached results.",
-                self.base_ref
+            info!(
+                base_ref = %self.base_ref,
+                "No files changed, using cached results"
             );
             return Ok(vec![]);
         }
 
-        eprintln!(
-            "[bazbom] Found {} changed files since {}",
-            changed_files.len(),
-            self.base_ref
+        info!(
+            changed_count = changed_files.len(),
+            base_ref = %self.base_ref,
+            "Found changed files"
         );
 
         // Detect build system and query for affected targets
         let affected = self.query_affected_targets(&changed_files)?;
 
-        eprintln!(
-            "[bazbom] Identified {} affected targets (incremental scan)",
-            affected.len()
+        info!(
+            affected_count = affected.len(),
+            "Identified affected targets for incremental scan"
         );
 
         Ok(affected)
@@ -91,7 +92,7 @@ impl IncrementalAnalyzer {
 
         // For Maven/Gradle, we scan the entire project since dependency
         // tracking is handled by the build tool itself
-        eprintln!("[bazbom] Non-Bazel workspace detected. Full scan required.");
+        info!("Non-Bazel workspace detected, full scan required");
         Ok(vec![])
     }
 
@@ -119,7 +120,7 @@ impl IncrementalAnalyzer {
         let file_set = file_labels.join(", ");
         let query = format!("rdeps(//..., set({}))", file_set);
 
-        eprintln!("[bazbom] Executing Bazel query: {}", query);
+        info!(query = %query, "Executing Bazel query");
 
         let output = Command::new("bazel")
             .args(["query", &query, "--output=label"])
@@ -129,9 +130,9 @@ impl IncrementalAnalyzer {
 
         if !output.status.success() {
             let stderr = String::from_utf8_lossy(&output.stderr);
-            eprintln!(
-                "[bazbom] warning: Bazel query failed (falling back to full scan): {}",
-                stderr
+            info!(
+                error = %stderr,
+                "Bazel query failed, falling back to full scan"
             );
             return Ok(vec![]);
         }
