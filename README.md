@@ -11,7 +11,7 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
-[![Bazel](https://img.shields.io/badge/Bazel-7.6.2-43A047?logo=bazel)](https://bazel.build)
+[![Bazel](https://img.shields.io/badge/Bazel-8.4.2-43A047?logo=bazel)](https://bazel.build)
 [![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/reference/jvm-language-support.md)
 
 [Quickstart](#quickstart) •
@@ -28,7 +28,7 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 
 > **100% Rust Implementation - Production Ready**
 > 
 > BazBOM is implemented in 100% memory-safe Rust with comprehensive test coverage:
-> - **676 Tests Passing** - Complete test coverage, zero failures
+> - **671+ Tests Passing** - Complete test coverage, zero failures (5 Rego engine tests skipped)
 > - **15 Functional Crates** - Modular architecture (core, formats, advisories, policy, graph, ml, tui, dashboard, lsp, operator, etc.)
 > - **11 CLI Commands** - Full feature set: scan, policy, fix, db, license, install-hooks, init, explore, dashboard, team, report
 > - **Zero Clippy Warnings** - Production-quality codebase

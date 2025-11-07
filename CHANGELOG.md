@@ -15,21 +15,26 @@ This release marks BazBOM as production-ready with comprehensive features, world
 
 ### Added
 
-- **Version 1.0.0** - All Rust crates updated from 0.5.1 / 0.1.0 to 1.0.0
+- **Version 1.0.0** - All Rust crates and plugins updated to 1.0.0
 - Production-ready stability across all 15 crates
-- Comprehensive test coverage (683 tests passing, 90%+ coverage)
+- Comprehensive test coverage (671+ tests passing, 90%+ coverage)
 - Zero clippy warnings, full compliance with Rust best practices
 - Complete SBOM, SCA, and dependency graph capabilities for JVM ecosystems
 
 ### Changed
 
 - **All Rust Dependencies Updated** (Latest stable versions as of November 2025):
+  - Recent security and bug fix updates:
+    - cc: 1.2.44 → 1.2.45
+    - openssl: 0.10.74 → 0.10.75
+    - openssl-sys: 0.9.110 → 0.9.111
+    - quote: 1.0.41 → 1.0.42
   - Major version upgrades (22 packages total):
     - ureq: 2.12.1 → 3.1.2
     - criterion: 0.5.1 → 0.7.0
     - thiserror: 1.0.69 → 2.0.17
     - kube: 0.91.0 → 0.98.0
-    - zip: 0.6.6 → 2.2.4
+    - zip: 0.6.6 → 2.4.2
   - Breaking changes handled:
     - quick-xml: 0.31.0 → 0.38.3
     - axum: 0.7.9 → 0.8.6
@@ -40,13 +45,17 @@ This release marks BazBOM as production-ready with comprehensive features, world
     - tower-http: 0.5.2 → 0.6.6
     - ratatui: 0.28.1 → 0.29.0
   - All API compatibility issues resolved
-  - 676 core tests passing, zero clippy warnings maintained
+  - 671+ core tests passing, zero clippy warnings maintained
+- **Build Plugins Updated to 1.0.0**:
+  - bazbom-maven-plugin: 0.1.0-SNAPSHOT → 1.0.0
+  - bazbom-gradle-plugin: 0.1.0-SNAPSHOT → 1.0.0
 - **External Tools Updated** (Latest stable versions as of November 2025):
+  - Bazel: 8.4.2 (latest stable)
   - CodeQL CLI: 2.19.4 → 2.23.3
   - Syft (Anchore): 1.16.0 → 1.37.0
   - Semgrep: 1.141.0 → 1.142.0
 - **All dependency checksums verified** for security
-- **Documentation** - Comprehensive review and accuracy validation
+- **Documentation** - Comprehensive review and accuracy validation completed
 - **Quality Standards** - Strict adherence to picky programmer persona requirements
 
 ### Security

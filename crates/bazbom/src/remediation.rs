@@ -1169,8 +1169,8 @@ fn create_github_pr(
 
     let mut pr_response = response;
     let json_text = pr_response.body_mut().read_to_string()?;
-    let pr_data: serde_json::Value = serde_json::from_str(&json_text)
-        .context("Failed to parse GitHub API response")?;
+    let pr_data: serde_json::Value =
+        serde_json::from_str(&json_text).context("Failed to parse GitHub API response")?;
 
     let pr_url = pr_data["html_url"]
         .as_str()

@@ -6,7 +6,7 @@
 //! - Bazel query optimization and caching
 //! - Component serialization and deserialization
 
-use criterion::{ criterion_group, criterion_main, BenchmarkId, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
 
 /// Benchmark parsing maven_install.json files of various sizes

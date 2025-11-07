@@ -1,6 +1,6 @@
 # Container Image Scanning
 
-**Status:** Beta (Available in BazBOM v0.5.1+)
+**Status:** Beta (Available in BazBOM v1.0.0+)
 
 ---
 

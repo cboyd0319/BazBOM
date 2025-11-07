@@ -103,7 +103,7 @@ Download and verify the SHA256 checksum:
 
 ```bash
 # Download checksum file
-curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v0.1.0/bazbom-x86_64-apple-darwin.tar.gz.sha256
+curl -LO https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz.sha256
 
 # Verify checksum
 echo "$(cat bazbom-x86_64-apple-darwin.tar.gz.sha256)  bazbom-x86_64-apple-darwin.tar.gz" | shasum -a 256 --check
