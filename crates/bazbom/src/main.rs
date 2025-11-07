@@ -1082,10 +1082,21 @@ fn main() -> Result<()> {
                             severity_level
                         };
 
-                        // Note: is_reachable would require integration with reachability analysis results
-                        // Default to false (unknown) rather than assuming reachability
-                        // This avoids false positives in prioritization
-                        let is_reachable = false; // TODO: Integrate with reachability analyzer output
+                        // Reachability Analysis Integration Point
+                        // This field should be populated by integrating with the bazbom-reachability.jar
+                        // output after ASM-based call graph analysis completes.
+                        //
+                        // Current behavior: Defaults to false (unknown reachability) to avoid false
+                        // positives in ML-based prioritization. This is a safe default as it doesn't
+                        // exclude vulnerabilities from consideration.
+                        //
+                        // Next steps for integration:
+                        // 1. Parse reachability analysis JSON output from bazbom-reachability.jar
+                        // 2. Match vulnerable class/method signatures with call graph
+                        // 3. Set is_reachable = true only for confirmed reachable vulnerabilities
+                        //
+                        // See: docs/operations/reachability.md (when implemented)
+                        let is_reachable = false;
 
                         let features = VulnerabilityFeatures {
                             cvss_score,

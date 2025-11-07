@@ -44,7 +44,7 @@ jobs:
           TAR=dist/bazbom-${{ matrix.target }}.tar.gz
           tar -C $(dirname "$BIN") -czf "$TAR" $(basename "$BIN")
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: bazbom-${{ matrix.target }}
           path: dist/bazbom-${{ matrix.target }}.tar.gz
@@ -57,10 +57,10 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           path: dist
-      - uses: sigstore/cosign-installer@v3
+      - uses: sigstore/cosign-installer@7e8b5415ebb2755ddca3522cdd3e06a67cbc813d # v3.10.1
       - name: Sign
         shell: bash
         run: |
@@ -71,7 +71,7 @@ jobs:
             sha256sum "$f" | awk '{print $1}' > "$f.sha256"
           done
       - name: Upload signed artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: signed-dist
           path: dist/**
@@ -140,13 +140,13 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Download signed artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: signed-dist
           path: dist
       
       - name: Create release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2
         with:
           files: |
             dist/**/bazbom-*.tar.gz
