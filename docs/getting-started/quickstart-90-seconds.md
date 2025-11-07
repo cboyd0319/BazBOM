@@ -200,8 +200,8 @@ Now `bazbom scan .` uses these defaults. CLI flags override config.
 
 - **[Complete Usage Guide](../user-guide/usage.md)** - All commands and options
 - **[Orchestrated Scanning](../integrations/orchestrated-scan.md)** - Advanced workflows
-- **[Integration Plan](strategy/product-roadmap/BAZBOM_INTEGRATION_PLAN.md)** - Architecture details
-- **[Quickstart Demo](examples/orchestrated-scan-quickstart.sh)** - Interactive tutorial
+- **[Architecture Overview](../ARCHITECTURE.md)** - Architecture details
+- **[CI Integration](../CI.md)** - CI/CD workflows
 
 ---
 

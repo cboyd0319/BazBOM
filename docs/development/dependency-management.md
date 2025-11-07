@@ -358,8 +358,7 @@ pip-compile --generate-hashes --allow-unsafe requirements.in
 - [pip-tools Documentation](https://pip-tools.readthedocs.io/)
 - [PEP 665: Specifying Installation Requirements](https://peps.python.org/pep-0665/)
 - [Hash-checking mode](https://pip.pypa.io/en/stable/topics/secure-installs/)
-- [PYSEC_OMEGA Standards](strategy/product-roadmap/PYSEC.md)
-- [Supply Chain Security Guide](docs/security/WORKFLOW_SECURITY_POLICY.md)
+- [Supply Chain Security Guide](../security/WORKFLOW_SECURITY_POLICY.md)
 
 ## Summary
 

@@ -479,7 +479,7 @@
 - **JetBrains Publishing:** https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html
 - **Asset Guide:** [marketplace-assets.md](marketplace-assets.md)
 - **Testing Guide:** [IDE Plugin Testing Guide](plugin-testing.md)
-- **Main Roadmap:** [../../strategy/roadmap.md](../../strategy/roadmap.md)
+- **Capabilities Reference:** [../../reference/capabilities-reference.md](../../reference/capabilities-reference.md)
 
 ---
 

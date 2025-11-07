@@ -252,9 +252,8 @@ To add new ML features:
 - [EPSS](https://www.first.org/epss/): Exploit Prediction Scoring System
 - [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities-catalog): Known Exploited Vulnerabilities
 - [CVSS](https://www.first.org/cvss/): Common Vulnerability Scoring System
-- [Phase 10 Spec](../archive/phases/PHASE_10_AI_INTELLIGENCE.md): Detailed phase specification
+- [Threat Detection](../security/threat-detection.md): ML-powered threat detection
 
 ---
 
-**Last Updated:** 2025-11-05  
-**Phase 10 Status:** 5% Complete (Infrastructure established)
+**Last Updated:** 2025-11-05
