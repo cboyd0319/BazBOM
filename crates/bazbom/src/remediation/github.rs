@@ -6,6 +6,7 @@ use chrono;
 use serde_json::json;
 use std::path::Path;
 use std::process::Command;
+use tracing::info;
 
 use super::apply::apply_fixes_with_testing;
 use super::types::{ApplyResultWithTests, PrConfig, RemediationSuggestion};
@@ -24,12 +25,12 @@ pub fn generate_pr(
     project_root: &Path,
     config: PrConfig,
 ) -> Result<String> {
-    println!("\n[bazbom] Generating PR for vulnerability fixes...");
+    info!("Generating PR for vulnerability fixes");
 
     let timestamp = chrono::Utc::now().format("%Y%m%d-%H%M%S");
     let branch_name = format!("bazbom/fix-vulnerabilities-{}", timestamp);
 
-    println!("[bazbom] Creating branch: {}", branch_name);
+    info!(branch = %branch_name, "Creating branch");
 
     let status = Command::new("git")
         .args(["checkout", "-b", &branch_name])
@@ -41,11 +42,11 @@ pub fn generate_pr(
         anyhow::bail!("Failed to create branch {}", branch_name);
     }
 
-    println!("\n[bazbom] Applying fixes...");
+    info!("Applying fixes");
     let apply_result = apply_fixes_with_testing(suggestions, build_system, project_root, false)?;
 
     if apply_result.applied.is_empty() {
-        println!("[bazbom] No fixes were applied, skipping PR creation");
+        info!("No fixes were applied, skipping PR creation");
         let _ = Command::new("git")
             .args(["checkout", "-"])
             .current_dir(project_root)
@@ -53,7 +54,7 @@ pub fn generate_pr(
         return Ok("No fixes applied, PR not created".to_string());
     }
 
-    println!("\n[bazbom] Staging changes...");
+    info!("Staging changes");
     let status = Command::new("git")
         .args(["add", "-A"])
         .current_dir(project_root)
@@ -66,7 +67,7 @@ pub fn generate_pr(
 
     let commit_message = generate_commit_message(suggestions, &apply_result);
 
-    println!("[bazbom] Committing changes...");
+    info!("Committing changes");
     let status = Command::new("git")
         .args(["commit", "-m", &commit_message])
         .current_dir(project_root)
@@ -77,7 +78,7 @@ pub fn generate_pr(
         anyhow::bail!("Failed to commit changes");
     }
 
-    println!("[bazbom] Pushing branch to remote...");
+    info!("Pushing branch to remote");
     let status = Command::new("git")
         .args(["push", "-u", "origin", &branch_name])
         .current_dir(project_root)
@@ -91,11 +92,10 @@ pub fn generate_pr(
     let pr_body = generate_pr_body(suggestions, &apply_result);
     let pr_title = generate_pr_title(&apply_result.applied);
 
-    println!("\n[bazbom] Creating pull request...");
+    info!("Creating pull request");
     let pr_url = create_github_pr(&config, &pr_title, &pr_body, &branch_name)?;
 
-    println!("\n[+] Pull request created successfully!");
-    println!("   URL: {}", pr_url);
+    info!(url = %pr_url, "Pull request created successfully");
 
     Ok(pr_url)
 }

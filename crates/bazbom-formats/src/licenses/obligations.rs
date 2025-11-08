@@ -121,10 +121,13 @@ impl LicenseObligations {
             ],
         );
 
-        obligations.insert(
-            "GPL-3.0-or-later".to_string(),
-            obligations.get("GPL-3.0-only").unwrap().clone(),
-        );
+        // GPL-3.0-or-later has same obligations as GPL-3.0-only
+        if let Some(gpl_only_obls) = obligations.get("GPL-3.0-only") {
+            obligations.insert(
+                "GPL-3.0-or-later".to_string(),
+                gpl_only_obls.clone(),
+            );
+        }
 
         obligations.insert(
             "AGPL-3.0-only".to_string(),
@@ -160,10 +163,13 @@ impl LicenseObligations {
             ],
         );
 
-        obligations.insert(
-            "AGPL-3.0-or-later".to_string(),
-            obligations.get("AGPL-3.0-only").unwrap().clone(),
-        );
+        // AGPL-3.0-or-later has same obligations as AGPL-3.0-only
+        if let Some(agpl_only_obls) = obligations.get("AGPL-3.0-only") {
+            obligations.insert(
+                "AGPL-3.0-or-later".to_string(),
+                agpl_only_obls.clone(),
+            );
+        }
 
         obligations.insert(
             "BSD-2-Clause".to_string(),
