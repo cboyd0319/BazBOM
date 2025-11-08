@@ -58,136 +58,107 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
-  osv-scanner:
-    name: OSV Vulnerability Scanner
+  cargo-audit:
+    name: Cargo Audit - Rust Dependencies
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     permissions:
       contents: read
       security-events: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      
-      - name: Run OSV Scanner
-        uses: google/osv-scanner-action@40a8940a65eab1544a6af759e43d936201a131a2 # v2.0.3
-        with:
-          scan-args: |-
-            --lockfile=requirements.txt
-            --lockfile=requirements-test.txt
-            --lockfile=requirements-security.txt
-            --format=json
-            --output=osv-results.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo audit
+        run: cargo audit --json > audit-results.json
         continue-on-error: true
-      
-      - name: Upload OSV results
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
-        if: always() && hashFiles('osv-results.sarif') != ''
-        with:
-          sarif_file: osv-results.sarif
-          category: osv-scanner
+
+      - name: Check for vulnerabilities
+        run: |
+          if cargo audit --deny warnings; then
+            echo "✅ No vulnerabilities found in Cargo dependencies" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ Vulnerabilities found - review audit-results.json" >> $GITHUB_STEP_SUMMARY
+          fi
         continue-on-error: true
-      
-      - name: Upload OSV JSON
+
+      - name: Upload audit results
         uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
         if: always()
         with:
-          name: osv-scanner-results
-          path: osv-results.json
+          name: cargo-audit-results
+          path: audit-results.json
           retention-days: 30
           if-no-files-found: warn
 
-  hash-verification:
-    name: Verify Dependency Hashes
+  cargo-lock-verification:
+    name: Verify Cargo.lock is Up-to-Date
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    
+
     permissions:
       contents: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      
-      - name: Set up Python
-        uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a2b # v5.3.0
-        with:
-          python-version: '3.12'
-      
-      - name: Verify requirements.txt has hashes
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Verify Cargo.lock is up-to-date
         run: |
-          echo "## Hash Verification" >> $GITHUB_STEP_SUMMARY
+          echo "## Cargo.lock Verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
-          check_hashes() {
-            local file=$1
-            if [ ! -f "$file" ]; then
-              echo "⚠️ $file not found" >> $GITHUB_STEP_SUMMARY
-              return 0
-            fi
-            
-            # Check if file has hash entries
-            if grep -q "^.*--hash=sha256:" "$file"; then
-              local hash_count=$(grep -c "^.*--hash=sha256:" "$file")
-              echo "✅ $file: $hash_count hashes verified" >> $GITHUB_STEP_SUMMARY
-            else
-              echo "❌ $file: NO HASHES FOUND (security risk)" >> $GITHUB_STEP_SUMMARY
-              return 1
-            fi
-          }
-          
-          EXIT_CODE=0
-          check_hashes "requirements.txt" || EXIT_CODE=1
-          check_hashes "requirements-test.txt" || EXIT_CODE=1
-          check_hashes "requirements-security.txt" || EXIT_CODE=1
-          
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "✅ All requirements files have SHA256 hashes" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "❌ Some requirements files missing hashes" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "Generate hashes with: pip-compile --generate-hashes requirements.in" >> $GITHUB_STEP_SUMMARY
+
+          if [ ! -f "Cargo.lock" ]; then
+            echo "❌ Cargo.lock not found (required for reproducible builds)" >> $GITHUB_STEP_SUMMARY
+            exit 1
           fi
-          
-          exit $EXIT_CODE
-      
-      - name: Verify pip-tools is available
-        run: |
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Dependency Lock Tools" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          
-          if [ -f requirements.in ] || [ -f requirements-test.in ] || [ -f requirements-security.in ]; then
-            echo "✅ .in files found (source requirements)" >> $GITHUB_STEP_SUMMARY
+
+          # Check if Cargo.lock is up-to-date with Cargo.toml files
+          cargo update --workspace --dry-run > /tmp/cargo-check.txt 2>&1
+
+          if grep -q "Updating" /tmp/cargo-check.txt; then
+            echo "⚠️ Cargo.lock is out of date" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
-            echo "To update locked requirements:" >> $GITHUB_STEP_SUMMARY
-            echo '```bash' >> $GITHUB_STEP_SUMMARY
-            echo "pip install pip-tools" >> $GITHUB_STEP_SUMMARY
-            echo "pip-compile --generate-hashes requirements.in" >> $GITHUB_STEP_SUMMARY
-            echo "pip-compile --generate-hashes requirements-test.in" >> $GITHUB_STEP_SUMMARY
-            echo "pip-compile --generate-hashes requirements-security.in" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/cargo-check.txt >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`cargo update\` to update Cargo.lock" >> $GITHUB_STEP_SUMMARY
+            exit 1
           else
-            echo "⚠️ No .in files found" >> $GITHUB_STEP_SUMMARY
+            echo "✅ Cargo.lock is up-to-date" >> $GITHUB_STEP_SUMMARY
           fi
+
+          # Count dependencies
+          local dep_count=$(grep -c "^name = " Cargo.lock || echo "0")
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 Total locked dependencies: $dep_count" >> $GITHUB_STEP_SUMMARY
 
   summary:
     name: Security Review Summary
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [dependency-review, osv-scanner, hash-verification]
+    needs: [dependency-review, cargo-audit, cargo-lock-verification]
     if: always()
-    
+
     permissions:
       contents: read
-    
+
     steps:
       - name: Generate summary
         run: |
@@ -197,7 +168,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Checks Performed" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ GitHub Dependency Review" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ OSV Scanner" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Hash verification" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Cargo Audit (Rust security advisories)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Cargo.lock verification" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Review the individual job outputs for detailed results." >> $GITHUB_STEP_SUMMARY

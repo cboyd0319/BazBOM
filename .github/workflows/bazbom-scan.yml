@@ -21,6 +21,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          shared-key: "bazbom-build"
+
+      - name: Build BazBOM
+        run: cargo build --release -p bazbom
+
+      - name: Add BazBOM to PATH
+        run: echo "${{ github.workspace }}/target/release" >> $GITHUB_PATH
+
       - name: Set up JDK
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
