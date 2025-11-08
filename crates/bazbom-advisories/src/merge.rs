@@ -122,12 +122,12 @@ pub enum Priority {
 
 /// Merge multiple vulnerability sources into a canonical vulnerability
 ///
-/// # Panics
+/// # Errors
 ///
-/// Panics if the `vulns` vector is empty.
-pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
+/// Returns an error if the `vulns` vector is empty.
+pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Result<Vulnerability, String> {
     if vulns.is_empty() {
-        panic!("Cannot merge empty vulnerability list");
+        return Err("Cannot merge empty vulnerability list".to_string());
     }
 
     // Use the first vulnerability as base
@@ -159,10 +159,13 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
     let mut best_severity: Option<Severity> = None;
     for vuln in &vulns {
         if let Some(sev) = &vuln.severity {
-            if best_severity.is_none()
-                || (best_severity.as_ref().unwrap().cvss_v3.unwrap_or(0.0)
-                    < sev.cvss_v3.unwrap_or(0.0))
-            {
+            let current_cvss = best_severity
+                .as_ref()
+                .and_then(|s| s.cvss_v3)
+                .unwrap_or(0.0);
+            let new_cvss = sev.cvss_v3.unwrap_or(0.0);
+
+            if best_severity.is_none() || current_cvss < new_cvss {
                 best_severity = Some(sev.clone());
             }
         }
@@ -171,11 +174,15 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
 
     // Use longest/best description
     for vuln in &vulns {
-        if vuln.details.is_some()
-            && (merged.details.is_none()
-                || vuln.details.as_ref().unwrap().len() > merged.details.as_ref().unwrap().len())
-        {
-            merged.details = vuln.details.clone();
+        if let Some(vuln_details) = &vuln.details {
+            let should_replace = match &merged.details {
+                None => true,
+                Some(merged_details) => vuln_details.len() > merged_details.len(),
+            };
+
+            if should_replace {
+                merged.details = Some(vuln_details.clone());
+            }
         }
     }
 
@@ -188,7 +195,7 @@ pub fn merge_vulnerabilities(vulns: Vec<Vulnerability>) -> Vulnerability {
     }
     merged.references = ref_map.into_values().collect();
 
-    merged
+    Ok(merged)
 }
 
 /// Calculate priority based on severity, KEV, and EPSS
@@ -265,7 +272,7 @@ mod tests {
             priority: None,
         };
 
-        let merged = merge_vulnerabilities(vec![vuln1, vuln2]);
+        let merged = merge_vulnerabilities(vec![vuln1, vuln2]).expect("Should merge successfully");
 
         assert!(merged.aliases.contains(&"CVE-2024-1234".to_string()));
         assert!(merged.aliases.contains(&"GHSA-xxxx-yyyy".to_string()));

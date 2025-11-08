@@ -97,7 +97,8 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
         "cyclonedx" => {
             let path = dir.join("sbom.cyclonedx.json");
             let bom = bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", VERSION);
-            let content = serde_json::to_vec_pretty(&bom).unwrap();
+            let content = serde_json::to_vec_pretty(&bom)
+                .map_err(std::io::Error::other)?;
             fs::write(&path, content)?;
             Ok(path)
         }
@@ -107,7 +108,8 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
                 "bazbom-stub",
                 format!("https://github.com/cboyd0319/BazBOM/sbom/{:?}", system),
             );
-            let content = serde_json::to_vec_pretty(&doc).unwrap();
+            let content = serde_json::to_vec_pretty(&doc)
+                .map_err(std::io::Error::other)?;
             fs::write(&path, content)?;
 
             // Also write sca_findings.json as expected by tests
@@ -121,7 +123,8 @@ pub fn write_stub_sbom<P: AsRef<Path>>(
             });
             fs::write(
                 &findings_path,
-                serde_json::to_vec_pretty(&empty_findings).unwrap(),
+                serde_json::to_vec_pretty(&empty_findings)
+                    .map_err(std::io::Error::other)?,
             )?;
 
             Ok(path)
