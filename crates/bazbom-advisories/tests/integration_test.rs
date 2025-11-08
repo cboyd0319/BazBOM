@@ -277,7 +277,7 @@ fn test_merge_multiple_sources() {
     let vuln2 = parse_nvd_entry(&nvd_entry).unwrap();
 
     // Merge vulnerabilities
-    let merged = merge_vulnerabilities(vec![vuln1, vuln2]);
+    let merged = merge_vulnerabilities(vec![vuln1, vuln2]).expect("Should merge successfully");
 
     // Check merged data
     assert!(merged.aliases.contains(&"CVE-2024-TEST".to_string()));

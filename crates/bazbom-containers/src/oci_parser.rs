@@ -189,7 +189,9 @@ impl OciImageParser {
             if path.extension() == Some(std::ffi::OsStr::new("tar"))
                 && !path.to_string_lossy().contains("manifest")
             {
-                let layer_path = output_dir.as_ref().join(path.file_name().unwrap());
+                let file_name = path.file_name()
+                    .ok_or_else(|| anyhow::anyhow!("Invalid file name in tar archive"))?;
+                let layer_path = output_dir.as_ref().join(file_name);
                 let mut output = File::create(&layer_path).with_context(|| {
                     format!("Failed to create layer file: {}", layer_path.display())
                 })?;

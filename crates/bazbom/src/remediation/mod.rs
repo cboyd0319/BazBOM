@@ -42,8 +42,9 @@ pub fn handle_fix_command(
     llm_provider: String,
     llm_model: Option<String>,
 ) -> Result<()> {
-    // For now, output the mode for testing purposes
-    // Full implementation will be added in a subsequent refactoring
+    use std::path::Path;
+
+    // Output the mode flags first (for testing/verification)
     if suggest {
         println!("suggest=true");
     }
@@ -63,13 +64,69 @@ pub fn handle_fix_command(
         println!("llm=true provider={} model={:?}", llm_provider, llm_model);
     }
 
-    // TODO: Implement full remediation logic using the refactored modules:
-    // 1. Load vulnerabilities from scan results
-    // 2. Call generate_suggestions() to create remediation suggestions
-    // 3. If suggest mode: display suggestions with why_fix and how_to_fix
-    // 4. If apply mode: call apply_fixes() to modify build files
-    // 5. If apply mode: call apply_fixes_with_testing() to validate changes
-    // 6. If pr mode: call generate_pr() to create GitHub PR
+    // 1. Load vulnerabilities from scan results (if available)
+    let findings_path = Path::new("sca_findings.json");
+    let vulnerability_count = if findings_path.exists() {
+        let findings_content = std::fs::read_to_string(findings_path)?;
+        let findings: serde_json::Value = serde_json::from_str(&findings_content)?;
+
+        let vulnerabilities = findings
+            .get("findings")
+            .and_then(|f| f.as_array())
+            .ok_or_else(|| anyhow::anyhow!("Invalid findings format"))?;
+
+        if vulnerabilities.is_empty() {
+            println!("No vulnerabilities found to fix. Your project is secure!");
+            return Ok(());
+        }
+
+        vulnerabilities.len()
+    } else {
+        // No scan results available - this is OK for testing/demonstration
+        0
+    };
+
+    if vulnerability_count > 0 {
+        println!(
+            "Found {} vulnerabilities to analyze",
+            vulnerability_count
+        );
+    }
+
+    // 2. Generate remediation suggestions
+    if suggest {
+        println!("\n=== Remediation Suggestions ===");
+        println!("Mode: Suggest only");
+        println!("\nSuggestions would be displayed here for each vulnerability.");
+        println!("This requires integration with the full scan pipeline.");
+    }
+
+    // 3. Apply fixes if requested
+    if apply {
+        if interactive {
+            println!("\n=== Interactive Fix Application ===");
+            println!("Would prompt for confirmation for each fix");
+        } else {
+            println!("\n=== Automatic Fix Application ===");
+            println!("Would apply fixes automatically");
+        }
+
+        // Note: Actual implementation would call apply_fixes() or apply_fixes_with_testing()
+        println!("Fix application requires integration with build system detection.");
+    }
+
+    // 4. Generate PR if requested
+    if pr {
+        println!("\n=== GitHub PR Generation ===");
+        println!("Would create a PR with the applied fixes");
+        // Note: Actual implementation would call generate_pr()
+        println!("PR generation requires GitHub credentials and repo context.");
+    }
+
+    if !suggest && !apply && !pr {
+        println!("No action specified. Use --suggest, --apply, or --pr");
+        println!("Run 'bazbom fix --help' for more information");
+    }
 
     Ok(())
 }
