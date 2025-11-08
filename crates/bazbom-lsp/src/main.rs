@@ -1,5 +1,12 @@
-// BazBOM Language Server Protocol implementation
-// Provides real-time vulnerability scanning for IDE integration
+//! BazBOM Language Server Protocol implementation
+//!
+//! Provides real-time vulnerability scanning and code actions for IDE integration.
+//!
+//! This LSP server enables:
+//! - Real-time diagnostics for vulnerable dependencies in build files
+//! - Code actions (quick fixes) to upgrade vulnerable packages
+//! - Hover information showing CVE details and severity
+//! - Integration with VS Code, IntelliJ, and other LSP-compatible editors
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
