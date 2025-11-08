@@ -71,7 +71,9 @@ fn load_advisories_from_cache(
 
 fn write_policy_result(result: &bazbom_policy::PolicyResult) -> Result<()> {
     let policy_output = PathBuf::from("policy_result.json");
-    fs::write(&policy_output, serde_json::to_vec_pretty(&result).unwrap())
+    let json_data = serde_json::to_vec_pretty(&result)
+        .context("failed to serialize policy result to JSON")?;
+    fs::write(&policy_output, json_data)
         .with_context(|| format!("failed writing {:?}", policy_output))?;
     println!("[bazbom] wrote {:?}", policy_output);
     Ok(())
@@ -88,7 +90,9 @@ fn write_policy_violations_sarif(result: &bazbom_policy::PolicyResult) -> Result
         sarif.add_result(result_item);
     }
 
-    fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
+    let json_data = serde_json::to_vec_pretty(&sarif)
+        .context("failed to serialize SARIF report to JSON")?;
+    fs::write(&sarif_path, json_data)
         .with_context(|| format!("failed writing {:?}", sarif_path))?;
     println!(
         "[bazbom] wrote {:?} ({} violations)",
