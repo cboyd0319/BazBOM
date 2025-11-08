@@ -1,4 +1,11 @@
-// Library exports for testing and internal use
+//! BazBOM Core Library
+//!
+//! This is the main library crate that provides internal modules for the BazBOM CLI.
+//! It contains analyzers, scanners, and utilities for JVM ecosystem SBOM generation.
+//!
+//! This crate is primarily for internal use and testing. Public API users should
+//! use the individual specialized crates like `bazbom-core`, `bazbom-formats`, etc.
+
 pub mod advisory;
 pub mod analyzers;
 pub mod android;
