@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
-use std::fs;
-use std::path::Path;
+use bazbom::cli::{ComplianceFrameworkArg, ReportCmd};
 use bazbom_reports::{
-    ComplianceFramework, PolicyStatus, ReportGenerator, ReportType, SbomData,
-    VulnerabilityDetail, VulnerabilityFindings,
+    ComplianceFramework, PolicyStatus, ReportGenerator, ReportType, SbomData, VulnerabilityDetail,
+    VulnerabilityFindings,
 };
 use chrono::Utc;
-use bazbom::cli::{ComplianceFrameworkArg, ReportCmd};
+use std::fs;
+use std::path::Path;
 
 /// Handle the `bazbom report` command
 pub fn handle_report(action: ReportCmd) -> Result<()> {

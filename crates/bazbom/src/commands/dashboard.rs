@@ -76,10 +76,10 @@ fn load_findings_data(
     use bazbom_dashboard::{DashboardSummary, DependencyGraph, Vulnerability, VulnerabilityCounts};
     use std::fs;
 
-    let findings_content = fs::read_to_string(findings_path)
-        .context("Failed to read findings file")?;
-    let findings: serde_json::Value = serde_json::from_str(&findings_content)
-        .context("Failed to parse findings JSON")?;
+    let findings_content =
+        fs::read_to_string(findings_path).context("Failed to read findings file")?;
+    let findings: serde_json::Value =
+        serde_json::from_str(&findings_content).context("Failed to parse findings JSON")?;
 
     // Extract summary
     let summary = DashboardSummary {
@@ -113,10 +113,7 @@ fn load_findings_data(
         .map(|v| Vulnerability {
             cve: v["cve"].as_str().unwrap_or("").to_string(),
             package_name: v["package"]["name"].as_str().unwrap_or("").to_string(),
-            package_version: v["package"]["version"]
-                .as_str()
-                .unwrap_or("")
-                .to_string(),
+            package_version: v["package"]["version"].as_str().unwrap_or("").to_string(),
             severity: v["severity"].as_str().unwrap_or("").to_string(),
             cvss: v["cvss"].as_f64().unwrap_or(0.0) as f32,
             description: v["description"].as_str().map(|s| s.to_string()),

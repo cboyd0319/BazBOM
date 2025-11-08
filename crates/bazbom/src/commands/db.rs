@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
-use std::path::PathBuf;
 use bazbom::cli::DbCmd;
+use std::path::PathBuf;
 
 /// Handle the `bazbom db` command
 pub fn handle_db(action: DbCmd) -> Result<()> {

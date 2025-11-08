@@ -344,7 +344,11 @@ fn generate_breaking_changes_warning(
     };
 
     if fixed_major > current_major {
-        Some(generate_major_version_warning(package, current_version, fixed))
+        Some(generate_major_version_warning(
+            package,
+            current_version,
+            fixed,
+        ))
     } else if fixed_major == current_major {
         if fixed_minor > current_minor {
             Some(generate_minor_version_warning(current_version, fixed))

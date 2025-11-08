@@ -5,7 +5,7 @@ use bazbom_core::{detect_build_system, write_stub_sbom};
 use std::path::PathBuf;
 
 /// Handle legacy scan command
-#[allow(dead_code)]  // Used from commands module
+#[allow(dead_code)] // Used from commands module
 #[allow(clippy::too_many_arguments)]
 pub fn handle_legacy_scan(
     path: String,
@@ -26,12 +26,15 @@ pub fn handle_legacy_scan(
     let system = detect_build_system(&root);
     let out = PathBuf::from(&out_dir);
 
-    println!("[bazbom] scan path={} reachability={} format={} system={:?}", path, reachability, format, system);
+    println!(
+        "[bazbom] scan path={} reachability={} format={} system={:?}",
+        path, reachability, format, system
+    );
 
     // For now, write a stub SBOM to make tests pass
     write_stub_sbom(&out, &format, system)
         .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
-    
+
     // Also create a stub SARIF file for tests
     let sarif_path = out.join("sca_findings.sarif");
     let stub_sarif = serde_json::json!({
@@ -40,7 +43,6 @@ pub fn handle_legacy_scan(
         "runs": []
     });
     std::fs::write(&sarif_path, serde_json::to_string_pretty(&stub_sarif)?)?;
-    
+
     Ok(())
 }
-

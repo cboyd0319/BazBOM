@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
+use bazbom::cli::PolicyCmd;
+use bazbom::{advisory, policy_integration};
 use std::fs;
 use std::path::PathBuf;
-use bazbom::{advisory, policy_integration};
-use bazbom::cli::PolicyCmd;
 
 /// Handle the `bazbom policy` command
 pub fn handle_policy(action: PolicyCmd) -> Result<()> {
@@ -46,7 +46,9 @@ fn handle_policy_check() -> Result<()> {
     print_policy_summary(&result)
 }
 
-fn load_advisories_from_cache(cache_dir: &PathBuf) -> Result<Vec<bazbom_advisories::Vulnerability>> {
+fn load_advisories_from_cache(
+    cache_dir: &PathBuf,
+) -> Result<Vec<bazbom_advisories::Vulnerability>> {
     if cache_dir.exists() {
         match advisory::load_advisories(cache_dir) {
             Ok(vulns) => {
@@ -69,19 +71,17 @@ fn load_advisories_from_cache(cache_dir: &PathBuf) -> Result<Vec<bazbom_advisori
 
 fn write_policy_result(result: &bazbom_policy::PolicyResult) -> Result<()> {
     let policy_output = PathBuf::from("policy_result.json");
-    fs::write(
-        &policy_output,
-        serde_json::to_vec_pretty(&result).unwrap(),
-    )
-    .with_context(|| format!("failed writing {:?}", policy_output))?;
+    let json_data =
+        serde_json::to_vec_pretty(&result).context("failed to serialize policy result to JSON")?;
+    fs::write(&policy_output, json_data)
+        .with_context(|| format!("failed writing {:?}", policy_output))?;
     println!("[bazbom] wrote {:?}", policy_output);
     Ok(())
 }
 
 fn write_policy_violations_sarif(result: &bazbom_policy::PolicyResult) -> Result<()> {
     let sarif_path = PathBuf::from("policy_violations.sarif");
-    let mut sarif =
-        bazbom_formats::sarif::SarifReport::new("bazbom-policy", bazbom_core::VERSION);
+    let mut sarif = bazbom_formats::sarif::SarifReport::new("bazbom-policy", bazbom_core::VERSION);
 
     for violation in &result.violations {
         let level = determine_violation_level(violation);
@@ -90,7 +90,9 @@ fn write_policy_violations_sarif(result: &bazbom_policy::PolicyResult) -> Result
         sarif.add_result(result_item);
     }
 
-    fs::write(&sarif_path, serde_json::to_vec_pretty(&sarif).unwrap())
+    let json_data =
+        serde_json::to_vec_pretty(&sarif).context("failed to serialize SARIF report to JSON")?;
+    fs::write(&sarif_path, json_data)
         .with_context(|| format!("failed writing {:?}", sarif_path))?;
     println!(
         "[bazbom] wrote {:?} ({} violations)",
@@ -131,11 +133,7 @@ fn print_policy_summary(result: &bazbom_policy::PolicyResult) -> Result<()> {
     }
 }
 
-fn handle_policy_init(
-    list: bool,
-    template: Option<String>,
-    output: String,
-) -> Result<()> {
+fn handle_policy_init(list: bool, template: Option<String>, output: String) -> Result<()> {
     if list {
         list_policy_templates();
         Ok(())
@@ -209,10 +207,7 @@ fn print_policy_details(policy: &bazbom_policy::PolicyConfig) {
     println!("  Severity threshold: {:?}", policy.severity_threshold);
     println!("  KEV gate: {}", policy.kev_gate);
     println!("  EPSS threshold: {:?}", policy.epss_threshold);
-    println!(
-        "  Reachability required: {}",
-        policy.reachability_required
-    );
+    println!("  Reachability required: {}", policy.reachability_required);
     println!("  VEX auto-apply: {}", policy.vex_auto_apply);
 
     if let Some(allowlist) = &policy.license_allowlist {

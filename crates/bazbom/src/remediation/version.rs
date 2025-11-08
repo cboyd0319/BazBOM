@@ -47,10 +47,7 @@ mod tests {
 
     #[test]
     fn test_parse_semantic_version_with_suffix() {
-        assert_eq!(
-            parse_semantic_version("1.2.3-SNAPSHOT"),
-            Some((1, 2, 3))
-        );
+        assert_eq!(parse_semantic_version("1.2.3-SNAPSHOT"), Some((1, 2, 3)));
         assert_eq!(parse_semantic_version("1.2.3-alpha"), Some((1, 2, 3)));
         assert_eq!(parse_semantic_version("1.2.3-beta.1"), Some((1, 2, 3)));
     }
