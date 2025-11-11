@@ -1,6 +1,6 @@
 [package]
 name = "bazbom"
-version = "1.0.0"
+version = "6.0.0"
 edition = "2021"
 license = "MIT"
 description = "Build-time SBOM, SCA, and dependency graph for JVM projects (Maven, Gradle, Bazel)"
@@ -40,6 +40,7 @@ bazbom-containers = { path = "../bazbom-containers" }
 bazbom-ml = { path = "../bazbom-ml" }
 bazbom-depsdev = { path = "../bazbom-depsdev" }
 bazbom-upgrade-analyzer = { path = "../bazbom-upgrade-analyzer" }
+bazbom-polyglot = { path = "../bazbom-polyglot" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"

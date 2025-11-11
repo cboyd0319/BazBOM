@@ -57,7 +57,7 @@ bazbom scan .
 <plugin>
     <groupId>io.bazbom</groupId>
     <artifactId>bazbom-maven-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>6.0.0</version>
 </plugin>
 ```
 
@@ -81,7 +81,7 @@ bazbom scan .
 
 ```kotlin
 plugins {
-    id("io.bazbom.gradle-plugin") version "1.0.0"
+    id("io.bazbom.gradle-plugin") version "6.0.0"
 }
 ```
 

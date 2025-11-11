@@ -72,6 +72,38 @@ pub enum Commands {
         #[arg(long)]
         ml_risk: bool,
     },
+    /// Complete container security analysis (SBOM + vulnerability scanning)
+    ContainerScan {
+        /// Container image to scan (name:tag or path to tar file)
+        image: String,
+        /// Output directory for results
+        #[arg(long, value_name = "DIR", default_value = "./container-scan")]
+        output: String,
+        /// Output format (spdx|cyclonedx)
+        #[arg(long, default_value = "spdx")]
+        format: String,
+        /// Save results as baseline for future comparisons
+        #[arg(long)]
+        baseline: bool,
+        /// Compare against saved baseline
+        #[arg(long)]
+        compare_baseline: bool,
+        /// Compare with another image
+        #[arg(long, value_name = "IMAGE")]
+        compare: Option<String>,
+        /// Create GitHub issues for vulnerabilities (requires gh CLI)
+        #[arg(long, value_name = "REPO")]
+        create_issues: Option<String>,
+        /// Interactive TUI for detailed exploration
+        #[arg(long)]
+        interactive: bool,
+        /// Generate executive report
+        #[arg(long, value_name = "FILE")]
+        report: Option<String>,
+        /// Show only specific priority vulnerabilities (p0, p1, p2, fixable, quick-wins)
+        #[arg(long, value_name = "FILTER")]
+        show: Option<String>,
+    },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
         #[command(subcommand)]

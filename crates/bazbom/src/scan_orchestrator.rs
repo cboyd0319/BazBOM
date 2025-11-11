@@ -12,6 +12,7 @@ use crate::publish::GitHubPublisher;
 use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
 use anyhow::{Context as _, Result};
 use bazbom_cache::incremental::IncrementalAnalyzer;
+use colored::Colorize;
 use std::path::PathBuf;
 
 pub struct ScanOrchestratorOptions {
@@ -75,7 +76,7 @@ impl ScanOrchestrator {
     }
 
     pub fn run(&self) -> Result<()> {
-        println!("[bazbom] orchestrated scan starting...");
+        use crate::progress::ScanProgress;
 
         // Initialize performance monitor if benchmarking enabled
         let mut perf_monitor = if self.benchmark {
@@ -85,18 +86,18 @@ impl ScanOrchestrator {
         };
 
         if self.cyclonedx {
-            println!("[bazbom] CycloneDX output enabled");
+            println!("   {} CycloneDX output enabled", "ℹ️".to_string().dimmed());
         }
 
         if let Some(ref target) = self.target {
-            println!("[bazbom] targeting specific module: {}", target);
+            println!("   {} Targeting specific module: {}", "🎯".to_string(), target);
         }
 
         // Step 0: Check if incremental scan is possible
         if self.incremental {
             if let Ok(skip_scan) = self.check_incremental_scan() {
                 if skip_scan {
-                    println!("[bazbom] no significant changes detected, using cached results");
+                    println!("   {} No significant changes detected, using cached results", "✅".green());
                     return Ok(());
                 }
             }
@@ -107,71 +108,105 @@ impl ScanOrchestrator {
         if !cache_disabled {
             if let Ok(cached_result) = self.try_use_cache() {
                 if cached_result {
-                    println!("[bazbom] using cached scan results (cache hit)");
-                    println!("[bazbom] set BAZBOM_DISABLE_CACHE=1 to disable caching");
+                    println!("   {} Using cached scan results (cache hit)", "⚡".yellow());
+                    println!("   {} Set BAZBOM_DISABLE_CACHE=1 to disable caching", "ℹ️".to_string().dimmed());
                     return Ok(());
                 }
             }
         } else {
-            println!("[bazbom] cache disabled via BAZBOM_DISABLE_CACHE");
+            println!("   {} Cache disabled via BAZBOM_DISABLE_CACHE", "⊘".dimmed());
         }
 
+        // Build phase list based on what's enabled
+        let mut phases = vec!["SBOM Generation", "SCA Analysis"];
+        if self.with_semgrep {
+            phases.push("Semgrep SAST");
+        }
+        if self.with_codeql.is_some() {
+            phases.push("CodeQL Analysis");
+        }
+        if self.threat_detection.is_some() {
+            phases.push("Threat Intel");
+        }
+
+        let progress = ScanProgress::new(&phases);
+        let mut phase_idx = 0;
+
         // Step 1: Generate SBOM
+        progress.start_phase(phase_idx, "Analyzing dependencies...");
         if let Some(ref mut monitor) = perf_monitor {
             monitor.start_phase("sbom_generation");
         }
+        progress.update_phase(phase_idx, 30, "Parsing build files...");
         self.generate_sbom()?;
+        progress.complete_phase(phase_idx, "Complete");
         if let Some(ref mut monitor) = perf_monitor {
             monitor.end_phase();
         }
+        phase_idx += 1;
 
         // Run analyzers
         let mut reports = Vec::new();
 
         // 1. SCA (always runs)
+        progress.start_phase(phase_idx, "Fetching vulnerability data...");
         if let Some(ref mut monitor) = perf_monitor {
             monitor.start_phase("vulnerability_scan");
         }
         let sca = ScaAnalyzer::new();
         if sca.enabled(&self.config, true) {
+            progress.update_phase(phase_idx, 50, "Analyzing vulnerabilities...");
             match sca.run(&self.context) {
                 Ok(report) => {
-                    println!("[bazbom] SCA analysis complete");
+                    progress.complete_phase(phase_idx, "Complete");
                     reports.push(report);
                 }
-                Err(e) => eprintln!("[bazbom] SCA analysis failed: {}", e),
+                Err(e) => {
+                    progress.fail_phase(phase_idx, &format!("Failed: {}", e));
+                }
             }
         }
         if let Some(ref mut monitor) = perf_monitor {
             monitor.end_phase();
         }
+        phase_idx += 1;
 
         // 2. Semgrep (optional)
         if self.with_semgrep {
+            progress.start_phase(phase_idx, "Running SAST rules...");
             let semgrep = SemgrepAnalyzer::new();
             if semgrep.enabled(&self.config, self.with_semgrep) {
+                progress.update_phase(phase_idx, 40, "Scanning code patterns...");
                 match semgrep.run(&self.context) {
                     Ok(report) => {
-                        println!("[bazbom] Semgrep analysis complete");
+                        progress.complete_phase(phase_idx, "Complete");
                         reports.push(report);
                     }
-                    Err(e) => eprintln!("[bazbom] Semgrep analysis failed: {}", e),
+                    Err(e) => {
+                        progress.fail_phase(phase_idx, &format!("Failed: {}", e));
+                    }
                 }
             }
+            phase_idx += 1;
         }
 
         // 3. CodeQL (optional)
         if let Some(ref suite) = self.with_codeql {
+            progress.start_phase(phase_idx, "Building CodeQL database...");
             let codeql = CodeqlAnalyzer::new(Some(suite.as_str().to_string()));
             if codeql.enabled(&self.config, self.with_codeql.is_some()) {
+                progress.update_phase(phase_idx, 60, "Running queries...");
                 match codeql.run(&self.context) {
                     Ok(report) => {
-                        println!("[bazbom] CodeQL analysis complete");
+                        progress.complete_phase(phase_idx, "Complete");
                         reports.push(report);
                     }
-                    Err(e) => eprintln!("[bazbom] CodeQL analysis failed: {}", e),
+                    Err(e) => {
+                        progress.fail_phase(phase_idx, &format!("Failed: {}", e));
+                    }
                 }
             }
+            phase_idx += 1;
         }
 
         // 4. Threat Intelligence (if enabled)
@@ -182,16 +217,21 @@ impl ScanOrchestrator {
             .threat_detection
             .unwrap_or(ThreatDetectionLevel::Standard);
         if threat_level != ThreatDetectionLevel::Off {
+            progress.start_phase(phase_idx, "Gathering threat intel...");
             let threat = ThreatAnalyzer::new(threat_level);
             if threat.enabled(&self.config, self.threat_detection.is_some()) {
+                progress.update_phase(phase_idx, 50, "Analyzing threat patterns...");
                 match threat.run(&self.context) {
                     Ok(report) => {
-                        println!("[bazbom] Threat intelligence analysis complete");
+                        progress.complete_phase(phase_idx, "Complete");
                         reports.push(report);
                     }
-                    Err(e) => eprintln!("[bazbom] Threat intelligence analysis failed: {}", e),
+                    Err(e) => {
+                        progress.fail_phase(phase_idx, &format!("Failed: {}", e));
+                    }
                 }
             }
+            phase_idx += 1;
         }
         if let Some(ref mut monitor) = perf_monitor {
             monitor.end_phase();
@@ -206,6 +246,9 @@ impl ScanOrchestrator {
         if let Some(ref strategy) = self.containers {
             self.run_container_sbom(strategy)?;
         }
+
+        // Save report count before consuming reports
+        let report_count = reports.len();
 
         // Merge all SARIF reports
         if !reports.is_empty() {
@@ -260,6 +303,10 @@ impl ScanOrchestrator {
                 eprintln!("[bazbom] warning: failed to cache scan results: {}", e);
             }
         }
+
+        // Finish progress display
+        let summary = format!("✨ Scan complete! Generated {} reports", report_count);
+        progress.finish(&summary);
 
         // Finalize performance monitoring and display metrics
         if let Some(monitor) = perf_monitor {
@@ -550,20 +597,91 @@ impl ScanOrchestrator {
     }
 
     fn scan_single_container(&self, image_path: &std::path::Path) -> Result<()> {
-        use bazbom_containers::ContainerScanner;
+        use bazbom_containers::{ContainerScanner, ScanEvent};
+        use crate::container_ux::{ContainerScanProgress, ContainerSummary};
+        use std::time::Instant;
 
-        println!("[bazbom] scanning container: {:?}", image_path);
+        // Track scan start time
+        let scan_start = Instant::now();
 
         // Create scanner
         let scanner = ContainerScanner::new(image_path.to_path_buf());
 
-        // Scan the container
-        let scan_result = scanner.scan().context("Container scan failed")?;
+        // Track progress with beautiful UX
+        let mut progress: Option<ContainerScanProgress> = None;
 
-        println!("[bazbom] container scan complete:");
-        println!("[bazbom]   image: {}", scan_result.image.name);
-        println!("[bazbom]   layers: {}", scan_result.image.layers.len());
-        println!("[bazbom]   Java artifacts: {}", scan_result.artifacts.len());
+        // Scan with progress tracking
+        let scan_result = scanner.scan_with_progress(|event| {
+            match event {
+                ScanEvent::ImageMetadata { name, layers } => {
+                    progress = Some(ContainerScanProgress::new(&name, layers));
+                }
+                ScanEvent::LayerStart { digest, size, .. } => {
+                    if let Some(ref mut p) = progress {
+                        p.start_layer(
+                            &digest,
+                            size as f64 / 1_048_576.0, // Convert bytes to MB
+                        );
+                    }
+                }
+                ScanEvent::LayerComplete { artifacts_found, .. } => {
+                    if let Some(ref mut p) = progress {
+                        p.complete_layer(artifacts_found, 0); // 0 vulns for now
+                    }
+                }
+                ScanEvent::Complete => {
+                    if let Some(ref mut p) = progress {
+                        p.finish();
+                    }
+                }
+                _ => {}
+            }
+        }).context("Container scan failed")?;
+
+        println!(); // Add spacing after progress
+
+        // Build layer breakdown data for beautiful display
+        let layer_data: Vec<(String, f64, usize, usize)> = scan_result
+            .layer_metrics
+            .iter()
+            .map(|m| {
+                (
+                    m.digest.clone(),
+                    m.size as f64 / 1_048_576.0, // Convert to MB
+                    m.artifacts_found,
+                    m.vulnerabilities_found,
+                )
+            })
+            .collect();
+
+        // Display beautiful layer breakdown
+        crate::container_ux::print_layer_breakdown(&layer_data);
+        println!();
+
+        // Calculate totals and metrics
+        let total_size_mb: f64 = layer_data.iter().map(|(_, size, _, _)| size).sum();
+        let total_vulns: usize = layer_data.iter().map(|(_, _, _, vulns)| vulns).sum();
+
+        // For now, we don't have severity breakdown from container scanning
+        // In a real implementation, we'd analyze each vulnerability
+        let scan_duration = scan_start.elapsed();
+
+        // Display beautiful container summary
+        let summary = ContainerSummary {
+            image_name: scan_result.image.name.clone(),
+            image_digest: scan_result.image.digest.clone(),
+            base_image: scan_result.image.base_image.clone(),
+            total_layers: scan_result.image.layers.len(),
+            total_size_mb,
+            java_artifacts: scan_result.artifacts.len(),
+            vulnerabilities: total_vulns,
+            critical_vulns: 0,  // Would be populated by vulnerability scan
+            high_vulns: 0,      // Would be populated by vulnerability scan
+            medium_vulns: 0,    // Would be populated by vulnerability scan
+            low_vulns: 0,       // Would be populated by vulnerability scan
+            scan_duration,
+        };
+        summary.print();
 
         // Generate container SBOM
         let sbom_path = self.context.out_dir.join(format!(
@@ -571,9 +689,81 @@ impl ScanOrchestrator {
             scan_result.image.name.replace([':', '/'], "-")
         ));
 
-        self.generate_container_sbom(&scan_result, &sbom_path)?;
+        self.generate_container_sbom_from_detailed(&scan_result, &sbom_path)?;
 
-        println!("[bazbom] container SBOM written to: {:?}", sbom_path);
+        println!();
+        println!("   {} Container SBOM written to: {:?}", "📄".to_string(), sbom_path);
+
+        Ok(())
+    }
+
+    fn generate_container_sbom_from_detailed(
+        &self,
+        scan_result: &bazbom_containers::DetailedScanResult,
+        output_path: &std::path::Path,
+    ) -> Result<()> {
+        use bazbom_formats::spdx::{Package, SpdxDocument};
+
+        println!();
+        println!("   {} Generating container SBOM...", "📝".to_string());
+
+        // Create SPDX document for the container
+        let mut doc = SpdxDocument::new(
+            format!("container-{}", scan_result.image.name),
+            format!("Container SBOM for {}", scan_result.image.name),
+        );
+
+        // Add container as a package
+        let container_pkg = Package {
+            spdxid: format!(
+                "SPDXRef-Package-{}",
+                scan_result.image.name.replace(':', "-")
+            ),
+            name: scan_result.image.name.clone(),
+            version_info: Some("latest".to_string()),
+            download_location: "NOASSERTION".to_string(),
+            files_analyzed: false,
+            license_concluded: None,
+            license_declared: None,
+            external_refs: None,
+        };
+        doc.add_package(container_pkg);
+
+        // Add each Java artifact as a package
+        for (idx, artifact) in scan_result.artifacts.iter().enumerate() {
+            let package = if let Some(ref coords) = artifact.maven_coords {
+                Package {
+                    spdxid: format!(
+                        "SPDXRef-Package-{}-{}",
+                        coords.artifact_id.replace('.', "-"),
+                        idx
+                    ),
+                    name: format!("{}:{}", coords.group_id, coords.artifact_id),
+                    version_info: Some(coords.version.clone()),
+                    download_location: "NOASSERTION".to_string(),
+                    files_analyzed: false,
+                    license_concluded: None,
+                    license_declared: None,
+                    external_refs: None,
+                }
+            } else {
+                Package {
+                    spdxid: format!("SPDXRef-Package-artifact-{}", idx),
+                    name: artifact.path.clone(),
+                    version_info: Some("unknown".to_string()),
+                    download_location: "NOASSERTION".to_string(),
+                    files_analyzed: false,
+                    license_concluded: None,
+                    license_declared: None,
+                    external_refs: None,
+                }
+            };
+            doc.add_package(package);
+        }
+
+        // Write SBOM to file
+        let json = serde_json::to_string_pretty(&doc)?;
+        std::fs::write(output_path, json)?;
 
         Ok(())
     }
@@ -876,14 +1066,86 @@ impl ScanOrchestrator {
     fn generate_sbom(&self) -> Result<()> {
         println!("[bazbom] generating SBOM...");
 
-        // Detect build system
+        // Detect JVM build system
         let system = bazbom_core::detect_build_system(&self.context.workspace);
-        println!("[bazbom] detected build system: {:?}", system);
+        println!("[bazbom] detected JVM build system: {:?}", system);
 
-        // Generate SPDX SBOM (using stub for now - full implementations would parse build files)
+        // Scan for polyglot ecosystems
+        println!("[bazbom] scanning for polyglot ecosystems...");
+        let workspace_path = self.context.workspace.to_str()
+            .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
+
+        // Try to use existing runtime, or create a new one if not in async context
+        let polyglot_results = match tokio::runtime::Handle::try_current() {
+            Ok(handle) => {
+                // We're in an async context, use block_in_place
+                tokio::task::block_in_place(|| {
+                    handle.block_on(bazbom_polyglot::scan_directory(workspace_path))
+                })?
+            }
+            Err(_) => {
+                // No runtime available, create a new one
+                let rt = tokio::runtime::Runtime::new()?;
+                rt.block_on(bazbom_polyglot::scan_directory(workspace_path))?
+            }
+        };
+
+        // Display detected ecosystems
+        if !polyglot_results.is_empty() {
+            println!("\n📦 Detected {} polyglot ecosystems:", polyglot_results.len());
+            for result in &polyglot_results {
+                let icon = match result.ecosystem.as_str() {
+                    "Node.js/npm" => "📦",
+                    "Python" => "🐍",
+                    "Go" => "🐹",
+                    "Rust" => "🦀",
+                    "Ruby" => "💎",
+                    "PHP" => "🐘",
+                    _ => "📦",
+                };
+                println!(
+                    "  {} {} - {} packages, {} vulnerabilities",
+                    icon,
+                    result.ecosystem,
+                    result.total_packages,
+                    result.total_vulnerabilities
+                );
+
+                // Show vulnerability summary if any found
+                if result.total_vulnerabilities > 0 {
+                    let critical = result.vulnerabilities.iter()
+                        .filter(|v| v.severity == "CRITICAL").count();
+                    let high = result.vulnerabilities.iter()
+                        .filter(|v| v.severity == "HIGH").count();
+                    let medium = result.vulnerabilities.iter()
+                        .filter(|v| v.severity == "MEDIUM").count();
+                    let low = result.vulnerabilities.iter()
+                        .filter(|v| v.severity == "LOW").count();
+
+                    if critical > 0 || high > 0 {
+                        println!(
+                            "    🚨 {} CRITICAL, {} HIGH, {} MEDIUM, {} LOW",
+                            critical, high, medium, low
+                        );
+                    }
+                }
+            }
+            println!();
+        } else {
+            println!("[bazbom] no polyglot ecosystems detected (JVM-only project)");
+        }
+
+        // Generate unified SBOM combining JVM + polyglot
+        if !polyglot_results.is_empty() {
+            let polyglot_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
+            let polyglot_sbom_path = self.context.sbom_dir.join("polyglot-sbom.json");
+            std::fs::write(&polyglot_sbom_path, serde_json::to_string_pretty(&polyglot_sbom)?)?;
+            println!("[bazbom] wrote polyglot SBOM to {:?}", polyglot_sbom_path);
+        }
+
+        // Generate JVM SPDX SBOM
         let spdx_path = bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
-
-        println!("[bazbom] wrote SPDX SBOM to {:?}", spdx_path);
+        println!("[bazbom] wrote JVM SPDX SBOM to {:?}", spdx_path);
 
         // Optionally generate CycloneDX
         if self.cyclonedx {
@@ -935,8 +1197,8 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_orchestrator_run() -> Result<()> {
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_orchestrator_run() -> Result<()> {
         let temp = tempdir()?;
         let workspace = temp.path().to_path_buf();
         let out_dir = workspace.join("out");

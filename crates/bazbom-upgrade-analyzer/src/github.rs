@@ -99,7 +99,7 @@ impl GitHubAnalyzer {
             Regex::new(r"(?i)breaking change[s]?:").unwrap(),
             Regex::new(r"(?i)\*\*breaking\*\*:?\s*(.+)").unwrap(),
             Regex::new(r"(?i)[⚠️💥]\s*(.+)").unwrap(),
-        };
+        ];
 
         // Split body into lines
         let lines: Vec<&str> = body.lines().collect();
@@ -180,12 +180,13 @@ impl GitHubAnalyzer {
         };
 
         // Common migration guide paths
+        let version_specific = format!("docs/migration/{}.md", version);
         let paths = vec![
             "MIGRATION.md",
             "UPGRADING.md",
             "docs/migration.md",
             "docs/upgrading.md",
-            &format!("docs/migration/{}.md", version),
+            &version_specific,
         ];
 
         for path in paths {
@@ -221,8 +222,8 @@ impl Default for GitHubAnalyzer {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_parse_repo_url() {
+    #[tokio::test]
+    async fn test_parse_repo_url() {
         let analyzer = GitHubAnalyzer::default();
 
         assert_eq!(
@@ -236,8 +237,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn test_extract_breaking_changes() {
+    #[tokio::test]
+    async fn test_extract_breaking_changes() {
         let analyzer = GitHubAnalyzer::default();
 
         let body = r#"

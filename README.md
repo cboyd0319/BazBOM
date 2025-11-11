@@ -4,7 +4,7 @@
 
 # BazBOM
 
-### Developer-friendly build-time SBOM & SCA for Bazel and JVM
+### Developer-friendly build-time SBOM & SCA for Bazel, JVM, and Polyglot Monorepos
 
 Security for developers, not security engineers • Universal JVM support • 100% Rust • Zero telemetry
 
@@ -14,7 +14,7 @@ Security for developers, not security engineers • Universal JVM support • 10
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 [![Bazel](https://img.shields.io/badge/Bazel-8.4.2-43A047?logo=bazel)](https://bazel.build)
-[![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/reference/jvm-language-support.md)
+[![JVM + Polyglot](https://img.shields.io/badge/scope-JVM%20%2B%20Polyglot-blue)](docs/polyglot/README.md)
 
 [Quickstart](#quickstart) •
 [Quick Reference](docs/QUICKREF.md) •
@@ -67,7 +67,7 @@ Security for developers, not security engineers • Universal JVM support • 10
 
 ## What is BazBOM?
 
-BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **Bazel monorepos and JVM projects**. Unlike other tools that overwhelm developers with security jargon, BazBOM provides **actionable guidance in plain English**.
+BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **Bazel monorepos, JVM projects, and polyglot applications**. Unlike other tools that overwhelm developers with security jargon, BazBOM provides **actionable guidance in plain English**.
 
 ### Core Mission
 
@@ -114,20 +114,32 @@ Run: bazbom fix log4j-core --explain
 
 ### Scope
 
-**BazBOM is exclusively for JVM ecosystems:**
-- **Languages:** Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
+**BazBOM 6.0 supports JVM-first with polyglot capabilities:**
+
+**🎯 Primary Focus (World-Class Depth):**
+- **JVM Languages:** Java, Kotlin, Scala, Groovy, Clojure
 - **Build Systems:** Bazel (with JVM rules), Maven, Gradle, Ant, sbt, Buildr
 - **Containers:** JVM artifact detection in Docker/OCI images
-- **Out of scope:** Node.js, Python, Go, Rust, C++, or any non-JVM languages
 
-**Philosophy:** Master one domain (Bazel + JVM) instead of being mediocre at everything.
+**🌍 NEW in 6.0: Polyglot Support** ([Docs](docs/polyglot/README.md))
+- **Node.js/npm** - package.json, package-lock.json
+- **Python** - requirements.txt, poetry.lock, Pipfile.lock
+- **Go** - go.mod
+- **Rust** - Cargo.toml, Cargo.lock
+- **Ruby** - Gemfile, Gemfile.lock
+- **PHP** - composer.json, composer.lock
 
-For detailed language and build system support, see [JVM Language Support](docs/reference/jvm-language-support.md).
+*Automatic ecosystem detection, unified SBOM generation, OSV vulnerability scanning for all languages.*
+
+**Philosophy:** Master JVM (world-class depth) + support common polyglot monorepo patterns.
+
+For detailed support, see [JVM Language Support](docs/reference/jvm-language-support.md) and [Polyglot Guide](docs/polyglot/README.md).
 
 ### Who is this for?
 
 - **Java/Kotlin/Scala developers** who want security without the PhD
 - **Teams with Bazel monorepos** (the only tool that actually works)
+- **Polyglot monorepo teams** - Node.js + Python + Go + Rust + Ruby + PHP in one unified SBOM
 - **DevSecOps engineers** who want developers to actually fix vulnerabilities
 - **Security teams** who need accurate SBOMs without fighting with developers
 - **Organizations** tired of tools that create more problems than they solve
@@ -703,6 +715,16 @@ See [Orchestrated Scanning Guide](docs/integrations/orchestrated-scan.md) for de
 - **Bazel** (WORKSPACE/MODULE.bazel) - via aspects
 - Auto-detection of build system
 - Unified CLI: `bazbom scan .`
+
+**🌍 Polyglot Ecosystem Support** NEW
+- **Node.js/npm** - package.json + lockfiles
+- **Python** - requirements.txt, poetry, pipenv
+- **Go** - go.mod modules
+- **Rust** - Cargo.toml/Cargo.lock
+- **Ruby** - Gemfile/Bundler
+- **PHP** - composer.json/lock
+- Unified SBOM across all languages
+- OSV vulnerability scanning for all ecosystems
 
 **Installation & Setup**
 - One-line installer script

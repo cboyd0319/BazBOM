@@ -17,6 +17,7 @@ members = [
   "crates/bazbom-operator",
   "crates/bazbom-depsdev",
   "crates/bazbom-upgrade-analyzer",
+  "crates/bazbom-polyglot",
 ]
 resolver = "2"
 

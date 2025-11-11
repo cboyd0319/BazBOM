@@ -156,15 +156,19 @@ impl OciImageParser {
             let path = entry.path()?;
             let path_str = path.to_string_lossy();
 
-            // Match both <hash>.json and blobs/sha256/<hash>.json
-            if path_str.contains(&config_filename) && path_str.ends_with(".json") {
+            // Match both <hash>.json and blobs/sha256/<hash> (OCI format without extension)
+            // Also match <hash> directly for bare hash files
+            let matches_config = path_str.contains(&config_filename)
+                && (path_str.ends_with(".json") || path_str.ends_with(&config_filename));
+
+            if matches_config {
                 let mut contents = String::new();
                 entry.read_to_string(&mut contents)?;
 
-                let config: OciImageConfig =
-                    serde_json::from_str(&contents).context("Failed to parse image config")?;
-
-                return Ok(config);
+                // Try to parse as JSON
+                if let Ok(config) = serde_json::from_str::<OciImageConfig>(&contents) {
+                    return Ok(config);
+                }
             }
         }
 

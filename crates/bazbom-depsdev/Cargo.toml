@@ -1,6 +1,6 @@
 [package]
 name = "bazbom-depsdev"
-version = "0.1.0"
+version = "6.0.0"
 edition = "2021"
 authors = ["Chad Boyd <cboyd0319@gmail.com>"]
 description = "deps.dev API client for BazBOM upgrade intelligence"
@@ -14,6 +14,7 @@ tokio = { version = "1.0", features = ["full"] }
 anyhow = "1.0"
 thiserror = "1.0"
 url = "2.5"
+urlencoding = "2.1"
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 

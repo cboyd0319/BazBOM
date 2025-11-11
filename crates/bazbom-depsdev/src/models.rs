@@ -160,8 +160,9 @@ pub struct DependencyGraph {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DependencyEdge {
-    pub from: usize,  // Index into nodes array
-    pub to: usize,    // Index into nodes array
+    pub from_node: usize,     // Index into nodes array
+    pub to_node: usize,       // Index into nodes array
+    pub requirement: String,  // Version requirement
 }
 
 impl DependencyGraph {

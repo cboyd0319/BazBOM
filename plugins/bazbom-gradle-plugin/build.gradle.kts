@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "io.bazbom"
-version = "1.0.0"
+version = "6.0.0"
 
 repositories {
     mavenCentral()

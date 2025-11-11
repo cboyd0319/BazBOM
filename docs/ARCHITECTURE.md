@@ -49,6 +49,7 @@ Located in `crates/`:
 | `bazbom-containers` | OCI image scanning | Beta |
 | `bazbom-cache` | Advisory database caching | Production |
 | `bazbom-reports` | HTML/PDF report generation | Beta |
+| `bazbom-polyglot` | Multi-language ecosystem support (npm, Python, Go, Rust, Ruby, PHP) | Production |
 
 ### Build System Integration
 
@@ -66,6 +67,81 @@ Located in `crates/`:
 - Aspect: `packages_used`
 - Traverses: `java_*`, `kotlin_*`, `scala_*` rules
 - Data source: `maven_install.json` via `rules_jvm_external`
+
+### Polyglot Ecosystem Support (NEW in 6.0)
+
+**Location:** `crates/bazbom-polyglot/`
+
+```mermaid
+flowchart TD
+    A[bazbom scan command] --> B{Detect Ecosystems}
+
+    B -->|JVM| C1[Maven Plugin]
+    B -->|JVM| C2[Gradle Plugin]
+    B -->|JVM| C3[Bazel Aspects]
+    B -->|Polyglot| D[Ecosystem Detection]
+
+    D --> E1[npm Parser]
+    D --> E2[Python Parser]
+    D --> E3[Go Parser]
+    D --> E4[Rust Parser]
+    D --> E5[Ruby Parser]
+    D --> E6[PHP Parser]
+
+    E1 -->|package.json/lock| F[Package Extraction]
+    E2 -->|requirements.txt/poetry| F
+    E3 -->|go.mod| F
+    E4 -->|Cargo.toml/lock| F
+    E5 -->|Gemfile/lock| F
+    E6 -->|composer.json/lock| F
+
+    C1 --> G[JVM Graph Normalizer]
+    C2 --> G
+    C3 --> G
+
+    F --> H[OSV Vulnerability Scanner]
+    G --> I[Advisory Engine]
+
+    H --> J[Unified SBOM Generator]
+    I --> J
+
+    J --> K[SPDX 2.3 Output]
+
+    style D fill:#e1f5ff
+    style F fill:#e1f5ff
+    style H fill:#ffe1e1
+    style J fill:#e1ffe1
+```
+
+**Title:** Unified JVM + Polyglot architecture in BazBOM 6.0
+
+**Ecosystem Detection Strategy:**
+1. Recursive directory walk with `walkdir`
+2. `filter_entry()` to skip build artifacts (node_modules, target, .git, dist, etc.)
+3. Manifest file detection (package.json, Gemfile, go.mod, etc.)
+4. Lockfile preference over manifest for exact versions
+5. Parallel parsing of detected ecosystems
+6. Unified SBOM generation with cross-ecosystem PURLs
+
+**Parser Architecture:**
+Each parser implements:
+- **Lockfile parsing** (primary): Exact versions with full dependency tree
+- **Manifest fallback** (secondary): When lockfile unavailable
+- **Version normalization**: Strip operators (^, ~, >=, v prefix, etc.)
+- **Namespace extraction**: Registry/organization mapping
+- **OSV mapping**: Ecosystem name for vulnerability queries
+
+**Supported File Formats:**
+| Ecosystem | Lockfile | Manifest | Parser Lines | Tests |
+|-----------|----------|----------|--------------|-------|
+| npm | package-lock.json (v6, v7) | package.json | 300 | 3 |
+| Python | poetry.lock, Pipfile.lock | requirements.txt, pyproject.toml | 290 | 3 |
+| Go | go.sum | go.mod | 282 | 3 |
+| Rust | Cargo.lock | Cargo.toml | 240 | 3 |
+| Ruby | Gemfile.lock | Gemfile | 290 | 3 |
+| PHP | composer.lock | composer.json | 300 | 3 |
+
+See [Polyglot Support Documentation](polyglot/README.md) for detailed guide.
 
 ### Reachability Analysis
 

@@ -127,7 +127,7 @@ The codebase follows Rust best practices:
 
 | Command | Status | Purpose |
 |---------|--------|---------|
-| `bazbom --version` | ✅ Working | Version: 1.0.0 |
+| `bazbom --version` | ✅ Working | Version: 6.0.0 |
 | `bazbom --help` | ✅ Working | Shows all commands |
 | `bazbom scan` | ✅ Working | SBOM generation + scanning |
 | `bazbom policy` | ✅ Working | Policy enforcement |

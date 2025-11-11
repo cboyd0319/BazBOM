@@ -56,7 +56,7 @@ homebrew-bazbom/
    class Bazbom < Formula
      desc "Build-time SBOM, SCA, and dependency graph for JVM projects"
      homepage "https://github.com/cboyd0319/BazBOM"
-     version "1.0.0"
+     version "6.0.0"
      license "MIT"
 
      on_macos do

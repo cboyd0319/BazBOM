@@ -3,6 +3,7 @@
 //! This module contains the implementation of all CLI commands, extracted from main.rs
 //! to improve modularity and maintainability.
 
+pub mod container_scan;
 pub mod dashboard;
 pub mod db;
 pub mod explore;
@@ -17,6 +18,7 @@ pub mod team;
 pub mod upgrade_intelligence;
 
 // Re-export command handlers for convenience
+pub use container_scan::handle_container_scan;
 pub use dashboard::handle_dashboard;
 pub use db::handle_db;
 pub use explore::handle_explore;

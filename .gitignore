@@ -51,6 +51,26 @@ bazbom-output/
 /findings/
 /enrich/
 /fixes/
+/security/
+/static/
+
+# Container scanning outputs
+*-scan/
+container-scan-results/
+container-sbom.spdx.json
+container-vulns.json
+*.tar
+!plugins/**/*.tar
+!examples/**/*.tar
+
+# Test outputs and coverage
+coverage.json
+lcov.info
+maven_install.json
+
+# Weird build artifacts
+$HOME/
+crates/*/$HOME/
 
 # Homebrew generated files
 homebrew/bazbom.rb

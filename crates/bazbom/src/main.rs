@@ -13,7 +13,8 @@ mod shading;
 use bazbom::cli::{Cli, Commands};
 use commands::*;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     let cli = Cli::parse();
     let command = cli.command.unwrap_or(Commands::Scan {
         path: ".".into(),
@@ -82,26 +83,64 @@ fn main() -> Result<()> {
             benchmark,
             ml_risk,
         ),
+        Commands::ContainerScan {
+            image,
+            output,
+            format,
+            baseline,
+            compare_baseline,
+            compare,
+            create_issues,
+            interactive,
+            report,
+            show,
+        } => {
+            use commands::container_scan::ContainerScanOptions;
+            use std::path::PathBuf;
+
+            let opts = ContainerScanOptions {
+                image_name: image,
+                output_dir: PathBuf::from(output),
+                format,
+                baseline,
+                compare_baseline,
+                compare_image: compare,
+                create_issues_repo: create_issues,
+                interactive,
+                report_file: report,
+                filter: show,
+            };
+
+            commands::container_scan::handle_container_scan(opts).await?;
+            Ok(())
+        },
         Commands::Policy { action } => handle_policy(action),
         Commands::Fix {
+            package,
             suggest,
             apply,
             pr,
             interactive,
+            explain,
             ml_prioritize,
             llm,
             llm_provider,
             llm_model,
-        } => handle_fix(
-            suggest,
-            apply,
-            pr,
-            interactive,
-            ml_prioritize,
-            llm,
-            llm_provider,
-            llm_model,
-        ),
+        } => {
+            handle_fix(
+                package,
+                suggest,
+                apply,
+                pr,
+                interactive,
+                explain,
+                ml_prioritize,
+                llm,
+                llm_provider,
+                llm_model,
+            ).await?;
+            Ok(())
+        },
         Commands::License { action } => handle_license(action),
         Commands::Db { action } => handle_db(action),
         Commands::InstallHooks { policy, fast } => handle_install_hooks(policy, fast),

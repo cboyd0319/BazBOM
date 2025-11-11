@@ -242,6 +242,34 @@ impl Default for DockerClient {
     }
 }
 
+/// Events emitted during container scanning for progress tracking
+#[derive(Debug, Clone)]
+pub enum ScanEvent {
+    Phase(String),
+    ImageMetadata { name: String, layers: usize },
+    LayerStart { index: usize, total: usize, digest: String, size: u64 },
+    LayerComplete { index: usize, artifacts_found: usize },
+    Complete,
+}
+
+/// Metrics for a single layer
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LayerMetrics {
+    pub digest: String,
+    pub size: u64,
+    pub artifacts_found: usize,
+    pub vulnerabilities_found: usize,
+}
+
+/// Detailed scan result with layer-level metrics
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DetailedScanResult {
+    pub image: ContainerImage,
+    pub artifacts: Vec<JavaArtifact>,
+    pub build_system: Option<BuildSystem>,
+    pub layer_metrics: Vec<LayerMetrics>,
+}
+
 /// Container scanner
 pub struct ContainerScanner {
     /// Path to container image (tar file or directory)
@@ -289,6 +317,99 @@ impl ContainerScanner {
             image,
             artifacts,
             build_system,
+        })
+    }
+
+    /// Scan container image with detailed progress tracking and metrics
+    pub fn scan_with_progress<F>(&self, mut progress_callback: F) -> Result<DetailedScanResult>
+    where
+        F: FnMut(ScanEvent),
+    {
+        // Parse image metadata
+        progress_callback(ScanEvent::Phase("Parsing image metadata".to_string()));
+        let image = self.parse_image_metadata()?;
+
+        progress_callback(ScanEvent::ImageMetadata {
+            name: image.name.clone(),
+            layers: image.layers.len(),
+        });
+
+        // Extract layers
+        progress_callback(ScanEvent::Phase("Extracting layers".to_string()));
+        let layer_paths = self.extract_layers()?;
+
+        // Scan each layer
+        let mut layer_metrics = Vec::new();
+        let mut all_artifacts = Vec::new();
+
+        for (idx, layer_path) in layer_paths.iter().enumerate() {
+            let layer = &image.layers[idx];
+
+            progress_callback(ScanEvent::LayerStart {
+                index: idx,
+                total: layer_paths.len(),
+                digest: layer.digest.clone(),
+                size: layer.size,
+            });
+
+            // Find artifacts in this layer
+            let parser = crate::oci_parser::OciImageParser::new(&self.image_path);
+            let candidates = parser.scan_layer_for_artifacts(layer_path)?;
+
+            // Convert to JavaArtifacts with full metadata
+            let mut layer_artifacts = Vec::new();
+            for candidate in candidates {
+                let maven_coords = if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
+                    self.extract_maven_metadata(&candidate.path).ok()
+                } else {
+                    None
+                };
+
+                let sha256 = self.calculate_file_hash(&candidate.path)?;
+
+                let artifact = JavaArtifact {
+                    path: candidate.path.clone(),
+                    layer: layer.digest.clone(),
+                    artifact_type: match candidate.artifact_type {
+                        crate::oci_parser::ArtifactType::Jar => ArtifactType::Jar,
+                        crate::oci_parser::ArtifactType::War => ArtifactType::War,
+                        crate::oci_parser::ArtifactType::Ear => ArtifactType::Ear,
+                        crate::oci_parser::ArtifactType::Class => ArtifactType::Class,
+                        _ => ArtifactType::Unknown,
+                    },
+                    maven_coords,
+                    size: candidate.size,
+                    sha256,
+                };
+
+                layer_artifacts.push(artifact.clone());
+                all_artifacts.push(artifact);
+            }
+
+            // Store layer metrics
+            layer_metrics.push(LayerMetrics {
+                digest: layer.digest.clone(),
+                size: layer.size,
+                artifacts_found: layer_artifacts.len(),
+                vulnerabilities_found: 0, // Will be populated by vulnerability scan
+            });
+
+            progress_callback(ScanEvent::LayerComplete {
+                index: idx,
+                artifacts_found: layer_artifacts.len(),
+            });
+        }
+
+        // Detect build system
+        let build_system = self.detect_build_system(&all_artifacts);
+
+        progress_callback(ScanEvent::Complete);
+
+        Ok(DetailedScanResult {
+            image,
+            artifacts: all_artifacts,
+            build_system,
+            layer_metrics,
         })
     }
 
