@@ -17,10 +17,10 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (705 
 [![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/reference/jvm-language-support.md)
 
 [Quickstart](#quickstart) •
+[Quick Reference](docs/QUICKREF.md) •
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Documentation](docs/README.md) •
-[Tech Writer Persona](docs/tech_writer_persona.md) •
 [Contributing](CONTRIBUTING.md)
 
 </div>

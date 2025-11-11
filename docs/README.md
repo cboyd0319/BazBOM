@@ -5,6 +5,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 ## Quick Navigation
 
 **Essential docs** (from tech writer persona):
+- **[QUICKREF.md](QUICKREF.md)** - One-page cheat sheet for all common BazBOM operations
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Components, data flow, boundaries, decisions (ADR-style summaries)
 - **[USAGE.md](USAGE.md)** - Common tasks: generate SBOM locally, in CI, per-target, per-image
 - **[BAZEL.md](BAZEL.md)** - Aspects, rules, targets, macros, minimal reproducible examples
@@ -15,9 +16,11 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## Getting Started
 
+- **[QUICKREF.md](QUICKREF.md)** – One-page cheat sheet (installation, commands, workflows)
 - [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – zero to first scan with defaults
 - [Quick Start Guide](getting-started/quickstart.md) – five-minute walkthrough with CI tips
 - [Homebrew Installation](getting-started/homebrew-installation.md) – signed packages and tap management
+- [Shell Completions](getting-started/shell-completions.md) – Bash, Zsh, Fish completion setup
 - [IDE Setup Checklist](getting-started/ide-setup.md) – configure IntelliJ / VS Code extensions
 
 ## User Guide & How-tos
@@ -62,6 +65,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 ## Operations & Release Management
 
 - **[CI/CD Integration](CI.md)** - Complete CI recipes for GitHub Actions, GitLab, Jenkins, CircleCI
+- [Deep Analysis Report](operations/deep-analysis-report.md) - Comprehensive audit results (705 tests, zero issues)
 - [Release Process](operations/release-process.md)
 - [Release Checklist](operations/release-checklist.md)
 - [Homebrew Tap Creation](operations/homebrew-tap-creation.md)
@@ -96,6 +100,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 ## Quality & Style Standards
 
 - [Tech Writer Persona](tech_writer_persona.md)
+- [Third-Party Notices](THIRD_PARTY_NOTICES.md) - Attribution for optional external tools (Semgrep, CodeQL, etc.)
 - Style references: Google Developer Style, Microsoft Writing Style, Diátaxis
 - CI checks: `markdownlint`, `vale`, broken-link checks, example validation
 
