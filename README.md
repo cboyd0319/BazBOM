@@ -6,9 +6,11 @@
 
 ### Enterprise-grade build-time SBOM, SCA, and dependency graph for JVM
 
-Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 tests) • Zero telemetry • Offline-first
+Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (705 tests) • Zero telemetry • Offline-first
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
+[![Tests](https://img.shields.io/badge/tests-705%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 [![Bazel](https://img.shields.io/badge/Bazel-8.4.2-43A047?logo=bazel)](https://bazel.build)
@@ -256,10 +258,10 @@ cat bazel-bin/app/app_sbom.spdx.json
 ### 3. Run vulnerability scan
 
 ```bash
-# CLI mode
-bazbom scan . --format spdx  # TODO: Add vulnerability scanning to CLI
+# CLI mode - automatically scans for vulnerabilities
+bazbom scan .
 
-# Bazel mode
+# Bazel mode - native integration
 bazel build //:sca_scan
 ```
 

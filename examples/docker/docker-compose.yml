@@ -1,0 +1,110 @@
+# BazBOM Docker Compose Example
+#
+# This example demonstrates running BazBOM in a containerized environment
+# to scan JVM projects for vulnerabilities and generate SBOMs.
+#
+# Usage:
+#   docker-compose up                    # Run scan and view results
+#   docker-compose run bazbom --help     # See all BazBOM commands
+#   docker-compose down                  # Clean up
+
+version: '3.8'
+
+services:
+  # BazBOM scanner service
+  bazbom:
+    image: rust:1.91-bookworm
+    container_name: bazbom-scanner
+    working_dir: /workspace
+    volumes:
+      # Mount your project directory
+      - ../../:/bazbom:ro
+      # Mount the project to scan (replace with your project path)
+      - ./sample-project:/workspace:ro
+      # Mount output directory for results
+      - ./output:/output
+    environment:
+      - RUST_LOG=info
+      - BAZBOM_OUT_DIR=/output
+    command: >
+      bash -c "
+        echo '🚀 BazBOM Docker Scanner' &&
+        echo '' &&
+        echo 'Installing BazBOM...' &&
+        cd /bazbom &&
+        cargo build --release -p bazbom --quiet &&
+        cp target/release/bazbom /usr/local/bin/ &&
+        echo '✓ BazBOM installed' &&
+        echo '' &&
+        echo 'Scanning project...' &&
+        cd /workspace &&
+        bazbom scan . --format spdx --out-dir /output &&
+        echo '' &&
+        echo '✅ Scan complete! Results in ./output/' &&
+        ls -lh /output/
+      "
+    networks:
+      - bazbom-network
+
+  # Optional: Dependency-Track for SBOM management
+  dependency-track:
+    image: dependencytrack/bundled:latest
+    container_name: bazbom-dependency-track
+    ports:
+      - "8081:8080"
+    volumes:
+      - dependency-track-data:/data
+    environment:
+      - ALPINE_DATABASE_MODE=external
+      - ALPINE_DATABASE_URL=jdbc:postgresql://postgres:5432/dtrack
+      - ALPINE_DATABASE_DRIVER=org.postgresql.Driver
+      - ALPINE_DATABASE_USERNAME=dtrack
+      - ALPINE_DATABASE_PASSWORD=dtrack
+    depends_on:
+      - postgres
+    networks:
+      - bazbom-network
+    profiles:
+      - full-stack
+
+  # PostgreSQL for Dependency-Track
+  postgres:
+    image: postgres:15-alpine
+    container_name: bazbom-postgres
+    environment:
+      - POSTGRES_DB=dtrack
+      - POSTGRES_USER=dtrack
+      - POSTGRES_PASSWORD=dtrack
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - bazbom-network
+    profiles:
+      - full-stack
+
+  # Optional: OWASP Dependency-Check for comparison
+  dependency-check:
+    image: owasp/dependency-check:latest
+    container_name: bazbom-dependency-check
+    volumes:
+      - ./sample-project:/src:ro
+      - ./output/dependency-check:/report
+      - dependency-check-data:/usr/share/dependency-check/data
+    command: >
+      --scan /src
+      --format ALL
+      --out /report
+      --project sample-project
+    networks:
+      - bazbom-network
+    profiles:
+      - comparison
+
+volumes:
+  dependency-track-data:
+  postgres-data:
+  dependency-check-data:
+
+networks:
+  bazbom-network:
+    driver: bridge

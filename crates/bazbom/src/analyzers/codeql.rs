@@ -76,7 +76,8 @@ impl CodeqlAnalyzer {
         };
 
         // Run codeql database create
-        let db_path_str = db_dir.to_str()
+        let db_path_str = db_dir
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid UTF-8 in database path"))?;
         let command_arg = format!("--command={}", build_command);
 
@@ -124,9 +125,11 @@ impl CodeqlAnalyzer {
             query_pack
         );
 
-        let db_path_str = db_dir.to_str()
+        let db_path_str = db_dir
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid UTF-8 in database path"))?;
-        let output_path_str = output_path.to_str()
+        let output_path_str = output_path
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid UTF-8 in output path"))?;
         let format_arg = String::from("--format=sarif-latest");
         let output_arg = format!("--output={}", output_path_str);
