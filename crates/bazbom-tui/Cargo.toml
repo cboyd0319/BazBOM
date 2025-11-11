@@ -19,6 +19,3 @@ anyhow = "1.0"
 
 # BazBOM core
 bazbom-core = { path = "../bazbom-core", version = "1.0.0" }
-
-# Utilities
-unicode-width = "0.2"
