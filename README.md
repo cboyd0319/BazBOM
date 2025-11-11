@@ -26,16 +26,16 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 
 ---
 
 > **100% Rust Implementation - Production Ready**
-> 
+>
 > BazBOM is implemented in 100% memory-safe Rust with comprehensive test coverage:
-> - **671+ Tests Passing** - Complete test coverage, zero failures (5 Rego engine tests skipped)
+> - **705 Tests Passing** - Complete test coverage, zero failures
 > - **15 Functional Crates** - Modular architecture (core, formats, advisories, policy, graph, ml, tui, dashboard, lsp, operator, etc.)
 > - **11 CLI Commands** - Full feature set: scan, policy, fix, db, license, install-hooks, init, explore, dashboard, team, report
 > - **Zero Clippy Warnings** - Production-quality codebase
 > - **Build Plugins** - Maven and Gradle plugins for deep dependency extraction (Java/Kotlin)
 > - **Single Binary** - Easy installation and distribution
-> 
-> **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.  
+>
+> **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
 > See [Architecture Overview](docs/ARCHITECTURE.md) and [Capabilities Reference](docs/reference/capabilities-reference.md) for complete details.
 
 ---
