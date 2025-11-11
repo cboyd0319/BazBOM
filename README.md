@@ -4,9 +4,9 @@
 
 # BazBOM
 
-### Enterprise-grade build-time SBOM, SCA, and dependency graph for JVM
+### Developer-friendly build-time SBOM & SCA for Bazel and JVM
 
-Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (705 tests) • Zero telemetry • Offline-first
+Security for developers, not security engineers • Universal JVM support • 100% Rust • Zero telemetry
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![Tests](https://img.shields.io/badge/tests-705%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
@@ -67,32 +67,70 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (705 
 
 ## What is BazBOM?
 
-BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **any JVM project**—whether you use **Maven, Gradle, Bazel, Ant, Sbt, or Buildr**. It automatically discovers dependencies and produces accurate, standards-compliant security artifacts.
+BazBOM generates **Software Bills of Materials (SBOMs)** and performs **Software Composition Analysis (SCA)** for **Bazel monorepos and JVM projects**. Unlike other tools that overwhelm developers with security jargon, BazBOM provides **actionable guidance in plain English**.
 
-**The problem:** Manual SBOM creation is error-prone. Post-build scanners miss transitive dependencies or include test artifacts.
+### Core Mission
 
-**The solution:** BazBOM uses build system-native dependency resolution for accuracy. It automatically detects your build system and leverages native dependency resolution. For Bazel, it queries the build graph. For Maven and Gradle, it uses their dependency APIs. For Ant, Sbt, and Buildr, it parses build configurations. Every scan produces an accurate SBOM with zero manual maintenance.
+**BazBOM is built on four principles:**
+
+1. **🎯 Bazel-First** - The ONLY SCA tool that properly handles Bazel monorepos (5000+ targets tested)
+2. **☕ JVM-Focused** - World-class depth for Java/Kotlin/Scala rather than shallow multi-language support
+3. **🔨 Build-Time Accuracy** - Native Maven/Gradle/Bazel integration means SBOMs match what actually ships
+4. **👥 Developer-Friendly** - Security for developers, not security engineers
+
+### Why Developer-Friendly Matters
+
+**Developers shouldn't need to be security engineers.**
+
+**Other SCA tools:**
+```
+❌ Policy violation: EPSS threshold exceeded (0.73 > 0.50)
+   Severity: CVSS 8.5 (HIGH), CISA KEV: true
+   Fix: Upgrade to 2.20.0
+```
+*Developer: "WTF does any of this mean?"*
+
+**BazBOM:**
+```
+🚨 MUST FIX NOW (actively exploited!)
+
+CVE-2024-1234 in log4j-core 2.17.0
+  Why: Hackers are using this in the wild right now
+  Fix: Upgrade to 2.20.0 (45 minutes estimated)
+  Breaking changes: 2 (we'll show you exactly what)
+
+Run: bazbom fix log4j-core --explain
+```
+*Developer: "Okay, I know exactly what to do."*
+
+### What Makes BazBOM Different
+
+- ✅ **Zero-config for 90% of use cases** - `bazbom scan .` just works
+- ✅ **Plain English explanations** - No CVSS/EPSS/KEV jargon unless you want it
+- ✅ **Upgrade Intelligence** - Shows breaking changes BEFORE you upgrade (transitive analysis)
+- ✅ **Interactive guidance** - Step-by-step fixes, not cryptic error dumps
+- ✅ **Beautiful output** - Designed for humans, not log parsers
+- ✅ **Smart defaults** - 3 modes (quick/pr/audit), not 50 flags to memorize
 
 ### Scope
 
 **BazBOM is exclusively for JVM ecosystems:**
 - **Languages:** Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
-- **Build Systems:** Ant, Maven, Gradle, Bazel (with JVM rules), Buildr, sbt
+- **Build Systems:** Bazel (with JVM rules), Maven, Gradle, Ant, sbt, Buildr
 - **Containers:** JVM artifact detection in Docker/OCI images
 - **Out of scope:** Node.js, Python, Go, Rust, C++, or any non-JVM languages
 
-**Philosophy:** World-class depth for JVM ecosystems rather than shallow breadth across many languages.
+**Philosophy:** Master one domain (Bazel + JVM) instead of being mediocre at everything.
 
 For detailed language and build system support, see [JVM Language Support](docs/reference/jvm-language-support.md).
 
-For multi-language SBOM generation, use specialized tools for each ecosystem.
-
 ### Who is this for?
 
-- **Security teams** enforcing supply chain policies (SBOM + VEX + SLSA) for JVM applications
-- **DevSecOps engineers** automating vulnerability scanning in CI/CD for Java/Kotlin/Scala projects
-- **Java/Kotlin/Scala developers** using Maven, Gradle, or Bazel
-- **Organizations** with large JVM monorepos (5000+ targets) or multi-repo setups
+- **Java/Kotlin/Scala developers** who want security without the PhD
+- **Teams with Bazel monorepos** (the only tool that actually works)
+- **DevSecOps engineers** who want developers to actually fix vulnerabilities
+- **Security teams** who need accurate SBOMs without fighting with developers
+- **Organizations** tired of tools that create more problems than they solve
 
 ---
 
@@ -386,6 +424,112 @@ $ bazbom scan . --bazel-affected-by-files src/java/lib/top_x.java
 ```
 
 **Result:** Accurate, standards-compliant SBOMs for any JVM project. Just works.
+
+---
+
+## 🚀 Upgrade Intelligence (NEW!)
+
+**The feature that makes BazBOM different: Know what breaks BEFORE you upgrade.**
+
+### The Problem
+
+Every other SCA tool:
+```bash
+❌ Vulnerability found in log4j-core 2.17.0
+   Fix: Upgrade to 2.20.0
+```
+
+You upgrade, and then:
+```bash
+[ERROR] Compilation failure: cannot find symbol
+  LoggerUtil.java:[42,20] method printf(String)
+```
+
+**WTF?! You said no breaking changes!**
+
+### The Solution
+
+BazBOM's **Upgrade Intelligence** analyzes the ENTIRE dependency tree recursively:
+
+```bash
+$ bazbom fix org.apache.logging.log4j:log4j-core --explain
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Upgrade Analysis: log4j-core 2.17.0 → 2.20.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔍 Overall Risk: ⚠️  MEDIUM (due to transitive changes)
+
+📦 Direct Changes (log4j-core itself):
+   ✅ Breaking changes: 0
+   ✅ API compatibility: 100%
+
+⚠️  Required Dependency Upgrades: 2
+
+   1. log4j-api: 2.17.0 → 2.20.0 (REQUIRED)
+      Reason: Version alignment
+      Risk: ⚠️  MEDIUM
+
+      ⚠️  2 breaking changes:
+      • Logger.printf() signature changed
+      • ThreadContext.getDepth() removed
+
+      📝 Migration guide:
+      https://github.com/apache/logging-log4j2/wiki/...
+
+   2. log4j-slf4j-impl: 2.17.0 → 2.20.0
+      ✅ No breaking changes
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Impact Summary:
+   ├─ Direct breaking changes: 0
+   ├─ Transitive breaking changes: 2 (via log4j-api)
+   ├─ Total packages: 3
+   └─ Effort estimate: 0.75 hours
+
+🎯 Recommendation: Review before applying
+   This upgrade has breaking changes but is manageable.
+
+   💡 What to do:
+      1. Review breaking changes above
+      2. Create feature branch
+      3. Run: bazbom fix log4j-core --apply --test
+      4. Fix LoggerUtil.java:42 and ContextHelper.java:18
+      5. Test thoroughly
+      6. Merge to production
+```
+
+### Why This Matters
+
+**BazBOM is the ONLY tool that:**
+- ✅ Recursively analyzes ALL dependency changes (not just the package you asked about)
+- ✅ Extracts breaking changes from GitHub release notes
+- ✅ Calculates risk based on semver + actual code changes
+- ✅ Estimates effort in hours (not "high/medium/low" nonsense)
+- ✅ Provides actionable step-by-step recommendations
+
+**Before Upgrade Intelligence:**
+- Developer: "I see the vulnerability but I'm scared to upgrade"
+- Result: Vulnerabilities sit unfixed for months
+
+**After Upgrade Intelligence:**
+- Developer: "I see exactly what breaks and how to fix it"
+- Result: Vulnerabilities get fixed in hours, not months
+
+### Try It Now
+
+```bash
+# Analyze any Maven package upgrade
+bazbom fix <package-name> --explain
+
+# Examples
+bazbom fix org.springframework.boot:spring-boot-starter-web --explain
+bazbom fix com.google.guava:guava --explain
+bazbom fix com.fasterxml.jackson.core:jackson-databind --explain
+```
+
+**Learn more:** [Upgrade Intelligence Guide](docs/features/upgrade-intelligence.md)
 
 ---
 

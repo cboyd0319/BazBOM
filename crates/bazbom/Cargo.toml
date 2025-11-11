@@ -38,6 +38,8 @@ bazbom-reports = { path = "../bazbom-reports" }
 bazbom-threats = { path = "../bazbom-threats" }
 bazbom-containers = { path = "../bazbom-containers" }
 bazbom-ml = { path = "../bazbom-ml" }
+bazbom-depsdev = { path = "../bazbom-depsdev" }
+bazbom-upgrade-analyzer = { path = "../bazbom-upgrade-analyzer" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"
@@ -50,6 +52,7 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 webbrowser = "1.0"
 num_cpus = "1.17"
 rayon = "1.11"
+colored = "2"
 
 [dev-dependencies]
 assert_cmd = "2"

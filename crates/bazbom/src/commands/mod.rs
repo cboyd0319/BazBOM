@@ -14,6 +14,7 @@ pub mod policy;
 pub mod report;
 pub mod scan;
 pub mod team;
+pub mod upgrade_intelligence;
 
 // Re-export command handlers for convenience
 pub use dashboard::handle_dashboard;

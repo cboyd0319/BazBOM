@@ -79,6 +79,8 @@ pub enum Commands {
     },
     /// Show remediation suggestions or apply fixes
     Fix {
+        /// Package to analyze/fix (e.g., org.apache.logging.log4j:log4j-core)
+        package: Option<String>,
         /// Suggest fixes without applying changes
         #[arg(long)]
         suggest: bool,
@@ -91,6 +93,9 @@ pub enum Commands {
         /// Interactive mode with smart batch processing
         #[arg(long)]
         interactive: bool,
+        /// Show detailed upgrade impact analysis (breaking changes, transitive deps)
+        #[arg(long)]
+        explain: bool,
         /// Use ML-enhanced prioritization for vulnerability fixes
         #[arg(long)]
         ml_prioritize: bool,

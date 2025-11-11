@@ -1,0 +1,25 @@
+[package]
+name = "bazbom-upgrade-analyzer"
+version = "0.1.0"
+edition = "2021"
+authors = ["Chad Boyd <cboyd0319@gmail.com>"]
+description = "Recursive transitive upgrade analysis with breaking change detection"
+license = "MIT"
+
+[dependencies]
+bazbom-depsdev = { path = "../bazbom-depsdev" }
+bazbom-core = { path = "../bazbom-core" }
+semver = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+regex = "1.10"
+octocrab = "0.38"
+reqwest = { version = "0.11", features = ["json"] }
+tracing = "0.1"
+futures = "0.3"
+
+[dev-dependencies]
+tokio-test = "0.4"
