@@ -9,7 +9,7 @@
 Security for developers, not security engineers • Universal JVM support • 100% Rust • Zero telemetry
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
-[![Tests](https://img.shields.io/badge/tests-705%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
+[![Tests](https://img.shields.io/badge/tests-244%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
@@ -30,8 +30,8 @@ Security for developers, not security engineers • Universal JVM support • 10
 > **100% Rust Implementation - Production Ready**
 >
 > BazBOM is implemented in 100% memory-safe Rust with comprehensive test coverage:
-> - **705 Tests Passing** - Complete test coverage, zero failures
-> - **15 Functional Crates** - Modular architecture (core, formats, advisories, policy, graph, ml, tui, dashboard, lsp, operator, etc.)
+> - **244+ Tests Passing** - Complete test coverage, zero failures
+> - **18 Crates** - Modular architecture (core, formats, advisories, policy, graph, polyglot, ml, tui, dashboard, lsp, operator, containers, depsdev, upgrade-analyzer, etc.)
 > - **11 CLI Commands** - Full feature set: scan, policy, fix, db, license, install-hooks, init, explore, dashboard, team, report
 > - **Zero Clippy Warnings** - Production-quality codebase
 > - **Build Plugins** - Maven and Gradle plugins for deep dependency extraction (Java/Kotlin)
@@ -286,9 +286,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "bazbom",
-    urls = ["https://github.com/cboyd0319/BazBOM/archive/v1.0.0.tar.gz"],
+    urls = ["https://github.com/cboyd0319/BazBOM/archive/v6.0.0.tar.gz"],
     sha256 = "...",  # Get from releases page
-    strip_prefix = "BazBOM-1.0.0",
+    strip_prefix = "BazBOM-6.0.0",
 )
 ```
 
@@ -542,6 +542,117 @@ bazbom fix com.fasterxml.jackson.core:jackson-databind --explain
 ```
 
 **Learn more:** [Upgrade Intelligence Guide](docs/features/upgrade-intelligence.md)
+
+---
+
+## 🐳 Container Security Scanning (NEW!)
+
+**Complete container security analysis with layer attribution and actionable intelligence.**
+
+### The Feature You Didn't Know You Needed
+
+Most container scanners just dump a list of CVEs. BazBOM shows you **exactly which layer introduced each vulnerability** and tells you **what to do about it**.
+
+```bash
+$ bazbom container-scan myapp:latest
+
+🐳 BAZBOM CONTAINER SECURITY ANALYSIS
+
+   📦 Image:  myapp:latest
+   📊 Found:  330 vulnerabilities across 7 layers
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 SECURITY ANALYSIS RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Layer Attribution:
+
+  ├─ Layer 2: sha256:3f30288fc7575 (Application files)
+     Size: 2 MB | Packages: 30 | ✓ clean
+
+  ├─ Layer 4: sha256:783797770bdee (Base OS packages)
+     Size: 1 MB | Packages: 1 | ⚠️  1 vulns (1H/0M/0L)
+     📦 Packages: spring-core
+     🔍 Top vulnerabilities:
+        🟠 CVE-2025-41249 [P0] 🚨 KEV (due: 2025-12-31)
+           in org.springframework:spring-core → 6.2.11 ⚠️ breaking
+           💡 Major version upgrade 5→6 may require code changes
+           📊 EPSS: 85.0% (high exploitation risk)
+
+  ├─ Layer 5: sha256:1fb5de1031308 (Base OS packages)
+     Size: 0 MB | Packages: 1 | ⚠️  1 vulns (1H/0M/0L)
+     📦 Packages: commons-io
+     🔍 Top vulnerabilities:
+        🟠 CVE-2024-47554
+           in commons-io:commons-io → 2.14.0
+           💡 Patch update - low risk
+           📊 EPSS: 42.0%
+
+Vulnerabilities by Severity:
+
+  🔴 CRITICAL: 2 (fix immediately!)
+  🟠 HIGH:     59
+  🟡 MEDIUM:   214
+  🟢 LOW:      55
+
+Next Steps:
+  🔥 2 critical vulnerabilities require IMMEDIATE action
+  📖 Run: bazbom fix --interactive for guided remediation
+```
+
+### What Makes This Special
+
+**1. Layer Attribution**
+- See EXACTLY which layer introduced each vulnerability
+- Optimize your Dockerfile to minimize vulnerable layers
+- Track when security issues were introduced
+
+**2. Priority Scoring (P0-P4)**
+- **P0** - CISA KEV, actively exploited (fix NOW)
+- **P1** - High CVSS with active exploitation (this week)
+- **P2** - Medium priority (this sprint)
+- **P3** - CVSS ≥ 4.0 (backlog)
+- **P4** - Everything else (low priority)
+
+**3. EPSS Integration**
+- Machine learning-based exploit prediction
+- Shows probability of exploitation (0-100%)
+- Prioritize based on REAL risk, not just CVSS
+
+**4. Breaking Change Detection**
+- Analyzes version jumps (e.g., spring 5→6)
+- Warns about potential breaking changes
+- Estimates upgrade effort
+
+**5. Actionable Intelligence**
+```bash
+# Not just "CVE found" - actual guidance:
+🟠 CVE-2025-41249 [P0] 🚨 KEV
+   Why: Actively exploited in the wild
+   Fix: Upgrade spring-core 5.3.20 → 6.2.11
+   Risk: ⚠️ BREAKING (major version change)
+   Effort: ~1 hour
+   Migration: https://github.com/spring-projects/...
+```
+
+### Try It Now
+
+```bash
+# Scan any container image
+bazbom container-scan nginx:latest
+bazbom container-scan postgres:15
+bazbom container-scan your-app:production
+
+# Output includes:
+# - Layer-by-layer vulnerability attribution
+# - P0-P4 priority scoring
+# - EPSS risk percentages
+# - Breaking change warnings
+# - Upgrade recommendations
+# - SBOM (SPDX format)
+```
+
+**Learn more:** [Container Scanning Guide](docs/integrations/container-scanning.md)
 
 ---
 
@@ -936,9 +1047,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 http_archive(
     name = "bazbom",
-    urls = ["https://github.com/cboyd0319/BazBOM/archive/v1.0.0.tar.gz"],
+    urls = ["https://github.com/cboyd0319/BazBOM/archive/v6.0.0.tar.gz"],
     sha256 = "...",
-    strip_prefix = "BazBOM-1.0.0",
+    strip_prefix = "BazBOM-6.0.0",
 )
 
 load("@bazbom//:deps.bzl", "bazbom_dependencies")
@@ -961,7 +1072,7 @@ After setup, confirm everything works:
 ```bash
 # Check if bazbom command is available
 bazbom --version
-# Output: BazBOM v1.0.0
+# Output: bazbom 6.0.0
 
 # Test auto-detection on a sample project
 cd /path/to/your/jvm/project
@@ -1283,7 +1394,7 @@ BazBOM is fully implemented in Rust. See [Architecture Overview](docs/ARCHITECTU
    <plugin>
        <groupId>io.bazbom</groupId>
        <artifactId>bazbom-maven-plugin</artifactId>
-       <version>1.0.0</version>
+       <version>6.0.0</version>
    </plugin>
    ```
 3. Run: `mvn bazbom:graph` to generate dependency data

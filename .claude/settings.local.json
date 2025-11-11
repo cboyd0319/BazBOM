@@ -32,7 +32,9 @@
       "Bash(cargo clippy:*)",
       "Bash(git check-ignore:*)",
       "Bash(find:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(cargo audit:*)",
+      "Bash(cargo tree:*)"
     ],
     "deny": [],
     "ask": []
