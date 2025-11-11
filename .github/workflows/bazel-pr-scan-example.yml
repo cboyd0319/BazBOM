@@ -4,23 +4,18 @@
 # to scan only affected targets in large monorepos, reducing scan time
 # from 45+ minutes to ~8 minutes on average.
 #
-# Copy this file to .github/workflows/ in your repository and customize
-# as needed for your monorepo structure.
+# NOTE: This is an EXAMPLE workflow for users to copy to their own repositories.
+# It is DISABLED in the BazBOM repository itself.
+#
+# To use this in your repository:
+# 1. Copy this file to .github/workflows/ in your repository
+# 2. Remove the "if: false" condition below
+# 3. Customize the paths and queries for your monorepo structure
 
 name: Bazel PR Security Scan (Example)
 
 on:
-  pull_request:
-    branches: [main, develop]
-    paths:
-      # Only run when code changes, not documentation
-      - 'src/**'
-      - 'lib/**'
-      - 'services/**'
-      - 'BUILD.bazel'
-      - 'WORKSPACE'
-      - 'MODULE.bazel'
-      - 'maven_install.json'
+  workflow_dispatch:  # Manual trigger only (disabled by default)
 
 # Restrict permissions to minimum required
 permissions:
@@ -32,6 +27,7 @@ jobs:
   incremental-scan:
     name: Incremental Security Scan
     runs-on: ubuntu-latest
+    if: false  # Disabled - this is an example workflow for users
     timeout-minutes: 20  # Incremental scans are much faster
     
     steps:

@@ -87,10 +87,7 @@ pub fn handle_fix_command(
     };
 
     if vulnerability_count > 0 {
-        println!(
-            "Found {} vulnerabilities to analyze",
-            vulnerability_count
-        );
+        println!("Found {} vulnerabilities to analyze", vulnerability_count);
     }
 
     // 2. Generate remediation suggestions

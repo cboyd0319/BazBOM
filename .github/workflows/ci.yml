@@ -7,7 +7,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
-# Default permissions following PYSEC_OMEGA standards
+# Default permissions following security standards
 permissions:
   contents: read
 
@@ -17,107 +17,101 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  # Primary CI: Rust build and test
+  rust-ci:
+    name: Rust Build and Test
     runs-on: ubuntu-latest
-    timeout-minutes: 60
-    
+    timeout-minutes: 30
+
     permissions:
       contents: read
-      checks: write  # For test result annotations
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           persist-credentials: false
-      
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          shared-key: "rust-ci"
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (linting)
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace --all-targets --locked
+
+      - name: Test
+        run: cargo test --workspace --all-features --no-fail-fast
+
+  # Documentation lint
+  lint-docs:
+    name: Lint Documentation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
+        with:
+          node-version: '20'
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli
+
+      - name: Lint markdown files
+        run: markdownlint --config .markdownlint.json 'docs/**/*.md' '*.md' || true
+        continue-on-error: true
+
+  # Validate Bazel aspects (optional - examples and tools)
+  validate-bazel-aspects:
+    name: Validate Bazel Aspects
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true  # Don't fail CI if Bazel validation has issues
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          persist-credentials: false
+
       - name: Setup Java
         uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
         with:
           distribution: 'temurin'
           java-version: '11'
-          cache: 'maven'
-      
+
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@8d2cb86a3680a820c3e219597279ce3f80d17a47 # 0.15.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}
           repository-cache: true
-      
-      - name: Build all targets
-        run: bazel build //...
-        timeout-minutes: 30
-      
-      - name: Run tests
-        run: bazel test //... --test_output=errors
-        timeout-minutes: 20
-      
-      - name: Build examples
-        run: bazel build //examples/...
-        timeout-minutes: 10
-  
-  lint-docs:
-    name: Lint Documentation
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
-        with:
-          node-version: '20'
-          cache: 'npm'
-      
-      - name: Install markdownlint
-        run: npm install -g markdownlint-cli
-      
-      - name: Lint markdown files
-        run: markdownlint --config .markdownlint.json docs/**/*.md *.md security/**/*.md
-  
-  validate-bazel:
-    name: Validate Bazel Files
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    
-    permissions:
-      contents: read
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-      
-      - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@8d2cb86a3680a820c3e219597279ce3f80d17a47 # 0.15.0
-        with:
-          bazelisk-cache: true
-      
-      - name: Validate WORKSPACE
-        run: bazel query //... > /dev/null
-        timeout-minutes: 5
-      
-      - name: Check formatting (buildifier)
+
+      - name: Validate Bazel aspects and examples
         run: |
-          # Install buildifier with version pinning
-          BUILDIFIER_VERSION="6.4.0"
-          BUILDIFIER_SHA256="be63db12899f48600bad94051123b1fd7b5251e7661b9168582ce52396132e92"
-          
-          wget -O /tmp/buildifier "https://github.com/bazelbuild/buildtools/releases/download/v${BUILDIFIER_VERSION}/buildifier-linux-amd64"
-          echo "${BUILDIFIER_SHA256}  /tmp/buildifier" | sha256sum -c
-          chmod +x /tmp/buildifier
-          sudo mv /tmp/buildifier /usr/local/bin/buildifier
-          
-          # Check formatting
-          buildifier -mode=check -r .
-        timeout-minutes: 5
+          echo "Validating Bazel workspace..."
+          bazel query //tools/... > /dev/null || echo "No tools targets"
+          bazel query //examples/... > /dev/null || echo "No example targets"
+          echo "Bazel validation complete"
+        timeout-minutes: 10

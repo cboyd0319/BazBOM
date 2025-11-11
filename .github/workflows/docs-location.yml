@@ -17,21 +17,35 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Checking for Markdown files outside docs/ and allowed stubs..."
+          echo "Checking for Markdown files outside docs/ and allowed locations..."
           mapfile -t files < <(git ls-files '**/*.md')
           violations=()
           for f in "${files[@]}"; do
             case "$f" in
+              # Main documentation
               docs/*) continue;;
-              README.md|CHANGELOG.md|CONTRIBUTING.md|CODE_OF_CONDUCT.md|SECURITY.md|MAINTAINERS.md) continue;;
-              .github/copilot-instructions.md) continue;;
+              # Root stubs (allowed per copilot-instructions.md)
+              README.md|CHANGELOG.md|CONTRIBUTING.md|CODE_OF_CONDUCT.md|SECURITY.md|MAINTAINERS.md|Makefile.md) continue;;
+              # GitHub-specific docs
+              .github/*.md|.github/**/*.md) continue;;
+              # Module/component README files (allowed)
+              crates/*/README.md) continue;;
+              plugins/*/README.md) continue;;
+              tools/*/README.md) continue;;
+              examples/*/README.md|examples/*/*/README.md) continue;;
+              benchmarks/README.md) continue;;
+              homebrew/README.md) continue;;
+              windows/README.md) continue;;
+              rules/*/README.md) continue;;
+              # Top-level project files
               *) violations+=("$f");;
             esac
           done
           if (( ${#violations[@]} > 0 )); then
-            echo "Found Markdown files outside docs/:"
+            echo "Found Markdown files in unexpected locations:"
             printf ' - %s\n' "${violations[@]}"
-            echo "\nTo comply, move docs under docs/ and leave minimal root stubs if needed."
+            echo ""
+            echo "To comply, move documentation under docs/ or appropriate module directories."
             exit 1
           fi
-          echo "Docs location check passed."
+          echo "✅ Docs location check passed."

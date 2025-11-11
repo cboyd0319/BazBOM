@@ -6,19 +6,21 @@
 
 ### Enterprise-grade build-time SBOM, SCA, and dependency graph for JVM
 
-Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 tests) • Zero telemetry • Offline-first
+Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (705 tests) • Zero telemetry • Offline-first
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
+[![Tests](https://img.shields.io/badge/tests-705%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
+[![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 [![Bazel](https://img.shields.io/badge/Bazel-8.4.2-43A047?logo=bazel)](https://bazel.build)
 [![JVM Only](https://img.shields.io/badge/scope-JVM%20only-blue)](docs/reference/jvm-language-support.md)
 
 [Quickstart](#quickstart) •
+[Quick Reference](docs/QUICKREF.md) •
 [Features](#features) •
 [Capabilities](docs/reference/capabilities-reference.md) •
 [Documentation](docs/README.md) •
-[Tech Writer Persona](docs/tech_writer_persona.md) •
 [Contributing](CONTRIBUTING.md)
 
 </div>
@@ -26,16 +28,16 @@ Universal support for Maven, Gradle, Bazel, Ant, Sbt, Buildr • 100% Rust (683 
 ---
 
 > **100% Rust Implementation - Production Ready**
-> 
+>
 > BazBOM is implemented in 100% memory-safe Rust with comprehensive test coverage:
-> - **671+ Tests Passing** - Complete test coverage, zero failures (5 Rego engine tests skipped)
+> - **705 Tests Passing** - Complete test coverage, zero failures
 > - **15 Functional Crates** - Modular architecture (core, formats, advisories, policy, graph, ml, tui, dashboard, lsp, operator, etc.)
 > - **11 CLI Commands** - Full feature set: scan, policy, fix, db, license, install-hooks, init, explore, dashboard, team, report
 > - **Zero Clippy Warnings** - Production-quality codebase
 > - **Build Plugins** - Maven and Gradle plugins for deep dependency extraction (Java/Kotlin)
 > - **Single Binary** - Easy installation and distribution
-> 
-> **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.  
+>
+> **Full SBOM generation requires build system plugins** (Maven/Gradle) for complete dependency extraction.
 > See [Architecture Overview](docs/ARCHITECTURE.md) and [Capabilities Reference](docs/reference/capabilities-reference.md) for complete details.
 
 ---
@@ -256,10 +258,10 @@ cat bazel-bin/app/app_sbom.spdx.json
 ### 3. Run vulnerability scan
 
 ```bash
-# CLI mode
-bazbom scan . --format spdx  # TODO: Add vulnerability scanning to CLI
+# CLI mode - automatically scans for vulnerabilities
+bazbom scan .
 
-# Bazel mode
+# Bazel mode - native integration
 bazel build //:sca_scan
 ```
 

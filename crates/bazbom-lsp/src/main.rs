@@ -90,7 +90,8 @@ impl BazBomLanguageServer {
         let out_dir = temp_dir.path();
 
         // Run bazbom scan command
-        let out_dir_str = out_dir.to_str()
+        let out_dir_str = out_dir
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid UTF-8 in output directory path"))?;
 
         let output = tokio::process::Command::new("bazbom")

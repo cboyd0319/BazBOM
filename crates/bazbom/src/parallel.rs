@@ -329,7 +329,9 @@ where
 
             // Update progress
             let count = {
-                let mut c = completed.lock().expect("Mutex poisoned - this should not happen in normal operation");
+                let mut c = completed
+                    .lock()
+                    .expect("Mutex poisoned - this should not happen in normal operation");
                 *c += 1;
                 *c
             };
@@ -456,14 +458,19 @@ mod tests {
                     Ok(x * 2)
                 },
                 move |completed, total| {
-                    progress_clone.lock().expect("Mutex should not be poisoned in tests").push((completed, total));
+                    progress_clone
+                        .lock()
+                        .expect("Mutex should not be poisoned in tests")
+                        .push((completed, total));
                 },
             )
             .unwrap();
 
         assert_eq!(results.len(), 5);
 
-        let updates = progress_updates.lock().expect("Mutex should not be poisoned in tests");
+        let updates = progress_updates
+            .lock()
+            .expect("Mutex should not be poisoned in tests");
         assert!(!updates.is_empty());
 
         // Should have at least one progress update
@@ -558,14 +565,19 @@ mod tests {
                 Ok(x * 2)
             },
             move |completed, total| {
-                progress_clone.lock().expect("Mutex should not be poisoned in tests").push((completed, total));
+                progress_clone
+                    .lock()
+                    .expect("Mutex should not be poisoned in tests")
+                    .push((completed, total));
             },
         )
         .unwrap();
 
         assert_eq!(results.len(), 8);
 
-        let updates = progress_updates.lock().expect("Mutex should not be poisoned in tests");
+        let updates = progress_updates
+            .lock()
+            .expect("Mutex should not be poisoned in tests");
         assert!(!updates.is_empty());
 
         // Verify all progress updates have correct total

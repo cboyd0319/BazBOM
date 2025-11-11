@@ -89,16 +89,11 @@ impl SyftRunner {
 
         // Generate SPDX SBOM using Syft
         let output_path = ctx.sbom_dir.join("container.spdx.json");
-        let output_path_str = output_path.to_str()
+        let output_path_str = output_path
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("Invalid UTF-8 in output path"))?;
 
-        let args = vec![
-            image_or_path,
-            "-o",
-            "spdx-json",
-            "--file",
-            output_path_str,
-        ];
+        let args = vec![image_or_path, "-o", "spdx-json", "--file", output_path_str];
 
         let output = run_tool(&syft_bin, &args, &ctx.workspace, 300)?;
 

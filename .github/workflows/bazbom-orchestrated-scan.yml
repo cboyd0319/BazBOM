@@ -6,24 +6,19 @@
 # - Optional CodeQL analysis
 # - Merged SARIF upload
 # - Artifact archiving
+#
+# NOTE: This is an EXAMPLE workflow for users to copy to their own repositories.
+# It is DISABLED in the BazBOM repository itself (this repo uses bazbom-scan.yml instead).
 
 name: BazBOM Orchestrated Scan (Example)
 
 on:
-  pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
-  push:
-    branches:
-      - main
-  schedule:
-    # Nightly deep scan
-    - cron: '0 2 * * *'
+  workflow_dispatch:  # Manual trigger only (disabled by default)
 
 jobs:
   bazbom-scan:
     runs-on: ubuntu-latest
+    if: false  # Disabled - this is an example workflow for users
     permissions:
       contents: read
       security-events: write
