@@ -41,6 +41,12 @@ bazbom-ml = { path = "../bazbom-ml" }
 bazbom-depsdev = { path = "../bazbom-depsdev" }
 bazbom-upgrade-analyzer = { path = "../bazbom-upgrade-analyzer" }
 bazbom-polyglot = { path = "../bazbom-polyglot" }
+bazbom-js-reachability = { path = "../bazbom-js-reachability" }
+bazbom-python-reachability = { path = "../bazbom-python-reachability" }
+bazbom-go-reachability = { path = "../bazbom-go-reachability" }
+bazbom-rust-reachability = { path = "../bazbom-rust-reachability" }
+bazbom-ruby-reachability = { path = "../bazbom-ruby-reachability" }
+bazbom-php-reachability = { path = "../bazbom-php-reachability" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"

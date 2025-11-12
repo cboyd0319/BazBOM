@@ -1335,7 +1335,7 @@ async fn analyze_container_reachability(
     Ok(())
 }
 
-/// Run polyglot reachability analysis
+/// Run polyglot reachability analysis with full call graph analysis
 async fn run_polyglot_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
@@ -1345,29 +1345,186 @@ async fn run_polyglot_reachability(
     // Detect what languages are present in the container
     let ecosystems = bazbom_polyglot::detect_ecosystems(project_path.to_str().unwrap_or("."))?;
 
-    // For now, use a conservative heuristic: mark packages as reachable if they're
-    // in detected ecosystems and we find evidence of their use
-    for package in packages.keys() {
-        // Check if package appears to be used (conservative: assume reachable)
-        // In a full implementation, this would run language-specific call graph analysis
-        for ecosystem in &ecosystems {
-            // Heuristic: if the package ecosystem matches the detected ecosystem,
-            // assume it's potentially reachable (conservative approach)
-            let ecosystem_matches = match ecosystem.ecosystem_type {
-                bazbom_polyglot::EcosystemType::Npm => package.starts_with('@') || !package.contains(':'),
-                bazbom_polyglot::EcosystemType::Python => !package.contains(':') && !package.starts_with('@'),
-                bazbom_polyglot::EcosystemType::Go => package.contains("github.com") || package.contains("golang.org"),
-                bazbom_polyglot::EcosystemType::Rust => !package.contains(':') && !package.contains('/'),
-                bazbom_polyglot::EcosystemType::Ruby => !package.contains(':') && !package.starts_with('@'),
-                bazbom_polyglot::EcosystemType::Php => package.contains('/') && !package.starts_with('@'),
-            };
-
-            if ecosystem_matches {
-                // Conservative: mark as reachable if we found its ecosystem
-                // TODO: In future, run language-specific call graph analysis
-                reachable.insert(package.clone());
-                break;
+    // Run language-specific call graph analysis for each detected ecosystem
+    for ecosystem in &ecosystems {
+        let ecosystem_reachable = match ecosystem.ecosystem_type {
+            bazbom_polyglot::EcosystemType::Npm => {
+                analyze_npm_reachability(project_path, packages).await
             }
+            bazbom_polyglot::EcosystemType::Python => {
+                analyze_python_reachability(project_path, packages).await
+            }
+            bazbom_polyglot::EcosystemType::Go => {
+                analyze_go_reachability(project_path, packages).await
+            }
+            bazbom_polyglot::EcosystemType::Rust => {
+                analyze_rust_reachability(project_path, packages).await
+            }
+            bazbom_polyglot::EcosystemType::Ruby => {
+                analyze_ruby_reachability(project_path, packages).await
+            }
+            bazbom_polyglot::EcosystemType::Php => {
+                analyze_php_reachability(project_path, packages).await
+            }
+        };
+
+        // Merge results from each ecosystem
+        match ecosystem_reachable {
+            Ok(pkgs) => {
+                reachable.extend(pkgs);
+            }
+            Err(e) => {
+                eprintln!(
+                    "   ⚠️  Call graph analysis failed for {}: {}",
+                    ecosystem.name, e
+                );
+            }
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze NPM package reachability using call graph
+async fn analyze_npm_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_js_reachability::analyze_js_project;
+
+    let report = analyze_js_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    // Check each package against the reachability report
+    for (package, _cves) in packages {
+        // Check if any vulnerabilities for this package are reachable
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Python package reachability using call graph
+async fn analyze_python_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_python_reachability::analyze_python_project;
+
+    let report = analyze_python_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Go package reachability using call graph
+async fn analyze_go_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_go_reachability::analyze_go_project;
+
+    let report = analyze_go_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Rust package reachability using call graph
+async fn analyze_rust_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_rust_reachability::analyze_rust_project;
+
+    let report = analyze_rust_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Ruby package reachability using call graph
+async fn analyze_ruby_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_ruby_reachability::analyze_ruby_project;
+
+    let report = analyze_ruby_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze PHP package reachability using call graph
+async fn analyze_php_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_php_reachability::analyze_php_project;
+
+    let report = analyze_php_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
         }
     }
 

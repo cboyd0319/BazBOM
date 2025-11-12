@@ -18,5 +18,8 @@ serde_json = "1.0"
 anyhow = "1.0"
 regex = "1.10"
 
+# Graph visualization
+petgraph = "0.8"
+
 # BazBOM core
 bazbom-core = { path = "../bazbom-core", version = "6.0.0" }

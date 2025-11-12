@@ -70,6 +70,31 @@ impl SearchMode {
     }
 }
 
+/// View mode for TUI display
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ViewMode {
+    /// List view (default)
+    List,
+    /// Graph view with ASCII dependency tree
+    Graph,
+}
+
+impl ViewMode {
+    pub fn as_str(&self) -> &str {
+        match self {
+            ViewMode::List => "List",
+            ViewMode::Graph => "Graph",
+        }
+    }
+
+    pub fn toggle(&self) -> Self {
+        match self {
+            ViewMode::List => ViewMode::Graph,
+            ViewMode::Graph => ViewMode::List,
+        }
+    }
+}
+
 /// Main TUI application state
 pub struct App {
     /// List of dependencies to display
@@ -88,6 +113,8 @@ pub struct App {
     show_help: bool,
     /// Export message to display
     export_message: Option<String>,
+    /// Current view mode (list or graph)
+    view_mode: ViewMode,
 }
 
 /// Simplified dependency representation for TUI
@@ -125,6 +152,7 @@ impl App {
             severity_filter: None,
             show_help: false,
             export_message: None,
+            view_mode: ViewMode::List,
         }
     }
 
@@ -355,6 +383,11 @@ fn handle_key_event(key: KeyEvent, app: &mut App) -> Result<bool> {
             let status = if app.case_insensitive { "ON" } else { "OFF" };
             app.export_message = Some(format!("Case-insensitive search: {}", status));
         }
+        KeyCode::Char('g') => {
+            // Toggle view mode: List <-> Graph
+            app.view_mode = app.view_mode.toggle();
+            app.export_message = Some(format!("View mode: {}", app.view_mode.as_str()));
+        }
         _ => {}
     }
     Ok(false)
@@ -379,14 +412,23 @@ fn ui(f: &mut Frame, app: &mut App) {
     // Header
     render_header(f, chunks[0], app);
 
-    // Main content (split into list and details)
-    let content_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-        .split(chunks[1]);
+    // Main content - switch between list and graph views
+    match app.view_mode {
+        ViewMode::List => {
+            // Split into list and details
+            let content_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(chunks[1]);
 
-    render_dependency_list(f, content_chunks[0], app);
-    render_details(f, content_chunks[1], app);
+            render_dependency_list(f, content_chunks[0], app);
+            render_details(f, content_chunks[1], app);
+        }
+        ViewMode::Graph => {
+            // Full-width graph view
+            render_graph(f, chunks[1], app);
+        }
+    }
 
     // Footer
     render_footer(f, chunks[2], app);
@@ -555,7 +597,7 @@ fn render_footer(f: &mut Frame, area: Rect, app: &App) {
     let footer_text = if let Some(ref msg) = app.export_message {
         msg.clone()
     } else {
-        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [r] Search mode [i] Case [e] Export filtered [x] Export all [?] Help [q] Quit"
+        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [g] Graph View [r] Search mode [i] Case [e] Export [?] Help [q] Quit"
             .to_string()
     };
 
@@ -564,6 +606,140 @@ fn render_footer(f: &mut Frame, area: Rect, app: &App) {
         .block(Block::default().borders(Borders::ALL));
 
     f.render_widget(footer, area);
+}
+
+/// Render dependency graph in ASCII tree format
+fn render_graph(f: &mut Frame, area: Rect, app: &App) {
+    let filtered_deps = app.filtered_dependencies();
+
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(
+                "Dependency Graph (Tree View)",
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            ),
+        ]),
+        Line::from(""),
+    ];
+
+    if filtered_deps.is_empty() {
+        lines.push(Line::from("No dependencies to display"));
+    } else {
+        // Build a simple tree structure grouped by scope
+        use std::collections::HashMap;
+        let mut scopes: HashMap<String, Vec<&Dependency>> = HashMap::new();
+
+        for dep in &filtered_deps {
+            scopes.entry(dep.scope.clone()).or_default().push(dep);
+        }
+
+        let mut scope_names: Vec<_> = scopes.keys().cloned().collect();
+        scope_names.sort();
+
+        for (scope_idx, scope) in scope_names.iter().enumerate() {
+            let is_last_scope = scope_idx == scope_names.len() - 1;
+            let scope_prefix = if is_last_scope { "└─" } else { "├─" };
+
+            // Scope header
+            lines.push(Line::from(vec![
+                Span::raw(scope_prefix),
+                Span::styled(
+                    format!(" {} ({} deps)", scope, scopes[scope].len()),
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                ),
+            ]));
+
+            let deps = &scopes[scope];
+            for (dep_idx, dep) in deps.iter().enumerate() {
+                let is_last_dep = dep_idx == deps.len() - 1;
+                let scope_connector = if is_last_scope { "  " } else { "│ " };
+                let dep_prefix = if is_last_dep { "└─" } else { "├─" };
+
+                // Dependency name and version
+                let vuln_indicator = if !dep.vulnerabilities.is_empty() {
+                    let critical = dep.vulnerabilities.iter().filter(|v| v.severity == "CRITICAL").count();
+                    let high = dep.vulnerabilities.iter().filter(|v| v.severity == "HIGH").count();
+
+                    if critical > 0 {
+                        format!(" [🔴 {} CRITICAL]", critical)
+                    } else if high > 0 {
+                        format!(" [🟠 {} HIGH]", high)
+                    } else {
+                        format!(" [⚠️  {} vulns]", dep.vulnerabilities.len())
+                    }
+                } else {
+                    String::new()
+                };
+
+                lines.push(Line::from(vec![
+                    Span::raw(format!("{}  {}", scope_connector, dep_prefix)),
+                    Span::styled(
+                        &dep.name,
+                        if !dep.vulnerabilities.is_empty() {
+                            Style::default().fg(Color::Red)
+                        } else {
+                            Style::default().fg(Color::Green)
+                        },
+                    ),
+                    Span::styled(
+                        format!(" @ {}", dep.version),
+                        Style::default().fg(Color::Cyan),
+                    ),
+                    Span::styled(
+                        vuln_indicator,
+                        Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+                    ),
+                ]));
+
+                // Show vulnerability details if present
+                if !dep.vulnerabilities.is_empty() {
+                    let vuln_connector = if is_last_dep { "   " } else { "│  " };
+                    for (vuln_idx, vuln) in dep.vulnerabilities.iter().take(3).enumerate() {
+                        let is_last_vuln = vuln_idx == dep.vulnerabilities.len().min(3) - 1;
+                        let vuln_prefix = if is_last_vuln { "└─" } else { "├─" };
+
+                        let severity_color = match vuln.severity.as_str() {
+                            "CRITICAL" => Color::Red,
+                            "HIGH" => Color::LightRed,
+                            "MEDIUM" => Color::Yellow,
+                            _ => Color::Gray,
+                        };
+
+                        lines.push(Line::from(vec![
+                            Span::raw(format!("{}  {}   {}", scope_connector, vuln_connector, vuln_prefix)),
+                            Span::styled(
+                                &vuln.cve,
+                                Style::default().fg(severity_color).add_modifier(Modifier::BOLD),
+                            ),
+                            Span::styled(
+                                format!(" ({}, CVSS: {:.1})", vuln.severity, vuln.cvss),
+                                Style::default().fg(Color::Gray),
+                            ),
+                        ]));
+                    }
+
+                    if dep.vulnerabilities.len() > 3 {
+                        lines.push(Line::from(vec![
+                            Span::raw(format!("{}  {}   ", scope_connector, if is_last_dep { " " } else { "│" })),
+                            Span::styled(
+                                format!("... {} more vulnerabilities", dep.vulnerabilities.len() - 3),
+                                Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC),
+                            ),
+                        ]));
+                    }
+                }
+            }
+
+            if !is_last_scope {
+                lines.push(Line::from(""));
+            }
+        }
+    }
+
+    let paragraph = Paragraph::new(lines)
+        .block(Block::default().borders(Borders::ALL).title("Dependency Graph"));
+
+    f.render_widget(paragraph, area);
 }
 
 /// Render help screen
@@ -613,8 +789,9 @@ fn render_help(f: &mut Frame) {
                 .fg(Color::Yellow)
                 .add_modifier(Modifier::BOLD),
         )]),
-        Line::from("  Left       Dependency list"),
-        Line::from("  Right      Vulnerability details"),
+        Line::from("  g          Toggle Graph View (List ↔ Tree)"),
+        Line::from("  Left       Dependency list (List mode)"),
+        Line::from("  Right      Vulnerability details (List mode)"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "Export:",

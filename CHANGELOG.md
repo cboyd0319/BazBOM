@@ -43,6 +43,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Missing parent warnings with graceful fallback
   - Example: `[profile.dev]` with `extends = "base"` merges base settings
 
+- **EPSS/KEV Integration** - Real-time exploit prediction and known exploited vulnerability data
+  - Fetches EPSS scores from FIRST.org API (exploitation probability)
+  - Integrates CISA KEV catalog (known actively exploited CVEs)
+  - Enriches vulnerability data with actionable threat intelligence
+  - Graceful degradation if external APIs are unavailable
+
+- **TUI Graph Visualization** - Interactive dependency tree view in the terminal UI
+  - Toggle between list view and ASCII tree view with 'g' key
+  - Groups dependencies by scope with color-coded severity indicators
+  - Shows vulnerabilities inline with CVE IDs and CVSS scores
+  - Visual severity markers: 🔴 Critical/High, 🟡 Medium, 🟢 Low
+  - Limits display to 3 vulnerabilities per dependency for readability
+  - ~132 lines of new rendering code in bazbom-tui
+
+- **Container Reachability Analysis** - Full call graph analysis for container scanning
+  - Replaced conservative heuristic with language-specific call graph analysis
+  - Integrated all 6 polyglot reachability analyzers (JS, Python, Go, Rust, Ruby, PHP)
+  - Analyzes each detected ecosystem with AST-based static analysis
+  - Determines which vulnerable packages are actually reachable from entrypoints
+  - Reduces false positives by filtering unreachable vulnerability code
+  - ~200 lines of polyglot wiring in container_scan.rs
+
 ### Changed
 
 - Profile resolution now returns owned values instead of references
