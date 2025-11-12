@@ -22,8 +22,23 @@ Every vulnerability gets a **P0-P4 priority score** based on:
 BazBOM doesn't just tell you what's wrong - it tells you **what to do about it**:
 - **Quick Wins** - Easy fixes with high impact (non-breaking patches)
 - **Action Plan** - Prioritized roadmap with time estimates
-- **Copy-Paste Fixes** - Ready-to-use Maven/Gradle dependency updates
+- **Multi-Language Copy-Paste Fixes** - Ready-to-use dependency updates for:
+  - ☕ Java (Maven/Gradle)
+  - 🐍 Python (pip/Poetry/Pipfile)
+  - 📦 JavaScript (npm/yarn/package.json)
+  - 🐹 Go (go.mod/go get)
+  - 🦀 Rust (Cargo.toml/cargo add)
+  - 💎 Ruby (Gemfile/bundle)
+  - 🐘 PHP (composer.json/composer require)
+- **Framework-Specific Migration Guides** - Actionable upgrade paths for Spring Boot, Django, Rails, React, Vue, Angular, Express, and more
 - **Effort Analysis** - Estimated time to remediate each vulnerability
+
+### 4. Reachability Analysis (Optional)
+Reduce noise by analyzing which vulnerabilities are actually **reachable** in your container's code:
+- 🎯 **REACHABLE** - Vulnerable code is in execution paths (prioritize these!)
+- 🛡️ **unreachable** - Vulnerable dependencies not used (lower priority)
+- Uses ecosystem detection and call graph analysis
+- Conservative heuristic ensures no false negatives
 
 ## Quick Start
 
@@ -99,6 +114,35 @@ Available filters:
 - `fixable` - Only vulnerabilities with patches
 - `quick-wins` - Easy fixes (non-breaking patches)
 - `kev` - CISA Known Exploited Vulnerabilities only
+
+### Reachability Analysis
+
+Analyze which vulnerabilities are actually reachable in your container's code:
+```bash
+bazbom container-scan myapp:latest --with-reachability
+```
+
+How it works:
+1. Extracts container filesystem (docker/podman)
+2. Detects languages and ecosystems in the container
+3. Analyzes which vulnerable packages are actually used
+4. Marks vulnerabilities as 🎯 REACHABLE or 🛡️ unreachable
+
+Benefits:
+- **Focus on real risks** - Prioritize vulnerabilities in code that's actually executed
+- **Reduce alert fatigue** - Filter out unused transitive dependencies
+- **Smart prioritization** - Combine reachability with P0-P4 scoring
+
+Example output:
+```
+🔴 CVE-2024-1234 [P0] 🎯 REACHABLE
+   in log4j-core 2.14.1 → 2.17.1
+
+🟡 CVE-2024-5678 [P2] 🛡️ unreachable
+   in unused-lib 1.0.0 → 1.0.1
+```
+
+**Note**: Uses conservative heuristics (marks packages reachable if their ecosystem is detected). Future versions will use language-specific call graph analysis for precision.
 
 ### Interactive TUI Mode
 

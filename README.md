@@ -530,6 +530,9 @@ bazbom container-scan <image> --interactive      # Interactive TUI explorer
 bazbom container-scan <image> --report out.html  # Executive report (HTML)
 bazbom container-scan <image> --create-issues owner/repo  # Create GitHub issues for P0/P1
 bazbom container-scan <image> --format sarif     # SARIF output for CI/CD
+
+# Advanced Analysis
+bazbom container-scan <image> --with-reachability  # Reachability analysis (show which vulns are actually used)
 ```
 
 **Unique Features:**
@@ -539,8 +542,10 @@ bazbom container-scan <image> --format sarif     # SARIF output for CI/CD
 - **P0-P4 Scoring** - Smart prioritization (severity + EPSS + KEV)
 - **Quick Wins Analysis** - Identifies easy, high-impact fixes
 - **Breaking Change Detection** - Warns about major version upgrades
+- **Framework Migration Guides** - Spring Boot, Django, Rails, React, Vue, Angular, Express, Go modules
 - **Effort Estimation** - Calculates remediation time
-- **Copy-Paste Fixes** - Ready-to-use Maven/Gradle updates
+- **Multi-Language Copy-Paste Fixes** - Java, Python, JavaScript, Go, Rust, Ruby, PHP (Maven/Gradle/pip/npm/etc.)
+- **Reachability Analysis** - Shows which vulnerabilities are actually in execution paths (🎯 vs 🛡️)
 
 [Full Documentation](docs/features/container-scanning.md)
 
