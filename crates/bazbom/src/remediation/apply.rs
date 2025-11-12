@@ -5,10 +5,62 @@ use bazbom_core::BuildSystem;
 use std::path::Path;
 use tracing::{info, warn};
 
-use super::build_systems::{apply_bazel_fix, apply_gradle_fix, apply_maven_fix};
+use super::build_systems::{
+    apply_bazel_fix, apply_bundler_fix, apply_cargo_fix, apply_composer_fix, apply_go_fix,
+    apply_gradle_fix, apply_maven_fix, apply_npm_fix, apply_pip_fix,
+};
 use super::types::{ApplyResult, ApplyResultWithTests, RemediationSuggestion};
 use crate::backup::{choose_backup_strategy, BackupHandle};
 use crate::test_runner::{has_tests, run_tests};
+
+/// Package manager types
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PackageManager {
+    Maven,
+    Gradle,
+    Bazel,
+    Npm,
+    Pip,
+    Go,
+    Cargo,
+    Bundler,
+    Composer,
+}
+
+/// Detect package manager from project root
+fn detect_package_manager(project_root: &Path) -> Option<PackageManager> {
+    // Check for manifest files in priority order
+    if project_root.join("package.json").exists() {
+        return Some(PackageManager::Npm);
+    }
+    if project_root.join("Cargo.toml").exists() {
+        return Some(PackageManager::Cargo);
+    }
+    if project_root.join("go.mod").exists() {
+        return Some(PackageManager::Go);
+    }
+    if project_root.join("requirements.txt").exists() {
+        return Some(PackageManager::Pip);
+    }
+    if project_root.join("Gemfile").exists() {
+        return Some(PackageManager::Bundler);
+    }
+    if project_root.join("composer.json").exists() {
+        return Some(PackageManager::Composer);
+    }
+    if project_root.join("pom.xml").exists() {
+        return Some(PackageManager::Maven);
+    }
+    if project_root.join("build.gradle").exists() || project_root.join("build.gradle.kts").exists()
+    {
+        return Some(PackageManager::Gradle);
+    }
+    if project_root.join("MODULE.bazel").exists() || project_root.join("WORKSPACE").exists() {
+        return Some(PackageManager::Bazel);
+    }
+
+    None
+}
 
 /// Apply fixes automatically
 pub fn apply_fixes(
@@ -19,19 +71,50 @@ pub fn apply_fixes(
     let mut applied = Vec::new();
     let mut failed = Vec::new();
 
+    // Auto-detect package manager (fallback if build_system is Unknown)
+    let package_manager = if build_system == BuildSystem::Unknown {
+        match detect_package_manager(project_root) {
+            Some(pm) => {
+                info!(package_manager = ?pm, "Auto-detected package manager");
+                pm
+            }
+            None => {
+                anyhow::bail!("Could not detect package manager from project files");
+            }
+        }
+    } else {
+        // Map BuildSystem to PackageManager
+        match build_system {
+            BuildSystem::Maven => PackageManager::Maven,
+            BuildSystem::Gradle => PackageManager::Gradle,
+            BuildSystem::Bazel => PackageManager::Bazel,
+            _ => {
+                // Fallback to detection for other build systems
+                match detect_package_manager(project_root) {
+                    Some(pm) => pm,
+                    None => {
+                        anyhow::bail!("Could not detect package manager from project files");
+                    }
+                }
+            }
+        }
+    };
+
     for suggestion in suggestions {
         if suggestion.fixed_version.is_none() {
             continue;
         }
 
-        let result = match build_system {
-            BuildSystem::Maven => apply_maven_fix(suggestion, project_root),
-            BuildSystem::Gradle => apply_gradle_fix(suggestion, project_root),
-            BuildSystem::Bazel => apply_bazel_fix(suggestion, project_root),
-            _ => {
-                warn!(build_system = ?build_system, "Unsupported build system for auto-fix");
-                continue;
-            }
+        let result = match package_manager {
+            PackageManager::Maven => apply_maven_fix(suggestion, project_root),
+            PackageManager::Gradle => apply_gradle_fix(suggestion, project_root),
+            PackageManager::Bazel => apply_bazel_fix(suggestion, project_root),
+            PackageManager::Npm => apply_npm_fix(suggestion, project_root),
+            PackageManager::Pip => apply_pip_fix(suggestion, project_root),
+            PackageManager::Go => apply_go_fix(suggestion, project_root),
+            PackageManager::Cargo => apply_cargo_fix(suggestion, project_root),
+            PackageManager::Bundler => apply_bundler_fix(suggestion, project_root),
+            PackageManager::Composer => apply_composer_fix(suggestion, project_root),
         };
 
         match result {

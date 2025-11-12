@@ -62,7 +62,21 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
 
     println!();
     println!("{}", "📚 References:".bold());
-    println!("  • NVD: https://nvd.nist.gov/vuln/detail/{}", cve_id);
+    println!("  • NVD:        https://nvd.nist.gov/vuln/detail/{}", cve_id);
+    println!("  • MITRE:      https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", cve_id);
+    println!("  • GitHub:     https://github.com/advisories/{}", cve_id);
+    println!();
+
+    println!("{}", "🔓 Exploit Resources:".bold().yellow());
+    println!("  • ExploitDB:  https://www.exploit-db.com/search?cve={}", cve_id);
+    println!("  • GitHub POCs: https://github.com/search?q={}+POC&type=repositories", cve_id);
+    println!("  • Packet Storm: https://packetstormsecurity.com/search/?q={}", cve_id);
+    println!("  • Nuclei Templates: https://github.com/projectdiscovery/nuclei-templates/search?q={}", cve_id);
+    println!();
+
+    println!("{}", "💡 Tip:".dimmed());
+    println!("  {}", "Check if exploit code exists before prioritizing remediation.".dimmed());
+    println!("  {}", "Public exploits significantly increase risk.".dimmed());
     println!();
 
     Ok(())

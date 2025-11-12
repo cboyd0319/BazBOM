@@ -71,6 +71,9 @@ pub struct ThreatsConfig {
 /// Named profile containing scan configuration
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Profile {
+    /// Inherit settings from another profile
+    pub extends: Option<String>,
+
     // Core scanning options
     pub reachability: Option<bool>,
     pub fast: Option<bool>,
@@ -183,8 +186,62 @@ impl Config {
         Self::load(path).unwrap_or_default()
     }
 
-    /// Get a named profile by name
-    pub fn get_profile(&self, name: &str) -> Option<&Profile> {
+    /// Get a named profile by name, resolving inheritance chain
+    pub fn get_profile(&self, name: &str) -> Option<Profile> {
+        self.resolve_profile(name, &mut Vec::new())
+    }
+
+    /// Resolve profile with inheritance, detecting cycles
+    fn resolve_profile(&self, name: &str, visited: &mut Vec<String>) -> Option<Profile> {
+        // Cycle detection
+        if visited.contains(&name.to_string()) {
+            eprintln!(
+                "Warning: Circular profile inheritance detected: {} -> {}",
+                visited.join(" -> "),
+                name
+            );
+            return None;
+        }
+
+        let profile = self.profile.get(name)?;
+        visited.push(name.to_string());
+
+        // If no extends, return the profile as-is
+        let extends = match &profile.extends {
+            Some(e) => e,
+            None => return Some(profile.clone()),
+        };
+
+        // Resolve parent profile
+        let mut resolved = match self.resolve_profile(extends, visited) {
+            Some(p) => p,
+            None => {
+                // Check if this was a cycle (parent is in visited list) vs. missing profile
+                if visited.iter().any(|v| v == extends) {
+                    // Cycle detected - propagate None
+                    return None;
+                } else {
+                    // Missing parent - warn and use current profile as-is
+                    eprintln!(
+                        "Warning: Profile '{}' extends non-existent profile '{}'",
+                        name, extends
+                    );
+                    return Some(profile.clone());
+                }
+            }
+        };
+
+        // Merge current profile into resolved parent
+        resolved.merge(profile);
+
+        // Clear extends since we've resolved it
+        resolved.extends = None;
+
+        Some(resolved)
+    }
+
+    /// Get a profile reference without resolving inheritance
+    pub fn get_profile_raw(&self, name: &str) -> Option<&Profile> {
         self.profile.get(name)
     }
 
@@ -304,6 +361,7 @@ cyclonedx = true
     #[test]
     fn test_profile_merge() {
         let mut base = Profile {
+            extends: None,
             reachability: Some(true),
             fast: Some(false),
             format: Some("spdx".to_string()),
@@ -311,6 +369,7 @@ cyclonedx = true
         };
 
         let override_profile = Profile {
+            extends: None,
             fast: Some(true),
             ml_risk: Some(true),
             ..Default::default()
@@ -327,5 +386,76 @@ cyclonedx = true
 
         // New values
         assert_eq!(base.ml_risk, Some(true));
+    }
+
+    #[test]
+    fn test_profile_inheritance() {
+        let toml = r#"
+[profile.base]
+reachability = true
+format = "spdx"
+fast = false
+
+[profile.dev]
+extends = "base"
+fast = true
+no_upload = true
+
+[profile.strict]
+extends = "dev"
+ml_risk = true
+with_semgrep = true
+"#;
+        let config: Config = toml::from_str(toml).unwrap();
+
+        // Test dev profile inherits from base
+        let dev = config.get_profile("dev").unwrap();
+        assert_eq!(dev.reachability, Some(true)); // from base
+        assert_eq!(dev.format, Some("spdx".to_string())); // from base
+        assert_eq!(dev.fast, Some(true)); // overridden in dev
+        assert_eq!(dev.no_upload, Some(true)); // from dev
+        assert_eq!(dev.extends, None); // resolved
+
+        // Test strict profile inherits from dev (which inherits from base)
+        let strict = config.get_profile("strict").unwrap();
+        assert_eq!(strict.reachability, Some(true)); // from base
+        assert_eq!(strict.format, Some("spdx".to_string())); // from base
+        assert_eq!(strict.fast, Some(true)); // from dev
+        assert_eq!(strict.no_upload, Some(true)); // from dev
+        assert_eq!(strict.ml_risk, Some(true)); // from strict
+        assert_eq!(strict.with_semgrep, Some(true)); // from strict
+        assert_eq!(strict.extends, None); // resolved
+    }
+
+    #[test]
+    fn test_profile_inheritance_missing_parent() {
+        let toml = r#"
+[profile.child]
+extends = "nonexistent"
+fast = true
+"#;
+        let config: Config = toml::from_str(toml).unwrap();
+
+        // Should still return the profile even if parent doesn't exist
+        let child = config.get_profile("child").unwrap();
+        assert_eq!(child.fast, Some(true));
+    }
+
+    #[test]
+    fn test_profile_inheritance_cycle() {
+        let toml = r#"
+[profile.a]
+extends = "b"
+reachability = true
+
+[profile.b]
+extends = "a"
+fast = true
+"#;
+        let config: Config = toml::from_str(toml).unwrap();
+
+        // Should detect cycle and return None
+        let result = config.get_profile("a");
+        assert!(result.is_none());
     }
 }

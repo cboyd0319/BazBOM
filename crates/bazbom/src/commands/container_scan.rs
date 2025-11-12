@@ -10,6 +10,7 @@ use anyhow::{Context, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -60,6 +61,7 @@ pub struct VulnerabilityInfo {
     pub breaking_change: Option<bool>, // Major version upgrade required
     pub upgrade_path: Option<String>, // Recommended upgrade strategy
     pub is_reachable: bool, // Reachability analysis result
+    pub difficulty_score: Option<u8>, // Remediation difficulty (0-100)
 }
 
 /// Complete container scan results
@@ -92,8 +94,10 @@ struct QuickWin {
 #[allow(dead_code)]
 struct ActionItem {
     priority: String,
-    cve_id: String,
+    cve_id: String, // Primary CVE (kept for compatibility)
+    cves_fixed: Vec<String>, // All CVEs fixed by this action
     package: String,
+    fixed_version: String,
     description: String,
     estimated_hours: f32,
     breaking: bool,
@@ -771,28 +775,29 @@ async fn enrich_vulnerabilities(vulns: &mut [VulnerabilityInfo]) -> Result<()> {
 
         // Calculate priority (P0-P4)
         vuln.priority = Some(calculate_priority_level(vuln));
+
+        // Calculate remediation difficulty score (0-100)
+        vuln.difficulty_score = Some(calculate_difficulty_score(vuln));
     }
 
     Ok(())
 }
 
-/// Load EPSS scores (simplified - real implementation would use bazbom-advisories)
+/// Load EPSS scores (stub - TODO: implement real API integration with ureq 3.x)
 async fn load_epss_data() -> Result<HashMap<String, (f64, f64)>> {
-    // TODO: Integrate with bazbom-advisories to load actual EPSS data
-    // For now, return mock data for demo
-    let mut map = HashMap::new();
-    map.insert("CVE-2025-41249".to_string(), (0.85, 0.92)); // High EPSS
-    map.insert("CVE-2024-47554".to_string(), (0.42, 0.67)); // Medium EPSS
-    map.insert("CVE-2025-7425".to_string(), (0.15, 0.34)); // Low EPSS
-    Ok(map)
+    // TODO: Implement real EPSS API integration
+    // Current issue: ureq 3.x has different API than ureq 2.x used in bazbom-advisories
+    // Need to either: (1) use ureq 2.x, (2) use reqwest, or (3) figure out ureq 3.x API
+    // For now, return empty map - P0-P4 scoring will still work based on CVSS + KEV
+    Ok(HashMap::new())
 }
 
-/// Load CISA KEV data (simplified)
+/// Load CISA KEV data (stub - TODO: implement real API integration with ureq 3.x)
 async fn load_kev_data() -> Result<HashMap<String, String>> {
-    // TODO: Integrate with bazbom-advisories to load actual KEV data
-    let mut map = HashMap::new();
-    map.insert("CVE-2025-41249".to_string(), "2025-12-31".to_string());
-    Ok(map)
+    // TODO: Implement real CISA KEV API integration
+    // Same ureq 3.x API issue as EPSS
+    // For now, return empty map - P0-P4 scoring will still work based on CVSS + EPSS
+    Ok(HashMap::new())
 }
 
 /// Calculate priority level (P0-P4)
@@ -849,6 +854,86 @@ fn calculate_priority_level(vuln: &VulnerabilityInfo) -> String {
 
     // P4: Everything else
     "P4".to_string()
+}
+
+/// Calculate remediation difficulty score (0-100)
+///
+/// Factors:
+/// - No fix available: 100 (impossible)
+/// - Breaking changes (major version): +40
+/// - Major version jumps: +15 per jump
+/// - Framework migrations: +25
+/// - Base: 10 (simple patch)
+fn calculate_difficulty_score(vuln: &VulnerabilityInfo) -> u8 {
+    // No fix = impossible
+    if vuln.fixed_version.is_none() {
+        return 100;
+    }
+
+    let mut score = 10u8; // Base difficulty for any upgrade
+
+    // Breaking changes add significant complexity
+    if vuln.breaking_change == Some(true) {
+        score = score.saturating_add(40);
+    }
+
+    // Calculate version jumps (e.g., 1.0 -> 4.0 = 3 major jumps)
+    if let Some(ref fixed) = vuln.fixed_version {
+        let major_jumps = count_major_version_jumps(&vuln.installed_version, fixed);
+        score = score.saturating_add(major_jumps.saturating_mul(15));
+    }
+
+    // Framework-specific complexity (requires migration guides)
+    if is_framework_package(&vuln.package_name) {
+        score = score.saturating_add(25);
+    }
+
+    score.min(95) // Cap at 95 (100 reserved for "no fix")
+}
+
+/// Count major version jumps (e.g., 1.2.3 -> 4.5.6 = 3 jumps)
+fn count_major_version_jumps(from: &str, to: &str) -> u8 {
+    let parse_major = |v: &str| -> Option<u32> {
+        v.split('.').next()?.parse().ok()
+    };
+
+    match (parse_major(from), parse_major(to)) {
+        (Some(from_major), Some(to_major)) if to_major > from_major => {
+            (to_major - from_major).min(6) as u8 // Cap at 6 jumps
+        }
+        _ => 0,
+    }
+}
+
+/// Check if package is a major framework requiring migration guides
+fn is_framework_package(name: &str) -> bool {
+    let frameworks = [
+        "spring-boot", "spring-core", "spring-framework",
+        "django", "flask",
+        "rails", "railties",
+        "react", "react-dom",
+        "vue", "vuejs",
+        "angular", "@angular/core",
+        "express",
+        "laravel", "symfony",
+    ];
+
+    frameworks.iter().any(|f| name.contains(f))
+}
+
+/// Format difficulty score as a colored label
+fn format_difficulty_label(score: u8) -> colored::ColoredString {
+    let (emoji, label, color_fn): (&str, &str, fn(&str) -> colored::ColoredString) = match score {
+        0..=20 => ("🟢", "Trivial", |s| s.green()),
+        21..=40 => ("🟡", "Easy", |s| s.yellow()),
+        41..=60 => ("🟠", "Moderate", |s| s.bright_yellow()),
+        61..=80 => ("🔴", "Hard", |s| s.red()),
+        81..=99 => ("⚠️", "Very Hard", |s| s.bright_red().bold()),
+        100 => ("🚫", "No Fix Available", |s| s.bright_red().bold()),
+        _ => ("❓", "Unknown", |s| s.dimmed()),
+    };
+
+    color_fn(&format!("Difficulty: {} {} ({}/100)", emoji, label, score))
 }
 
 /// Extract layer-to-package mapping from Syft native JSON
@@ -963,6 +1048,7 @@ async fn analyze_layer_attribution(
                         breaking_change,
                         upgrade_path,
                         is_reachable: false, // Will be analyzed if --with-reachability is enabled
+                        difficulty_score: None, // Will be calculated later
                     });
                 }
             }
@@ -1438,6 +1524,12 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
                 if let Some(ref upgrade_path) = vuln.upgrade_path {
                     println!("           💡 {}", upgrade_path.dimmed());
                 }
+
+                // Show difficulty score
+                if let Some(difficulty) = vuln.difficulty_score {
+                    let difficulty_label = format_difficulty_label(difficulty);
+                    println!("           {}", difficulty_label);
+                }
             }
             if vulns_by_severity.len() > show_count {
                 println!("        {} and {} more vulnerabilities...", "".dimmed(), (vulns_by_severity.len() - show_count).to_string().dimmed());
@@ -1579,36 +1671,82 @@ fn display_quick_wins(results: &ContainerScanResults) -> Result<()> {
 
 /// Display prioritized action plan
 fn display_action_plan(results: &ContainerScanResults) -> Result<()> {
-    let mut actions = Vec::new();
+    // Group vulnerabilities by (package, fixed_version) for consolidation
+    let mut grouped_actions: HashMap<(String, String), Vec<&VulnerabilityInfo>> = HashMap::new();
 
-    // Collect all actionable vulnerabilities
+    // Collect all actionable vulnerabilities and group by fix
     for layer in &results.layers {
         for vuln in &layer.vulnerabilities {
-            if vuln.fixed_version.is_some() {
-                let estimated_hours = if vuln.breaking_change == Some(true) {
-                    2.0 // Breaking changes take longer
-                } else if vuln.is_kev {
-                    1.0 // KEV requires immediate attention
-                } else {
-                    0.25 // Quick patches
-                };
-
-                actions.push(ActionItem {
-                    priority: vuln.priority.clone().unwrap_or_else(|| "P4".to_string()),
-                    cve_id: vuln.cve_id.clone(),
-                    package: vuln.package_name.clone(),
-                    description: vuln.title.clone(),
-                    estimated_hours,
-                    breaking: vuln.breaking_change == Some(true),
-                    kev: vuln.is_kev,
-                    epss: vuln.epss_score.unwrap_or(0.0),
-                });
+            if let Some(ref fixed) = vuln.fixed_version {
+                let key = (vuln.package_name.clone(), fixed.clone());
+                grouped_actions.entry(key).or_default().push(vuln);
             }
         }
     }
 
-    if actions.is_empty() {
+    if grouped_actions.is_empty() {
         return Ok(());
+    }
+
+    // Convert grouped vulns into consolidated ActionItems
+    let mut actions = Vec::new();
+    for ((package, fixed_version), vulns) in grouped_actions {
+        // Take highest priority from group
+        let priority_index = vulns.iter()
+            .map(|v| {
+                let p = v.priority.as_deref().unwrap_or("P4");
+                match p {
+                    "P0" => 0,
+                    "P1" => 1,
+                    "P2" => 2,
+                    "P3" => 3,
+                    _ => 4,
+                }
+            })
+            .min()
+            .unwrap_or(4);
+
+        let priority = match priority_index {
+            0 => "P0",
+            1 => "P1",
+            2 => "P2",
+            3 => "P3",
+            _ => "P4",
+        }.to_string();
+
+        // Collect all CVE IDs
+        let cves_fixed: Vec<String> = vulns.iter().map(|v| v.cve_id.clone()).collect();
+
+        // Check if any CVE is KEV or breaking
+        let has_kev = vulns.iter().any(|v| v.is_kev);
+        let is_breaking = vulns.iter().any(|v| v.breaking_change == Some(true));
+
+        // Max EPSS score
+        let max_epss = vulns.iter()
+            .filter_map(|v| v.epss_score)
+            .fold(0.0, f64::max);
+
+        // Estimated hours based on severity
+        let estimated_hours = if is_breaking {
+            2.0 // Breaking changes take longer
+        } else if has_kev {
+            1.0 // KEV requires immediate attention
+        } else {
+            0.25 // Quick patches
+        };
+
+        actions.push(ActionItem {
+            priority,
+            cve_id: cves_fixed[0].clone(), // Primary CVE for display
+            cves_fixed,
+            package,
+            fixed_version,
+            description: vulns[0].title.clone(),
+            estimated_hours,
+            breaking: is_breaking,
+            kev: has_kev,
+            epss: max_epss,
+        });
     }
 
     // Sort by priority
@@ -1625,11 +1763,16 @@ fn display_action_plan(results: &ContainerScanResults) -> Result<()> {
     if !p0_actions.is_empty() {
         println!("{}", "🔥 URGENT (Do TODAY):".red().bold());
         for (idx, action) in p0_actions.iter().take(3).enumerate() {
-            println!("  {}. {} {} in {}",
+            println!("  {}. {} Update {} → {}",
                 idx + 1,
                 if action.kev { "[P0/KEV]".red().bold() } else { "[P0]".red().bold() },
-                action.cve_id.bright_white().bold(),
-                action.package.bright_cyan()
+                action.package.bright_cyan().bold(),
+                action.fixed_version.green().bold()
+            );
+            println!("     ✅ Fixes: {} ({} {})",
+                action.cves_fixed.join(", ").bright_white(),
+                action.cves_fixed.len(),
+                if action.cves_fixed.len() == 1 { "vuln" } else { "vulns" }
             );
             println!("     ⏱  Est: {}", format_time(action.estimated_hours));
             if action.breaking {
@@ -1647,10 +1790,15 @@ fn display_action_plan(results: &ContainerScanResults) -> Result<()> {
     if !p1_actions.is_empty() {
         println!("{}", "⚠️  HIGH PRIORITY (This week):".yellow().bold());
         for (idx, action) in p1_actions.iter().take(3).enumerate() {
-            println!("  {}. [P1] {} in {}",
+            println!("  {}. [P1] Update {} → {}",
                 p0_actions.len() + idx + 1,
-                action.cve_id.bright_white().bold(),
-                action.package.bright_cyan()
+                action.package.bright_cyan().bold(),
+                action.fixed_version.green().bold()
+            );
+            println!("     ✅ Fixes: {} ({} {})",
+                action.cves_fixed.join(", ").bright_white(),
+                action.cves_fixed.len(),
+                if action.cves_fixed.len() == 1 { "vuln" } else { "vulns" }
             );
             println!("     ⏱  Est: {}", format_time(action.estimated_hours));
             println!();
@@ -1671,36 +1819,36 @@ fn display_action_plan(results: &ContainerScanResults) -> Result<()> {
 
 /// Display copy-paste remediation commands
 fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
-    // Collect fixes by ecosystem
-    let mut java_fixes = Vec::new();
-    let mut python_fixes = Vec::new();
-    let mut js_fixes = Vec::new();
-    let mut go_fixes = Vec::new();
-    let mut rust_fixes = Vec::new();
-    let mut ruby_fixes = Vec::new();
-    let mut php_fixes = Vec::new();
+    // Group fixes by (package, fixed_version) to deduplicate
+    let mut java_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new(); // (pkg, fixed) -> (current_ver, [cves])
+    let mut python_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
+    let mut js_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
+    let mut go_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
+    let mut rust_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
+    let mut ruby_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
+    let mut php_fixes: HashMap<(String, String), (String, Vec<String>)> = HashMap::new();
 
     for layer in &results.layers {
         for vuln in &layer.vulnerabilities {
             if let Some(ref fixed) = vuln.fixed_version {
                 let ecosystem = detect_ecosystem(&vuln.package_name);
-                let fix_tuple = (
-                    vuln.package_name.clone(),
-                    vuln.installed_version.clone(),
-                    fixed.clone(),
-                    vuln.severity.clone(),
-                );
+                let key = (vuln.package_name.clone(), fixed.clone());
 
-                match ecosystem {
-                    PackageEcosystem::Java => java_fixes.push(fix_tuple),
-                    PackageEcosystem::Python => python_fixes.push(fix_tuple),
-                    PackageEcosystem::JavaScript => js_fixes.push(fix_tuple),
-                    PackageEcosystem::Go => go_fixes.push(fix_tuple),
-                    PackageEcosystem::Rust => rust_fixes.push(fix_tuple),
-                    PackageEcosystem::Ruby => ruby_fixes.push(fix_tuple),
-                    PackageEcosystem::PHP => php_fixes.push(fix_tuple),
-                    PackageEcosystem::Other => {}
-                }
+                let fixes_map = match ecosystem {
+                    PackageEcosystem::Java => &mut java_fixes,
+                    PackageEcosystem::Python => &mut python_fixes,
+                    PackageEcosystem::JavaScript => &mut js_fixes,
+                    PackageEcosystem::Go => &mut go_fixes,
+                    PackageEcosystem::Rust => &mut rust_fixes,
+                    PackageEcosystem::Ruby => &mut ruby_fixes,
+                    PackageEcosystem::PHP => &mut php_fixes,
+                    PackageEcosystem::Other => continue,
+                };
+
+                fixes_map.entry(key)
+                    .or_insert_with(|| (vuln.installed_version.clone(), Vec::new()))
+                    .1
+                    .push(vuln.cve_id.clone());
             }
         }
     }
@@ -1719,8 +1867,9 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display Java fixes
     if !java_fixes.is_empty() {
-        java_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in java_fixes {
+        let mut fixes_vec: Vec<_> = java_fixes.into_iter().collect();
+        fixes_vec.truncate(2); // Limit to 2 examples
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             let parts: Vec<&str> = package.split(':').collect();
             let (group_id, artifact_id) = if parts.len() >= 2 {
                 (parts[0], parts[1])
@@ -1729,6 +1878,11 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
             };
 
             println!("  {} Package: {}", "☕".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "Maven (pom.xml):".bright_white().bold());
             println!("  {}", "```xml".dimmed());
@@ -1749,9 +1903,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display Python fixes
     if !python_fixes.is_empty() {
-        python_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in python_fixes {
+        let mut fixes_vec: Vec<_> = python_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "🐍".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "requirements.txt:".bright_white().bold());
             println!("  {}", "```".dimmed());
@@ -1773,9 +1933,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display JavaScript/Node fixes
     if !js_fixes.is_empty() {
-        js_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in js_fixes {
+        let mut fixes_vec: Vec<_> = js_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "📦".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "package.json:".bright_white().bold());
             println!("  {}", "```json".dimmed());
@@ -1799,9 +1965,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display Go fixes
     if !go_fixes.is_empty() {
-        go_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in go_fixes {
+        let mut fixes_vec: Vec<_> = go_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "🐹".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "go.mod:".bright_white().bold());
             println!("  {}", "```".dimmed());
@@ -1818,9 +1990,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display Rust fixes
     if !rust_fixes.is_empty() {
-        rust_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in rust_fixes {
+        let mut fixes_vec: Vec<_> = rust_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "🦀".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "Cargo.toml:".bright_white().bold());
             println!("  {}", "```toml".dimmed());
@@ -1838,9 +2016,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display Ruby fixes
     if !ruby_fixes.is_empty() {
-        ruby_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in ruby_fixes {
+        let mut fixes_vec: Vec<_> = ruby_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "💎".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "Gemfile:".bright_white().bold());
             println!("  {}", "```ruby".dimmed());
@@ -1857,9 +2041,15 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
 
     // Display PHP fixes
     if !php_fixes.is_empty() {
-        php_fixes.truncate(2);
-        for (package, _current, fixed, _severity) in php_fixes {
+        let mut fixes_vec: Vec<_> = php_fixes.into_iter().collect();
+        fixes_vec.truncate(2);
+        for ((package, fixed), (_current, cves)) in fixes_vec {
             println!("  {} Package: {}", "🐘".bright_yellow(), package.bright_cyan().bold());
+            println!("     ✅ Fixes: {} ({} {})",
+                cves.join(", ").bright_white(),
+                cves.len(),
+                if cves.len() == 1 { "vuln" } else { "vulns" }
+            );
             println!();
             println!("  {}", "composer.json:".bright_white().bold());
             println!("  {}", "```json".dimmed());

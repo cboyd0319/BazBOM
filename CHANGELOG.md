@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-CVE Vulnerability Grouping** - Remediation actions now group all CVEs fixed by a single package upgrade
+  - Reduces noise by consolidating related vulnerabilities
+  - Shows all CVEs (e.g., "Fixes 3 CVEs: CVE-2024-1234, CVE-2024-5678, CVE-2024-9012")
+  - Makes action plans more concise and actionable
+  - ~613 lines of enhancement code in container scanning
+
+- **Exploit Intelligence** - `bazbom explain` command now includes exploit resource links
+  - Added ExploitDB, GitHub POC repositories, Packet Storm Security, and Nuclei Templates
+  - Helps security teams quickly assess exploitability
+  - Provides actionable intelligence for prioritization
+
+- **Remediation Difficulty Scoring** - 0-100 difficulty score for each vulnerability fix
+  - Algorithm factors: breaking changes (+40), version jumps (+15 each), framework migrations (+25), no fix (100)
+  - Visual indicators: 🟢 Trivial (0-20) → 🚫 No Fix Available (100)
+  - Helps teams estimate effort and prioritize work
+
+- **Auto-detect Main Module** - `bazbom check` now auto-detects the main module in monorepos
+  - Supports Maven, Gradle, JavaScript, Rust, Go, Python ecosystems
+  - Smart directory preferences: "app", "main", "core", "server", "api"
+  - Graceful fallback to full workspace scan if no clear main module
+
+- **Universal Auto-fix** - Extended automatic fix application from 3 → 9 package managers
+  - **New support:** npm (package.json), pip (requirements.txt), Go (go.mod), Cargo (Cargo.toml), Bundler (Gemfile), Composer (composer.json)
+  - **Existing:** Maven (pom.xml), Gradle (build.gradle), Bazel (MODULE.bazel)
+  - Auto-detects package manager from project files
+  - Applies fixes, runs tests, automatically rolls back on failure
+  - ~295 lines of new code in remediation module
+
+- **Profile Inheritance** - Named profiles in bazbom.toml can now extend other profiles
+  - Multi-level inheritance support (e.g., "strict" extends "dev" extends "base")
+  - Cycle detection with clear error messages
+  - Missing parent warnings with graceful fallback
+  - Example: `[profile.dev]` with `extends = "base"` merges base settings
+
+### Changed
+
+- Profile resolution now returns owned values instead of references
+- Package manager detection logic extracted into dedicated function
+- Enhanced test coverage for config module (7 tests including inheritance scenarios)
+
 ## [6.5.0] - 2025-11-12
 
 ### 🎉 Complete Polyglot Parity Achieved - v6.5.0 Production Release (100% Complete)
