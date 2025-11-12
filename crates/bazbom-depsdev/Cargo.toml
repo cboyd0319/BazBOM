@@ -1,6 +1,6 @@
 [package]
 name = "bazbom-depsdev"
-version = "6.0.0"
+version = "6.5.0"
 edition = "2021"
 authors = ["Chad Boyd <cboyd0319@gmail.com>"]
 description = "deps.dev API client for BazBOM upgrade intelligence"

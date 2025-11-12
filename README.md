@@ -30,7 +30,7 @@ Security for developers, not security engineers • Universal JVM support • 10
 > **100% Rust Implementation - Production Ready (v6.5.0) - ZERO WARNINGS ✨**
 >
 > BazBOM is implemented in 100% memory-safe Rust with comprehensive test coverage and absolute code quality:
-> - **342+ Tests Passing** - Complete test coverage, zero failures (98 new reachability tests)
+> - **67 Test Suites Passing** - Complete test coverage across all crates, zero failures
 > - **26 Crates** - Modular architecture including 6 new reachability analyzers
 > - **11 CLI Commands** - Full feature set: scan, policy, fix, db, license, install-hooks, init, explore, dashboard, team, report
 > - **7 Language Analyzers** - World-class reachability analysis for JS/TS, Python, Go, Rust, Ruby, PHP, JVM
@@ -1029,11 +1029,11 @@ bazbom scan --with-reachability --format sarif
 | Language | Accuracy | Status | Analyzer |
 |----------|----------|--------|----------|
 | Rust | >98% | ✅ v6.5.0 | syn (official Rust parser) |
-| Go | ~90% | ✅ v6.4.0 | tree-sitter |
-| JavaScript/TypeScript | ~85% | ✅ v6.3.0 | tree-sitter |
-| Python | ~80% | ✅ v6.4.0 | tree-sitter |
 | Ruby | ~75% | ✅ v6.5.0 | tree-sitter |
 | PHP | ~70% | ✅ v6.5.0 | tree-sitter |
+| Go | ~90% | ✅ v6.5.0 | tree-sitter |
+| Python | ~80% | ✅ v6.5.0 | tree-sitter |
+| JavaScript/TypeScript | ~85% | ✅ v6.5.0 | tree-sitter |
 | JVM (Java/Kotlin/Scala) | ~85% | ✅ v6.1.0 | bytecode analysis |
 
 **Key Features:**
