@@ -84,6 +84,60 @@ pub enum Commands {
         #[arg(long, short = 'm')]
         ml_risk: bool,
     },
+
+    // ========== QUICK COMMAND ALIASES ==========
+    /// Quick local dev scan (fast mode, no reachability)
+    #[command(name = "check")]
+    Check {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+    },
+
+    /// CI-optimized scan (JSON + SARIF output, no GitHub upload)
+    #[command(name = "ci")]
+    Ci {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Output directory
+        #[arg(long, short = 'o', default_value = ".")]
+        out_dir: String,
+    },
+
+    /// PR-optimized scan (incremental + diff mode)
+    #[command(name = "pr")]
+    Pr {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Git base reference for comparison
+        #[arg(long, short = 'b', default_value = "main")]
+        base: String,
+        /// Path to baseline findings
+        #[arg(long)]
+        baseline: Option<String>,
+    },
+
+    /// Full scan with all features (reachability + all formats)
+    #[command(name = "full")]
+    Full {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Output directory
+        #[arg(long, short = 'o', default_value = ".")]
+        out_dir: String,
+    },
+
+    /// Super-fast smoke test (< 5 seconds)
+    #[command(name = "quick")]
+    Quick {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+    },
+
     /// Complete container security analysis (SBOM + vulnerability scanning)
     ContainerScan {
         /// Container image to scan (name:tag or path to tar file)

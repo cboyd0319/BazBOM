@@ -9,6 +9,7 @@ mod reachability;
 mod reachability_cache;
 mod scan;
 mod shading;
+mod smart_defaults;
 
 use bazbom::cli::{Cli, Commands};
 use commands::*;
@@ -95,6 +96,158 @@ async fn main() -> Result<()> {
             benchmark,
             ml_risk,
         ),
+
+        // ========== QUICK COMMAND HANDLERS ==========
+        Commands::Check { path } => {
+            println!("🚀 Running quick local check (fast mode)...\n");
+            handle_scan(
+                path,
+                None,              // profile
+                false,             // reachability
+                true,              // fast
+                "spdx".into(),     // format
+                ".".into(),        // out_dir
+                false,             // json
+                None,              // bazel_targets_query
+                None,              // bazel_targets
+                None,              // bazel_affected_by_files
+                "//...".into(),    // bazel_universe
+                false,             // cyclonedx
+                false,             // with_semgrep
+                None,              // with_codeql
+                None,              // autofix
+                None,              // containers
+                true,              // no_upload
+                None,              // target
+                false,             // incremental
+                "main".into(),     // base
+                false,             // diff
+                None,              // baseline
+                false,             // benchmark
+                false,             // ml_risk
+            )
+        },
+
+        Commands::Ci { path, out_dir } => {
+            println!("🤖 Running CI-optimized scan (JSON + SARIF)...\n");
+            handle_scan(
+                path,
+                None,              // profile
+                false,             // reachability (too slow for CI)
+                true,              // fast
+                "sarif".into(),    // format
+                out_dir,           // out_dir
+                true,              // json
+                None,              // bazel_targets_query
+                None,              // bazel_targets
+                None,              // bazel_affected_by_files
+                "//...".into(),    // bazel_universe
+                false,             // cyclonedx
+                false,             // with_semgrep
+                None,              // with_codeql
+                None,              // autofix
+                None,              // containers
+                true,              // no_upload
+                None,              // target
+                false,             // incremental
+                "main".into(),     // base
+                false,             // diff
+                None,              // baseline
+                false,             // benchmark
+                false,             // ml_risk
+            )
+        },
+
+        Commands::Pr { path, base, baseline } => {
+            println!("📋 Running PR-optimized scan (incremental + diff)...\n");
+            handle_scan(
+                path,
+                None,              // profile
+                false,             // reachability
+                false,             // fast
+                "sarif".into(),    // format
+                ".".into(),        // out_dir
+                true,              // json
+                None,              // bazel_targets_query
+                None,              // bazel_targets
+                None,              // bazel_affected_by_files
+                "//...".into(),    // bazel_universe
+                false,             // cyclonedx
+                false,             // with_semgrep
+                None,              // with_codeql
+                None,              // autofix
+                None,              // containers
+                false,             // no_upload
+                None,              // target
+                true,              // incremental
+                base,              // base
+                true,              // diff
+                baseline,          // baseline
+                false,             // benchmark
+                false,             // ml_risk
+            )
+        },
+
+        Commands::Full { path, out_dir } => {
+            println!("💪 Running FULL scan with ALL features enabled...\n");
+            handle_scan(
+                path,
+                None,              // profile
+                true,              // reachability
+                false,             // fast
+                "spdx".into(),     // format
+                out_dir,           // out_dir
+                false,             // json
+                None,              // bazel_targets_query
+                None,              // bazel_targets
+                None,              // bazel_affected_by_files
+                "//...".into(),    // bazel_universe
+                true,              // cyclonedx
+                false,             // with_semgrep
+                None,              // with_codeql
+                None,              // autofix
+                None,              // containers
+                false,             // no_upload
+                None,              // target
+                false,             // incremental
+                "main".into(),     // base
+                false,             // diff
+                None,              // baseline
+                true,              // benchmark
+                true,              // ml_risk
+            )
+        },
+
+        Commands::Quick { path } => {
+            println!("⚡ Running super-fast smoke test (< 5 seconds)...\n");
+            handle_scan(
+                path,
+                None,              // profile
+                false,             // reachability
+                true,              // fast
+                "spdx".into(),     // format
+                ".".into(),        // out_dir
+                false,             // json
+                None,              // bazel_targets_query
+                None,              // bazel_targets
+                None,              // bazel_affected_by_files
+                "//...".into(),    // bazel_universe
+                false,             // cyclonedx
+                false,             // with_semgrep
+                None,              // with_codeql
+                None,              // autofix
+                None,              // containers
+                true,              // no_upload
+                None,              // target - TODO: auto-detect main module
+                false,             // incremental
+                "main".into(),     // base
+                false,             // diff
+                None,              // baseline
+                false,             // benchmark
+                false,             // ml_risk
+            )
+        },
+
         Commands::ContainerScan {
             image,
             output,
