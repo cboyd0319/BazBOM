@@ -69,7 +69,7 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
 }
 
 /// Display vulnerability details from SARIF result
-fn display_vulnerability(result: &serde_json::Value, cve_id: &str, verbose: bool) -> Result<()> {
+fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: bool) -> Result<()> {
     println!("{}", "📦 Affected Package:".bold());
     
     if let Some(message) = result.get("message").and_then(|m| m.get("text")).and_then(|t| t.as_str()) {

@@ -48,7 +48,7 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
     for package in &result.packages {
         let package_key = format!("{}@{}", package.name, package.version);
         // Conservative: if ANY function is reachable, package is considered reachable
-        vulnerable_packages_reachable.insert(package_key, report.reachable_functions.len() > 0);
+        vulnerable_packages_reachable.insert(package_key, !report.reachable_functions.is_empty());
     }
 
     result.reachability = Some(ReachabilityData {

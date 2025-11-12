@@ -37,3 +37,11 @@ pub use analyzer::JsReachabilityAnalyzer;
 pub use call_graph::CallGraph;
 pub use error::{JsReachabilityError, Result};
 pub use models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
+
+use std::path::Path;
+
+/// Convenience function to analyze a JavaScript/TypeScript project
+pub fn analyze_js_project(project_root: &Path) -> Result<ReachabilityReport> {
+    let mut analyzer = JsReachabilityAnalyzer::new();
+    analyzer.analyze(project_root)
+}

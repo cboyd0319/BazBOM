@@ -118,7 +118,7 @@ fn apply_profile(profile_name: &str, project_path: &str) -> anyhow::Result<()> {
         anyhow::bail!("bazbom.toml not found in project directory");
     }
 
-    let config = Config::from_file(&config_path)?;
+    let config = Config::load(&config_path)?;
 
     let profile = config.get_profile(profile_name)
         .ok_or_else(|| anyhow::anyhow!("Profile '{}' not found in bazbom.toml", profile_name))?;
@@ -144,7 +144,7 @@ fn apply_profile(profile_name: &str, project_path: &str) -> anyhow::Result<()> {
 
 /// Compare current scan with baseline findings
 fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) -> Result<()> {
-    use std::collections::{HashMap, HashSet};
+    use std::collections::HashSet;
     use colored::Colorize;
 
     println!();
@@ -220,7 +220,8 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
 }
 
 /// Extract CVE IDs from SARIF findings
-fn extract_cve_ids(findings: &serde_json::Value) -> HashSet<String> {
+fn extract_cve_ids(findings: &serde_json::Value) -> std::collections::HashSet<String> {
+    use std::collections::HashSet;
     let mut cve_ids = HashSet::new();
 
     if let Some(runs) = findings.get("runs").and_then(|r| r.as_array()) {

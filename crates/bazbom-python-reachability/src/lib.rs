@@ -57,3 +57,11 @@ pub use error::{PythonReachabilityError, Result};
 pub use models::{
     DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability,
 };
+
+use std::path::Path;
+
+/// Convenience function to analyze a Python project
+pub fn analyze_python_project(project_root: &Path) -> Result<ReachabilityReport> {
+    let mut analyzer = PythonReachabilityAnalyzer::new();
+    analyzer.analyze(project_root)
+}

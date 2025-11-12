@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [6.5.0] - 2025-11-12
 
-### 🎉 Complete Polyglot Parity Achieved - v6.5.0 Production Release
+### 🎉 Complete Polyglot Parity Achieved - v6.5.0 Production Release (100% Complete)
 
-This release achieves COMPLETE feature parity across all 7 supported languages with world-class reachability analysis and developer UX improvements.
+This release achieves COMPLETE feature parity across all 7 supported languages with world-class reachability analysis fully integrated into the scan workflow, plus all CLI features fully implemented and tested.
 
 ### Added
 
@@ -36,15 +36,19 @@ This release achieves COMPLETE feature parity across all 7 supported languages w
   - Conservative handling of variable functions and dynamic includes
   - 1,371 lines of production code
 
-- **⚡ Developer Experience Improvements**
+- **⚡ Developer Experience Improvements (ALL FULLY IMPLEMENTED)**
+  - **Reachability Fully Integrated** - All 6 language analyzers wired into scan workflow
+  - **JSON Output** - Machine-readable output with `--json` flag for CI/CD
+  - **Named Profiles** - Load scan configurations from `bazbom.toml` with `--profile`
+  - **Diff Mode** - Compare findings with baseline using `--diff --baseline`
+  - **Explain Command** - Real SARIF parsing with `bazbom explain CVE-2024-1234 --verbose`
+    - Shows vulnerability details, severity, CVSS scores
+    - Displays reachability status (REACHABLE vs UNREACHABLE)
+    - Call chain visualization in verbose mode
   - Short flag aliases: `-r` (reachability), `-f` (format), `-o` (out-dir), `-s` (semgrep), `-c` (codeql), `-i` (incremental), `-m` (ml-risk), `-b` (base), `-p` (profile), `-d` (diff)
   - Clickable CVE links in TUI (OSC 8 hyperlinks for iTerm2, kitty, Windows Terminal, etc.)
   - Regex/glob search modes in TUI (toggle with 'r', case-insensitive with 'i')
   - GraphML/DOT export for dependency graphs (compatible with Gephi, Cytoscape, Graphviz)
-  - Named profiles system infrastructure (`bazbom scan -p strict`)
-  - Explain command for detailed CVE analysis (`bazbom explain CVE-2024-1234`)
-  - Diff mode infrastructure for tracking security posture changes
-  - JSON output flag for machine-readable results
 
 ### Changed
 
