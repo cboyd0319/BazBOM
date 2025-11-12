@@ -44,6 +44,23 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [RipGrep Integration](integrations/ripgrep-integration.md)
 - **[Complete Integration Guide](INTEGRATIONS.md)** - All integrations in one place
 
+## Polyglot & Reachability Analysis
+
+**Status**: ✅ Complete (v6.5.0)
+
+- **[Reachability Analysis Overview](reachability/README.md)** - World-class reachability across 7 languages
+- [Polyglot Status](polyglot/POLYGLOT_STATUS.md) - Current language support matrix
+- [Polyglot Roadmap](polyglot/POLYGLOT_ROADMAP.md) - Future language additions
+
+### Supported Languages (7/7)
+- ✅ JavaScript/TypeScript (v6.3.0)
+- ✅ Python (v6.4.0)
+- ✅ Go (v6.4.0)
+- ✅ Rust (v6.5.0)
+- ✅ Ruby (v6.5.0)
+- ✅ PHP (v6.5.0)
+- ✅ JVM: Java/Kotlin/Scala (v6.1.0)
+
 ## Security & Assurance
 
 - [Supply Chain Architecture](security/supply-chain.md)
@@ -95,11 +112,24 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 ## Format Specifications
 
 - **[SPDX 2.3 Format](FORMAT_SPDX.md)** - Field mapping, examples, validation, known gaps
+- [CycloneDX Format](formats/cyclonedx.md) - CycloneDX SBOM generation
+- [SARIF Format](formats/sarif.md) - Security analysis results
 - [Schemas Reference](reference/schemas/README.md)
+
+## Version History & Roadmaps
+
+### Completed Milestones
+- ✅ [v6.5.0 Roadmap](completed-roadmaps/V6_5_0_ROADMAP.md) - Complete Polyglot Reachability Parity
+- ✅ [v6.4.0 Roadmap](completed-roadmaps/V6_4_0_ROADMAP.md) - Python + Go Reachability
+- ✅ [v6.3.0 Roadmap](completed-roadmaps/V6_3_0_ROADMAP.md) - JavaScript/TypeScript Reachability
+- ✅ [v6.2.0 Roadmap](completed-roadmaps/V6_2_0_ROADMAP.md) - Polyglot Upgrade Intelligence
+
+### Current & Future
+- 🚀 [v7 Roadmap](V7_ROADMAP.md) - Next generation features
+- 📖 [v7 Quick Start](V7_QUICK_START.md) - Getting started with v7
 
 ## Quality & Style Standards
 
-- [Tech Writer Persona](tech_writer_persona.md)
 - [Third-Party Notices](THIRD_PARTY_NOTICES.md) - Attribution for optional external tools (Semgrep, CodeQL, etc.)
 - Style references: Google Developer Style, Microsoft Writing Style, Diátaxis
 - CI checks: `markdownlint`, `vale`, broken-link checks, example validation
