@@ -90,7 +90,7 @@ impl ScanOrchestrator {
         }
 
         if let Some(ref target) = self.target {
-            println!("   {} Targeting specific module: {}", "🎯".to_string(), target);
+            println!("   🎯 Targeting specific module: {}", target);
         }
 
         // Step 0: Check if incremental scan is possible
@@ -231,7 +231,6 @@ impl ScanOrchestrator {
                     }
                 }
             }
-            phase_idx += 1;
         }
         if let Some(ref mut monitor) = perf_monitor {
             monitor.end_phase();
@@ -692,7 +691,7 @@ impl ScanOrchestrator {
         self.generate_container_sbom_from_detailed(&scan_result, &sbom_path)?;
 
         println!();
-        println!("   {} Container SBOM written to: {:?}", "📄".to_string(), sbom_path);
+        println!("   📄 Container SBOM written to: {:?}", sbom_path);
 
         Ok(())
     }
@@ -705,7 +704,7 @@ impl ScanOrchestrator {
         use bazbom_formats::spdx::{Package, SpdxDocument};
 
         println!();
-        println!("   {} Generating container SBOM...", "📝".to_string());
+        println!("   📝 Generating container SBOM...");
 
         // Create SPDX document for the container
         let mut doc = SpdxDocument::new(
@@ -768,6 +767,7 @@ impl ScanOrchestrator {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn generate_container_sbom(
         &self,
         scan_result: &bazbom_containers::ContainerScanResult,

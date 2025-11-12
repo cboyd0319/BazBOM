@@ -9,6 +9,7 @@ use std::time::Duration;
 
 /// Container scan progress tracker
 pub struct ContainerScanProgress {
+    #[allow(dead_code)]
     image_name: String,
     total_layers: usize,
     current_layer: usize,
@@ -197,8 +198,7 @@ impl ContainerSummary {
         }
 
         if self.java_artifacts > 0 {
-            println!("  {} {} Java artifacts detected",
-                "☕".to_string(),
+            println!("  ☕ {} Java artifacts detected",
                 self.java_artifacts
             );
             println!("    Consider scanning with {} for full dependency analysis",
@@ -207,9 +207,8 @@ impl ContainerSummary {
         }
 
         if self.vulnerabilities == 0 && self.java_artifacts == 0 {
-            println!("  {} {} No Java artifacts or vulnerabilities found",
-                "✨".green(),
-                "".to_string()
+            println!("  {}  No Java artifacts or vulnerabilities found",
+                "✨".green()
             );
         }
 

@@ -116,8 +116,8 @@ impl GoUpdater {
         // require github.com/gin-gonic/gin v1.7.0
         // github.com/gin-gonic/gin v1.7.0 (in require block)
 
-        let parts: Vec<&str> = if trimmed.starts_with("require ") {
-            trimmed["require ".len()..].split_whitespace().collect()
+        let parts: Vec<&str> = if let Some(stripped) = trimmed.strip_prefix("require ") {
+            stripped.split_whitespace().collect()
         } else {
             trimmed.split_whitespace().collect()
         };

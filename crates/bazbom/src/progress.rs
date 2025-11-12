@@ -10,6 +10,7 @@ use std::time::Duration;
 
 /// Progress indicator for orchestrated scans with multiple phases
 pub struct ScanProgress {
+    #[allow(dead_code)]
     multi: Arc<MultiProgress>,
     phases: Vec<ProgressBar>,
 }
@@ -43,7 +44,7 @@ impl ScanProgress {
                     .progress_chars("█▓▒░")
                     .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
             );
-            pb.set_prefix(format!("{}", name));
+            pb.set_prefix(name.to_string());
             pb.set_message("⏸️  Queued".dimmed().to_string());
             pb.enable_steady_tick(Duration::from_millis(80));
             phases.push(pb);

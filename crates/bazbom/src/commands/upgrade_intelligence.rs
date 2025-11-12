@@ -21,8 +21,7 @@ pub async fn explain_upgrade(package: &str) -> Result<()> {
 
     // Analyzing indicator with animation feel
     println!("  {}", "┌─────────────────────────────────────────────────────┐".bright_black());
-    println!("  │ {} {}                                    │",
-        "📊".to_string(),
+    println!("  │ 📊 {}                                    │",
         "Analyzing upgrade impact...".cyan().bold()
     );
     println!("  │                                                       │");
@@ -98,18 +97,17 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
     println!();
 
     // Direct changes section
-    println!("  {} {}",
-        "📦".to_string(),
+    println!("  📦 {}",
         format!("Direct Changes: {}", analysis.target_package).bright_white().bold()
     );
     println!("  {}", "─".repeat(65).bright_black());
 
     if analysis.direct_breaking_changes.is_empty() {
-        println!("  {}  {} Breaking changes: {}", "│".bright_black(), "✅", "0".green().bold());
-        println!("  {}  {} API compatibility: {}", "│".bright_black(), "✅", "100%".green().bold());
-        println!("  {}  {} Risk level: {}", "│".bright_black(), "✅", format_risk_level(RiskLevel::Low));
+        println!("  {}  ✅ Breaking changes: {}", "│".bright_black(), "0".green().bold());
+        println!("  {}  ✅ API compatibility: {}", "│".bright_black(), "100%".green().bold());
+        println!("  {}  ✅ Risk level: {}", "│".bright_black(), format_risk_level(RiskLevel::Low));
     } else {
-        println!("  {}  {} Breaking changes: {}", "│".bright_black(), "⚠️ ", analysis.direct_breaking_changes.len().to_string().red().bold());
+        println!("  {}  ⚠️  Breaking changes: {}", "│".bright_black(), analysis.direct_breaking_changes.len().to_string().red().bold());
         println!("  {}", "│".bright_black());
         for (i, change) in analysis.direct_breaking_changes.iter().enumerate() {
             let prefix = if i == analysis.direct_breaking_changes.len() - 1 { "└─" } else { "├─" };
@@ -123,8 +121,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
 
     // Required dependency upgrades
     if !analysis.required_upgrades.is_empty() {
-        println!("  {} {}",
-            "⚙️ ".to_string(),
+        println!("  ⚙️  {}",
             format!("Transitive Dependencies: {} upgrades required", analysis.required_upgrades.len()).bright_white().bold()
         );
         println!("  {}", "─".repeat(65).bright_black());
@@ -319,20 +316,17 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
             "║".bright_green().bold()
         );
         println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_green().bold());
-        println!("  {} {}                                                   {}",
+        println!("  {} ✅ This is a low-risk upgrade with no breaking changes.                                                   {}",
             "║".bright_green().bold(),
-            "✅ This is a low-risk upgrade with no breaking changes.",
             "║".bright_green().bold()
         );
-        println!("  {} {}                                                   {}",
+        println!("  {}    The main benefit is addressing vulnerabilities.                                                   {}",
             "║".bright_green().bold(),
-            "   The main benefit is addressing vulnerabilities.",
             "║".bright_green().bold()
         );
         println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_green().bold());
-        println!("  {} {} {}                                              {}",
+        println!("  {} 💡 {}                                              {}",
             "║".bright_green().bold(),
-            "💡".to_string(),
             "NEXT STEPS:".bold(),
             "║".bright_green().bold()
         );
@@ -363,15 +357,13 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                     "║".bright_yellow().bold()
                 );
                 println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_yellow().bold());
-                println!("  {} {}                                                   {}",
+                println!("  {} ⚠️  This upgrade has some breaking changes but is manageable.                                                   {}",
                     "║".bright_yellow().bold(),
-                    "⚠️  This upgrade has some breaking changes but is manageable.",
                     "║".bright_yellow().bold()
                 );
                 println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_yellow().bold());
-                println!("  {} {} {}                                              {}",
+                println!("  {} 💡 {}                                              {}",
                     "║".bright_yellow().bold(),
-                    "💡".to_string(),
                     "RECOMMENDED APPROACH:".bold(),
                     "║".bright_yellow().bold()
                 );
@@ -416,15 +408,13 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                     "║".bright_red().bold()
                 );
                 println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_red().bold());
-                println!("  {} {}                                                   {}",
+                println!("  {}    This is a major upgrade with significant breaking changes.                                                   {}",
                     "║".bright_red().bold(),
-                    "   This is a major upgrade with significant breaking changes.",
                     "║".bright_red().bold()
                 );
                 println!("  {}", "╠═══════════════════════════════════════════════════════════════╣".bright_red().bold());
-                println!("  {} {} {}                                              {}",
+                println!("  {} 💡 {}                                              {}",
                     "║".bright_red().bold(),
-                    "💡".to_string(),
                     "RECOMMENDED APPROACH:".bold(),
                     "║".bright_red().bold()
                 );

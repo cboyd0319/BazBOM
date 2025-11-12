@@ -296,7 +296,7 @@ mod tests {
         assert!(confidence >= 0.9);
 
         // Ambiguous simple name should be low-medium confidence
-        let (system, confidence) = detect_ecosystem_with_confidence("somepackage");
+        let (_system, confidence) = detect_ecosystem_with_confidence("somepackage");
         assert!(confidence <= 0.7);
     }
 

@@ -36,11 +36,13 @@ impl ScanSummary {
     }
 
     /// Get severity emoji for a count
+    #[allow(dead_code)]
     fn severity_emoji(count: usize) -> &'static str {
         if count > 0 { "⚠️ " } else { "✓" }
     }
 
     /// Get color for severity level
+    #[allow(dead_code)]
     fn severity_color(severity: &str) -> ColoredString {
         match severity {
             "CRITICAL" => "CRITICAL".red().bold(),
@@ -104,25 +106,25 @@ impl ScanSummary {
             if self.critical_count > 0 {
                 self.print_row(
                     "  ├─ Critical:",
-                    &format!("{:>3}  {}", self.critical_count, "🔴".to_string())
+                    &format!("{:>3}  {}", self.critical_count, "🔴")
                 );
             }
             if self.high_count > 0 {
                 self.print_row(
                     "  ├─ High:",
-                    &format!("{:>3}  {}", self.high_count, "🟠".to_string())
+                    &format!("{:>3}  {}", self.high_count, "🟠")
                 );
             }
             if self.medium_count > 0 {
                 self.print_row(
                     "  ├─ Medium:",
-                    &format!("{:>3}  {}", self.medium_count, "🟡".to_string())
+                    &format!("{:>3}  {}", self.medium_count, "🟡")
                 );
             }
             if self.low_count > 0 {
                 self.print_row(
                     "  └─ Low:",
-                    &format!("{:>3}  {}", self.low_count, "🟢".to_string())
+                    &format!("{:>3}  {}", self.low_count, "🟢")
                 );
             }
         }
@@ -210,9 +212,8 @@ impl ScanSummary {
         }
 
         if self.total_findings() == 0 {
-            println!("  {} {} All clear! No action needed.",
-                "✨".green(),
-                "".to_string()
+            println!("  {}  All clear! No action needed.",
+                "✨".green()
             );
         }
 
