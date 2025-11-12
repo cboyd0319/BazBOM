@@ -50,6 +50,38 @@ This release achieves COMPLETE feature parity across all 7 supported languages w
   - Regex/glob search modes in TUI (toggle with 'r', case-insensitive with 'i')
   - GraphML/DOT export for dependency graphs (compatible with Gephi, Cytoscape, Graphviz)
 
+- **🐳 Container Scanning Enhancements (2025-11-12)**
+  - **Multi-Language Copy-Paste Remediation** - 7-language support
+    - ☕ Java: Maven XML and Gradle DSL dependency declarations
+    - 🐍 Python: requirements.txt, pyproject.toml (Poetry), Pipfile formats
+    - 📦 JavaScript: package.json, npm install, yarn add commands
+    - 🐹 Go: go.mod require statements and go get commands
+    - 🦀 Rust: Cargo.toml dependencies and cargo add
+    - 💎 Ruby: Gemfile gem declarations and bundle update
+    - 🐘 PHP: composer.json require and composer commands
+  - **Framework-Specific Upgrade Intelligence** - Actionable migration guides
+    - Spring Boot 1→2, 2→3 with Java 17+ requirement detection
+    - Django 2→3, 3→4, 4→5 with migration guide links
+    - Rails 5→6, 6→7 with Ruby version requirements
+    - React 16→17, 17→18 concurrent features migration
+    - Vue 2→3 major API changes with migration link
+    - Angular version-specific update.angular.io links
+    - Express 4→5 middleware/routing breaking changes
+    - Go modules v2+ import path versioning
+  - **Ecosystem-Specific Version Semantics** - Context-aware upgrade guidance
+    - Rust pre-1.0 crates (minor versions can break)
+    - Go v2+ module import path requirements
+    - Python semver flexibility warnings
+    - npm/JavaScript strict semver enforcement
+  - **Reachability Analysis for Containers** - `--with-reachability` flag
+    - Container filesystem extraction (docker/podman support)
+    - Ecosystem detection and package reachability analysis
+    - Visual indicators: 🎯 REACHABLE (red) vs 🛡️ unreachable (dimmed)
+    - Conservative heuristic: marks packages reachable if ecosystem detected
+    - Graceful degradation if analysis fails
+    - Future enhancement: language-specific call graph analysis
+  - Impact: +613 lines of production code across Phase 1, 2, and 3
+
 ### Changed
 
 - **All Crates Updated to v6.5.0** for consistency
