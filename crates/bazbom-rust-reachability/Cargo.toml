@@ -1,0 +1,28 @@
+[package]
+name = "bazbom-rust-reachability"
+version = "6.5.0"
+edition = "2021"
+authors = ["BazBOM Contributors"]
+description = "Rust reachability analysis for BazBOM vulnerability scanning"
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+syn = { version = "2", features = ["full", "visit", "extra-traits"] }
+tracing = "0.1"
+walkdir = "2"
+petgraph = "0.6"
+
+[dev-dependencies]
+tempfile = "3"
+
+[features]
+default = []
+tracing-support = ["dep:tracing-subscriber"]
+
+[dependencies.tracing-subscriber]
+version = "0.3"
+optional = true
