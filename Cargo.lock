@@ -697,6 +697,7 @@ dependencies = [
  "bazbom-core",
  "crossterm 0.29.0",
  "ratatui",
+ "regex",
  "serde",
  "serde_json",
 ]

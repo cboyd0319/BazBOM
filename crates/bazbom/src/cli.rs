@@ -15,16 +15,16 @@ pub enum Commands {
         #[arg(default_value = ".")]
         path: String,
         /// Enable reachability analysis (OPAL)
-        #[arg(long)]
+        #[arg(long, short = 'r')]
         reachability: bool,
         /// Fast mode: skip reachability analysis for speed (<10s scans)
         #[arg(long)]
         fast: bool,
         /// Output format (spdx|cyclonedx)
-        #[arg(long, default_value = "spdx")]
+        #[arg(long, short = 'f', default_value = "spdx")]
         format: String,
         /// Output directory (defaults to current directory)
-        #[arg(long, value_name = "DIR", default_value = ".")]
+        #[arg(long, short = 'o', value_name = "DIR", default_value = ".")]
         out_dir: String,
         /// Bazel-specific: query expression to select targets
         #[arg(long, value_name = "QUERY")]
@@ -42,10 +42,10 @@ pub enum Commands {
         #[arg(long)]
         cyclonedx: bool,
         /// Run Semgrep with BazBOM's curated JVM ruleset
-        #[arg(long)]
+        #[arg(long, short = 's')]
         with_semgrep: bool,
         /// Run CodeQL analysis (optional suite: default or security-extended)
-        #[arg(long, value_name = "SUITE")]
+        #[arg(long, short = 'c', value_name = "SUITE")]
         with_codeql: Option<CodeqlSuite>,
         /// Generate OpenRewrite recipes (off, dry-run, or pr)
         #[arg(long, value_name = "MODE")]
@@ -60,16 +60,16 @@ pub enum Commands {
         #[arg(long, value_name = "MODULE")]
         target: Option<String>,
         /// Enable incremental analysis (scan only changed code)
-        #[arg(long)]
+        #[arg(long, short = 'i')]
         incremental: bool,
         /// Git base reference for incremental analysis (e.g., main, HEAD~1)
-        #[arg(long, value_name = "REF", default_value = "main")]
+        #[arg(long, short = 'b', value_name = "REF", default_value = "main")]
         base: String,
         /// Enable performance benchmarking and metrics reporting
         #[arg(long)]
         benchmark: bool,
         /// Use ML-enhanced risk scoring for vulnerability prioritization
-        #[arg(long)]
+        #[arg(long, short = 'm')]
         ml_risk: bool,
     },
     /// Complete container security analysis (SBOM + vulnerability scanning)
