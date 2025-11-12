@@ -10,6 +10,35 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     /// Scan a project and generate SBOM + findings
+    #[command(after_help = "EXAMPLES:
+  # Quick local scan
+  bazbom scan
+
+  # Full scan with reachability (production-ready)
+  bazbom scan --reachability
+
+  # CI/CD optimized
+  bazbom scan --json --format sarif > findings.sarif
+
+  # Scan only changed code in PR
+  bazbom scan --incremental --base main
+
+  # Compare with last week's scan
+  bazbom scan --diff --baseline baseline.json
+
+  # Use pre-configured profile
+  bazbom scan --profile production
+
+QUICK COMMANDS:
+  bazbom check   → Fast local dev scan
+  bazbom ci      → CI-optimized (JSON + SARIF)
+  bazbom pr      → PR mode (incremental + diff)
+  bazbom full    → Everything enabled
+  bazbom quick   → 5-second smoke test
+
+PROFILES:
+  Run 'bazbom init' to create bazbom.toml with profiles.
+  Example profiles: dev, ci, production, strict")]
     Scan {
         /// Path to project (defaults to current directory)
         #[arg(default_value = ".")]
@@ -87,6 +116,18 @@ pub enum Commands {
 
     // ========== QUICK COMMAND ALIASES ==========
     /// Quick local dev scan (fast mode, no reachability)
+    #[command(name = "check", after_help = "EXAMPLES:
+  # Scan current directory
+  bazbom check
+
+  # Scan specific project
+  bazbom check ./my-project
+
+WHAT IT DOES:
+  • Fast mode (no reachability analysis)
+  • No GitHub upload
+  • Perfect for quick local validation
+  • Runs in < 10 seconds")]
     #[command(name = "check")]
     Check {
         /// Path to project (defaults to current directory)
@@ -95,6 +136,18 @@ pub enum Commands {
     },
 
     /// CI-optimized scan (JSON + SARIF output, no GitHub upload)
+    #[command(name = "ci", after_help = "EXAMPLES:
+  # In GitHub Actions
+  bazbom ci
+
+  # In GitLab CI
+  bazbom ci -o ./artifacts
+
+WHAT IT DOES:
+  • Auto-detects CI environment
+  • Outputs JSON + SARIF formats
+  • No GitHub upload (use your CI's upload)
+  • Optimized for speed")]
     #[command(name = "ci")]
     Ci {
         /// Path to project (defaults to current directory)
@@ -106,6 +159,21 @@ pub enum Commands {
     },
 
     /// PR-optimized scan (incremental + diff mode)
+    #[command(name = "pr", after_help = "EXAMPLES:
+  # Compare with main branch
+  bazbom pr
+
+  # Compare with specific branch
+  bazbom pr --base develop
+
+  # With existing baseline
+  bazbom pr --baseline main-findings.json
+
+WHAT IT DOES:
+  • Incremental analysis (only changed code)
+  • Shows diff of vulnerabilities
+  • Perfect for PR checks
+  • Shows what's new vs fixed")]
     #[command(name = "pr")]
     Pr {
         /// Path to project (defaults to current directory)
@@ -120,6 +188,19 @@ pub enum Commands {
     },
 
     /// Full scan with all features (reachability + all formats)
+    #[command(name = "full", after_help = "EXAMPLES:
+  # Complete scan with everything
+  bazbom full
+
+  # Save to specific directory
+  bazbom full -o ./security-scan
+
+WHAT IT DOES:
+  • Reachability analysis (reduces noise by 70-90%)
+  • Both SPDX and CycloneDX SBOMs
+  • ML risk scoring
+  • Performance benchmarking
+  • Most comprehensive scan available")]
     #[command(name = "full")]
     Full {
         /// Path to project (defaults to current directory)
@@ -131,6 +212,15 @@ pub enum Commands {
     },
 
     /// Super-fast smoke test (< 5 seconds)
+    #[command(name = "quick", after_help = "EXAMPLES:
+  # Lightning-fast validation
+  bazbom quick
+
+WHAT IT DOES:
+  • Ultra-fast scan (< 5 seconds)
+  • Basic dependency check
+  • Critical vulnerabilities only
+  • Perfect for pre-commit hooks")]
     #[command(name = "quick")]
     Quick {
         /// Path to project (defaults to current directory)
@@ -226,6 +316,33 @@ pub enum Commands {
         #[arg(long)]
         fast: bool,
     },
+    /// Install CI/CD configuration templates
+    #[command(name = "install", after_help = "EXAMPLES:
+  # Install GitHub Actions workflow
+  bazbom install github
+
+  # Install GitLab CI config
+  bazbom install gitlab
+
+  # Install CircleCI config
+  bazbom install circleci
+
+  # List all available templates
+  bazbom install --list
+
+SUPPORTED PROVIDERS:
+  • github    → GitHub Actions (.github/workflows/bazbom.yml)
+  • gitlab    → GitLab CI (.gitlab-ci.yml)
+  • circleci  → CircleCI (.circleci/config.yml)
+  • jenkins   → Jenkins (Jenkinsfile.bazbom)
+  • travis    → Travis CI (.travis.yml)")]
+    Install {
+        /// CI provider (github, gitlab, circleci, jenkins, travis)
+        provider: Option<String>,
+        /// List available templates
+        #[arg(long)]
+        list: bool,
+    },
     /// Interactive setup wizard for new projects
     Init {
         /// Path to project (defaults to current directory)
@@ -263,6 +380,81 @@ pub enum Commands {
         /// Show full call chain (verbose mode)
         #[arg(long, short = 'v')]
         verbose: bool,
+    },
+    /// Quick security status overview
+    #[command(after_help = "EXAMPLES:
+  # Show current security status
+  bazbom status
+
+  # Detailed status with full breakdown
+  bazbom status --verbose
+
+WHAT IT SHOWS:
+  • Security score (0-100)
+  • Total vulnerabilities by severity
+  • Reachable vulnerabilities count
+  • Last scan timestamp
+  • Recent trend (improving/worsening)
+  • Quick action recommendations")]
+    Status {
+        /// Show detailed breakdown
+        #[arg(long, short = 'v')]
+        verbose: bool,
+        /// Path to findings file (defaults to latest)
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+    },
+    /// Compare security posture between branches or commits
+    #[command(after_help = "EXAMPLES:
+  # Compare feature branch with main
+  bazbom compare main feature/new-api
+
+  # Compare current branch with main
+  bazbom compare main
+
+  # Compare two specific commits
+  bazbom compare abc123 def456
+
+WHAT IT SHOWS:
+  • New vulnerabilities introduced
+  • Vulnerabilities fixed
+  • Security score delta
+  • Risk assessment (better/worse/same)")]
+    Compare {
+        /// Base branch or commit (e.g., main, HEAD~1, abc123)
+        base: String,
+        /// Target branch or commit (defaults to current HEAD)
+        target: Option<String>,
+        /// Show detailed diff
+        #[arg(long, short = 'v')]
+        verbose: bool,
+    },
+    /// Continuous monitoring mode (watch for changes and re-scan)
+    #[command(after_help = "EXAMPLES:
+  # Start watching current directory
+  bazbom watch
+
+  # Watch with custom check interval
+  bazbom watch --interval 300  # Every 5 minutes
+
+  # Watch and only show critical issues
+  bazbom watch --critical-only
+
+WHAT IT DOES:
+  • Monitors dependency files for changes
+  • Automatically re-scans when changes detected
+  • Shows real-time vulnerability alerts
+  • Perfect for development workflows")]
+    Watch {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Check interval in seconds (default: 60)
+        #[arg(long, short = 'i', default_value = "60")]
+        interval: u64,
+        /// Only show critical vulnerabilities
+        #[arg(long)]
+        critical_only: bool,
     },
     /// Team coordination and assignment management
     Team {

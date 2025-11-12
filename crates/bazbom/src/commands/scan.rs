@@ -1,5 +1,6 @@
 use anyhow::Result;
 use std::path::PathBuf;
+use crate::smart_defaults::SmartDefaults;
 
 /// Handle the `bazbom scan` command
 ///
@@ -9,11 +10,11 @@ use std::path::PathBuf;
 pub fn handle_scan(
     path: String,
     profile: Option<String>,
-    reachability: bool,
+    mut reachability: bool,
     fast: bool,
     format: String,
     out_dir: String,
-    json: bool,
+    mut json: bool,
     bazel_targets_query: Option<String>,
     bazel_targets: Option<Vec<String>>,
     bazel_affected_by_files: Option<Vec<String>>,
@@ -32,6 +33,30 @@ pub fn handle_scan(
     benchmark: bool,
     ml_risk: bool,
 ) -> Result<()> {
+    // Apply smart defaults if no flags were explicitly set
+    let defaults = SmartDefaults::detect();
+
+    // Show what we detected (if any smart defaults were applied)
+    let smart_defaults_enabled = std::env::var("BAZBOM_NO_SMART_DEFAULTS").is_err();
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability) {
+        defaults.print_detection();
+    }
+
+    // Auto-enable features based on environment (only if not explicitly set)
+    if defaults.is_ci && !json && smart_defaults_enabled {
+        println!("  → Enabling JSON output for CI");
+        json = true;
+    }
+
+    if defaults.enable_reachability && !reachability && !fast && smart_defaults_enabled {
+        println!("  → Enabling reachability analysis (repo < 100MB)");
+        reachability = true;
+    }
+
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability) {
+        println!();
+    }
+
     // Load profile from bazbom.toml if specified
     if let Some(ref profile_name) = profile {
         if let Err(e) = apply_profile(profile_name, &path) {

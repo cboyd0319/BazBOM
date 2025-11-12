@@ -3,13 +3,17 @@ use clap::Parser;
 
 mod advisory;
 mod bazel;
+mod ci_templates;
 mod commands;
+mod errors;
+mod output;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
 mod scan;
 mod shading;
 mod smart_defaults;
+mod suggestions;
 
 use bazbom::cli::{Cli, Commands};
 use commands::*;
@@ -309,10 +313,25 @@ async fn main() -> Result<()> {
         Commands::License { action } => handle_license(action),
         Commands::Db { action } => handle_db(action),
         Commands::InstallHooks { policy, fast } => handle_install_hooks(policy, fast),
+        Commands::Install { provider, list } => {
+            if list {
+                ci_templates::list_templates();
+                Ok(())
+            } else if let Some(provider) = provider {
+                ci_templates::install_ci_template(&provider)
+            } else {
+                println!("❌ Error: Specify a provider or use --list to see options\n");
+                ci_templates::list_templates();
+                Ok(())
+            }
+        },
         Commands::Init { path } => handle_init(&path),
         Commands::Explore { sbom, findings } => handle_explore(sbom, findings),
         Commands::Dashboard { port, open, export } => handle_dashboard(port, open, export),
         Commands::Explain { cve_id, findings, verbose } => handle_explain(cve_id, findings, verbose),
+        Commands::Status { verbose, findings } => handle_status(verbose, findings),
+        Commands::Compare { base, target, verbose } => handle_compare(base, target, verbose),
+        Commands::Watch { path, interval, critical_only } => handle_watch(path, interval, critical_only),
         Commands::Team { action } => handle_team(action),
         Commands::Report { action } => handle_report(action),
     }
