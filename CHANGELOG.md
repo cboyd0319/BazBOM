@@ -7,7 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **🚨 CRITICAL VULNERABILITY FIXED (2025-11-12)**
+  - **RUSTSEC-2025-0009**: Fixed critical AES panic vulnerability in `ring` crate
+  - Updated `ring`: 0.17.9 → 0.17.14 (CRITICAL SECURITY FIX)
+  - Impact: Resolved potential denial of service in TLS/HTTPS operations
+  - Affected components: All HTTP clients (ureq, reqwest), TLS libraries (rustls, tokio-rustls)
+  - Verification: `cargo audit` reports 0 vulnerabilities ✅
+  - See [Comprehensive Security Audit](docs/COMPREHENSIVE_SECURITY_AUDIT_2025_11_12.md) for full details
+
+- **Zero Unsafe Code** - 100% memory-safe Rust across all 26 crates
+- **Zero Security Vulnerabilities** - Clean security audit
+
 ### Changed
+- **Major Dependency Updates (2025-11-12)**
+  - Updated 32+ dependencies to latest stable versions
+  - Major version upgrades:
+    - `kube`: 0.99.0 → 2.0.1 (Kubernetes client API)
+    - `k8s-openapi`: 0.24.0 → 0.26.0
+    - `schemars`: 0.8.22 → 1.1.0 (JSON Schema generation)
+    - `octocrab`: 0.38.0 → 0.47.1 (GitHub API client)
+    - `reqwest`: 0.11 → 0.12 (unified HTTP client)
+    - `petgraph`: 0.6.5 → 0.8.3 (graph algorithms)
+    - `tree-sitter`: 0.22.6 → 0.25.10 (code parsing)
+    - All 5 language parsers updated (JS/TS, Python, Go, Ruby, PHP)
+  - Build tool updates:
+    - `cc`: 1.0.106 → 1.2.45 (required for ring 0.17.14)
+    - `blake3`: 1.5.3 → 1.8.2 (hash functions)
+  - Eliminated 18 legacy dependencies (reqwest 0.11, hyper 0.14, etc.)
+  - Reduced duplicate dependencies by 42% (60+ → 35)
+  - All tests passing (360+), zero regressions ✅
+
+- **API Compatibility Updates (2025-11-12)**
+  - Tree-sitter v0.25 migration: Updated all reachability analysis crates
+    - Changed from function API (`language()`) to constant API (`LANGUAGE.into()`)
+    - Affected: bazbom-js-reachability, bazbom-python-reachability, bazbom-go-reachability, bazbom-ruby-reachability, bazbom-php-reachability
+  - Kubernetes operator updated for kube 2.0 API changes
+  - HTTP client stack unified on latest versions
+
 - **Dependency Updates (2025-11-11)**
   - Updated 5 dependencies to latest stable versions:
     - `hyper`: 1.7.0 → 1.8.0 (HTTP client/server framework)
