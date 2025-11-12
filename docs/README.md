@@ -40,7 +40,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
   - [Marketplace Publishing](integrations/ide/marketplace-publishing.md)
 - [LLM Integration](integrations/llm-integration.md) and [LLM Usage Patterns](integrations/llm-usage.md)
 - [Orchestrated Scan (Semgrep/CodeQL)](integrations/orchestrated-scan.md)
-- [Container Scanning](integrations/container-scanning.md)
+- [Container Scanning](features/container-scanning.md)
 - [RipGrep Integration](integrations/ripgrep-integration.md)
 - **[Complete Integration Guide](INTEGRATIONS.md)** - All integrations in one place
 

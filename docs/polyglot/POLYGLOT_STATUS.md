@@ -492,7 +492,7 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured
 
 ## 📚 Documentation Created
 
-1. **POLYGLOT_ROADMAP.md** - Complete implementation plan
+1. **[POLYGLOT_ROADMAP.md](../archive/roadmaps-old/POLYGLOT_ROADMAP_COMPLETED.md)** - Complete implementation plan (archived)
 2. **POLYGLOT_STATUS.md** - This document
 3. **Inline code documentation** - All modules fully documented
 

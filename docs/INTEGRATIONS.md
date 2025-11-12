@@ -32,7 +32,7 @@ syft myapp:latest -o spdx-json > container-sbom.json
 - BazBOM: Accurate JVM dependency graph from build
 - Syft: OS packages, Python/Node modules in image
 
-**Stubs:** See [container-scanning.md](integrations/container-scanning.md)
+**Full guide:** See [Container Scanning Guide](features/container-scanning.md)
 
 ## OSV-Scanner
 
@@ -378,7 +378,7 @@ on_scan = true
 
 | Tool | Purpose | Status | Docs |
 |------|---------|--------|------|
-| Syft | Container scanning | Recipe | [container-scanning.md](integrations/container-scanning.md) |
+| Syft | Container scanning | Guide | [container-scanning.md](features/container-scanning.md) |
 | OSV-Scanner | CVE validation | Recipe | — |
 | Dependency-Track | SBOM management | Recipe | Above |
 | GUAC | Supply chain graph | Stub | Above |
@@ -391,7 +391,7 @@ on_scan = true
 
 ## Next Steps
 
-- [Container scanning guide](integrations/container-scanning.md)
+- [Container scanning guide](features/container-scanning.md)
 - [IDE setup](integrations/ide/ide-integration.md)
 - [Orchestrated scanning](integrations/orchestrated-scan.md)
 - [CI integration](CI.md)
