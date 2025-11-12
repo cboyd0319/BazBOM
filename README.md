@@ -26,14 +26,18 @@ Security for developers, not security engineers • 100% Rust • Zero telemetry
 
 > **The most comprehensive UX overhaul in BazBOM's history**
 >
-> - ✅ **11 new UX features** - Quick commands, smart defaults, beautiful output
-> - ✅ **Full reachability integration** - 7 languages, 70-90% noise reduction
-> - ✅ **Zero-config workflows** - `bazbom check`, `bazbom ci`, `bazbom pr`
+> - ✅ **20 new UX features** - Quick commands, smart defaults, beautiful output, TUI graph viz
+> - ✅ **Full reachability integration** - 7 languages, 70-90% noise reduction, container call graph analysis
+> - ✅ **Zero-config workflows** - `bazbom check`, `bazbom ci`, `bazbom pr`, auto-detect main module
+> - ✅ **Exploit intelligence** - EPSS/KEV integration, POC links, difficulty scoring
+> - ✅ **Universal auto-fix** - 9 package managers (Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel)
+> - ✅ **Multi-CVE grouping** - Consolidate related vulnerabilities in remediation actions
+> - ✅ **Profile inheritance** - Reusable config with multi-level extends support
 > - ✅ **Continuous monitoring** - `bazbom watch` for auto-rescanning
 > - ✅ **Security dashboard** - `bazbom status` for at-a-glance posture
 > - ✅ **Branch comparison** - `bazbom compare main feature-branch`
 > - ✅ **CI templates** - One-command setup for GitHub, GitLab, CircleCI, Jenkins
-> - 🦀 **24 crates** • **360+ tests** • **18MB binary** • **Homebrew ready**
+> - 🦀 **30 crates** • **267 tests** • **18MB binary** • **Homebrew ready**
 
 [🚀 See What's New](#whats-new-in-v65) | [📚 Full Changelog](CHANGELOG.md)
 
@@ -402,6 +406,147 @@ Beautiful progress bars for long operations:
 
 Multi-phase progress for complex scans with real-time updates.
 
+### TUI Graph Visualization
+Interactive dependency tree visualization in the terminal:
+
+```bash
+# Toggle between list and graph views with 'g' key
+bazbom explore
+
+# ASCII tree view with:
+# - Dependencies grouped by scope
+# - Color-coded severity indicators (🔴 Critical, 🟡 Medium, 🟢 Low)
+# - Inline vulnerability display with CVE IDs and CVSS scores
+# - Box-drawing characters for clean tree layout
+```
+
+### Container Reachability Analysis
+Full call graph analysis for container scanning (replaces conservative heuristics):
+
+```bash
+# Now with AST-based reachability analysis
+bazbom container-scan myapp:latest --with-reachability
+
+# Analyzes all 6 detected languages:
+# - JavaScript/TypeScript (SWC AST parsing)
+# - Python (RustPython AST)
+# - Go (tree-sitter)
+# - Rust (syn parser)
+# - Ruby (tree-sitter)
+# - PHP (tree-sitter)
+
+# Shows which vulnerabilities are actually reachable from entrypoints
+# Reduces false positives by filtering unreachable code
+```
+
+### Multi-CVE Vulnerability Grouping
+Consolidates related vulnerabilities in remediation actions:
+
+```bash
+bazbom fix log4j-core
+
+# Shows: "Fixes 3 CVEs: CVE-2024-1234, CVE-2024-5678, CVE-2024-9012"
+# Instead of 3 separate actions for the same package upgrade
+```
+
+### Exploit Intelligence
+`bazbom explain` now includes exploit resource links:
+
+```bash
+bazbom explain CVE-2024-1234
+
+# Includes links to:
+# - ExploitDB (public exploit code)
+# - GitHub POC repositories
+# - Packet Storm Security
+# - Nuclei Templates (automated exploitation)
+```
+
+### Remediation Difficulty Scoring
+0-100 difficulty score for each vulnerability fix:
+
+```
+🟢 Trivial (0-20)   - Patch version bump
+🟡 Easy (21-40)     - Minor version upgrade
+🟠 Moderate (41-60) - Major version upgrade
+🔴 Hard (61-80)     - Framework migration
+🚫 No Fix (100)     - No patch available
+
+# Algorithm considers:
+# - Breaking changes (+40 points)
+# - Version jumps (+15 per major version)
+# - Framework migrations (+25 points)
+```
+
+### EPSS/KEV Integration
+Real-time exploit prediction and known exploitation data:
+
+```bash
+# Automatically enriches vulnerabilities with:
+# - EPSS scores (exploitation probability from FIRST.org)
+# - CISA KEV status (actively exploited in the wild)
+
+# Example output:
+🚨 CVE-2024-1234
+   EPSS: 0.89 (89% exploitation probability)
+   KEV: Yes (CISA confirmed active exploitation)
+   Priority: P0 (urgent - patch immediately)
+```
+
+### Universal Auto-Fix
+Extended from 3 to 9 package managers:
+
+```bash
+bazbom fix <package> --apply
+
+# Now supports:
+# - Maven (pom.xml)
+# - Gradle (build.gradle/build.gradle.kts)
+# - Bazel (MODULE.bazel)
+# - npm (package.json)
+# - pip (requirements.txt)
+# - Go (go.mod)
+# - Cargo (Cargo.toml)
+# - Bundler (Gemfile)
+# - Composer (composer.json)
+
+# Auto-detects package manager, applies fix, runs tests
+# Automatically rolls back on failure
+```
+
+### Profile Inheritance
+Reusable configuration profiles with inheritance:
+
+```toml
+# bazbom.toml
+[profile.base]
+reachability = true
+format = "spdx"
+
+[profile.dev]
+extends = "base"    # Inherits from base
+fast = true
+no_upload = true
+
+[profile.strict]
+extends = "dev"     # Multi-level inheritance
+ml_risk = true
+with_semgrep = true
+
+# Use with: bazbom scan --profile strict
+```
+
+### Auto-Detect Main Module
+Smart monorepo main module detection:
+
+```bash
+bazbom check  # Auto-detects main module in monorepos
+
+# Supports: Maven, Gradle, JavaScript, Rust, Go, Python
+# Prefers: "app", "main", "core", "server", "api" directories
+# Falls back to full workspace scan if ambiguous
+```
+
 ---
 
 ## Features
@@ -445,6 +590,14 @@ Multi-phase progress for complex scans with real-time updates.
 - ✅ **Quick Commands** (check, ci, pr, full, quick)
 - ✅ **Smart Defaults** (Auto-detects CI, PR, repo size)
 - ✅ **Beautiful Output** (Unicode boxes, color-coded)
+- ✅ **TUI Graph Visualization** (Toggle with 'g' key, ASCII tree view)
+- ✅ **Multi-CVE Grouping** (Consolidate related vulnerabilities)
+- ✅ **Exploit Intelligence** (POC links: ExploitDB, GitHub, Packet Storm, Nuclei)
+- ✅ **Difficulty Scoring** (0-100 remediation effort estimation)
+- ✅ **Auto-Detect Main Module** (Smart monorepo detection)
+- ✅ **Universal Auto-Fix** (9 package managers: Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel)
+- ✅ **Profile Inheritance** (Multi-level config extends)
+- ✅ **EPSS/KEV Integration** (Exploit prediction + CISA KEV)
 - ✅ **Status Command** (Security score + recommendations)
 - ✅ **Compare Command** (Branch security comparison)
 - ✅ **Watch Mode** (Continuous monitoring)
@@ -463,7 +616,7 @@ Multi-phase progress for complex scans with real-time updates.
 - ✅ **Clickable CVE Links** (OSC 8 hyperlinks)
 
 ### **Advanced Features**
-- **Container Scanning** (Layer attribution, EPSS enrichment, KEV detection, P0-P4 scoring, quick wins)
+- **Container Scanning** (Layer attribution, EPSS enrichment, KEV detection, P0-P4 scoring, quick wins, **full call graph reachability**)
 - **ML Risk Scoring** (EPSS-based prioritization)
 - **LLM Fix Generation** (Ollama/Claude/GPT)
 - **Team Assignment** (CVE ownership tracking)
@@ -532,7 +685,7 @@ bazbom container-scan <image> --create-issues owner/repo  # Create GitHub issues
 bazbom container-scan <image> --format sarif     # SARIF output for CI/CD
 
 # Advanced Analysis
-bazbom container-scan <image> --with-reachability  # Reachability analysis (show which vulns are actually used)
+bazbom container-scan <image> --with-reachability  # Full call graph reachability analysis (AST-based, 6 languages)
 ```
 
 **Unique Features:**
@@ -541,11 +694,17 @@ bazbom container-scan <image> --with-reachability  # Reachability analysis (show
 - **KEV Detection** - CISA Known Exploited Vulnerabilities tracking
 - **P0-P4 Scoring** - Smart prioritization (severity + EPSS + KEV)
 - **Quick Wins Analysis** - Identifies easy, high-impact fixes
+- **Remediation Difficulty Scoring** - 0-100 effort estimation with visual indicators
+- **Multi-CVE Grouping** - Consolidates related vulnerabilities
 - **Breaking Change Detection** - Warns about major version upgrades
 - **Framework Migration Guides** - Spring Boot, Django, Rails, React, Vue, Angular, Express, Go modules
 - **Effort Estimation** - Calculates remediation time
 - **Multi-Language Copy-Paste Fixes** - Java, Python, JavaScript, Go, Rust, Ruby, PHP (Maven/Gradle/pip/npm/etc.)
-- **Reachability Analysis** - Shows which vulnerabilities are actually in execution paths (🎯 vs 🛡️)
+- **Full Call Graph Reachability** - AST-based static analysis for 6 languages (JS, Python, Go, Rust, Ruby, PHP)
+  - Replaces conservative heuristics with real call graph analysis
+  - Determines which vulnerable packages are actually reachable from entrypoints
+  - Reduces false positives by filtering unreachable vulnerability code
+  - Shows 🎯 (reachable, actionable) vs 🛡️ (unreachable, can ignore)
 
 [Full Documentation](docs/features/container-scanning.md)
 
