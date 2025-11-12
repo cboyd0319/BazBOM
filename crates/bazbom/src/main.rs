@@ -36,6 +36,8 @@ async fn main() -> Result<()> {
         target: None,
         incremental: false,
         base: "main".into(),
+        diff: false,
+        baseline: None,
         benchmark: false,
         ml_risk: false,
     });
@@ -61,6 +63,8 @@ async fn main() -> Result<()> {
             target,
             incremental,
             base,
+            diff,
+            baseline,
             benchmark,
             ml_risk,
         } => handle_scan(
@@ -83,6 +87,8 @@ async fn main() -> Result<()> {
             target,
             incremental,
             base,
+            diff,
+            baseline,
             benchmark,
             ml_risk,
         ),

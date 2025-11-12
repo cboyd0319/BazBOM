@@ -68,6 +68,12 @@ pub enum Commands {
         /// Git base reference for incremental analysis (e.g., main, HEAD~1)
         #[arg(long, short = 'b', value_name = "REF", default_value = "main")]
         base: String,
+        /// Show diff of vulnerabilities compared to previous scan
+        #[arg(long, short = 'd')]
+        diff: bool,
+        /// Path to baseline findings for diff comparison
+        #[arg(long, value_name = "FILE")]
+        baseline: Option<String>,
         /// Enable performance benchmarking and metrics reporting
         #[arg(long)]
         benchmark: bool,
