@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Dependency Updates (2025-11-11)**
+  - Updated 5 dependencies to latest stable versions:
+    - `hyper`: 1.7.0 → 1.8.0 (HTTP client/server framework)
+    - `indicatif`: 0.18.2 → 0.18.3 (progress bars and spinners)
+    - `quick-xml`: 0.38.3 → 0.38.4 (XML parser for SBOM generation)
+    - `syn`: 2.0.109 → 2.0.110 (Rust syntax parsing for proc macros)
+    - `ureq`: 3.1.2 → 3.1.4 (HTTP client for vulnerability database queries)
+  - All updates are patch/minor versions maintaining API compatibility
+  - Zero breaking changes, full backward compatibility maintained
+  - Regression testing completed:
+    - ✅ All library tests passing
+    - ✅ Zero clippy warnings with `-D warnings`
+    - ✅ Release build successful (1m 11s)
+  - Impact: Latest bug fixes, security patches, and performance improvements
+
 ### Fixed
 - **Comprehensive Code Quality Audit (2025-11-12)**
   - Resolved ALL 70+ clippy warnings across the entire codebase
