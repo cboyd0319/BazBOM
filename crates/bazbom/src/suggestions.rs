@@ -40,7 +40,7 @@ impl ScanMetadata {
         }
 
         // Reachability suggestions
-        if !self.reachability_enabled && self.total_vulns > 10 {
+        if !self.reachability_enabled && self.total_vulns >= 10 {
             let reduction_estimate = ((self.total_vulns as f64) * 0.75).round() as usize;
             suggestions.push(format!(
                 "Enable reachability analysis to reduce noise - estimated ~{} fewer alerts: 'bazbom scan --reachability'",

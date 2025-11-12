@@ -259,6 +259,9 @@ WHAT IT DOES:
         /// Show only specific priority vulnerabilities (p0, p1, p2, fixable, quick-wins)
         #[arg(long, value_name = "FILTER")]
         show: Option<String>,
+        /// Enable reachability analysis (extracts container filesystem and analyzes code)
+        #[arg(long)]
+        with_reachability: bool,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {

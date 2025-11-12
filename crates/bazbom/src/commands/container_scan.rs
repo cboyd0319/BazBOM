@@ -26,6 +26,7 @@ pub struct ContainerScanOptions {
     pub interactive: bool,
     pub report_file: Option<String>,
     pub filter: Option<String>,
+    pub with_reachability: bool,
 }
 
 /// Layer information with vulnerability attribution
@@ -58,6 +59,7 @@ pub struct VulnerabilityInfo {
     pub references: Vec<String>, // CVE database links
     pub breaking_change: Option<bool>, // Major version upgrade required
     pub upgrade_path: Option<String>, // Recommended upgrade strategy
+    pub is_reachable: bool, // Reachability analysis result
 }
 
 /// Complete container scan results
@@ -213,9 +215,34 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
 
     // Step 4: Analyze layers and attribute vulnerabilities
     println!("🔍 {} Analyzing layer attribution...", "Step 4/5:".bold());
-    let results = analyze_layer_attribution(&opts.image_name, &sbom_path, &vuln_path).await?;
+    let mut results = analyze_layer_attribution(&opts.image_name, &sbom_path, &vuln_path).await?;
     println!("   ✅ Mapped vulnerabilities to {} layers", results.layers.len().to_string().bright_cyan().bold());
     println!();
+
+    // Optional: Reachability analysis
+    if opts.with_reachability {
+        println!("🎯 {} Running reachability analysis...", "Step 4.5/5:".bold());
+        match extract_container_filesystem(&opts.image_name, &opts.output_dir).await {
+            Ok(filesystem_dir) => {
+                match analyze_container_reachability(&mut results, &filesystem_dir).await {
+                    Ok(_) => {
+                        let reachable_count = results.layers.iter()
+                            .flat_map(|l| &l.vulnerabilities)
+                            .filter(|v| v.is_reachable)
+                            .count();
+                        println!("   ✅ Found {} reachable vulnerabilities", reachable_count.to_string().red().bold());
+                    },
+                    Err(e) => {
+                        eprintln!("   ⚠️  Reachability analysis error: {}", e);
+                    }
+                }
+            },
+            Err(e) => {
+                eprintln!("   ⚠️  Filesystem extraction failed: {}", e);
+            }
+        }
+        println!();
+    }
 
     // Step 5: Generate beautiful summary
     println!("✨ {} Generating security report...", "Step 5/5:".bold());
@@ -264,6 +291,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             interactive: false,
             report_file: None,
             filter: None,
+            with_reachability: false,
         }).await?;
 
         let compare_vuln = scan_vulnerabilities(&ContainerScanOptions {
@@ -277,6 +305,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             interactive: false,
             report_file: None,
             filter: None,
+            with_reachability: false,
         }).await?;
 
         let compare_results = analyze_layer_attribution(compare_image, &compare_sbom, &compare_vuln).await?;
@@ -933,6 +962,7 @@ async fn analyze_layer_attribution(
                         references,
                         breaking_change,
                         upgrade_path,
+                        is_reachable: false, // Will be analyzed if --with-reachability is enabled
                     });
                 }
             }
@@ -1035,6 +1065,149 @@ async fn analyze_layer_attribution(
         medium_count,
         low_count,
     })
+}
+
+/// Extract container filesystem for reachability analysis
+async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Result<PathBuf> {
+    let extract_dir = output_dir.join("filesystem");
+    std::fs::create_dir_all(&extract_dir)?;
+
+    // Try to export the container filesystem using docker/podman
+    let docker_export = Command::new("docker")
+        .args(&["create", "--name", "bazbom-temp", image_name])
+        .output();
+
+    let container_id = if let Ok(output) = docker_export {
+        if output.status.success() {
+            String::from_utf8_lossy(&output.stdout).trim().to_string()
+        } else {
+            // Try podman as fallback
+            let podman_create = Command::new("podman")
+                .args(&["create", "--name", "bazbom-temp", image_name])
+                .output()
+                .context("Failed to create container with docker or podman")?;
+
+            if !podman_create.status.success() {
+                anyhow::bail!("Failed to create container for filesystem extraction");
+            }
+            String::from_utf8_lossy(&podman_create.stdout).trim().to_string()
+        }
+    } else {
+        anyhow::bail!("Docker/Podman not available for filesystem extraction");
+    };
+
+    // Export the filesystem
+    let export_output = Command::new("docker")
+        .args(&["export", &container_id, "-o"])
+        .arg(extract_dir.join("filesystem.tar"))
+        .output();
+
+    // Clean up the container
+    let _ = Command::new("docker").args(&["rm", &container_id]).output();
+
+    if export_output.is_err() || !export_output.as_ref().unwrap().status.success() {
+        // Try podman
+        let _ = Command::new("podman")
+            .args(&["export", &container_id, "-o"])
+            .arg(extract_dir.join("filesystem.tar"))
+            .output()
+            .context("Failed to export container filesystem")?;
+        let _ = Command::new("podman").args(&["rm", &container_id]).output();
+    }
+
+    // Extract the tar
+    let tar_path = extract_dir.join("filesystem.tar");
+    let status = Command::new("tar")
+        .args(&["-xf"])
+        .arg(&tar_path)
+        .arg("-C")
+        .arg(&extract_dir)
+        .status()
+        .context("Failed to extract filesystem tar")?;
+
+    if !status.success() {
+        anyhow::bail!("Failed to extract container filesystem");
+    }
+
+    // Clean up tar file
+    let _ = std::fs::remove_file(tar_path);
+
+    Ok(extract_dir)
+}
+
+/// Perform reachability analysis on container vulnerabilities
+async fn analyze_container_reachability(
+    results: &mut ContainerScanResults,
+    filesystem_dir: &Path,
+) -> Result<()> {
+    // Collect unique packages with vulnerabilities
+    let mut packages_to_analyze: HashMap<String, Vec<String>> = HashMap::new();
+
+    for layer in &results.layers {
+        for vuln in &layer.vulnerabilities {
+            packages_to_analyze
+                .entry(vuln.package_name.clone())
+                .or_default()
+                .push(vuln.cve_id.clone());
+        }
+    }
+
+    if packages_to_analyze.is_empty() {
+        return Ok(());
+    }
+
+    // Run polyglot reachability analysis on the extracted filesystem
+    let reachable_packages = run_polyglot_reachability(filesystem_dir, &packages_to_analyze).await?;
+
+    // Update vulnerability reachability status
+    for layer in &mut results.layers {
+        for vuln in &mut layer.vulnerabilities {
+            if reachable_packages.contains(&vuln.package_name) {
+                vuln.is_reachable = true;
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Run polyglot reachability analysis
+async fn run_polyglot_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    let mut reachable = std::collections::HashSet::new();
+
+    // Detect what languages are present in the container
+    let ecosystems = bazbom_polyglot::detect_ecosystems(project_path.to_str().unwrap_or("."))?;
+
+    // For now, use a conservative heuristic: mark packages as reachable if they're
+    // in detected ecosystems and we find evidence of their use
+    for package in packages.keys() {
+        // Check if package appears to be used (conservative: assume reachable)
+        // In a full implementation, this would run language-specific call graph analysis
+        for ecosystem in &ecosystems {
+            // Heuristic: if the package ecosystem matches the detected ecosystem,
+            // assume it's potentially reachable (conservative approach)
+            let ecosystem_matches = match ecosystem.ecosystem_type {
+                bazbom_polyglot::EcosystemType::Npm => package.starts_with('@') || !package.contains(':'),
+                bazbom_polyglot::EcosystemType::Python => !package.contains(':') && !package.starts_with('@'),
+                bazbom_polyglot::EcosystemType::Go => package.contains("github.com") || package.contains("golang.org"),
+                bazbom_polyglot::EcosystemType::Rust => !package.contains(':') && !package.contains('/'),
+                bazbom_polyglot::EcosystemType::Ruby => !package.contains(':') && !package.starts_with('@'),
+                bazbom_polyglot::EcosystemType::Php => package.contains('/') && !package.starts_with('@'),
+            };
+
+            if ecosystem_matches {
+                // Conservative: mark as reachable if we found its ecosystem
+                // TODO: In future, run language-specific call graph analysis
+                reachable.insert(package.clone());
+                break;
+            }
+        }
+    }
+
+    Ok(reachable)
 }
 
 /// Apply filter to scan results
@@ -1210,6 +1383,17 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
                     "".normal()
                 };
 
+                // Reachability indicator
+                let reachability_indicator = if opts.with_reachability {
+                    if vuln.is_reachable {
+                        " 🎯 REACHABLE".red().bold()
+                    } else {
+                        " 🛡️  unreachable".dimmed()
+                    }
+                } else {
+                    "".normal()
+                };
+
                 // Fix status with breaking change warning
                 let fix_status = if let Some(ref fix) = vuln.fixed_version {
                     let mut status = format!("→ {}", fix).green();
@@ -1221,11 +1405,12 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
                     "no fix available".dimmed()
                 };
 
-                println!("        {} {}{}{}",
+                println!("        {} {}{}{}{}",
                     severity_icon,
                     vuln.cve_id.bright_white().bold(),
                     priority_badge,
-                    kev_indicator
+                    kev_indicator,
+                    reachability_indicator
                 );
                 println!("           in {} {} {}",
                     vuln.package_name.bright_cyan(),

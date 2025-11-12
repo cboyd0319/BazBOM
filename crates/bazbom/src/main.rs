@@ -263,6 +263,7 @@ async fn main() -> Result<()> {
             interactive,
             report,
             show,
+            with_reachability,
         } => {
             use commands::container_scan::ContainerScanOptions;
             use std::path::PathBuf;
@@ -278,6 +279,7 @@ async fn main() -> Result<()> {
                 interactive,
                 report_file: report,
                 filter: show,
+                with_reachability,
             };
 
             commands::container_scan::handle_container_scan(opts).await?;
