@@ -204,13 +204,19 @@ impl PythonUpdater {
     /// Extract package name from requirement specifier
     /// e.g., "django==3.2.0" -> Some("django")
     ///       "requests>=2.28.0" -> Some("requests")
+    ///       "pandas[extra]==1.3.0" -> Some("pandas")
     fn extract_package_name(&self, requirement: &str) -> Option<String> {
         let requirement = requirement.trim();
 
         // Split on comparison operators
         for op in &["==", ">=", "<=", "!=", "~=", ">", "<"] {
             if let Some(idx) = requirement.find(op) {
-                return Some(requirement[..idx].trim().to_string());
+                let pkg_name = requirement[..idx].trim();
+                // Strip extras like [extra] from package name
+                if let Some(bracket_idx) = pkg_name.find('[') {
+                    return Some(pkg_name[..bracket_idx].trim().to_string());
+                }
+                return Some(pkg_name.to_string());
             }
         }
 
