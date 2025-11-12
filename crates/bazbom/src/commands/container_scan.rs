@@ -782,7 +782,7 @@ async fn enrich_vulnerabilities(vulns: &mut [VulnerabilityInfo]) -> Result<()> {
     Ok(())
 }
 
-/// Load EPSS scores (stub - TODO: implement real API integration with ureq 3.x)
+/// Load EPSS scores from FIRST.org API using ureq
 async fn load_epss_data() -> Result<HashMap<String, (f64, f64)>> {
     use serde::Deserialize;
 
