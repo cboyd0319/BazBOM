@@ -5,7 +5,7 @@
 
 use anyhow::Result;
 use colored::*;
-use dialoguer::{theme::ColorfulTheme, Confirm, Select, MultiSelect};
+use dialoguer::{theme::ColorfulTheme, Confirm, Select};
 use std::fmt;
 
 /// A vulnerability that can be fixed
@@ -152,7 +152,7 @@ impl InteractiveFix {
                     break;
                 }
                 Action::Quit => {
-                    println!("\n   {} Exiting interactive fix mode", "👋".to_string());
+                    println!("\n   👋 Exiting interactive fix mode");
                     break;
                 }
             }
@@ -188,9 +188,8 @@ impl InteractiveFix {
         println!("{}", "├──────────────────────────────────────────────────────────────┤".cyan());
 
         // Package info
-        println!("{} {} {:<50} {}",
+        println!("{} 📦 {:<50} {}",
             "│".cyan(),
-            "📦".to_string(),
             format!("{} {} → {}", vuln.package, vuln.current_version.yellow(), vuln.fixed_version.green()),
             "│".cyan()
         );
@@ -205,9 +204,8 @@ impl InteractiveFix {
 
         // CISA KEV warning
         if vuln.in_cisa_kev {
-            println!("{} {} {:<50} {}",
+            println!("{} 🚨 {:<50} {}",
                 "│".cyan(),
-                "🚨".to_string(),
                 "ACTIVELY EXPLOITED - Fix immediately!".red().bold(),
                 "│".cyan()
             );
@@ -419,6 +417,7 @@ enum Action {
 mod tests {
     use super::*;
 
+    #[allow(dead_code)]
     fn create_test_vulns() -> Vec<FixableVulnerability> {
         vec![
             FixableVulnerability {

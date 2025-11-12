@@ -21,6 +21,7 @@ struct PoetryPackage {
     name: String,
     version: String,
     description: Option<String>,
+    #[allow(dead_code)]
     category: Option<String>,
     #[serde(default)]
     dependencies: HashMap<String, String>,
@@ -229,7 +230,6 @@ fn parse_pipfile_lock(lockfile_path: &std::path::Path, result: &mut EcosystemSca
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    use std::path::PathBuf;
 
     #[test]
     fn test_parse_requirement_line() {

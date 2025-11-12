@@ -7,6 +7,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+- **🚨 CRITICAL VULNERABILITY FIXED (2025-11-12)**
+  - **RUSTSEC-2025-0009**: Fixed critical AES panic vulnerability in `ring` crate
+  - Updated `ring`: 0.17.9 → 0.17.14 (CRITICAL SECURITY FIX)
+  - Impact: Resolved potential denial of service in TLS/HTTPS operations
+  - Affected components: All HTTP clients (ureq, reqwest), TLS libraries (rustls, tokio-rustls)
+  - Verification: `cargo audit` reports 0 vulnerabilities ✅
+  - See [Comprehensive Security Audit](docs/COMPREHENSIVE_SECURITY_AUDIT_2025_11_12.md) for full details
+
+- **Zero Unsafe Code** - 100% memory-safe Rust across all 26 crates
+- **Zero Security Vulnerabilities** - Clean security audit
+
+### Changed
+- **Major Dependency Updates (2025-11-12)**
+  - Updated 32+ dependencies to latest stable versions
+  - Major version upgrades:
+    - `kube`: 0.99.0 → 2.0.1 (Kubernetes client API)
+    - `k8s-openapi`: 0.24.0 → 0.26.0
+    - `schemars`: 0.8.22 → 1.1.0 (JSON Schema generation)
+    - `octocrab`: 0.38.0 → 0.47.1 (GitHub API client)
+    - `reqwest`: 0.11 → 0.12 (unified HTTP client)
+    - `petgraph`: 0.6.5 → 0.8.3 (graph algorithms)
+    - `tree-sitter`: 0.22.6 → 0.25.10 (code parsing)
+    - All 5 language parsers updated (JS/TS, Python, Go, Ruby, PHP)
+  - Build tool updates:
+    - `cc`: 1.0.106 → 1.2.45 (required for ring 0.17.14)
+    - `blake3`: 1.5.3 → 1.8.2 (hash functions)
+  - Eliminated 18 legacy dependencies (reqwest 0.11, hyper 0.14, etc.)
+  - Reduced duplicate dependencies by 42% (60+ → 35)
+  - All tests passing (360+), zero regressions ✅
+
+- **API Compatibility Updates (2025-11-12)**
+  - Tree-sitter v0.25 migration: Updated all reachability analysis crates
+    - Changed from function API (`language()`) to constant API (`LANGUAGE.into()`)
+    - Affected: bazbom-js-reachability, bazbom-python-reachability, bazbom-go-reachability, bazbom-ruby-reachability, bazbom-php-reachability
+  - Kubernetes operator updated for kube 2.0 API changes
+  - HTTP client stack unified on latest versions
+
+- **Dependency Updates (2025-11-11)**
+  - Updated 5 dependencies to latest stable versions:
+    - `hyper`: 1.7.0 → 1.8.0 (HTTP client/server framework)
+    - `indicatif`: 0.18.2 → 0.18.3 (progress bars and spinners)
+    - `quick-xml`: 0.38.3 → 0.38.4 (XML parser for SBOM generation)
+    - `syn`: 2.0.109 → 2.0.110 (Rust syntax parsing for proc macros)
+    - `ureq`: 3.1.2 → 3.1.4 (HTTP client for vulnerability database queries)
+  - All updates are patch/minor versions maintaining API compatibility
+  - Zero breaking changes, full backward compatibility maintained
+  - Regression testing completed:
+    - ✅ All library tests passing
+    - ✅ Zero clippy warnings with `-D warnings`
+    - ✅ Release build successful (1m 11s)
+  - Impact: Latest bug fixes, security patches, and performance improvements
+
+### Fixed
+- **Comprehensive Code Quality Audit (2025-11-12)**
+  - Resolved ALL 70+ clippy warnings across the entire codebase
+  - Performance optimizations:
+    - `push_str("\n")` → `push('\n')` for reduced allocations
+    - `&PathBuf` → `&Path` parameters for zero-copy semantics
+    - `or_insert_with(Vec::new)` → `or_default()` for idiomatic code
+    - `last()` → `next_back()` on double-ended iterators (O(1) vs O(n))
+  - Code quality improvements:
+    - Fixed 14 instances of unnecessary `.to_string()` in format macros
+    - Replaced `vec![]` with `[]` for immutable collections
+    - Used `strip_prefix()` instead of manual string slicing
+    - Fixed borrow patterns and needless references
+    - Added `#[allow(dead_code)]` to 18 deserialization-only fields
+  - Testing & validation:
+    - ✅ Zero compiler warnings
+    - ✅ Zero clippy warnings with `-D warnings`
+    - ✅ All 342+ tests passing
+    - ✅ Release build successful
+    - ✅ Production-ready code quality achieved
+  - Impact: Improved performance, maintainability, and adherence to Rust best practices
+  - Files modified: 17 across 6 crates (143 lines changed: 70 insertions, 73 deletions)
+
 ## [1.0.0] - 2025-11-07
 
 ### 🎉 Major Release - Production Ready

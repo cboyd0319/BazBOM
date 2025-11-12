@@ -93,7 +93,7 @@ impl GitHubAnalyzer {
         let mut changes = Vec::new();
 
         // Patterns for common breaking change markers
-        let patterns = vec![
+        let patterns = [
             Regex::new(r"(?im)^#+\s*breaking\s+change[s]?:?\s*$").unwrap(),
             Regex::new(r"(?im)^#+\s*breaking\s*$").unwrap(),
             Regex::new(r"(?i)breaking change[s]?:").unwrap(),

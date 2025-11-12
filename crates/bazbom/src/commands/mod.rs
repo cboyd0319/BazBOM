@@ -19,7 +19,6 @@ pub mod team;
 pub mod upgrade_intelligence;
 
 // Re-export command handlers for convenience
-pub use container_scan::handle_container_scan;
 pub use dashboard::handle_dashboard;
 pub use db::handle_db;
 pub use explain::handle_explain;

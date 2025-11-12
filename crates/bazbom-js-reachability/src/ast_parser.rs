@@ -33,8 +33,8 @@ fn determine_language(file_path: &Path) -> Result<Language> {
         .unwrap_or("");
 
     match extension {
-        "ts" | "tsx" => Ok(tree_sitter_typescript::language_typescript()),
-        _ => Ok(tree_sitter_javascript::language()),
+        "ts" | "tsx" => Ok(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
+        _ => Ok(tree_sitter_javascript::LANGUAGE.into()),
     }
 }
 

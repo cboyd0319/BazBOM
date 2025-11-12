@@ -162,7 +162,7 @@ impl DependencyGraph {
         output.push_str("  rankdir=LR;\n");
         output.push_str("  node [shape=box, style=rounded];\n");
         output.push_str("  edge [fontsize=10];\n");
-        output.push_str("\n");
+        output.push('\n');
 
         // Add nodes
         output.push_str("  // Nodes\n");
@@ -191,7 +191,7 @@ impl DependencyGraph {
             output.push_str("];\n");
         }
 
-        output.push_str("\n");
+        output.push('\n');
 
         // Add edges
         output.push_str("  // Edges\n");

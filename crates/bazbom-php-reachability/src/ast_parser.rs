@@ -9,7 +9,7 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
     let source_code = std::fs::read_to_string(file_path)?;
 
     let mut parser = Parser::new();
-    let language = tree_sitter_php::language_php();
+    let language = tree_sitter_php::LANGUAGE_PHP.into();
     parser.set_language(&language)?;
 
     parser

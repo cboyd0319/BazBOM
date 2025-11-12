@@ -10,7 +10,7 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
     let source_code = std::fs::read_to_string(file_path)?;
 
     let mut parser = Parser::new();
-    let language = tree_sitter_go::language();
+    let language = tree_sitter_go::LANGUAGE.into();
 
     parser
         .set_language(&language)

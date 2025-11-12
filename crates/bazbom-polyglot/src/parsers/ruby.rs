@@ -48,7 +48,6 @@ fn parse_gemfile_lock(lockfile_path: &std::path::Path, result: &mut EcosystemSca
         .context("Failed to read Gemfile.lock")?;
 
     let mut in_specs_section = false;
-    let mut current_indent = 0;
 
     for line in content.lines() {
         let trimmed = line.trim();
@@ -78,7 +77,6 @@ fn parse_gemfile_lock(lockfile_path: &std::path::Path, result: &mut EcosystemSca
             // Top-level gems in specs (typically 4 spaces)
             if indent == 4 && !trimmed.starts_with('-') {
                 if let Some((name, version)) = parse_gem_spec_line(trimmed) {
-                    current_indent = indent;
                     result.add_package(Package {
                         name: name.to_string(),
                         version: version.to_string(),

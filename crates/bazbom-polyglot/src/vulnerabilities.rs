@@ -53,26 +53,32 @@ struct OsvSeverity {
 
 #[derive(Debug, Deserialize)]
 struct OsvAffected {
+    #[allow(dead_code)]
     package: Option<OsvAffectedPackage>,
     ranges: Option<Vec<OsvRange>>,
+    #[allow(dead_code)]
     versions: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OsvAffectedPackage {
+    #[allow(dead_code)]
     ecosystem: String,
+    #[allow(dead_code)]
     name: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct OsvRange {
     #[serde(rename = "type")]
+    #[allow(dead_code)]
     range_type: String,
     events: Vec<OsvEvent>,
 }
 
 #[derive(Debug, Deserialize)]
 struct OsvEvent {
+    #[allow(dead_code)]
     introduced: Option<String>,
     fixed: Option<String>,
 }
@@ -80,6 +86,7 @@ struct OsvEvent {
 #[derive(Debug, Deserialize)]
 struct OsvReference {
     #[serde(rename = "type")]
+    #[allow(dead_code)]
     ref_type: String,
     url: String,
 }

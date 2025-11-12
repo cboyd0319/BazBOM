@@ -12,19 +12,25 @@ use crate::ecosystems::{EcosystemScanResult, Package};
 /// package.json structure
 #[derive(Debug, Deserialize)]
 struct PackageJson {
+    #[allow(dead_code)]
     name: Option<String>,
+    #[allow(dead_code)]
     version: Option<String>,
+    #[allow(dead_code)]
     description: Option<String>,
     #[serde(default)]
     dependencies: HashMap<String, String>,
     #[serde(default, rename = "devDependencies")]
+    #[allow(dead_code)]
     dev_dependencies: HashMap<String, String>,
 }
 
 /// package-lock.json structure (simplified)
 #[derive(Debug, Deserialize)]
 struct PackageLockJson {
+    #[allow(dead_code)]
     name: Option<String>,
+    #[allow(dead_code)]
     version: Option<String>,
     #[serde(default)]
     packages: HashMap<String, LockfilePackage>,
@@ -38,6 +44,7 @@ struct LockfilePackage {
     #[serde(default)]
     dependencies: HashMap<String, String>,
     #[serde(rename = "devOptional")]
+    #[allow(dead_code)]
     dev_optional: Option<bool>,
 }
 
@@ -240,7 +247,6 @@ fn parse_package_json_deps(package_json: &PackageJson, result: &mut EcosystemSca
 mod tests {
     use super::*;
     use tempfile::TempDir;
-    use std::path::PathBuf;
 
     #[tokio::test]
     async fn test_parse_package_json() {

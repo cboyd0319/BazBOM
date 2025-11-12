@@ -4,7 +4,6 @@
 /// - JAR bytecode comparison for API surface changes
 /// - Maven POM analysis for plugin changes
 /// - Configuration file format changes
-
 // Placeholder for future bytecode analysis
 pub mod bytecode {
     // TODO: Implement JAR comparison using ASM or similar

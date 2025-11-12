@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 /// Container scan options
@@ -595,7 +595,7 @@ fn calculate_priority_level(vuln: &VulnerabilityInfo) -> String {
 }
 
 /// Extract layer-to-package mapping from Syft native JSON
-fn extract_layer_package_mapping(output_dir: &PathBuf) -> Result<HashMap<String, Vec<String>>> {
+fn extract_layer_package_mapping(output_dir: &Path) -> Result<HashMap<String, Vec<String>>> {
     let native_path = output_dir.join("sbom").join("syft-native.json");
     let content = std::fs::read_to_string(&native_path)?;
     let doc: serde_json::Value = serde_json::from_str(&content)?;
@@ -611,7 +611,7 @@ fn extract_layer_package_mapping(output_dir: &PathBuf) -> Result<HashMap<String,
                     if let Some(layer_id) = location["layerID"].as_str() {
                         layer_packages
                             .entry(layer_id.to_string())
-                            .or_insert_with(Vec::new)
+                            .or_default()
                             .push(package_name.clone());
                     }
                 }
@@ -722,7 +722,7 @@ async fn analyze_layer_attribution(
         .context("Invalid SBOM path")?;
 
     // Extract layer-to-package mapping from Syft native JSON
-    let layer_package_map = extract_layer_package_mapping(&output_dir.to_path_buf())?;
+    let layer_package_map = extract_layer_package_mapping(output_dir)?;
 
     // Build package-to-vulnerability map (with normalized names for matching)
     let mut package_vulns: HashMap<String, Vec<VulnerabilityInfo>> = HashMap::new();
@@ -730,14 +730,14 @@ async fn analyze_layer_attribution(
         // Store by both full name and normalized name for flexible matching
         package_vulns
             .entry(vuln.package_name.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(vuln.clone());
 
         // Also store by artifact name only (e.g., "commons-io" from "commons-io:commons-io")
-        let artifact_name = vuln.package_name.split(':').last().unwrap_or(&vuln.package_name);
+        let artifact_name = vuln.package_name.split(':').next_back().unwrap_or(&vuln.package_name);
         package_vulns
             .entry(artifact_name.to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(vuln.clone());
     }
 
@@ -1012,7 +1012,7 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
                 if let Some(cvss) = vuln.cvss_score {
                     println!("           CVSS: {:.1} | {}",
                         cvss.to_string().bright_white(),
-                        if let Some(ref refs) = vuln.references.get(0) {
+                        if let Some(refs) = vuln.references.first() {
                             refs.dimmed()
                         } else {
                             "".normal()
@@ -1340,7 +1340,7 @@ fn display_effort_analysis(results: &ContainerScanResults) -> Result<()> {
                 0.25
             };
 
-            match vuln.priority.as_ref().map(|s| s.as_str()) {
+            match vuln.priority.as_deref() {
                 Some("P0") => { p0_time += time; p0_count += 1; }
                 Some("P1") => { p1_time += time; p1_count += 1; }
                 Some("P2") => { p2_time += time; p2_count += 1; }
@@ -1383,12 +1383,10 @@ fn display_effort_analysis(results: &ContainerScanResults) -> Result<()> {
 
     let total_time = p0_time + p1_time + p2_time;
     println!();
-    println!("  {} Total estimated time: {}",
-        "📊".to_string(),
+    println!("  📊 Total estimated time: {}",
         format_time(total_time).bright_white().bold()
     );
-    println!("  {} Risk reduction: {} → {}",
-        "🎯".to_string(),
+    println!("  🎯 Risk reduction: {} → {}",
         if results.critical_count > 0 { "CRITICAL".red().bold() } else { "HIGH".yellow().bold() },
         "LOW".green().bold()
     );
@@ -1405,7 +1403,7 @@ fn display_security_score(results: &ContainerScanResults) -> Result<()> {
     // Deduct points for vulnerabilities
     score -= results.critical_count.min(10) * 10; // -10 per CRITICAL (max -100)
     score -= results.high_count.min(20) * 2; // -2 per HIGH (max -40)
-    score -= results.medium_count.min(50) * 1; // -1 per MEDIUM (max -50)
+    score -= results.medium_count.min(50); // -1 per MEDIUM (max -50)
 
     // Extra penalty for KEV
     let kev_count = results.layers.iter()
