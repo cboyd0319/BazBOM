@@ -8,6 +8,7 @@ use std::path::PathBuf;
 #[allow(clippy::too_many_arguments)]
 pub fn handle_scan(
     path: String,
+    profile: Option<String>,
     reachability: bool,
     fast: bool,
     format: String,
@@ -28,6 +29,9 @@ pub fn handle_scan(
     benchmark: bool,
     ml_risk: bool,
 ) -> Result<()> {
+    // TODO: Load profile from bazbom.toml and merge with CLI arguments
+    // For now, profile parameter is accepted but not yet used
+    let _ = profile;
     // Check if any orchestration flags are set
     let use_orchestrator = cyclonedx
         || with_semgrep

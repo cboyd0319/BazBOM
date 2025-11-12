@@ -18,6 +18,7 @@ async fn main() -> Result<()> {
     let cli = Cli::parse();
     let command = cli.command.unwrap_or(Commands::Scan {
         path: ".".into(),
+        profile: None,
         reachability: false,
         fast: false,
         format: "spdx".into(),
@@ -42,6 +43,7 @@ async fn main() -> Result<()> {
     match command {
         Commands::Scan {
             path,
+            profile,
             reachability,
             fast,
             format,
@@ -63,6 +65,7 @@ async fn main() -> Result<()> {
             ml_risk,
         } => handle_scan(
             path,
+            profile,
             reachability,
             fast,
             format,

@@ -14,6 +14,9 @@ pub enum Commands {
         /// Path to project (defaults to current directory)
         #[arg(default_value = ".")]
         path: String,
+        /// Use a named profile from bazbom.toml (e.g., strict, fast, ci)
+        #[arg(long, short = 'p', value_name = "PROFILE")]
+        profile: Option<String>,
         /// Enable reachability analysis (OPAL)
         #[arg(long, short = 'r')]
         reachability: bool,
