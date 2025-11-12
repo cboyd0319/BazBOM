@@ -49,8 +49,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 **Status**: ✅ Complete (v6.5.0)
 
 - **[Reachability Analysis Overview](reachability/README.md)** - World-class reachability across 7 languages
-- [Polyglot Status](polyglot/POLYGLOT_STATUS.md) - Current language support matrix
-- [Polyglot Roadmap](polyglot/POLYGLOT_ROADMAP.md) - Future language additions
+- [Polyglot Overview](polyglot/README.md) - Multi-language monorepo support
 
 ### Supported Languages (7/7)
 - ✅ JavaScript/TypeScript (v6.3.0)
@@ -118,15 +117,15 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## Version History & Roadmaps
 
-### Completed Milestones
-- ✅ [v6.5.0 Roadmap](completed-roadmaps/V6_5_0_ROADMAP.md) - Complete Polyglot Reachability Parity
-- ✅ [v6.4.0 Roadmap](completed-roadmaps/V6_4_0_ROADMAP.md) - Python + Go Reachability
-- ✅ [v6.3.0 Roadmap](completed-roadmaps/V6_3_0_ROADMAP.md) - JavaScript/TypeScript Reachability
-- ✅ [v6.2.0 Roadmap](completed-roadmaps/V6_2_0_ROADMAP.md) - Polyglot Upgrade Intelligence
+### Future Roadmap
+- 🚀 [v7 Roadmap](roadmaps/V7_ROADMAP.md) - GitHub Marketplace Edition
+- 📖 [v7 Quick Start](roadmaps/V7_QUICK_START.md) - 30-day plan
 
-### Current & Future
-- 🚀 [v7 Roadmap](V7_ROADMAP.md) - Next generation features
-- 📖 [v7 Quick Start](V7_QUICK_START.md) - Getting started with v7
+### Historical Milestones
+- ✅ v6.5.0 - Complete Polyglot Reachability Parity (archived)
+- ✅ v6.4.0 - Python + Go Reachability (archived)
+- ✅ v6.3.0 - JavaScript/TypeScript Reachability (archived)
+- ✅ v6.2.0 - Polyglot Upgrade Intelligence (archived)
 
 ## Quality & Style Standards
 
