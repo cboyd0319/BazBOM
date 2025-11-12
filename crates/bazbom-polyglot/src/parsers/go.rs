@@ -6,7 +6,7 @@ use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
 use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
 /// Scan Go ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -23,7 +23,34 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
     // go.sum is optional but provides checksums - we can use it to verify versions
     // For now, go.mod is sufficient for dependency tracking
 
+    // Run reachability analysis
+    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
+        eprintln!("Warning: Go reachability analysis failed: {}", e);
+    }
+
     Ok(result)
+}
+
+/// Analyze reachability for Go project
+fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+    use bazbom_go_reachability::analyze_go_project;
+
+    let report = analyze_go_project(&ecosystem.root_path)?;
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for package in &result.packages {
+        let key = format!("{}@{}", package.name, package.version);
+        vulnerable_packages_reachable.insert(key, !report.reachable_functions.is_empty());
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+    Ok(())
 }
 
 /// Parse go.mod file

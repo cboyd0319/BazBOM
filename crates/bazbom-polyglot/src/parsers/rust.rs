@@ -5,10 +5,11 @@
 use anyhow::{Context, Result};
 use cargo_lock::Lockfile;
 use std::fs;
+use std::collections::HashMap;
 use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
-/// Scan Rust ecosystem
+/// Scan Rust ecosystem with reachability analysis
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
     let mut result = EcosystemScanResult::new(
         "Rust".to_string(),
@@ -23,7 +24,42 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         parse_cargo_toml(manifest_path, &mut result)?;
     }
 
+    // Run reachability analysis
+    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
+        eprintln!("Warning: Rust reachability analysis failed: {}", e);
+        // Continue without reachability data
+    }
+
     Ok(result)
+}
+
+/// Analyze reachability for Rust project
+fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+    use bazbom_rust_reachability::analyze_rust_project;
+
+    let report = analyze_rust_project(&ecosystem.root_path)
+        .context("Failed to run Rust reachability analysis")?;
+
+    // Build map of vulnerable packages -> reachability
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    // For now, mark all packages as potentially reachable if any functions are reachable
+    // TODO: Map specific vulnerabilities to specific functions
+    for package in &result.packages {
+        let package_key = format!("{}@{}", package.name, package.version);
+        // Conservative: if ANY function is reachable, package is considered reachable
+        vulnerable_packages_reachable.insert(package_key, report.reachable_functions.len() > 0);
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+
+    Ok(())
 }
 
 /// Parse Cargo.lock using the cargo-lock crate

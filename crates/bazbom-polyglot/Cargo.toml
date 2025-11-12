@@ -29,6 +29,14 @@ chrono = "0.4"
 # BazBOM core
 bazbom-core = { path = "../bazbom-core", version = "6.0.0" }
 
+# Reachability analyzers
+bazbom-rust-reachability = { path = "../bazbom-rust-reachability" }
+bazbom-ruby-reachability = { path = "../bazbom-ruby-reachability" }
+bazbom-php-reachability = { path = "../bazbom-php-reachability" }
+bazbom-go-reachability = { path = "../bazbom-go-reachability" }
+bazbom-python-reachability = { path = "../bazbom-python-reachability" }
+bazbom-js-reachability = { path = "../bazbom-js-reachability" }
+
 # File system
 walkdir = "2.5"
 glob = "0.3"

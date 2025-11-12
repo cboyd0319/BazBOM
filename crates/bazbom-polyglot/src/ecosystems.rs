@@ -1,6 +1,7 @@
 //! Ecosystem data structures
 
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Package information from any ecosystem
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,6 +63,17 @@ pub struct Vulnerability {
     pub published_date: Option<String>,
 }
 
+/// Reachability analysis data
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ReachabilityData {
+    pub analyzed: bool,
+    pub total_functions: usize,
+    pub reachable_functions: usize,
+    pub unreachable_functions: usize,
+    /// Map of vulnerable package -> is_reachable
+    pub vulnerable_packages_reachable: HashMap<String, bool>,
+}
+
 /// Results from scanning an ecosystem
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EcosystemScanResult {
@@ -71,6 +83,9 @@ pub struct EcosystemScanResult {
     pub vulnerabilities: Vec<Vulnerability>,
     pub total_packages: usize,
     pub total_vulnerabilities: usize,
+    /// Reachability analysis results
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reachability: Option<ReachabilityData>,
 }
 
 impl EcosystemScanResult {
@@ -82,6 +97,7 @@ impl EcosystemScanResult {
             vulnerabilities: Vec::new(),
             total_packages: 0,
             total_vulnerabilities: 0,
+            reachability: None,
         }
     }
 

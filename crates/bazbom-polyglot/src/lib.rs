@@ -42,7 +42,7 @@ pub mod sbom;
 pub mod vulnerabilities;
 
 pub use detection::{detect_ecosystems, Ecosystem, EcosystemType};
-pub use ecosystems::{EcosystemScanResult, Package, Vulnerability};
+pub use ecosystems::{EcosystemScanResult, Package, Vulnerability, ReachabilityData};
 pub use sbom::generate_polyglot_sbom;
 
 use anyhow::Result;

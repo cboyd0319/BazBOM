@@ -5,8 +5,9 @@
 use anyhow::{Context, Result};
 use serde_json::Value;
 use std::fs;
+use std::collections::HashMap;
 use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
 /// Scan PHP ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -24,7 +25,34 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         parse_composer_json(manifest_path, &mut result)?;
     }
 
+    // Run reachability analysis
+    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
+        eprintln!("Warning: PHP reachability analysis failed: {}", e);
+    }
+
     Ok(result)
+}
+
+/// Analyze reachability for PHP project
+fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+    use bazbom_php_reachability::analyze_php_project;
+
+    let report = analyze_php_project(&ecosystem.root_path)?;
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for package in &result.packages {
+        let key = format!("{}@{}", package.name, package.version);
+        vulnerable_packages_reachable.insert(key, !report.reachable_functions.is_empty());
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+    Ok(())
 }
 
 /// Parse composer.lock

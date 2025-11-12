@@ -7,7 +7,7 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
 use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
 /// package.json structure
 #[derive(Debug, Deserialize)]
@@ -98,7 +98,34 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         }
     }
 
+    // Run reachability analysis
+    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
+        eprintln!("Warning: npm reachability analysis failed: {}", e);
+    }
+
     Ok(result)
+}
+
+/// Analyze reachability for npm/Node.js project
+fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+    use bazbom_js_reachability::analyze_js_project;
+
+    let report = analyze_js_project(&ecosystem.root_path)?;
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for package in &result.packages {
+        let key = format!("{}@{}", package.name, package.version);
+        vulnerable_packages_reachable.insert(key, !report.reachable_functions.is_empty());
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+    Ok(())
 }
 
 /// Parse package-lock.json (npm v7+)

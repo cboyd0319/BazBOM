@@ -44,5 +44,21 @@ pub fn handle_legacy_scan(
     });
     std::fs::write(&sarif_path, serde_json::to_string_pretty(&stub_sarif)?)?;
 
+    // JSON output mode
+    if std::env::var("BAZBOM_JSON_MODE").is_ok() {
+        let json_output = serde_json::json!({
+            "scan_time": chrono::Utc::now().to_rfc3339(),
+            "path": path,
+            "build_system": format!("{:?}", system),
+            "reachability_enabled": reachability,
+            "format": format,
+            "output_dir": out_dir,
+            "status": "success",
+            "sbom_generated": true,
+            "sarif_generated": true
+        });
+        println!("{}", serde_json::to_string_pretty(&json_output)?);
+    }
+
     Ok(())
 }
