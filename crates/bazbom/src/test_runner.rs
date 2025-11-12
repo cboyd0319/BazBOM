@@ -3,6 +3,7 @@
 
 use anyhow::{Context, Result};
 use bazbom_core::BuildSystem;
+use bazbom_depsdev::System;
 use std::path::Path;
 use std::process::{Command, Output};
 use std::time::{Duration, Instant};
@@ -25,6 +26,35 @@ pub fn run_tests(build_system: BuildSystem, project_root: &Path) -> Result<TestR
         BuildSystem::Gradle => run_gradle_tests(project_root)?,
         BuildSystem::Bazel => run_bazel_tests(project_root)?,
         _ => anyhow::bail!("Test execution not supported for {:?}", build_system),
+    };
+
+    let duration = start.elapsed();
+    let exit_code = output.status.code().unwrap_or(-1);
+    let success = output.status.success();
+
+    let output_text = String::from_utf8_lossy(&output.stdout).to_string()
+        + String::from_utf8_lossy(&output.stderr).as_ref();
+
+    Ok(TestResult {
+        success,
+        output: output_text,
+        duration,
+        exit_code,
+    })
+}
+
+/// Run tests for polyglot ecosystems (npm, Python, Go, Rust, etc.)
+pub fn run_tests_for_ecosystem(system: System, project_root: &Path) -> Result<TestResult> {
+    let start = Instant::now();
+
+    let output = match system {
+        System::Maven => run_maven_tests(project_root)?,
+        System::Npm => run_npm_tests(project_root)?,
+        System::PyPI => run_python_tests(project_root)?,
+        System::Go => run_go_tests(project_root)?,
+        System::Cargo => run_rust_tests(project_root)?,
+        System::RubyGems => run_ruby_tests(project_root)?,
+        System::NuGet => run_php_tests(project_root)?, // Placeholder for PHP
     };
 
     let duration = start.elapsed();
@@ -79,6 +109,97 @@ fn run_bazel_tests(project_root: &Path) -> Result<Output> {
         .current_dir(project_root)
         .output()
         .context("Failed to execute Bazel tests")
+}
+
+fn run_npm_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running npm tests...");
+
+    Command::new("npm")
+        .arg("test")
+        .current_dir(project_root)
+        .output()
+        .context("Failed to execute npm tests")
+}
+
+fn run_python_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running Python tests...");
+
+    // Try pytest first (most common)
+    let pytest_result = Command::new("pytest")
+        .current_dir(project_root)
+        .output();
+
+    if let Ok(output) = pytest_result {
+        Ok(output)
+    } else {
+        // Fall back to unittest
+        Command::new("python")
+            .args(["-m", "unittest", "discover"])
+            .current_dir(project_root)
+            .output()
+            .context("Failed to execute Python tests")
+    }
+}
+
+fn run_go_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running Go tests...");
+
+    Command::new("go")
+        .args(["test", "./..."])
+        .current_dir(project_root)
+        .output()
+        .context("Failed to execute Go tests")
+}
+
+fn run_rust_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running Rust tests...");
+
+    Command::new("cargo")
+        .arg("test")
+        .current_dir(project_root)
+        .output()
+        .context("Failed to execute Rust tests")
+}
+
+fn run_ruby_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running Ruby tests...");
+
+    // Try RSpec first
+    let rspec_result = Command::new("bundle")
+        .args(["exec", "rspec"])
+        .current_dir(project_root)
+        .output();
+
+    if let Ok(output) = rspec_result {
+        Ok(output)
+    } else {
+        // Fall back to rake test
+        Command::new("bundle")
+            .args(["exec", "rake", "test"])
+            .current_dir(project_root)
+            .output()
+            .context("Failed to execute Ruby tests")
+    }
+}
+
+fn run_php_tests(project_root: &Path) -> Result<Output> {
+    println!("[bazbom] Running PHP tests...");
+
+    // Try vendor/bin/phpunit first
+    let phpunit_vendor = project_root.join("vendor/bin/phpunit");
+
+    if phpunit_vendor.exists() {
+        Command::new(&phpunit_vendor)
+            .current_dir(project_root)
+            .output()
+            .context("Failed to execute PHPUnit tests")
+    } else {
+        // Try global phpunit
+        Command::new("phpunit")
+            .current_dir(project_root)
+            .output()
+            .context("Failed to execute PHPUnit tests")
+    }
 }
 
 /// Check if tests are available for the build system
