@@ -10,7 +10,6 @@ use anyhow::{Context, Result};
 use colored::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -785,19 +784,98 @@ async fn enrich_vulnerabilities(vulns: &mut [VulnerabilityInfo]) -> Result<()> {
 
 /// Load EPSS scores (stub - TODO: implement real API integration with ureq 3.x)
 async fn load_epss_data() -> Result<HashMap<String, (f64, f64)>> {
-    // TODO: Implement real EPSS API integration
-    // Current issue: ureq 3.x has different API than ureq 2.x used in bazbom-advisories
-    // Need to either: (1) use ureq 2.x, (2) use reqwest, or (3) figure out ureq 3.x API
-    // For now, return empty map - P0-P4 scoring will still work based on CVSS + KEV
-    Ok(HashMap::new())
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct EpssResponse {
+        data: Vec<EpssEntry>,
+    }
+
+    #[derive(Deserialize)]
+    struct EpssEntry {
+        cve: String,
+        epss: String,
+        percentile: String,
+    }
+
+    let mut epss_map = HashMap::new();
+
+    // EPSS API endpoint (FIRST.org)
+    let url = "https://api.first.org/data/v1/epss?scope=time-series&days=1";
+
+    match ureq::get(url).call() {
+        Ok(response) => {
+            if let Ok(body) = response.into_body().read_to_string() {
+                if let Ok(epss_data) = serde_json::from_str::<EpssResponse>(&body) {
+                    for entry in epss_data.data {
+                        if let (Ok(epss), Ok(percentile)) = (
+                            entry.epss.parse::<f64>(),
+                            entry.percentile.parse::<f64>(),
+                        ) {
+                            epss_map.insert(entry.cve, (epss, percentile));
+                        }
+                    }
+                    println!("[bazbom] Loaded EPSS data for {} CVEs", epss_map.len());
+                } else {
+                    eprintln!("[bazbom] Warning: Failed to parse EPSS API response");
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("[bazbom] Warning: Failed to fetch EPSS data: {}", e);
+        }
+    }
+
+    Ok(epss_map)
 }
 
-/// Load CISA KEV data (stub - TODO: implement real API integration with ureq 3.x)
+/// Load CISA KEV data from official feed
 async fn load_kev_data() -> Result<HashMap<String, String>> {
-    // TODO: Implement real CISA KEV API integration
-    // Same ureq 3.x API issue as EPSS
-    // For now, return empty map - P0-P4 scoring will still work based on CVSS + EPSS
-    Ok(HashMap::new())
+    use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct KevFeed {
+        vulnerabilities: Vec<KevEntry>,
+    }
+
+    #[derive(Deserialize)]
+    #[allow(dead_code)]
+    struct KevEntry {
+        #[serde(rename = "cveID")]
+        cve_id: String,
+        #[serde(rename = "vendorProject")]
+        vendor_project: String,
+        product: String,
+        #[serde(rename = "vulnerabilityName")]
+        vulnerability_name: String,
+        #[serde(rename = "dateAdded")]
+        date_added: String,
+    }
+
+    let mut kev_map = HashMap::new();
+
+    // CISA KEV feed URL
+    let url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json";
+
+    match ureq::get(url).call() {
+        Ok(response) => {
+            if let Ok(body) = response.into_body().read_to_string() {
+                if let Ok(kev_data) = serde_json::from_str::<KevFeed>(&body) {
+                    for entry in kev_data.vulnerabilities {
+                        kev_map.insert(entry.cve_id, entry.date_added);
+                    }
+                    println!("[bazbom] Loaded CISA KEV data for {} CVEs", kev_map.len());
+                } else {
+                    eprintln!("[bazbom] Warning: Failed to parse KEV feed");
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("[bazbom] Warning: Failed to fetch KEV data: {}", e);
+        }
+    }
+
+    Ok(kev_map)
 }
 
 /// Calculate priority level (P0-P4)
