@@ -463,7 +463,7 @@ Multi-phase progress for complex scans with real-time updates.
 - ✅ **Clickable CVE Links** (OSC 8 hyperlinks)
 
 ### **Advanced Features**
-- **Container Scanning** (Layer attribution + comparison)
+- **Container Scanning** (Layer attribution, EPSS enrichment, KEV detection, P0-P4 scoring, quick wins)
 - **ML Risk Scoring** (EPSS-based prioritization)
 - **LLM Fix Generation** (Ollama/Claude/GPT)
 - **Team Assignment** (CVE ownership tracking)
@@ -508,13 +508,41 @@ bazbom explain CVE-XXXX   # Deep CVE analysis
 
 ### Container Security
 ```bash
-bazbom container-scan <image>                    # Full container analysis
-bazbom container-scan <image> --baseline         # Save as baseline
-bazbom container-scan <image> --compare-baseline # Compare with baseline
-bazbom container-scan <image> --compare <other>  # Compare two images
-bazbom container-scan <image> --interactive      # Interactive TUI
-bazbom container-scan <image> --show p0          # Critical vulns only
+# Basic Scanning
+bazbom container-scan <image>                    # Full container analysis with layer attribution
+bazbom container-scan <image> -o ./output        # Custom output directory
+
+# Filtering & Focus
+bazbom container-scan <image> --show p0          # P0 (urgent) vulnerabilities only
+bazbom container-scan <image> --show p1          # P1 (high priority) vulnerabilities
+bazbom container-scan <image> --show kev         # CISA Known Exploited Vulnerabilities only
+bazbom container-scan <image> --show quick-wins  # Easy fixes (non-breaking patches)
+bazbom container-scan <image> --show fixable     # Only vulnerabilities with patches
+bazbom container-scan <image> --show critical    # Critical severity only
+
+# Comparison & Tracking
+bazbom container-scan <image> --baseline         # Save as baseline for tracking
+bazbom container-scan <image> --compare-baseline # Compare with baseline (shows improvements)
+bazbom container-scan <image> --compare <other>  # Side-by-side image comparison
+
+# Integrations & Reports
+bazbom container-scan <image> --interactive      # Interactive TUI explorer
+bazbom container-scan <image> --report out.html  # Executive report (HTML)
+bazbom container-scan <image> --create-issues owner/repo  # Create GitHub issues for P0/P1
+bazbom container-scan <image> --format sarif     # SARIF output for CI/CD
 ```
+
+**Unique Features:**
+- **Layer Attribution** - Maps vulnerabilities to exact Docker layers
+- **EPSS Enrichment** - Exploit Prediction Scoring System integration
+- **KEV Detection** - CISA Known Exploited Vulnerabilities tracking
+- **P0-P4 Scoring** - Smart prioritization (severity + EPSS + KEV)
+- **Quick Wins Analysis** - Identifies easy, high-impact fixes
+- **Breaking Change Detection** - Warns about major version upgrades
+- **Effort Estimation** - Calculates remediation time
+- **Copy-Paste Fixes** - Ready-to-use Maven/Gradle updates
+
+[Full Documentation](docs/features/container-scanning.md)
 
 ### Policy & Compliance
 ```bash

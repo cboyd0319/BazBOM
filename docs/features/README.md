@@ -28,6 +28,15 @@ This directory contains documentation for all the UX features introduced in v6.5
 - **[Compare Command](compare-command.md)** - Branch security comparison
 - **[Watch Mode](watch-mode.md)** - Continuous monitoring
 
+### Container Security (Advanced)
+- **[Container Scanning Guide](container-scanning.md)** - Complete container security analysis
+- Layer attribution (maps vulnerabilities to Docker layers)
+- EPSS enrichment & CISA KEV detection
+- P0-P4 intelligent prioritization
+- Quick wins analysis & breaking change detection
+- Baseline comparison & image comparison
+- GitHub integration & executive reports
+
 ### CI/CD Integration
 - **[CI Templates](ci-templates.md)** - One-command CI setup
 - Supports GitHub Actions, GitLab CI, CircleCI, Jenkins, Travis
@@ -92,6 +101,8 @@ bazbom watch --critical-only
 | Security Status | `bazbom status` | Current security score |
 | Branch Compare | `bazbom compare main feature` | Security delta |
 | Watch Mode | `bazbom watch` | Auto-rescan on changes |
+| Container Scan | `bazbom container-scan <image>` | Layer attribution + intelligence |
+| Container Filter | `bazbom container-scan <image> --show p0` | P0 vulnerabilities only |
 | CI Setup | `bazbom install github` | GitHub Actions workflow |
 
 ## Documentation Index
@@ -101,6 +112,7 @@ bazbom watch --critical-only
 - [Status Command](status-command.md)
 - [Compare Command](compare-command.md)
 - [Watch Mode](watch-mode.md)
+- [Container Scanning](container-scanning.md) ⭐ NEW
 - [CI Templates](ci-templates.md)
 - [Beautiful Output](beautiful-output.md)
 
