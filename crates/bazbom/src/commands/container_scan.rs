@@ -99,6 +99,78 @@ struct ActionItem {
     epss: f64,
 }
 
+/// Package ecosystem for language-specific remediation
+#[derive(Debug, Clone, PartialEq)]
+enum PackageEcosystem {
+    Java,
+    Python,
+    JavaScript,
+    Go,
+    Rust,
+    Ruby,
+    PHP,
+    Other,
+}
+
+/// Detect package ecosystem from package name and patterns
+fn detect_ecosystem(package_name: &str) -> PackageEcosystem {
+    // Java: Maven coordinates (org.group:artifact) or Java package names
+    if package_name.contains(':') ||
+       (package_name.contains('.') && (
+           package_name.starts_with("org.") ||
+           package_name.starts_with("com.") ||
+           package_name.starts_with("io.") ||
+           package_name.starts_with("net.")
+       )) {
+        return PackageEcosystem::Java;
+    }
+
+    // Python: Typically lowercase with hyphens/underscores
+    if package_name.chars().all(|c| c.is_lowercase() || c == '-' || c == '_' || c.is_numeric()) {
+        if package_name.starts_with("python-") ||
+           ["django", "flask", "requests", "numpy", "pandas", "pillow", "cryptography"].iter().any(|&p| package_name.starts_with(p)) {
+            return PackageEcosystem::Python;
+        }
+    }
+
+    // JavaScript/Node: Scoped packages (@org/pkg) or common npm patterns
+    if package_name.starts_with('@') && package_name.contains('/') {
+        return PackageEcosystem::JavaScript;
+    }
+    if ["react", "vue", "angular", "express", "lodash", "webpack", "typescript"].iter().any(|&p| package_name.starts_with(p)) {
+        return PackageEcosystem::JavaScript;
+    }
+
+    // Go: Module paths (github.com/org/repo)
+    if package_name.starts_with("github.com/") ||
+       package_name.starts_with("golang.org/") ||
+       package_name.starts_with("go.uber.org/") {
+        return PackageEcosystem::Go;
+    }
+
+    // Rust: Crate names (simple identifiers, often with hyphens)
+    if package_name.contains('-') && !package_name.contains('/') && !package_name.contains(':') {
+        // Common Rust crates
+        if ["tokio", "serde", "actix", "hyper", "reqwest", "clap"].iter().any(|&p| package_name.starts_with(p)) {
+            return PackageEcosystem::Rust;
+        }
+    }
+
+    // Ruby: Gem names (simple lowercase with hyphens)
+    if ["rails", "rake", "bundler", "sinatra", "puma"].iter().any(|&p| package_name.starts_with(p)) {
+        return PackageEcosystem::Ruby;
+    }
+
+    // PHP: Composer packages (vendor/package format)
+    if package_name.matches('/').count() == 1 && !package_name.starts_with('@') {
+        if ["symfony/", "laravel/", "guzzlehttp/", "phpunit/"].iter().any(|&p| package_name.starts_with(p)) {
+            return PackageEcosystem::PHP;
+        }
+    }
+
+    PackageEcosystem::Other
+}
+
 /// Main container scan command handler
 pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     println!();
@@ -452,6 +524,95 @@ fn parse_docker_size(size_str: &str) -> u64 {
 }
 
 /// Analyze upgrade impact for breaking changes
+/// Framework-specific migration guide knowledge
+fn get_framework_migration_guide(package: &str, current_major: u32, fixed_major: u32) -> Option<String> {
+    // Spring Boot major version migrations
+    if package.starts_with("org.springframework.boot") || package.contains("spring-boot") {
+        return match (current_major, fixed_major) {
+            (2, 3) => Some("Spring Boot 2→3 requires Java 17+. Migration guide: https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-3.0-Migration-Guide".to_string()),
+            (1, 2) => Some("Spring Boot 1→2 has significant changes. Guide: https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-2.0-Migration-Guide".to_string()),
+            _ => None,
+        };
+    }
+
+    // Django major versions
+    if package == "django" || package.starts_with("Django") {
+        return match (current_major, fixed_major) {
+            (4, 5) => Some("Django 4→5 removes deprecated features. Guide: https://docs.djangoproject.com/en/5.0/howto/upgrade-version/".to_string()),
+            (3, 4) => Some("Django 3→4 removes deprecated features. Guide: https://docs.djangoproject.com/en/4.0/howto/upgrade-version/".to_string()),
+            (2, 3) => Some("Django 2→3 drops Python 2 support. Requires Python 3.6+".to_string()),
+            _ => None,
+        };
+    }
+
+    // Rails
+    if package == "rails" || package.starts_with("rails") {
+        return match (current_major, fixed_major) {
+            (6, 7) => Some("Rails 6→7 requires Ruby 2.7+. Guide: https://guides.rubyonrails.org/upgrading_ruby_on_rails.html".to_string()),
+            (5, 6) => Some("Rails 5→6 requires Ruby 2.5+. Guide: https://guides.rubyonrails.org/upgrading_ruby_on_rails.html".to_string()),
+            _ => None,
+        };
+    }
+
+    // React
+    if package == "react" {
+        return match (current_major, fixed_major) {
+            (17, 18) => Some("React 17→18 introduces concurrent features. May need createRoot() migration".to_string()),
+            (16, 17) => Some("React 16→17 is a stepping stone release. Minimal breaking changes".to_string()),
+            _ => None,
+        };
+    }
+
+    // Vue
+    if package == "vue" || package.starts_with("@vue/") {
+        return match (current_major, fixed_major) {
+            (2, 3) => Some("Vue 2→3 has major API changes. Migration guide: https://v3-migration.vuejs.org/".to_string()),
+            _ => None,
+        };
+    }
+
+    // Angular
+    if package.starts_with("@angular/") {
+        return match (current_major, fixed_major) {
+            (v1, v2) if v2 > v1 => Some(format!("Angular {}→{} migration guide: https://update.angular.io/", v1, v2)),
+            _ => None,
+        };
+    }
+
+    // Express
+    if package == "express" {
+        return match (current_major, fixed_major) {
+            (4, 5) => Some("Express 4→5 has breaking changes in middleware and routing".to_string()),
+            _ => None,
+        };
+    }
+
+    // Go modules
+    if package.starts_with("github.com/") || package.starts_with("golang.org/") {
+        if fixed_major >= 2 && fixed_major > current_major {
+            return Some(format!("Go module major version {}→{}. Update import paths to include /v{}", current_major, fixed_major, fixed_major));
+        }
+    }
+
+    None
+}
+
+/// Get ecosystem-specific version semantics explanation
+fn get_ecosystem_version_semantics(package: &str) -> Option<&'static str> {
+    let ecosystem = detect_ecosystem(package);
+
+    match ecosystem {
+        PackageEcosystem::Python => Some("Python packages don't always follow semver strictly. Check changelog carefully."),
+        PackageEcosystem::JavaScript => Some("npm packages follow semver. Major = breaking changes."),
+        PackageEcosystem::Go => Some("Go modules use v2+ for breaking changes (import path changes)."),
+        PackageEcosystem::Rust => Some("Rust crates follow semver. Pre-1.0 allows breaking changes in minor versions."),
+        PackageEcosystem::Ruby => Some("Ruby gems generally follow semver for version 1.0+."),
+        PackageEcosystem::PHP => Some("PHP/Composer packages typically follow semver."),
+        PackageEcosystem::Java => Some("Java packages typically follow semver. Check for API deprecations."),
+        PackageEcosystem::Other => None,
+    }
+}
+
 fn analyze_upgrade_impact(current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
     // Parse semver versions
     let current_parts: Vec<&str> = current.split('.').collect();
@@ -468,15 +629,82 @@ fn analyze_upgrade_impact(current: &str, fixed: &str) -> (Option<bool>, Option<S
     if let (Some(cur), Some(fix)) = (current_major, fixed_major) {
         if fix > cur {
             // Major version bump - likely breaking
-            return (
-                Some(true),
-                Some(format!("Major version upgrade {}→{} may require code changes", cur, fix)),
-            );
+            let base_msg = format!("Major version upgrade {}→{} may require code changes", cur, fix);
+            return (Some(true), Some(base_msg));
         } else if fix == cur && fixed_parts.len() > 1 && current_parts.len() > 1 {
             // Minor version change
             let current_minor = current_parts[1].parse::<u32>().ok();
             let fixed_minor = fixed_parts[1].parse::<u32>().ok();
             if let (Some(cur_min), Some(fix_min)) = (current_minor, fixed_minor) {
+                if fix_min > cur_min + 5 {
+                    return (
+                        Some(false),
+                        Some(format!("Minor version jump {}.{}→{}.{} - review changelog", cur, cur_min, fix, fix_min)),
+                    );
+                }
+            }
+            return (Some(false), Some("Patch update - low risk".to_string()));
+        }
+    }
+
+    (None, None)
+}
+
+/// Enhanced upgrade impact analysis with framework-specific knowledge
+fn analyze_upgrade_impact_with_package(package: &str, current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
+    let current_parts: Vec<&str> = current.split('.').collect();
+    let fixed_parts: Vec<&str> = fixed.split('.').collect();
+
+    if current_parts.is_empty() || fixed_parts.is_empty() {
+        return (None, None);
+    }
+
+    let current_major = current_parts[0].parse::<u32>().ok();
+    let fixed_major = fixed_parts[0].parse::<u32>().ok();
+    let ecosystem = detect_ecosystem(package);
+
+    if let (Some(cur), Some(fix)) = (current_major, fixed_major) {
+        if fix > cur {
+            // Check for framework-specific migration guides
+            if let Some(guide) = get_framework_migration_guide(package, cur, fix) {
+                return (Some(true), Some(guide));
+            }
+
+            // Special case: Pre-1.0 Rust crates
+            if ecosystem == PackageEcosystem::Rust && cur == 0 {
+                return (
+                    Some(true),
+                    Some(format!("Pre-1.0 Rust crate: {}→{} may have breaking changes in minor versions", current, fixed))
+                );
+            }
+
+            // Special case: Go v2+ module versioning
+            if ecosystem == PackageEcosystem::Go && fix >= 2 {
+                return (
+                    Some(true),
+                    Some(format!("Go module major version {}→{}. Update import paths to /v{}", cur, fix, fix))
+                );
+            }
+
+            // Generic major version upgrade with ecosystem context
+            let mut msg = format!("Major version upgrade {}→{} may require code changes", cur, fix);
+            if let Some(semantics) = get_ecosystem_version_semantics(package) {
+                msg.push_str(&format!(". {}", semantics));
+            }
+            return (Some(true), Some(msg));
+        } else if fix == cur && fixed_parts.len() > 1 && current_parts.len() > 1 {
+            // Minor version change
+            let current_minor = current_parts[1].parse::<u32>().ok();
+            let fixed_minor = fixed_parts[1].parse::<u32>().ok();
+            if let (Some(cur_min), Some(fix_min)) = (current_minor, fixed_minor) {
+                // Special handling for pre-1.0 Rust crates where minor = breaking
+                if ecosystem == PackageEcosystem::Rust && cur == 0 && fix_min > cur_min {
+                    return (
+                        Some(true),
+                        Some(format!("Pre-1.0 Rust: 0.{}→0.{} may contain breaking changes", cur_min, fix_min))
+                    );
+                }
+
                 if fix_min > cur_min + 5 {
                     return (
                         Some(false),
@@ -676,18 +904,19 @@ async fn analyze_layer_attribution(
                         }
                     }
 
-                    // Detect breaking changes for Java artifacts
+                    // Detect breaking changes with framework-specific analysis
+                    let package_name = vuln["PkgName"].as_str().unwrap_or("unknown");
                     let installed = vuln["InstalledVersion"].as_str().unwrap_or("unknown");
                     let fixed = vuln["FixedVersion"].as_str();
                     let (breaking_change, upgrade_path) = if let Some(fix_ver) = fixed {
-                        analyze_upgrade_impact(installed, fix_ver)
+                        analyze_upgrade_impact_with_package(package_name, installed, fix_ver)
                     } else {
                         (None, None)
                     };
 
                     all_vulnerabilities.push(VulnerabilityInfo {
                         cve_id: cve_id.clone(),
-                        package_name: vuln["PkgName"].as_str().unwrap_or("unknown").to_string(),
+                        package_name: package_name.to_string(),
                         installed_version: installed.to_string(),
                         fixed_version: fixed.map(String::from),
                         severity: severity.clone(),
@@ -1257,25 +1486,45 @@ fn display_action_plan(results: &ContainerScanResults) -> Result<()> {
 
 /// Display copy-paste remediation commands
 fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
-    // Find top 2 fixable Java vulnerabilities
+    // Collect fixes by ecosystem
     let mut java_fixes = Vec::new();
+    let mut python_fixes = Vec::new();
+    let mut js_fixes = Vec::new();
+    let mut go_fixes = Vec::new();
+    let mut rust_fixes = Vec::new();
+    let mut ruby_fixes = Vec::new();
+    let mut php_fixes = Vec::new();
 
     for layer in &results.layers {
         for vuln in &layer.vulnerabilities {
             if let Some(ref fixed) = vuln.fixed_version {
-                if vuln.package_name.contains(':') || vuln.package_name.contains('.') {
-                    // Looks like a Java package
-                    java_fixes.push((vuln.package_name.clone(), vuln.installed_version.clone(), fixed.clone()));
+                let ecosystem = detect_ecosystem(&vuln.package_name);
+                let fix_tuple = (
+                    vuln.package_name.clone(),
+                    vuln.installed_version.clone(),
+                    fixed.clone(),
+                    vuln.severity.clone(),
+                );
+
+                match ecosystem {
+                    PackageEcosystem::Java => java_fixes.push(fix_tuple),
+                    PackageEcosystem::Python => python_fixes.push(fix_tuple),
+                    PackageEcosystem::JavaScript => js_fixes.push(fix_tuple),
+                    PackageEcosystem::Go => go_fixes.push(fix_tuple),
+                    PackageEcosystem::Rust => rust_fixes.push(fix_tuple),
+                    PackageEcosystem::Ruby => ruby_fixes.push(fix_tuple),
+                    PackageEcosystem::PHP => php_fixes.push(fix_tuple),
+                    PackageEcosystem::Other => {}
                 }
             }
         }
     }
 
-    if java_fixes.is_empty() {
+    // If no fixes available, skip
+    if java_fixes.is_empty() && python_fixes.is_empty() && js_fixes.is_empty() &&
+       go_fixes.is_empty() && rust_fixes.is_empty() && ruby_fixes.is_empty() && php_fixes.is_empty() {
         return Ok(());
     }
-
-    java_fixes.truncate(2);
 
     println!();
     println!("{}", "━".repeat(67).bright_magenta());
@@ -1283,35 +1532,163 @@ fn display_remediation_commands(results: &ContainerScanResults) -> Result<()> {
     println!("{}", "━".repeat(67).bright_magenta());
     println!();
 
-    for (package, _current, fixed) in java_fixes {
-        // Parse Maven coordinates
-        let parts: Vec<&str> = package.split(':').collect();
-        let (group_id, artifact_id) = if parts.len() >= 2 {
-            (parts[0], parts[1])
-        } else {
-            (package.as_str(), package.as_str())
-        };
+    // Display Java fixes
+    if !java_fixes.is_empty() {
+        java_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in java_fixes {
+            let parts: Vec<&str> = package.split(':').collect();
+            let (group_id, artifact_id) = if parts.len() >= 2 {
+                (parts[0], parts[1])
+            } else {
+                (package.as_str(), package.as_str())
+            };
 
-        println!("  Package: {}", package.bright_cyan().bold());
-        println!();
-        println!("  {}", "Maven (pom.xml):".bright_white().bold());
-        println!("  {}", "```xml".dimmed());
-        println!("  <dependency>");
-        println!("    <groupId>{}</groupId>", group_id.bright_white());
-        println!("    <artifactId>{}</artifactId>", artifact_id.bright_white());
-        println!("    <version>{}</version>", fixed.green().bold());
-        println!("  </dependency>");
-        println!("  {}", "```".dimmed());
-        println!();
-        println!("  {}", "Gradle (build.gradle):".bright_white().bold());
-        println!("  {}", "```groovy".dimmed());
-        println!("  implementation '{}:{}:{}'",
-            group_id.bright_white(),
-            artifact_id.bright_white(),
-            fixed.green().bold()
-        );
-        println!("  {}", "```".dimmed());
-        println!();
+            println!("  {} Package: {}", "☕".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "Maven (pom.xml):".bright_white().bold());
+            println!("  {}", "```xml".dimmed());
+            println!("  <dependency>");
+            println!("    <groupId>{}</groupId>", group_id.bright_white());
+            println!("    <artifactId>{}</artifactId>", artifact_id.bright_white());
+            println!("    <version>{}</version>", fixed.green().bold());
+            println!("  </dependency>");
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Gradle (build.gradle):".bright_white().bold());
+            println!("  {}", "```groovy".dimmed());
+            println!("  implementation '{}:{}:{}'", group_id.bright_white(), artifact_id.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display Python fixes
+    if !python_fixes.is_empty() {
+        python_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in python_fixes {
+            println!("  {} Package: {}", "🐍".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "requirements.txt:".bright_white().bold());
+            println!("  {}", "```".dimmed());
+            println!("  {}=={}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "pyproject.toml (Poetry):".bright_white().bold());
+            println!("  {}", "```toml".dimmed());
+            println!("  {} = \"^{}\"", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Pipfile:".bright_white().bold());
+            println!("  {}", "```toml".dimmed());
+            println!("  {} = \"=={}\"", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display JavaScript/Node fixes
+    if !js_fixes.is_empty() {
+        js_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in js_fixes {
+            println!("  {} Package: {}", "📦".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "package.json:".bright_white().bold());
+            println!("  {}", "```json".dimmed());
+            println!("  \"dependencies\": {{");
+            println!("    \"{}\": \"^{}\"", package.bright_white(), fixed.green().bold());
+            println!("  }}");
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "npm:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  npm install {}@{}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "yarn:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  yarn add {}@{}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display Go fixes
+    if !go_fixes.is_empty() {
+        go_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in go_fixes {
+            println!("  {} Package: {}", "🐹".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "go.mod:".bright_white().bold());
+            println!("  {}", "```".dimmed());
+            println!("  require {} {}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Command:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  go get {}@{}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display Rust fixes
+    if !rust_fixes.is_empty() {
+        rust_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in rust_fixes {
+            println!("  {} Package: {}", "🦀".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "Cargo.toml:".bright_white().bold());
+            println!("  {}", "```toml".dimmed());
+            println!("  [dependencies]");
+            println!("  {} = \"{}\"", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Command:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  cargo add {}@{}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display Ruby fixes
+    if !ruby_fixes.is_empty() {
+        ruby_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in ruby_fixes {
+            println!("  {} Package: {}", "💎".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "Gemfile:".bright_white().bold());
+            println!("  {}", "```ruby".dimmed());
+            println!("  gem '{}', '{}'", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Command:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  bundle update {}", package.bright_white());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
+    }
+
+    // Display PHP fixes
+    if !php_fixes.is_empty() {
+        php_fixes.truncate(2);
+        for (package, _current, fixed, _severity) in php_fixes {
+            println!("  {} Package: {}", "🐘".bright_yellow(), package.bright_cyan().bold());
+            println!();
+            println!("  {}", "composer.json:".bright_white().bold());
+            println!("  {}", "```json".dimmed());
+            println!("  \"require\": {{");
+            println!("    \"{}\": \"^{}\"", package.bright_white(), fixed.green().bold());
+            println!("  }}");
+            println!("  {}", "```".dimmed());
+            println!();
+            println!("  {}", "Command:".bright_white().bold());
+            println!("  {}", "```bash".dimmed());
+            println!("  composer require {}:{}", package.bright_white(), fixed.green().bold());
+            println!("  {}", "```".dimmed());
+            println!();
+        }
     }
 
     Ok(())
