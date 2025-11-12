@@ -4,36 +4,150 @@
 
 # BazBOM
 
-### Build-time SBOM & SCA for Bazel, JVM, and Polyglot Monorepos
-
-Security for developers, not security engineers • 100% Rust • Zero telemetry • Actually works with Bazel
+**Find vulnerabilities that actually matter - cut alert noise by 70-90%**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![Tests](https://img.shields.io/badge/tests-360%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 
-[Install](#installation) •
-[Quick Start](#quick-start) •
-[Documentation](docs/README.md) •
-[Examples](docs/examples/README.md)
+[Install](#installation) • [Quick Start](#quick-start) • [Documentation](docs/README.md)
 
 </div>
 
 ---
 
-## 🎉 **v6.5.0 - The Developer Experience Release** ✅
+## What is BazBOM?
 
-> **The most comprehensive UX overhaul in BazBOM's history**
->
-> - ✅ **20 new UX features** - Quick commands, smart defaults, beautiful output, TUI graph viz
-> - ✅ **Full reachability integration** - 7 languages, 70-90% noise reduction, container call graph analysis
-> - ✅ **Zero-config workflows** - `bazbom check`, `bazbom ci`, `bazbom pr`, auto-detect main module
-> - ✅ **Exploit intelligence** - EPSS/KEV integration, POC links, difficulty scoring
-> - ✅ **Universal auto-fix** - 9 package managers (Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel)
-> - 🦀 **30 crates** • **267 tests** • **18MB binary** • **Homebrew ready**
+BazBOM is a **developer-friendly security scanner** that uses reachability analysis to show which vulnerabilities are actually exploitable - not every CVE in every transitive dependency. It works natively with Bazel monorepos, speaks plain English instead of CVE jargon, and cuts false positives by 70-90%.
 
-[🚀 What's New](#whats-new-in-v65) | [📚 Full Changelog](CHANGELOG.md)
+**Stop drowning in alerts.** Traditional scanners report 237 vulnerabilities. BazBOM tells you the 28 that actually matter.
+
+## Key Features
+
+- **🎯 Reachability Analysis** - AST-based call graph analysis for 7 languages (Java, Rust, Go, JS/TS, Python, Ruby, PHP) cuts noise by 70-90% • [Learn more →](docs/reachability/README.md)
+- **🏗️ Bazel Native** - The only tool that natively understands Bazel's dependency model • Works with Maven/Gradle too • [Bazel guide →](docs/BAZEL.md)
+- **🗣️ Plain English** - "Hackers are using this right now" instead of "EPSS threshold exceeded" • Actionable fix suggestions
+- **⚡ Zero Config** - `bazbom check` auto-detects your stack and runs in <10 seconds • Quick commands for every workflow
+- **🔧 Universal Auto-Fix** - One command to upgrade dependencies across 9 package managers (Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel) • [Usage guide →](docs/USAGE.md)
+- **🐳 Container Scanning** - Layer attribution, EPSS/KEV enrichment, P0-P4 scoring, multi-language remediation • [Container guide →](docs/features/container-scanning.md)
+- **📊 Developer UX** - TUI explorer, beautiful terminal output, progress bars, smart suggestions • [See examples →](docs/examples/README.md)
+
+[See all features →](docs/CAPABILITY_MATRIX.md) | [Compare with alternatives →](#comparison-with-alternatives)
+
+---
+
+## Installation
+
+### Homebrew (macOS/Linux) - Recommended
+```bash
+brew tap cboyd0319/bazbom
+brew install bazbom
+bazbom --version
+```
+
+### Pre-built Binaries
+```bash
+# macOS (Apple Silicon)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-aarch64-apple-darwin.tar.gz
+tar -xzf bazbom-aarch64-apple-darwin.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# macOS (Intel)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz
+tar -xzf bazbom-x86_64-apple-darwin.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Linux (x86_64)
+curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
+tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
+sudo mv bazbom /usr/local/bin/
+
+# Verify installation
+bazbom --version
+```
+
+### From Source (Rust)
+```bash
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release -p bazbom
+sudo cp target/release/bazbom /usr/local/bin/
+```
+
+[More installation options →](docs/getting-started/quickstart.md) (Docker, npm, CI/CD)
+
+---
+
+## 🆕 What's New in v6.5.0
+
+> **The Developer Experience Release** - 20 new UX features, full reachability integration, universal auto-fix
+
+**Highlights:**
+- ✅ **Quick Commands** - `bazbom check`, `bazbom ci`, `bazbom pr` - zero-config workflows
+- ✅ **Full Reachability Integration** - 7 languages, container call graph analysis, 70-90% noise reduction
+- ✅ **Universal Auto-Fix** - 9 package managers with multi-CVE grouping
+- ✅ **Exploit Intelligence** - EPSS/KEV integration, POC links, difficulty scoring
+- ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
+
+🦀 **30 crates** • **267 tests** • **18MB binary** • **Homebrew ready**
+
+[📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
+
+---
+
+## Quick Start
+
+### 1. Zero-config quick scan
+```bash
+# Just run this in any project directory:
+bazbom check
+
+# Auto-detects: Maven, Gradle, Bazel, npm, Python, Go, Rust, Ruby, PHP
+# Completes in < 10 seconds
+```
+
+### 2. Add reachability analysis (70-90% noise reduction)
+```bash
+bazbom scan --reachability
+# or the short flag:
+bazbom scan -r
+```
+
+Shows which vulnerabilities are **actually exploitable** vs dead code.
+
+### 3. CI/CD - One command setup
+```bash
+# GitHub Actions
+bazbom install github
+
+# GitLab CI
+bazbom install gitlab
+
+# CircleCI
+bazbom install circleci
+
+# Creates complete workflow with SARIF upload + quality gates
+```
+
+### 4. Continuous monitoring during development
+```bash
+# Watch for dependency changes and auto-rescan
+bazbom watch
+
+# Checks every 60 seconds, rescans on changes
+```
+
+### 5. Check security status anytime
+```bash
+# Quick security overview with score
+bazbom status
+
+# Compare branches
+bazbom compare main feature-branch
+```
+
+[📚 Complete usage guide →](docs/USAGE.md) | [Command reference →](docs/QUICKREF.md)
 
 ---
 
@@ -97,102 +211,7 @@ No CVE jargon unless you want it. Plain English. Actionable steps.
 
 ---
 
-## Installation
-
-### Homebrew (macOS/Linux) - Recommended
-```bash
-brew tap cboyd0319/bazbom
-brew install bazbom
-bazbom --version
-```
-
-### Pre-built Binaries
-```bash
-# macOS (Apple Silicon)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-aarch64-apple-darwin.tar.gz
-tar -xzf bazbom-aarch64-apple-darwin.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# macOS (Intel)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz
-tar -xzf bazbom-x86_64-apple-darwin.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# Linux (x86_64)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# Verify installation
-bazbom --version
-```
-
-### From Source (Rust)
-```bash
-git clone https://github.com/cboyd0319/BazBOM.git
-cd BazBOM
-cargo build --release -p bazbom
-sudo cp target/release/bazbom /usr/local/bin/
-```
-
-See [Installation Guide](docs/getting-started/quickstart.md) for more options including Docker, npm, and CI/CD.
-
----
-
-## Quick Start
-
-### 1. Zero-config quick scan
-```bash
-# Just run this in any project directory:
-bazbom check
-
-# Auto-detects: Maven, Gradle, Bazel, npm, Python, Go, Rust, Ruby, PHP
-# Completes in < 10 seconds
-```
-
-### 2. Add reachability analysis (70-90% noise reduction)
-```bash
-bazbom scan --reachability
-# or the short flag:
-bazbom scan -r
-```
-
-Shows which vulnerabilities are **actually exploitable** vs dead code.
-
-### 3. CI/CD - One command setup
-```bash
-# GitHub Actions
-bazbom install github
-
-# GitLab CI
-bazbom install gitlab
-
-# CircleCI
-bazbom install circleci
-
-# Creates complete workflow with SARIF upload + quality gates
-```
-
-### 4. Continuous monitoring during development
-```bash
-# Watch for dependency changes and auto-rescan
-bazbom watch
-
-# Checks every 60 seconds, rescans on changes
-```
-
-### 5. Check security status anytime
-```bash
-# Quick security overview with score
-bazbom status
-
-# Compare branches
-bazbom compare main feature-branch
-```
-
----
-
-## 🆕 What's New in v6.5
+## 🆕 What's New in v6.5 (Details)
 
 ### Quick Commands & Smart Defaults
 Zero-config workflows that match how you actually work:
