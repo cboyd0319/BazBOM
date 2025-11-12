@@ -321,7 +321,7 @@ if __name__ == "__main__":
         assert!(report.all_functions.len() >= 2, "Should have found at least 2 functions");
 
         // Should have found entrypoints
-        assert!(report.entrypoints.len() > 0, "Should have found __main__ entrypoint");
+        assert!(!report.entrypoints.is_empty(), "Should have found __main__ entrypoint");
     }
 
     #[test]

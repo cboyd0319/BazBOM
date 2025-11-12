@@ -260,11 +260,11 @@ main();
         let report = analyzer.analyze(temp_dir.path()).unwrap();
 
         // Should have found functions
-        assert!(report.all_functions.len() > 0);
+        assert!(!report.all_functions.is_empty());
 
         // main and helper should be reachable
         // unused should NOT be reachable
-        assert!(report.unreachable_functions.len() > 0);
+        assert!(!report.unreachable_functions.is_empty());
     }
 
     #[test]

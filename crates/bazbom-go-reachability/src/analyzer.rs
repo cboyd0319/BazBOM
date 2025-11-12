@@ -271,6 +271,6 @@ func main() {
         let report = analyzer.analyze(temp_dir.path()).unwrap();
 
         assert!(report.all_functions.len() >= 2, "Should have found at least 2 functions");
-        assert!(report.entrypoints.len() > 0, "Should have found main entrypoint");
+        assert!(!report.entrypoints.is_empty(), "Should have found main entrypoint");
     }
 }
