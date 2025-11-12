@@ -7,6 +7,7 @@
 // - suggestions: Suggestion generation logic
 // - apply: Fix application with testing
 // - build_systems: Build system-specific fixers
+// - updaters: Polyglot dependency updaters (npm, Python, Go, Rust, Ruby, PHP)
 // - github: GitHub PR generation
 
 pub mod apply;
@@ -14,6 +15,7 @@ pub mod build_systems;
 pub mod github;
 pub mod suggestions;
 pub mod types;
+pub mod updaters;
 pub mod version;
 
 // Re-export commonly used types and functions
@@ -24,6 +26,7 @@ pub use types::{
     ApplyResult, ApplyResultWithTests, PrConfig, RemediationReport, RemediationSuggestion,
     RemediationSummary,
 };
+pub use updaters::{get_updater, DependencyUpdater};
 pub use version::parse_semantic_version;
 
 use anyhow::Result;
