@@ -29,6 +29,9 @@ pub enum Commands {
         /// Output directory (defaults to current directory)
         #[arg(long, short = 'o', value_name = "DIR", default_value = ".")]
         out_dir: String,
+        /// Output results in JSON format (machine-readable)
+        #[arg(long)]
+        json: bool,
         /// Bazel-specific: query expression to select targets
         #[arg(long, value_name = "QUERY")]
         bazel_targets_query: Option<String>,

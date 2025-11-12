@@ -13,6 +13,7 @@ pub fn handle_scan(
     fast: bool,
     format: String,
     out_dir: String,
+    json: bool,
     bazel_targets_query: Option<String>,
     bazel_targets: Option<Vec<String>>,
     bazel_affected_by_files: Option<Vec<String>>,
@@ -39,6 +40,10 @@ pub fn handle_scan(
     // For now, parameters are accepted but not yet used
     let _ = diff;
     let _ = baseline;
+
+    // TODO: Implement JSON output mode for machine-readable results
+    // For now, parameter is accepted but not yet used
+    let _ = json;
 
     // Check if any orchestration flags are set
     let use_orchestrator = cyclonedx
