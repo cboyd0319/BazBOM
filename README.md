@@ -656,6 +656,146 @@ bazbom container-scan your-app:production
 
 ---
 
+## 🌍 Coming Next: Version 6.2.0 - Full Polyglot Parity
+
+**Making Upgrade Intelligence work for ALL ecosystems, not just Maven.**
+
+Currently, BazBOM's killer features (Upgrade Intelligence and Interactive Fixing) only work for Maven packages. Version 6.2.0 changes that.
+
+### What's Being Added
+
+**Upgrade Intelligence for all 6 ecosystems:**
+```bash
+# npm packages
+bazbom fix express --explain
+
+# Python packages
+bazbom fix django --explain
+
+# Go modules
+bazbom fix github.com/gin-gonic/gin --explain
+
+# Rust crates
+bazbom fix serde --explain
+
+# Ruby gems & PHP packages too!
+```
+
+**Smart ecosystem detection** - No more `--ecosystem` flags. BazBOM auto-detects from package name format.
+
+**Interactive fix for all languages** - `bazbom fix --interactive` now handles npm, PyPI, Go, Rust, Ruby, and PHP packages with automated manifest updates.
+
+### Why This Matters
+
+Right now, if you're in a polyglot monorepo:
+- ❌ Maven dependencies get world-class upgrade intelligence
+- ❌ npm/Python/Go/Rust dependencies get basic "upgrade to X" (no breaking change analysis)
+
+After v6.2.0:
+- ✅ **ALL ecosystems get the same world-class treatment**
+- ✅ Recursive transitive dependency analysis
+- ✅ Breaking change detection from GitHub releases
+- ✅ Automated manifest updates
+- ✅ Test-before-commit workflow
+
+**Timeline:** 2 weeks (December 2025)
+**Read the full plan:** [V6.2.0 Roadmap](docs/V6_2_0_ROADMAP.md)
+
+### The Complete Polyglot Parity Journey
+
+**BazBOM is on a mission: IDENTICAL world-class capabilities for ALL languages.**
+
+| Feature | JVM | JS/TS | Python | Go | Rust | Ruby | PHP |
+|---------|-----|-------|--------|----|------|------|-----|
+| SBOM Generation | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Vulnerability Scanning | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Upgrade Intelligence | ✅ | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 |
+| Interactive Fixing | ✅ | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 | 🚧 v6.2 |
+| **Reachability Analysis** | ✅ | 📅 v6.3 | 📅 v6.4 | 📅 v6.4 | 📅 v6.5 | 📅 v6.5 | 📅 v6.5 |
+
+**Roadmap:**
+- **v6.2.0** (Dec 2025) - Upgrade Intelligence + Interactive Fixing for all ecosystems
+- **v6.3.0** (Jan 2026) - JavaScript/TypeScript reachability analysis
+- **v6.4.0** (Feb 2026) - Python + Go reachability analysis
+- **v6.5.0** (Mar 2026) - Rust + Ruby + PHP reachability → **COMPLETE PARITY ACHIEVED** 🎯
+
+**What "Complete Parity" Means:**
+
+Every vulnerability finding will show:
+- ✅ Is the vulnerable code **actually used** by your application? (Reachability)
+- ✅ What breaks if you upgrade? (Upgrade Intelligence)
+- ✅ One-click fix with automated testing (Interactive Fixing)
+
+**Result:** Reduce alert fatigue by 70-90% and focus on REAL risks, regardless of language.
+
+**Read the full plan:**
+- [V6.2.0 - Upgrade Intelligence](docs/V6_2_0_ROADMAP.md)
+- [V6.3.0 - JavaScript/TypeScript Reachability](docs/V6_3_0_ROADMAP.md)
+- [V6.4.0 - Python + Go Reachability](docs/V6_4_0_ROADMAP.md)
+- [V6.5.0 - Complete Parity](docs/V6_5_0_ROADMAP.md)
+
+---
+
+## 🚀 Coming Later: Version 7.0 - GitHub Marketplace Edition
+
+**BazBOM is going all-in on developer experience and supply chain security.**
+
+We're shipping **BazBOM 7.0** in Q1 2026 with GitHub Actions integration, making supply chain security something developers actually WANT to use.
+
+### What's Coming
+
+#### 🤖 GitHub Actions Integration
+```yaml
+# One line in your workflow = complete supply chain security
+- uses: bazbom-action/scan@v1
+  with:
+    fail-on: critical
+    upload-sarif: true
+```
+
+**Four official actions:**
+- `bazbom-action/scan` - Generate SBOM + vulnerability scan
+- `bazbom-action/verify` - Verify SBOM signatures and attestations
+- `bazbom-action/container-scan` - Scan container images
+- `bazbom-action/policy-check` - Enforce supply chain policies
+
+**Features:**
+- Auto-detect build system (Maven/Gradle/Bazel/npm/Python/Go/Rust)
+- Upload to GitHub Code Scanning (SARIF)
+- Upload to GitHub Dependency Graph (Dependabot integration)
+- PR comments with vulnerability summaries
+- Policy enforcement (fail builds on critical CVEs)
+- Zero-config for 80% of projects
+
+#### 🔒 Supply Chain Excellence
+
+**We're practicing what we preach:**
+- ✅ **ZERO vulnerabilities** in BazBOM itself (no exceptions)
+- ✅ **SLSA Level 3 provenance** for all releases
+- ✅ **Sigstore keyless signing** for all binaries
+- ✅ **Binary attestations** via GitHub Artifact Attestations
+- ✅ **Reproducible builds** (verify before you trust)
+- ✅ **Public build logs** (full transparency)
+
+#### 📊 Developer Joy
+
+**Because security tooling should be helpful, not annoying:**
+- < 5 minutes: First SBOM generated
+- < 10 minutes: Full CI/CD integration
+- < 1 minute: Add to existing project
+- Sensible defaults, zero config for common cases
+- Actionable guidance in plain English (not security jargon)
+
+### The Mission
+
+**Make BazBOM the #1 supply chain security tool developers WANT to use.**
+
+Not because compliance requires it. Not because security teams mandate it. But because it makes your life easier and your software more secure.
+
+**Read the full plan:** [V7 Roadmap](docs/V7_ROADMAP.md) | [V7 Quick Start (30 days)](docs/V7_QUICK_START.md)
+
+---
+
 ## Why Build-Time Analysis Matters
 
 **Post-build scanners miss critical details. BazBOM gets it right.**

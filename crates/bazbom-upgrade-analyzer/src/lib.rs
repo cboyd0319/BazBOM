@@ -6,9 +6,11 @@
 
 pub mod analyzer;
 pub mod breaking_changes;
+pub mod ecosystem_detection;
 pub mod github;
 pub mod models;
 pub mod semver;
 
 pub use analyzer::UpgradeAnalyzer;
+pub use ecosystem_detection::{detect_ecosystem_from_package, detect_ecosystem_with_confidence};
 pub use models::*;

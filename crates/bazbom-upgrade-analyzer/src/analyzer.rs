@@ -1,3 +1,4 @@
+use crate::ecosystem_detection::detect_ecosystem_from_package;
 use crate::github::GitHubAnalyzer;
 use crate::models::*;
 use crate::semver::analyze_semver_risk;
@@ -41,26 +42,29 @@ impl UpgradeAnalyzer {
         from_version: &str,
         to_version: &str,
     ) -> Result<UpgradeAnalysis> {
+        // Auto-detect ecosystem from package name format
+        let system = detect_ecosystem_from_package(package);
+
         info!(
-            "Starting recursive upgrade analysis: {} {} -> {}",
-            package, from_version, to_version
+            "Starting recursive upgrade analysis: {} {} -> {} (ecosystem: {:?})",
+            package, from_version, to_version, system
         );
 
         // 1. Analyze the target package itself
         let direct_analysis = self
-            .analyze_single_package(System::Maven, package, from_version, to_version)
+            .analyze_single_package(system, package, from_version, to_version)
             .await?;
 
         // 2. Get dependency graphs for both versions
         let from_deps = self
             .deps_dev
-            .get_dependencies(System::Maven, package, from_version)
+            .get_dependencies(system, package, from_version)
             .await
             .context("Failed to fetch from_version dependencies")?;
 
         let to_deps = self
             .deps_dev
-            .get_dependencies(System::Maven, package, to_version)
+            .get_dependencies(system, package, to_version)
             .await
             .context("Failed to fetch to_version dependencies")?;
 
