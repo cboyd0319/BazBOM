@@ -1,36 +1,50 @@
 # Container Image Scanning
 
-**Status:** Beta (Available in BazBOM v1.0.0+)
+**Status:** Production (v6.5.0+) - Comprehensive container security analysis with layer attribution, reachability analysis, and exploit intelligence
 
 ---
 
 ## Overview
 
-BazBOM can scan container images (Docker/OCI) for Java dependencies, generating SBOMs and identifying vulnerabilities in containerized applications.
+BazBOM provides comprehensive container security analysis with unique features not found in other tools:
+- **Full call graph reachability analysis** for 6 languages (JS, Python, Go, Rust, Ruby, PHP)
+- **Layer attribution** - Maps vulnerabilities to exact Docker layers
+- **EPSS/KEV enrichment** - Exploit prediction + CISA known exploited vulnerabilities
+- **P0-P4 prioritization** - Smart scoring based on severity + EPSS + KEV
+- **Remediation difficulty scoring** - 0-100 effort estimation
+- **Multi-CVE grouping** - Consolidates related vulnerabilities
+- **Quick wins analysis** - Identifies easy, high-impact fixes
 
 ### Features
 
-- **OCI Image Parsing** - Parse Docker/OCI container images
+- **Polyglot Dependency Detection** - Java, JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP
 - **Layer-by-Layer Analysis** - Analyze each container layer independently
-- **Java Artifact Detection** - Find JARs, WARs, EARs in containers
-- **Maven Metadata Extraction** - Extract groupId:artifactId:version from JARs
-- **Container SBOM Generation** - Create SBOMs for containerized apps
-- **Vulnerability Scanning** - Scan container dependencies for CVEs
+- **Full Call Graph Reachability** - AST-based static analysis to determine if vulnerable code is actually used
+- **Vulnerability Scanning** - OSV, NVD, GHSA, CISA KEV integration
+- **EPSS Enrichment** - Exploitation probability scoring from FIRST.org
+- **Remediation Intelligence** - Difficulty scoring, breaking change detection, effort estimation
+- **Interactive TUI** - Explore vulnerabilities with filtering and graph visualization
+- **Comparison Mode** - Track security improvements between images or baselines
+- **Executive Reporting** - HTML reports with actionable recommendations
 
 ---
 
 ## Quick Start
 
-### Scan a Container Image
+### Basic Container Scan
 
 ```bash
-# Export Docker image to tar file
-docker save myapp:latest -o myapp.tar
+# Scan any Docker/OCI image (no export needed)
+bazbom container-scan myapp:latest
 
-# Scan the container
-bazbom scan --containers=bazbom
+# Scan with full reachability analysis (6 languages)
+bazbom container-scan myapp:latest --with-reachability
 
-# BazBOM will automatically find and scan *.tar files in the current directory
+# Show only urgent vulnerabilities
+bazbom container-scan myapp:latest --show p0
+
+# Show only exploited vulnerabilities
+bazbom container-scan myapp:latest --show kev
 ```
 
 ### Full Workflow Example
@@ -39,44 +53,87 @@ bazbom scan --containers=bazbom
 # 1. Build your container
 docker build -t myapp:latest .
 
-# 2. Export to tar
-docker save myapp:latest -o myapp.tar
-
-# 3. Scan with BazBOM
-bazbom scan --containers=bazbom
+# 2. Comprehensive scan with all features
+bazbom container-scan myapp:latest \
+  --with-reachability \     # Full call graph analysis
+  --interactive             # Launch TUI for exploration
 
 # Output:
-[bazbom] container scanning requested
-[bazbom] using container scanning strategy: Bazbom
-[bazbom] found 1 container images to scan
-[bazbom] scanning container: myapp.tar
-[bazbom] parsing container image metadata
-[bazbom] extracting 15 layers
-[bazbom] scanning layer 0: /tmp/bazbom-layers-12345/layer-0
-[bazbom] found 2 artifacts in layer 0
-[bazbom] scanning layer 1: /tmp/bazbom-layers-12345/layer-1
-[bazbom] found 8 artifacts in layer 1
-[bazbom] total artifacts found: 42
-[bazbom] container scan complete
+🐳 Scanning container: myapp:latest
+🎯 Step 1/5: Extracting container layers
+   └─ Found 12 layers (342 MB)
+
+📦 Step 2/5: Detecting dependencies (polyglot)
+   └─ JavaScript: 87 packages
+   └─ Python: 23 packages
+   └─ Go: 5 packages
+
+🔍 Step 3/5: Scanning for vulnerabilities
+   └─ Found 42 vulnerabilities (7 critical, 15 high, 20 medium)
+
+🎯 Step 4.5/5: Running reachability analysis...
+   └─ JavaScript: 12 reachable / 30 total
+   └─ Python: 3 reachable / 12 total
+   └─ Result: 15 reachable vulnerabilities (36% reduction)
+
+📊 SECURITY ANALYSIS RESULTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Total Vulnerabilities: 42 (15 reachable 🎯, 27 unreachable 🛡️)
+  P0 (Urgent):          3 (all reachable - patch immediately!)
+  P1 (High Priority):   5 (2 reachable)
+  Quick Wins:           8 easy fixes identified
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💡 Top Recommendations:
+  1. Patch 3 P0 vulnerabilities (2 hours estimated)
+  2. Apply 8 quick wins (non-breaking patches)
+  3. Review 27 unreachable vulnerabilities (lower priority)
+```
+
+### Advanced Examples
+
+```bash
+# Compare with baseline to track improvements
+bazbom container-scan myapp:latest --baseline
+bazbom container-scan myapp:v2 --compare-baseline
+
+# Filter to specific priorities
+bazbom container-scan myapp:latest --show p0      # Urgent only
+bazbom container-scan myapp:latest --show kev     # Known exploited
+bazbom container-scan myapp:latest --show quick-wins
+
+# Generate executive report
+bazbom container-scan myapp:latest --report security-report.html
+
+# Create GitHub issues for critical vulns
+bazbom container-scan myapp:latest --create-issues myorg/myrepo
+
+# CI/CD integration
+bazbom container-scan myapp:latest --format sarif -o results/
 ```
 
 ---
 
-## Supported Features
+## Supported Features (v6.5.0+)
 
-###  Implemented
+### ✅ Production-Ready
 
-- OCI/Docker image format parsing
-- Layer extraction and analysis
-- JAR/WAR/EAR file detection
-- Maven metadata extraction from `META-INF/maven/*/pom.properties`
-- SHA-256 hash calculation for artifacts
-- Container SBOM generation with PURLs
-- Layer attribution (which layer contains which artifact)
-- Multi-architecture image support
-- Container vulnerability database integration
-- Dockerfile analysis
-- Base image detection and recursive scanning
+- **Polyglot Dependency Detection** - Java, JavaScript, TypeScript, Python, Go, Rust, Ruby, PHP
+- **OCI/Docker image format parsing** - Direct image scanning (no tar export needed)
+- **Layer extraction and analysis** - Maps vulnerabilities to exact layers
+- **Full call graph reachability** - AST-based static analysis for 6 languages
+- **EPSS enrichment** - Real-time exploit prediction scoring from FIRST.org
+- **CISA KEV integration** - Known exploited vulnerabilities tracking
+- **P0-P4 prioritization** - Smart scoring (severity + EPSS + KEV + reachability)
+- **Remediation difficulty scoring** - 0-100 effort estimation with visual indicators
+- **Multi-CVE grouping** - Consolidates related vulnerabilities
+- **Quick wins analysis** - Identifies easy, high-impact fixes
+- **Breaking change detection** - Warns about major version upgrades
+- **Interactive TUI** - Explore dependencies with graph visualization
+- **Comparison mode** - Baseline tracking and image comparison
+- **Executive reporting** - HTML reports with actionable recommendations
+- **GitHub integration** - Auto-create issues for P0/P1 vulnerabilities
+- **SARIF output** - CI/CD integration for code scanning
 
 ---
 
