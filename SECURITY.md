@@ -40,15 +40,15 @@ When we receive a security bug report, we will:
 
 ## Security Architecture
 
-BazBOM follows **PYSEC_OMEGA** security standards, making it one of the most secure GitHub projects. Our comprehensive security program includes:
+BazBOM is built with Rust for memory safety and follows industry-leading security practices. Our comprehensive security program includes:
 
 ### Code Security
 
-- **Static Analysis (SAST)**: Bandit, Semgrep, CodeQL
-- **Dependency Scanning**: pip-audit, Safety, OSV Scanner
+- **Static Analysis (SAST)**: cargo-clippy, cargo-audit, CodeQL, Semgrep
+- **Dependency Scanning**: cargo-audit (RustSec Advisory Database), OSV Scanner
 - **Secret Detection**: TruffleHog, GitLeaks
 - **Vulnerability Management**: Automated SARIF uploads to GitHub Security
-- **Pre-commit Hooks**: Automated security checks before every commit
+- **Zero Unsafe Code**: 100% memory-safe Rust across all crates (except where required with justification)
 
 ### Supply Chain Security
 
@@ -82,10 +82,9 @@ All code is automatically scanned on every commit:
 | Tool | Type | Frequency | Results |
 |------|------|-----------|---------|
 | **CodeQL** | SAST | Push, PR, Weekly | GitHub Security Tab |
-| **Bandit** | Python SAST | Push, PR | SARIF uploaded |
+| **cargo-clippy** | Rust Lints | Push, PR | CI logs (enforced with -D warnings) |
+| **cargo-audit** | Dependencies | Daily, Push | JSON report (RustSec advisories) |
 | **Semgrep** | Custom Rules | Push, PR | SARIF uploaded |
-| **pip-audit** | Dependencies | Daily | JSON report |
-| **Safety** | Dependencies | Daily | JSON report |
 | **TruffleHog** | Secrets | Pre-commit | Blocks commit |
 | **GitLeaks** | Secrets | Pre-commit, CI | Blocks commit |
 
@@ -104,17 +103,18 @@ All external input is validated and sanitized:
 
 - ✅ Path traversal prevention
 - ✅ Command injection prevention
-- ✅ SQL injection prevention (parameterized queries)
-- ✅ XXE attack prevention (defusedxml)
+- ✅ Memory safety (guaranteed by Rust)
+- ✅ Buffer overflow prevention (guaranteed by Rust)
 - ✅ SSRF prevention (URL scheme validation)
 
 ### Secure Defaults
 
-- No shell=True in subprocess calls
+- Command execution through safe APIs only
 - Read-only file system permissions
 - Least privilege principle throughout
 - Fail-secure error handling
 - No secrets in logs or error messages
+- Zero unsafe code without explicit justification
 
 ### Cryptography
 
@@ -129,9 +129,9 @@ BazBOM adheres to:
 
 - ✅ **OWASP Top 10** - All vulnerabilities addressed
 - ✅ **CWE Top 25** - Critical weaknesses mitigated
-- ✅ **SLSA** - Level 2+ supply chain security
+- ✅ **SLSA** - Level 3 supply chain security
 - ✅ **NIST SSDF** - Secure software development framework
-- ✅ **PYSEC_OMEGA** - Supreme Python security standards
+- ✅ **Memory Safety** - 100% Rust with zero unsafe code (except where required with justification)
 
 ## Security Documentation
 
@@ -179,4 +179,5 @@ We appreciate security researchers who responsibly disclose vulnerabilities. Con
 - [CWE/SANS Top 25](https://cwe.mitre.org/top25/)
 - [SLSA Framework](https://slsa.dev/)
 - [Sigstore](https://www.sigstore.dev/)
-- [Python Security](https://python.readthedocs.io/en/stable/library/security_warnings.html)
+- [Rust Security Guidelines](https://anssi-fr.github.io/rust-guide/)
+- [RustSec Advisory Database](https://rustsec.org/)

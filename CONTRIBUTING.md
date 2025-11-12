@@ -97,7 +97,7 @@ feat: add SPDX 3.0 support to SBOM generation
 
 ## Security Requirements
 
-BazBOM follows **PYSEC_OMEGA** security standards. All contributions must meet these requirements:
+BazBOM follows industry-leading Rust security best practices. All contributions must meet these requirements:
 
 ### Mandatory Security Checks
 
