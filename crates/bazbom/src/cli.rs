@@ -190,6 +190,17 @@ pub enum Commands {
         #[arg(long, value_name = "FILE")]
         export: Option<String>,
     },
+    /// Explain vulnerability details with call chain analysis
+    Explain {
+        /// CVE identifier (e.g., CVE-2024-1234)
+        cve_id: String,
+        /// Path to findings JSON file (defaults to latest scan)
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Show full call chain (verbose mode)
+        #[arg(long, short = 'v')]
+        verbose: bool,
+    },
     /// Team coordination and assignment management
     Team {
         #[command(subcommand)]

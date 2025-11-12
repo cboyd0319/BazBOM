@@ -150,6 +150,7 @@ async fn main() -> Result<()> {
         Commands::Init { path } => handle_init(&path),
         Commands::Explore { sbom, findings } => handle_explore(sbom, findings),
         Commands::Dashboard { port, open, export } => handle_dashboard(port, open, export),
+        Commands::Explain { cve_id, findings, verbose } => handle_explain(cve_id, findings, verbose),
         Commands::Team { action } => handle_team(action),
         Commands::Report { action } => handle_report(action),
     }
