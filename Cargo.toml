@@ -19,6 +19,7 @@ members = [
   "crates/bazbom-upgrade-analyzer",
   "crates/bazbom-polyglot",
   "crates/bazbom-js-reachability",
+  "crates/bazbom-python-reachability",
 ]
 resolver = "2"
 
