@@ -6,7 +6,7 @@ use crate::entrypoints::EntrypointDetector;
 use crate::error::Result;
 use crate::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
 use crate::module_resolver::ModuleResolver;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info};
 use walkdir::WalkDir;
@@ -72,7 +72,7 @@ impl JsReachabilityAnalyzer {
         info!("Discovering and parsing files...");
 
         // Common directories to skip
-        let skip_dirs = vec!["node_modules", "dist", "build", "coverage", ".git"];
+        let skip_dirs = ["node_modules", "dist", "build", "coverage", ".git"];
 
         for entry in WalkDir::new(project_root)
             .into_iter()
@@ -104,9 +104,10 @@ impl JsReachabilityAnalyzer {
     fn parse_and_build_graph(&mut self, file_path: &Path) -> Result<()> {
         debug!("Parsing file: {:?}", file_path);
 
-        let module = parse_file(file_path)?;
+        let source_code = std::fs::read_to_string(file_path)?;
+        let tree = parse_file(file_path)?;
         let mut extractor = FunctionExtractor::new(file_path.to_str().unwrap_or("unknown"));
-        extractor.extract_from_module(&module);
+        extractor.extract(&source_code, &tree)?;
 
         // Add functions to call graph
         for func in &extractor.functions {

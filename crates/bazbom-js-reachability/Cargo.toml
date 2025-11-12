@@ -11,11 +11,10 @@ anyhow = "1"
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Use stable compatible SWC versions (without serde::__private dependency)
-swc_common = { version = "0.34", default-features = false }
-swc_ecma_ast = "0.114"
-swc_ecma_parser = "0.145"
-swc_ecma_visit = "0.100"
+# Use tree-sitter for stable JS/TS parsing (no dependency conflicts)
+tree-sitter = "0.22"
+tree-sitter-javascript = "0.21"
+tree-sitter-typescript = "0.21"
 tracing = "0.1"
 walkdir = "2"
 petgraph = "0.6"

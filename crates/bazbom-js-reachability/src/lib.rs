@@ -19,7 +19,7 @@
 //! use bazbom_js_reachability::JsReachabilityAnalyzer;
 //! use std::path::Path;
 //!
-//! let analyzer = JsReachabilityAnalyzer::new();
+//! let mut analyzer = JsReachabilityAnalyzer::new();
 //! let report = analyzer.analyze(Path::new("./src")).unwrap();
 //!
 //! println!("Found {} reachable functions", report.reachable_functions.len());

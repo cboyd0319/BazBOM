@@ -187,8 +187,8 @@ impl CallGraph {
 
             // Visit neighbors
             for neighbor_idx in self.graph.neighbors(current_idx) {
-                if !visited.contains_key(&neighbor_idx) {
-                    visited.insert(neighbor_idx, true);
+                if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(neighbor_idx) {
+                    e.insert(true);
                     parent.insert(neighbor_idx, current_idx);
                     queue.push_back(neighbor_idx);
                 }
