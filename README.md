@@ -957,6 +957,57 @@ See [Orchestrated Scanning Guide](docs/integrations/orchestrated-scan.md) for de
 
 ---
 
+### ⚡ Developer Experience Improvements (v6.5.0)
+
+**v6.5.0 brings major UX improvements that make BazBOM faster and easier to use:**
+
+**Short Flag Aliases** - Save typing with convenient shortcuts:
+```bash
+# Before
+bazbom scan --reachability --with-semgrep --format spdx --out-dir ./reports
+
+# After (v6.5.0+)
+bazbom scan -r -s -f spdx -o ./reports
+```
+
+**Named Profiles** - Reusable configurations for different scenarios:
+```bash
+# Define in bazbom.toml
+[profile.strict]
+reachability = true
+with_semgrep = true
+ml_risk = true
+
+# Use with one flag
+bazbom scan -p strict
+```
+
+**JSON Output** - Machine-readable results for CI/CD automation:
+```bash
+bazbom scan --json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
+```
+
+**Diff Mode** - Track security posture changes over time:
+```bash
+bazbom scan --diff --baseline=baseline.json
+# Shows: ✅ 5 fixed, ⚠️ 2 new vulnerabilities
+```
+
+**Explain Command** - Quick vulnerability research:
+```bash
+bazbom explain CVE-2024-1234 --verbose
+# Shows: severity, reachability, call chain, remediation
+```
+
+**Enhanced TUI** - Better interactive exploration:
+- Clickable CVE links (open in browser from terminal)
+- Regex/glob search modes (press 'r' to toggle)
+- Case-insensitive search (press 'i' to toggle)
+
+See [IMPROVEMENTS_IMPLEMENTED.md](docs/IMPROVEMENTS_IMPLEMENTED.md) for complete details.
+
+---
+
 ### 🎯 Reachability Analysis (v6.5.0)
 
 **World-class reachability analysis across 7 programming languages** - dramatically reduce false positives by identifying which vulnerable code is actually reachable from your application's entrypoints.

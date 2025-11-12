@@ -17,8 +17,58 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame, Terminal,
 };
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::io;
+
+/// Create a clickable hyperlink using OSC 8 escape sequences
+///
+/// This works in terminals that support OSC 8:
+/// - iTerm2 (macOS)
+/// - kitty
+/// - Windows Terminal
+/// - GNOME Terminal
+/// - Alacritty
+/// - WezTerm
+///
+/// Format: \x1b]8;;URL\x1b\\TEXT\x1b]8;;\x1b\\
+fn make_clickable_link(text: &str, url: &str) -> String {
+    format!("\x1b]8;;{}\x1b\\{}\x1b]8;;\x1b\\", url, text)
+}
+
+/// Generate NVD URL for a CVE ID
+fn cve_to_nvd_url(cve_id: &str) -> String {
+    format!("https://nvd.nist.gov/vuln/detail/{}", cve_id)
+}
+
+/// Search mode for filtering dependencies
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchMode {
+    /// Simple substring search (case-insensitive)
+    Substring,
+    /// Regular expression search
+    Regex,
+    /// Glob pattern search
+    Glob,
+}
+
+impl SearchMode {
+    pub fn as_str(&self) -> &str {
+        match self {
+            SearchMode::Substring => "Substring",
+            SearchMode::Regex => "Regex",
+            SearchMode::Glob => "Glob",
+        }
+    }
+
+    pub fn next(&self) -> Self {
+        match self {
+            SearchMode::Substring => SearchMode::Regex,
+            SearchMode::Regex => SearchMode::Glob,
+            SearchMode::Glob => SearchMode::Substring,
+        }
+    }
+}
 
 /// Main TUI application state
 pub struct App {
@@ -28,6 +78,10 @@ pub struct App {
     list_state: ListState,
     /// Search/filter query
     search_query: String,
+    /// Search mode (substring, regex, glob)
+    search_mode: SearchMode,
+    /// Whether search is case-insensitive (for regex/glob)
+    case_insensitive: bool,
     /// Filter by severity
     severity_filter: Option<String>,
     /// Whether to show help screen
@@ -66,6 +120,8 @@ impl App {
             dependencies,
             list_state,
             search_query: String::new(),
+            search_mode: SearchMode::Substring,
+            case_insensitive: true,
             severity_filter: None,
             show_help: false,
             export_message: None,
@@ -81,9 +137,45 @@ impl App {
                 let matches_search = if self.search_query.is_empty() {
                     true
                 } else {
-                    dep.name
-                        .to_lowercase()
-                        .contains(&self.search_query.to_lowercase())
+                    match self.search_mode {
+                        SearchMode::Substring => {
+                            // Simple substring search (case-insensitive)
+                            dep.name
+                                .to_lowercase()
+                                .contains(&self.search_query.to_lowercase())
+                        }
+                        SearchMode::Regex => {
+                            // Regex search
+                            let pattern = if self.case_insensitive {
+                                format!("(?i){}", self.search_query)
+                            } else {
+                                self.search_query.clone()
+                            };
+                            Regex::new(&pattern)
+                                .ok()
+                                .and_then(|re| re.is_match(&dep.name).then_some(true))
+                                .unwrap_or(false)
+                        }
+                        SearchMode::Glob => {
+                            // Glob pattern search
+                            // Convert glob to regex: * -> .*, ? -> .
+                            let mut pattern = self.search_query
+                                .replace(".", r"\.")
+                                .replace("*", ".*")
+                                .replace("?", ".");
+
+                            if self.case_insensitive {
+                                pattern = format!("(?i)^{}$", pattern);
+                            } else {
+                                pattern = format!("^{}$", pattern);
+                            }
+
+                            Regex::new(&pattern)
+                                .ok()
+                                .and_then(|re| re.is_match(&dep.name).then_some(true))
+                                .unwrap_or(false)
+                        }
+                    }
                 };
 
                 // Severity filter
@@ -252,6 +344,17 @@ fn handle_key_event(key: KeyEvent, app: &mut App) -> Result<bool> {
                 all_deps.len()
             ));
         }
+        KeyCode::Char('r') => {
+            // Toggle search mode: Substring -> Regex -> Glob -> Substring
+            app.search_mode = app.search_mode.next();
+            app.export_message = Some(format!("Search mode: {}", app.search_mode.as_str()));
+        }
+        KeyCode::Char('i') => {
+            // Toggle case sensitivity
+            app.case_insensitive = !app.case_insensitive;
+            let status = if app.case_insensitive { "ON" } else { "OFF" };
+            app.export_message = Some(format!("Case-insensitive search: {}", status));
+        }
         _ => {}
     }
     Ok(false)
@@ -297,10 +400,14 @@ fn render_header(f: &mut Frame, area: Rect, app: &App) {
         "Filter: ALL".to_string()
     };
 
+    let case_text = if app.case_insensitive { "i" } else { "" };
+    let search_mode_text = format!("Search: {}{}", app.search_mode.as_str(), case_text);
+
     let header = Paragraph::new(format!(
-        "BazBOM Dependency Explorer - {} dependencies | {}",
+        "BazBOM Dependency Explorer - {} dependencies | {} | {}",
         app.dependencies.len(),
-        filter_text
+        filter_text,
+        search_mode_text
     ))
     .style(
         Style::default()
@@ -406,9 +513,14 @@ fn render_details(f: &mut Frame, area: Rect, app: &App) {
             };
 
             lines.push(Line::from(""));
+
+            // Create clickable CVE link using OSC 8
+            let cve_url = cve_to_nvd_url(&vuln.cve);
+            let clickable_cve = make_clickable_link(&format!("  {} ", vuln.cve), &cve_url);
+
             lines.push(Line::from(vec![
                 Span::styled(
-                    format!("  {} ", vuln.cve),
+                    clickable_cve,
                     Style::default().fg(color).add_modifier(Modifier::BOLD),
                 ),
                 Span::raw(format!("(CVSS {})", vuln.cvss)),
@@ -443,7 +555,7 @@ fn render_footer(f: &mut Frame, area: Rect, app: &App) {
     let footer_text = if let Some(ref msg) = app.export_message {
         msg.clone()
     } else {
-        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [e] Export filtered [x] Export all [?] Help [q] Quit"
+        "[↑↓/jk] Navigate [c/h/m/l/a] Filter [r] Search mode [i] Case [e] Export filtered [x] Export all [?] Help [q] Quit"
             .to_string()
     };
 
@@ -485,6 +597,15 @@ fn render_help(f: &mut Frame) {
         Line::from("  m          Show only MEDIUM vulnerabilities"),
         Line::from("  l          Show only LOW vulnerabilities"),
         Line::from("  a          Show ALL dependencies (clear filter)"),
+        Line::from(""),
+        Line::from(vec![Span::styled(
+            "Search:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )]),
+        Line::from("  r          Toggle search mode (Substring/Regex/Glob)"),
+        Line::from("  i          Toggle case-insensitive search"),
         Line::from(""),
         Line::from(vec![Span::styled(
             "Display:",

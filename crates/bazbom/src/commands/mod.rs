@@ -6,6 +6,7 @@
 pub mod container_scan;
 pub mod dashboard;
 pub mod db;
+pub mod explain;
 pub mod explore;
 pub mod fix;
 pub mod hooks;
@@ -21,6 +22,7 @@ pub mod upgrade_intelligence;
 pub use container_scan::handle_container_scan;
 pub use dashboard::handle_dashboard;
 pub use db::handle_db;
+pub use explain::handle_explain;
 pub use explore::handle_explore;
 pub use fix::handle_fix;
 pub use hooks::handle_install_hooks;

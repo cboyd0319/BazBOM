@@ -8,10 +8,12 @@ use std::path::PathBuf;
 #[allow(clippy::too_many_arguments)]
 pub fn handle_scan(
     path: String,
+    profile: Option<String>,
     reachability: bool,
     fast: bool,
     format: String,
     out_dir: String,
+    json: bool,
     bazel_targets_query: Option<String>,
     bazel_targets: Option<Vec<String>>,
     bazel_affected_by_files: Option<Vec<String>>,
@@ -25,9 +27,24 @@ pub fn handle_scan(
     target: Option<String>,
     incremental: bool,
     base: String,
+    diff: bool,
+    baseline: Option<String>,
     benchmark: bool,
     ml_risk: bool,
 ) -> Result<()> {
+    // TODO: Load profile from bazbom.toml and merge with CLI arguments
+    // For now, profile parameter is accepted but not yet used
+    let _ = profile;
+
+    // TODO: Implement diff mode - compare current findings with baseline
+    // For now, parameters are accepted but not yet used
+    let _ = diff;
+    let _ = baseline;
+
+    // TODO: Implement JSON output mode for machine-readable results
+    // For now, parameter is accepted but not yet used
+    let _ = json;
+
     // Check if any orchestration flags are set
     let use_orchestrator = cyclonedx
         || with_semgrep

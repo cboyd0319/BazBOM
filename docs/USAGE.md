@@ -16,6 +16,21 @@ Common tasks with BazBOM: generate SBOMs, scan for vulnerabilities, apply polici
 # Scan any JVM project (auto-detects build system)
 bazbom scan .
 
+# Quick scan with short flags (v6.5.0+)
+bazbom scan -r -s -f spdx -o ./reports
+
+# Use named profile (v6.5.0+)
+bazbom scan -p strict
+
+# JSON output for CI/CD (v6.5.0+)
+bazbom scan --json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
+
+# Diff mode - compare with baseline (v6.5.0+)
+bazbom scan --diff --baseline=baseline.json
+
+# Explain vulnerability details (v6.5.0+)
+bazbom explain CVE-2024-1234 --verbose
+
 # Sync advisory database (OSV/NVD/GHSA/KEV/EPSS)
 bazbom db sync
 
@@ -27,6 +42,12 @@ bazbom fix --suggest
 
 # Install pre-commit hooks
 bazbom install-hooks
+
+# Interactive TUI with enhanced search (v6.5.0+)
+bazbom explore --sbom sbom.spdx.json
+# Press 'r' to toggle regex/glob search modes
+# Press 'i' to toggle case-sensitive search
+# Click CVE links in supported terminals
 ```
 
 ## Generate SBOM Locally
@@ -44,10 +65,15 @@ bazbom scan .
 - `sca_findings.sarif` (GitHub Security format)
 
 **Flags:**
-- `--format spdx` (default) or `--format cyclonedx`
-- `--out-dir <path>` - Custom output directory
-- `--reachability` - Enable bytecode analysis (slower, more accurate)
+- `--format spdx` (or `-f spdx`) - Output format (default) or `cyclonedx`
+- `--out-dir <path>` (or `-o <path>`) - Custom output directory
+- `--reachability` (or `-r`) - Enable bytecode analysis (slower, more accurate)
 - `--fast` - Skip reachability for speed (<10 seconds)
+- `--profile <name>` (or `-p <name>`) - Use named profile from bazbom.toml (NEW in v6.5.0)
+- `--json` - Machine-readable JSON output for CI/CD automation (NEW in v6.5.0)
+- `--diff` (or `-d`) - Show vulnerability diff vs baseline (NEW in v6.5.0)
+- `--with-semgrep` (or `-s`) - Run Semgrep analysis
+- `--ml-risk` (or `-m`) - ML-enhanced risk scoring
 
 ### For Maven Projects
 
@@ -166,17 +192,26 @@ bazbom scan .
 
 ### `bazbom scan`
 
-| Flag | Type | Default | Purpose |
-|------|------|---------|---------|
-| `--format` | `spdx` \| `cyclonedx` | `spdx` | Output format |
-| `--out-dir` | path | `.` | Output directory |
-| `--reachability` | bool | false | Enable bytecode analysis |
-| `--fast` | bool | false | Skip reachability (speed) |
-| `--offline-mode` | bool | false | No network calls |
-| `--db-path` | path | `~/.bazbom/db` | Advisory database path |
-| `--bazel-targets` | targets | — | Explicit Bazel targets |
-| `--bazel-targets-query` | query | — | Bazel query expression |
-| `--bazel-affected-by-files` | files | — | Incremental scan (git diff) |
+| Flag | Short | Type | Default | Purpose |
+|------|-------|------|---------|---------|
+| `--format` | `-f` | `spdx` \| `cyclonedx` | `spdx` | Output format |
+| `--out-dir` | `-o` | path | `.` | Output directory |
+| `--reachability` | `-r` | bool | false | Enable bytecode analysis |
+| `--fast` | — | bool | false | Skip reachability (speed) |
+| `--profile` | `-p` | string | — | Named profile from bazbom.toml (v6.5.0+) |
+| `--json` | — | bool | false | Machine-readable JSON output (v6.5.0+) |
+| `--diff` | `-d` | bool | false | Show vulnerability diff vs baseline (v6.5.0+) |
+| `--baseline` | — | path | — | Baseline findings file for diff mode |
+| `--with-semgrep` | `-s` | bool | false | Run Semgrep analysis |
+| `--with-codeql` | `-c` | suite | — | Run CodeQL analysis |
+| `--ml-risk` | `-m` | bool | false | ML-enhanced risk scoring |
+| `--incremental` | `-i` | bool | false | Incremental analysis mode |
+| `--base` | `-b` | ref | `main` | Git base reference for incremental |
+| `--offline-mode` | — | bool | false | No network calls |
+| `--db-path` | — | path | `~/.bazbom/db` | Advisory database path |
+| `--bazel-targets` | — | targets | — | Explicit Bazel targets |
+| `--bazel-targets-query` | — | query | — | Bazel query expression |
+| `--bazel-affected-by-files` | — | files | — | Incremental scan (git diff) |
 
 ### `bazbom db sync`
 

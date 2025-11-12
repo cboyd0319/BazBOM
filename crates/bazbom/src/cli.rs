@@ -14,18 +14,24 @@ pub enum Commands {
         /// Path to project (defaults to current directory)
         #[arg(default_value = ".")]
         path: String,
+        /// Use a named profile from bazbom.toml (e.g., strict, fast, ci)
+        #[arg(long, short = 'p', value_name = "PROFILE")]
+        profile: Option<String>,
         /// Enable reachability analysis (OPAL)
-        #[arg(long)]
+        #[arg(long, short = 'r')]
         reachability: bool,
         /// Fast mode: skip reachability analysis for speed (<10s scans)
         #[arg(long)]
         fast: bool,
         /// Output format (spdx|cyclonedx)
-        #[arg(long, default_value = "spdx")]
+        #[arg(long, short = 'f', default_value = "spdx")]
         format: String,
         /// Output directory (defaults to current directory)
-        #[arg(long, value_name = "DIR", default_value = ".")]
+        #[arg(long, short = 'o', value_name = "DIR", default_value = ".")]
         out_dir: String,
+        /// Output results in JSON format (machine-readable)
+        #[arg(long)]
+        json: bool,
         /// Bazel-specific: query expression to select targets
         #[arg(long, value_name = "QUERY")]
         bazel_targets_query: Option<String>,
@@ -42,10 +48,10 @@ pub enum Commands {
         #[arg(long)]
         cyclonedx: bool,
         /// Run Semgrep with BazBOM's curated JVM ruleset
-        #[arg(long)]
+        #[arg(long, short = 's')]
         with_semgrep: bool,
         /// Run CodeQL analysis (optional suite: default or security-extended)
-        #[arg(long, value_name = "SUITE")]
+        #[arg(long, short = 'c', value_name = "SUITE")]
         with_codeql: Option<CodeqlSuite>,
         /// Generate OpenRewrite recipes (off, dry-run, or pr)
         #[arg(long, value_name = "MODE")]
@@ -60,16 +66,22 @@ pub enum Commands {
         #[arg(long, value_name = "MODULE")]
         target: Option<String>,
         /// Enable incremental analysis (scan only changed code)
-        #[arg(long)]
+        #[arg(long, short = 'i')]
         incremental: bool,
         /// Git base reference for incremental analysis (e.g., main, HEAD~1)
-        #[arg(long, value_name = "REF", default_value = "main")]
+        #[arg(long, short = 'b', value_name = "REF", default_value = "main")]
         base: String,
+        /// Show diff of vulnerabilities compared to previous scan
+        #[arg(long, short = 'd')]
+        diff: bool,
+        /// Path to baseline findings for diff comparison
+        #[arg(long, value_name = "FILE")]
+        baseline: Option<String>,
         /// Enable performance benchmarking and metrics reporting
         #[arg(long)]
         benchmark: bool,
         /// Use ML-enhanced risk scoring for vulnerability prioritization
-        #[arg(long)]
+        #[arg(long, short = 'm')]
         ml_risk: bool,
     },
     /// Complete container security analysis (SBOM + vulnerability scanning)
@@ -186,6 +198,17 @@ pub enum Commands {
         /// Export static HTML instead of starting server
         #[arg(long, value_name = "FILE")]
         export: Option<String>,
+    },
+    /// Explain vulnerability details with call chain analysis
+    Explain {
+        /// CVE identifier (e.g., CVE-2024-1234)
+        cve_id: String,
+        /// Path to findings JSON file (defaults to latest scan)
+        #[arg(long, value_name = "FILE")]
+        findings: Option<String>,
+        /// Show full call chain (verbose mode)
+        #[arg(long, short = 'v')]
+        verbose: bool,
     },
     /// Team coordination and assignment management
     Team {
