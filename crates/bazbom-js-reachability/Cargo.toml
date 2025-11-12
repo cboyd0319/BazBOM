@@ -1,0 +1,25 @@
+[package]
+name = "bazbom-js-reachability"
+version = "6.0.0"
+edition = "2021"
+license = "MIT"
+description = "JavaScript/TypeScript reachability analysis for BazBOM"
+repository = "https://github.com/cboyd0319/BazBOM"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Use stable compatible SWC versions (without serde::__private dependency)
+swc_common = { version = "0.34", default-features = false }
+swc_ecma_ast = "0.114"
+swc_ecma_parser = "0.145"
+swc_ecma_visit = "0.100"
+tracing = "0.1"
+walkdir = "2"
+petgraph = "0.6"
+
+[dev-dependencies]
+tempfile = "3"
+tokio-test = "0.4"
