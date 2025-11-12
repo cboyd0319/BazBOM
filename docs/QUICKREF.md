@@ -43,12 +43,31 @@ bazbom scan .                           # Auto-detect build system, SPDX output
 bazbom scan . --format cyclonedx        # CycloneDX format
 bazbom scan . --out-dir ./reports       # Custom output directory
 
+# Short flag aliases (v6.5.0+)
+bazbom scan -f spdx -o ./reports        # Short form of above
+bazbom scan -r -s -m                    # Reachability + Semgrep + ML risk
+
+# Named profiles (v6.5.0+)
+bazbom scan --profile strict            # Use predefined "strict" profile from bazbom.toml
+bazbom scan -p fast                     # Use "fast" profile (short form)
+bazbom scan -p ci                       # Use "ci" profile for pipelines
+
 # Fast mode (skip reachability analysis)
 bazbom scan . --fast                    # <10 second scans
 
 # Full analysis
 bazbom scan . --reachability            # Include call graph analysis
+bazbom scan -r                          # Short form (v6.5.0+)
 bazbom scan . --ml-risk                 # ML-enhanced risk scoring
+bazbom scan -m                          # Short form (v6.5.0+)
+
+# Machine-readable output (v6.5.0+)
+bazbom scan . --json                    # JSON output for automation/CI/CD
+bazbom scan --json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
+
+# Diff mode (v6.5.0+)
+bazbom scan --diff --baseline=baseline.json  # Compare with previous scan
+bazbom scan -d --baseline=baseline.json      # Short form
 
 # Bazel-specific
 bazbom scan . --bazel-targets //app:main                              # Specific target
@@ -123,11 +142,20 @@ bazbom license contamination
 ## Interactive Tools
 
 ```bash
-# Terminal UI for exploring dependencies
+# Terminal UI for exploring dependencies (v6.5.0+ with enhancements)
 bazbom explore --sbom sbom.spdx.json
+# New features:
+#  - Regex/glob search modes (press 'r' to toggle)
+#  - Case-insensitive search (press 'i' to toggle)
+#  - Clickable CVE links (in supported terminals)
+
+# Explain vulnerability details (v6.5.0+)
+bazbom explain CVE-2024-1234             # Quick vulnerability lookup
+bazbom explain CVE-2024-1234 --verbose  # Show full call chain
+bazbom explain CVE-2024-1234 -v --findings=./findings.json  # Custom findings file
 
 # Web dashboard
-bazbom dashboard                        # Starts on http://localhost:8080
+bazbom dashboard                        # Starts on http://localhost:3000
 
 # Team assignment management
 bazbom team assign                      # Assign vulnerabilities to team members
@@ -166,6 +194,34 @@ bazbom scan . --benchmark               # Show detailed performance metrics
 
 ---
 
+## Short Flag Reference (v6.5.0+)
+
+Save typing with convenient short flags:
+
+| Long Flag | Short | Description |
+|-----------|-------|-------------|
+| `--reachability` | `-r` | Enable reachability analysis |
+| `--format` | `-f` | Output format (spdx/cyclonedx) |
+| `--out-dir` | `-o` | Output directory |
+| `--with-semgrep` | `-s` | Run Semgrep analysis |
+| `--with-codeql` | `-c` | Run CodeQL analysis |
+| `--incremental` | `-i` | Incremental analysis mode |
+| `--ml-risk` | `-m` | ML-enhanced risk scoring |
+| `--base` | `-b` | Git base reference |
+| `--profile` | `-p` | Use named profile |
+| `--diff` | `-d` | Show diff vs baseline |
+
+**Example**:
+```bash
+# Before
+bazbom scan --reachability --with-semgrep --format spdx --out-dir ./output
+
+# After
+bazbom scan -r -s -f spdx -o ./output
+```
+
+---
+
 ## Build System Support
 
 | Build System | Auto-Detection | Command |
@@ -196,12 +252,31 @@ bazbom scan . --benchmark               # Show detailed performance metrics
 ## Configuration Files
 
 ```bash
-# Project-level config (bazbom.toml)
+# Project-level config (bazbom.toml) with named profiles (v6.5.0+)
 cat > bazbom.toml <<EOF
 [scan]
 format = "spdx"
 reachability = true
 fast = false
+
+# Named profiles for different scenarios
+[profile.strict]
+reachability = true
+with_semgrep = true
+with_codeql = "security-extended"
+ml_risk = true
+fail_on = ["critical", "high"]
+
+[profile.fast]
+fast = true
+incremental = true
+no_upload = true
+
+[profile.ci]
+reachability = true
+benchmark = true
+format = "spdx"
+cyclonedx = true
 
 [policy]
 severity_threshold = "HIGH"
