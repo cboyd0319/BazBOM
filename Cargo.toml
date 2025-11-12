@@ -20,6 +20,7 @@ members = [
   "crates/bazbom-polyglot",
   "crates/bazbom-js-reachability",
   "crates/bazbom-python-reachability",
+  "crates/bazbom-go-reachability",
 ]
 resolver = "2"
 
