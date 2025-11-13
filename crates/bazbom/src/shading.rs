@@ -334,56 +334,493 @@ pub fn extract_nested_jars(jar_path: &Path, output_dir: &Path) -> Result<Vec<Str
     Ok(nested_jars)
 }
 
-/// Generate a fingerprint for a class file
+/// Generate a fingerprint for a class file with method and field signatures
 ///
-/// Future use: Create unique fingerprints of class files for matching shaded
-/// classes to their original artifacts when relocation patterns are ambiguous.
-/// Enables high-confidence attribution even for complex shading scenarios.
+/// Extracts class metadata including:
+/// - Class name
+/// - Method signatures (name + descriptor)
+/// - Field signatures (name + descriptor)
+/// - Bytecode hash for matching
 #[allow(dead_code)]
 pub fn fingerprint_class(class_bytes: &[u8]) -> Result<ClassFingerprint> {
     // Compute bytecode hash for matching
     let hash = blake3::hash(class_bytes).to_hex().to_string();
 
+    // Parse constant pool
+    let constant_pool = parse_constant_pool(class_bytes)
+        .ok_or_else(|| anyhow::anyhow!("Failed to parse constant pool"))?;
+
     // Extract class name from bytecode
-    // The class file format has the class name at a specific offset
-    // For a proper implementation, we would parse the constant pool
-    // Here we provide a basic implementation that extracts the class name
     let class_name =
         extract_class_name_from_bytecode(class_bytes).unwrap_or_else(|| "Unknown".to_string());
 
-    // Note: For production use, method and field signatures should be extracted
-    // using ASM or similar bytecode parsing library. This would ideally be done
-    // in the Java-based bazbom-reachability tool and the results provided to Rust.
-    // For now, we rely on bytecode hash for matching.
+    // Extract method and field signatures
+    let (method_sigs, field_sigs) = extract_signatures(class_bytes, &constant_pool)?;
 
     Ok(ClassFingerprint {
         className: class_name,
-        methodSignatures: vec![],
-        fieldSignatures: vec![],
+        methodSignatures: method_sigs,
+        fieldSignatures: field_sigs,
         bytecodeHash: hash,
     })
 }
 
-/// Extract class name from bytecode (basic implementation)
-///
-/// Future use: Helper function for fingerprint_class to extract class names
-/// directly from bytecode for more accurate matching. Currently relies on
-/// bytecode hash; future implementation would parse constant pool.
-#[allow(dead_code)]
-fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
-    // Basic validation - check for Java class file magic number
+/// Extract method and field signatures from class bytecode
+fn extract_signatures(
+    class_bytes: &[u8],
+    constant_pool: &[ConstantPoolEntry],
+) -> Result<(Vec<String>, Vec<String>)> {
+    if class_bytes.len() < 10 {
+        return Ok((vec![], vec![]));
+    }
+
+    // Skip to the end of constant pool
+    let mut pos = 8; // Skip magic + version
+    let cp_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2;
+
+    // Skip constant pool entries
+    let mut i = 1;
+    while i < cp_count {
+        if pos >= class_bytes.len() {
+            return Ok((vec![], vec![]));
+        }
+        let tag = class_bytes[pos];
+        pos += 1;
+
+        let skip = match tag {
+            1 => {
+                let length = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+                2 + length
+            }
+            3 | 4 => 4,
+            5 | 6 => {
+                i += 1;
+                8
+            }
+            7 | 8 | 16 => 2,
+            9 | 10 | 11 | 12 | 18 => 4,
+            15 => 3,
+            _ => return Ok((vec![], vec![])),
+        };
+        pos += skip;
+        i += 1;
+    }
+
+    // Read access_flags, this_class, super_class
+    if pos + 6 > class_bytes.len() {
+        return Ok((vec![], vec![]));
+    }
+    pos += 6;
+
+    // Read interfaces_count and skip interfaces
+    if pos + 2 > class_bytes.len() {
+        return Ok((vec![], vec![]));
+    }
+    let interfaces_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2 + (interfaces_count * 2);
+
+    // Parse fields
+    let mut field_signatures = Vec::new();
+    if pos + 2 > class_bytes.len() {
+        return Ok((vec![], vec![]));
+    }
+    let fields_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2;
+
+    for _ in 0..fields_count {
+        if pos + 6 > class_bytes.len() {
+            break;
+        }
+        let _access_flags = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+        let name_index = u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+        let descriptor_index = u16::from_be_bytes([class_bytes[pos + 4], class_bytes[pos + 5]]);
+        pos += 6;
+
+        if let (Some(name), Some(descriptor)) = (
+            get_utf8_from_cp(constant_pool, name_index),
+            get_utf8_from_cp(constant_pool, descriptor_index),
+        ) {
+            field_signatures.push(format!("{}: {}", name, descriptor));
+        }
+
+        // Skip attributes
+        if pos + 2 > class_bytes.len() {
+            break;
+        }
+        let attributes_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+        pos += 2;
+
+        for _ in 0..attributes_count {
+            if pos + 6 > class_bytes.len() {
+                break;
+            }
+            let attribute_length =
+                u32::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3], class_bytes[pos + 4], class_bytes[pos + 5]]) as usize;
+            pos += 6 + attribute_length;
+        }
+    }
+
+    // Parse methods
+    let mut method_signatures = Vec::new();
+    if pos + 2 > class_bytes.len() {
+        return Ok((method_signatures, field_signatures));
+    }
+    let methods_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2;
+
+    for _ in 0..methods_count {
+        if pos + 6 > class_bytes.len() {
+            break;
+        }
+        let _access_flags = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+        let name_index = u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+        let descriptor_index = u16::from_be_bytes([class_bytes[pos + 4], class_bytes[pos + 5]]);
+        pos += 6;
+
+        if let (Some(name), Some(descriptor)) = (
+            get_utf8_from_cp(constant_pool, name_index),
+            get_utf8_from_cp(constant_pool, descriptor_index),
+        ) {
+            method_signatures.push(format!("{}{}", name, descriptor));
+        }
+
+        // Skip attributes
+        if pos + 2 > class_bytes.len() {
+            break;
+        }
+        let attributes_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+        pos += 2;
+
+        for _ in 0..attributes_count {
+            if pos + 6 > class_bytes.len() {
+                break;
+            }
+            let attribute_length =
+                u32::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3], class_bytes[pos + 4], class_bytes[pos + 5]]) as usize;
+            pos += 6 + attribute_length;
+        }
+    }
+
+    Ok((method_signatures, field_signatures))
+}
+
+/// Java class file constant pool entry types
+#[derive(Debug, Clone)]
+enum ConstantPoolEntry {
+    Utf8(String),
+    Integer(i32),
+    Float(f32),
+    Long(i64),
+    Double(f64),
+    Class(u16),
+    String(u16),
+    Fieldref(u16, u16),
+    Methodref(u16, u16),
+    InterfaceMethodref(u16, u16),
+    NameAndType(u16, u16),
+    MethodHandle(u8, u16),
+    MethodType(u16),
+    InvokeDynamic(u16, u16),
+    Invalid, // Padding entry for Long/Double
+}
+
+/// Parse Java class file constant pool
+fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
     if class_bytes.len() < 10 || &class_bytes[0..4] != b"\xCA\xFE\xBA\xBE" {
         return None;
     }
 
-    // For a complete implementation, we would need to:
-    // 1. Parse the constant pool
-    // 2. Find the this_class index
-    // 3. Resolve the class name from the constant pool
-    // This is complex and better done with a proper bytecode library
+    let mut pos = 8; // Skip magic (4) + minor (2) + major (2)
 
-    // For now, return None and rely on bytecode hash matching
-    None
+    // Read constant pool count
+    if pos + 2 > class_bytes.len() {
+        return None;
+    }
+    let cp_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2;
+
+    let mut constant_pool = vec![ConstantPoolEntry::Invalid]; // Index 0 is invalid
+
+    let mut i = 1;
+    while i < cp_count {
+        if pos >= class_bytes.len() {
+            return None;
+        }
+
+        let tag = class_bytes[pos];
+        pos += 1;
+
+        let entry = match tag {
+            1 => {
+                // CONSTANT_Utf8
+                if pos + 2 > class_bytes.len() {
+                    return None;
+                }
+                let length = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+                pos += 2;
+                if pos + length > class_bytes.len() {
+                    return None;
+                }
+                let string = String::from_utf8_lossy(&class_bytes[pos..pos + length]).to_string();
+                pos += length;
+                ConstantPoolEntry::Utf8(string)
+            }
+            3 => {
+                // CONSTANT_Integer
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let value = i32::from_be_bytes([
+                    class_bytes[pos],
+                    class_bytes[pos + 1],
+                    class_bytes[pos + 2],
+                    class_bytes[pos + 3],
+                ]);
+                pos += 4;
+                ConstantPoolEntry::Integer(value)
+            }
+            4 => {
+                // CONSTANT_Float
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let value = f32::from_be_bytes([
+                    class_bytes[pos],
+                    class_bytes[pos + 1],
+                    class_bytes[pos + 2],
+                    class_bytes[pos + 3],
+                ]);
+                pos += 4;
+                ConstantPoolEntry::Float(value)
+            }
+            5 => {
+                // CONSTANT_Long
+                if pos + 8 > class_bytes.len() {
+                    return None;
+                }
+                let value = i64::from_be_bytes([
+                    class_bytes[pos],
+                    class_bytes[pos + 1],
+                    class_bytes[pos + 2],
+                    class_bytes[pos + 3],
+                    class_bytes[pos + 4],
+                    class_bytes[pos + 5],
+                    class_bytes[pos + 6],
+                    class_bytes[pos + 7],
+                ]);
+                pos += 8;
+                // Long and Double take 2 constant pool entries
+                constant_pool.push(ConstantPoolEntry::Long(value));
+                constant_pool.push(ConstantPoolEntry::Invalid);
+                i += 1;
+                continue;
+            }
+            6 => {
+                // CONSTANT_Double
+                if pos + 8 > class_bytes.len() {
+                    return None;
+                }
+                let value = f64::from_be_bytes([
+                    class_bytes[pos],
+                    class_bytes[pos + 1],
+                    class_bytes[pos + 2],
+                    class_bytes[pos + 3],
+                    class_bytes[pos + 4],
+                    class_bytes[pos + 5],
+                    class_bytes[pos + 6],
+                    class_bytes[pos + 7],
+                ]);
+                pos += 8;
+                constant_pool.push(ConstantPoolEntry::Double(value));
+                constant_pool.push(ConstantPoolEntry::Invalid);
+                i += 1;
+                continue;
+            }
+            7 => {
+                // CONSTANT_Class
+                if pos + 2 > class_bytes.len() {
+                    return None;
+                }
+                let name_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                pos += 2;
+                ConstantPoolEntry::Class(name_index)
+            }
+            8 => {
+                // CONSTANT_String
+                if pos + 2 > class_bytes.len() {
+                    return None;
+                }
+                let string_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                pos += 2;
+                ConstantPoolEntry::String(string_index)
+            }
+            9 => {
+                // CONSTANT_Fieldref
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                let name_and_type_index =
+                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                pos += 4;
+                ConstantPoolEntry::Fieldref(class_index, name_and_type_index)
+            }
+            10 => {
+                // CONSTANT_Methodref
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                let name_and_type_index =
+                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                pos += 4;
+                ConstantPoolEntry::Methodref(class_index, name_and_type_index)
+            }
+            11 => {
+                // CONSTANT_InterfaceMethodref
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                let name_and_type_index =
+                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                pos += 4;
+                ConstantPoolEntry::InterfaceMethodref(class_index, name_and_type_index)
+            }
+            12 => {
+                // CONSTANT_NameAndType
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let name_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                let descriptor_index =
+                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                pos += 4;
+                ConstantPoolEntry::NameAndType(name_index, descriptor_index)
+            }
+            15 => {
+                // CONSTANT_MethodHandle
+                if pos + 3 > class_bytes.len() {
+                    return None;
+                }
+                let reference_kind = class_bytes[pos];
+                let reference_index =
+                    u16::from_be_bytes([class_bytes[pos + 1], class_bytes[pos + 2]]);
+                pos += 3;
+                ConstantPoolEntry::MethodHandle(reference_kind, reference_index)
+            }
+            16 => {
+                // CONSTANT_MethodType
+                if pos + 2 > class_bytes.len() {
+                    return None;
+                }
+                let descriptor_index =
+                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                pos += 2;
+                ConstantPoolEntry::MethodType(descriptor_index)
+            }
+            18 => {
+                // CONSTANT_InvokeDynamic
+                if pos + 4 > class_bytes.len() {
+                    return None;
+                }
+                let bootstrap_method_attr_index =
+                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                let name_and_type_index =
+                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                pos += 4;
+                ConstantPoolEntry::InvokeDynamic(bootstrap_method_attr_index, name_and_type_index)
+            }
+            _ => {
+                // Unknown tag
+                return None;
+            }
+        };
+
+        constant_pool.push(entry);
+        i += 1;
+    }
+
+    Some(constant_pool)
+}
+
+/// Get UTF-8 string from constant pool
+fn get_utf8_from_cp(constant_pool: &[ConstantPoolEntry], index: u16) -> Option<String> {
+    if index == 0 || index as usize >= constant_pool.len() {
+        return None;
+    }
+    match &constant_pool[index as usize] {
+        ConstantPoolEntry::Utf8(s) => Some(s.clone()),
+        _ => None,
+    }
+}
+
+/// Get class name from constant pool
+fn get_class_name_from_cp(constant_pool: &[ConstantPoolEntry], index: u16) -> Option<String> {
+    if index == 0 || index as usize >= constant_pool.len() {
+        return None;
+    }
+    match &constant_pool[index as usize] {
+        ConstantPoolEntry::Class(name_index) => {
+            get_utf8_from_cp(constant_pool, *name_index).map(|s| s.replace('/', "."))
+        }
+        _ => None,
+    }
+}
+
+/// Extract class name from bytecode with full constant pool parsing
+#[allow(dead_code)]
+fn extract_class_name_from_bytecode(class_bytes: &[u8]) -> Option<String> {
+    let constant_pool = parse_constant_pool(class_bytes)?;
+
+    // Find this_class index (after constant pool)
+    let mut pos = 8; // Skip magic + version
+    let cp_count = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+    pos += 2;
+
+    // Skip constant pool entries
+    let mut i = 1;
+    while i < cp_count {
+        if pos >= class_bytes.len() {
+            return None;
+        }
+        let tag = class_bytes[pos];
+        pos += 1;
+
+        let skip = match tag {
+            1 => {
+                // CONSTANT_Utf8
+                let length = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]) as usize;
+                2 + length
+            }
+            3 | 4 => 4,  // Integer, Float
+            5 | 6 => {
+                i += 1; // Long and Double take 2 entries
+                8
+            }
+            7 | 8 | 16 => 2, // Class, String, MethodType
+            9 | 10 | 11 | 12 | 18 => 4, // Field/Method/Interface/NameAndType/InvokeDynamic
+            15 => 3, // MethodHandle
+            _ => return None,
+        };
+        pos += skip;
+        i += 1;
+    }
+
+    // Read access_flags (2 bytes)
+    if pos + 2 > class_bytes.len() {
+        return None;
+    }
+    pos += 2;
+
+    // Read this_class (2 bytes)
+    if pos + 2 > class_bytes.len() {
+        return None;
+    }
+    let this_class = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+
+    get_class_name_from_cp(&constant_pool, this_class)
 }
 
 /// Scan a JAR file and create fingerprints for all classes
@@ -448,6 +885,131 @@ pub fn match_shaded_class(
     }
 
     None
+}
+
+/// API change detected during JAR comparison
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[allow(non_snake_case)]
+pub struct ApiChange {
+    pub changeType: ApiChangeType,
+    pub className: String,
+    pub signature: String,
+    pub description: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum ApiChangeType {
+    RemovedMethod,
+    RemovedField,
+    AddedMethod,
+    AddedField,
+    RemovedClass,
+    AddedClass,
+}
+
+/// Compare two JAR files and detect API breaking changes
+///
+/// Compares method and field signatures between two versions of a JAR file.
+/// Returns a list of API changes that may break compatibility.
+#[allow(dead_code)]
+pub fn compare_jars_for_breaking_changes(
+    old_jar_path: &Path,
+    new_jar_path: &Path,
+) -> Result<Vec<ApiChange>> {
+    let old_fingerprints = fingerprint_jar(old_jar_path)?;
+    let new_fingerprints = fingerprint_jar(new_jar_path)?;
+
+    let mut changes = Vec::new();
+
+    // Check for removed classes
+    for (old_class_name, old_fp) in &old_fingerprints {
+        if !new_fingerprints.contains_key(old_class_name) {
+            changes.push(ApiChange {
+                changeType: ApiChangeType::RemovedClass,
+                className: old_fp.className.clone(),
+                signature: old_class_name.clone(),
+                description: format!("Class {} was removed", old_fp.className),
+            });
+        }
+    }
+
+    // Check for added classes
+    for (new_class_name, new_fp) in &new_fingerprints {
+        if !old_fingerprints.contains_key(new_class_name) {
+            changes.push(ApiChange {
+                changeType: ApiChangeType::AddedClass,
+                className: new_fp.className.clone(),
+                signature: new_class_name.clone(),
+                description: format!("Class {} was added", new_fp.className),
+            });
+        }
+    }
+
+    // Check for method and field changes in existing classes
+    for (class_name, new_fp) in &new_fingerprints {
+        if let Some(old_fp) = old_fingerprints.get(class_name) {
+            // Compare methods
+            let old_methods: std::collections::HashSet<_> =
+                old_fp.methodSignatures.iter().collect();
+            let new_methods: std::collections::HashSet<_> =
+                new_fp.methodSignatures.iter().collect();
+
+            // Removed methods (breaking change)
+            for removed in old_methods.difference(&new_methods) {
+                changes.push(ApiChange {
+                    changeType: ApiChangeType::RemovedMethod,
+                    className: new_fp.className.clone(),
+                    signature: removed.to_string(),
+                    description: format!(
+                        "Method {} was removed from class {}",
+                        removed, new_fp.className
+                    ),
+                });
+            }
+
+            // Added methods (non-breaking, but note for completeness)
+            for added in new_methods.difference(&old_methods) {
+                changes.push(ApiChange {
+                    changeType: ApiChangeType::AddedMethod,
+                    className: new_fp.className.clone(),
+                    signature: added.to_string(),
+                    description: format!(
+                        "Method {} was added to class {}",
+                        added, new_fp.className
+                    ),
+                });
+            }
+
+            // Compare fields
+            let old_fields: std::collections::HashSet<_> = old_fp.fieldSignatures.iter().collect();
+            let new_fields: std::collections::HashSet<_> = new_fp.fieldSignatures.iter().collect();
+
+            // Removed fields (breaking change)
+            for removed in old_fields.difference(&new_fields) {
+                changes.push(ApiChange {
+                    changeType: ApiChangeType::RemovedField,
+                    className: new_fp.className.clone(),
+                    signature: removed.to_string(),
+                    description: format!(
+                        "Field {} was removed from class {}",
+                        removed, new_fp.className
+                    ),
+                });
+            }
+
+            // Added fields (non-breaking, but note for completeness)
+            for added in new_fields.difference(&old_fields) {
+                changes.push(ApiChange {
+                    changeType: ApiChangeType::AddedField,
+                    className: new_fp.className.clone(),
+                    signature: added.to_string(),
+                    description: format!("Field {} was added to class {}", added, new_fp.className),
+                });
+            }
+        }
+    }
+
+    Ok(changes)
 }
 
 /// Detect shading in a JAR by comparing its classes against a relocation map
