@@ -1,3 +1,4 @@
+use crate::community_data::CommunityDatabase;
 use crate::ecosystem_detection::detect_ecosystem_from_package;
 use crate::github::GitHubAnalyzer;
 use crate::models::*;
@@ -12,6 +13,7 @@ use tracing::{debug, info, warn};
 pub struct UpgradeAnalyzer {
     deps_dev: DepsDevClient,
     github: GitHubAnalyzer,
+    community_db: CommunityDatabase,
     /// Cache for already-analyzed packages to avoid duplicate work
     analysis_cache: HashMap<String, SinglePackageAnalysis>,
 }
@@ -29,6 +31,7 @@ impl UpgradeAnalyzer {
         Ok(Self {
             deps_dev: DepsDevClient::new(),
             github: GitHubAnalyzer::new()?,
+            community_db: CommunityDatabase::new()?,
             analysis_cache: HashMap::new(),
         })
     }
@@ -102,6 +105,11 @@ impl UpgradeAnalyzer {
             None
         };
 
+        // Query community database for success rate
+        let success_rate = self
+            .community_db
+            .get_success_rate(package, from_version, to_version);
+
         Ok(UpgradeAnalysis {
             target_package: package.to_string(),
             from_version: from_version.to_string(),
@@ -113,7 +121,7 @@ impl UpgradeAnalyzer {
             github_repo: direct_analysis.github_repo,
             migration_guide_url,
             compatibility_notes,
-            success_rate: None, // TODO: Query community database
+            success_rate,
         })
     }
 
