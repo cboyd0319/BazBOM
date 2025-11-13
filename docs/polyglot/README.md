@@ -155,7 +155,7 @@ cargo test -p bazbom-polyglot --lib detection
 ## Documentation
 
 - **[Implementation Status](POLYGLOT_STATUS.md)** - Detailed phase-by-phase completion status
-- **[Original Roadmap](POLYGLOT_ROADMAP.md)** - Planning and architecture decisions
+- **[Original Roadmap](../archive/roadmaps-old/POLYGLOT_ROADMAP_COMPLETED.md)** - Planning and architecture decisions (completed, archived)
 - **[Capability Matrix](../CAPABILITY_MATRIX.md)** - Full feature comparison
 
 ## Limitations

@@ -1,7 +1,7 @@
 # Integrations Index
 
 - [Orchestrated Scan (Semgrep/CodeQL)](orchestrated-scan.md)
-- [Container Scanning](container-scanning.md)
+- [Container Scanning](../features/container-scanning.md)
 - [RipGrep Integration](ripgrep-integration.md)
 - [LLM Integration](llm-integration.md)
 - [LLM Usage Patterns](llm-usage.md)

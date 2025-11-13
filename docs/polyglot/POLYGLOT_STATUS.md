@@ -2,9 +2,9 @@
 
 ## ✅ ALL PHASES COMPLETE - 100% POLYGLOT COVERAGE!
 
-**Status:** Polyglot support LIVE with ALL 6 ecosystems! 🚀📦🐍🐹🦀💎🐘
+**Status:** Polyglot support LIVE with ALL 7 languages! ☕🟨🐍🐹🦀💎🐘
 
-**Version:** 6.0.0 (2025-11-11)
+**Version:** 6.5.0 (2025-11-12)
 
 ---
 
@@ -492,7 +492,7 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured
 
 ## 📚 Documentation Created
 
-1. **POLYGLOT_ROADMAP.md** - Complete implementation plan
+1. **[POLYGLOT_ROADMAP.md](../archive/roadmaps-old/POLYGLOT_ROADMAP_COMPLETED.md)** - Complete implementation plan (archived)
 2. **POLYGLOT_STATUS.md** - This document
 3. **Inline code documentation** - All modules fully documented
 

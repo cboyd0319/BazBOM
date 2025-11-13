@@ -228,11 +228,89 @@ This release achieves COMPLETE feature parity across all 7 supported languages w
   - Impact: Improved performance, maintainability, and adherence to Rust best practices
   - Files modified: 17 across 6 crates (143 lines changed: 70 insertions, 73 deletions)
 
+## [6.4.0] - 2025-11-11
+
+### Added
+
+- **🐍 Python Reachability Analysis** (~80% accuracy)
+  - RustPython-based AST parsing for maximum compatibility
+  - Framework-aware detection: Django, Flask, FastAPI, pytest
+  - Import resolution with sys.path tracking
+  - Conservative handling of dynamic imports and `eval()`
+  - ~1,200 lines of production code
+
+- **🐹 Go Reachability Analysis** (~90% accuracy)
+  - Tree-sitter-based AST parsing
+  - Goroutine and channel pattern detection
+  - Framework-aware: Gin, Echo, Chi, gRPC, go-kit
+  - Comprehensive standard library support
+  - ~1,100 lines of production code
+
+### Changed
+
+- All crates updated to v6.4.0 for consistency
+- Enhanced polyglot support with 5 languages (JVM, JS/TS, Python, Go, Rust)
+
+## [6.3.0] - 2025-11-10
+
+### Added
+
+- **🟨 JavaScript/TypeScript Reachability Analysis** (~85% accuracy)
+  - SWC-based AST parsing with full TypeScript support
+  - Framework detection: React, Vue, Angular, Express, Next.js
+  - Dynamic import and require() handling
+  - CommonJS and ES Module support
+  - ~1,800 lines of production code
+
+### Changed
+
+- All crates updated to v6.3.0 for consistency
+- Enhanced polyglot support with 4 languages (JVM, JS/TS, Python, Go)
+
+## [6.2.0] - 2025-11-09
+
+### Added
+
+- **Polyglot Upgrade Intelligence** - Cross-language dependency upgrade analysis
+  - Framework-specific migration guides (Spring Boot, Django, Rails, React, etc.)
+  - Ecosystem-specific version semantics
+  - Breaking change detection
+  - Migration resource links
+
+### Changed
+
+- All crates updated to v6.2.0 for consistency
+
+## [6.0.0] - 2025-11-08
+
+### 🎉 Major Version Jump - Polyglot Architecture
+
+**Note:** This release represents a major architectural shift with the introduction of polyglot reachability analysis. The version jump from v1.0.0 to v6.0.0 reflects the significant expansion of language support and the extensive rewrite required for the new polyglot architecture.
+
+### Added
+
+- **Polyglot Architecture Foundation** - Multi-language reachability framework
+  - Unified AST analysis interface
+  - Language-specific analyzers with pluggable architecture
+  - Cross-language dependency tracking
+  - Foundation for 7-language support
+
+- **JVM Reachability Analysis** (>95% accuracy)
+  - OPAL Framework bytecode analysis
+  - Comprehensive call graph construction
+  - Reflection and dynamic dispatch handling
+
+### Changed
+
+- Complete architectural rewrite for polyglot support
+- All crates updated to v6.0.0
+- Enhanced CLI with multi-language capabilities
+
 ## [1.0.0] - 2025-11-07
 
 ### 🎉 Major Release - Production Ready
 
-This release marks BazBOM as production-ready with comprehensive features, world-class quality, and enterprise-grade security.
+This release marks BazBOM as production-ready with comprehensive JVM ecosystem features, world-class quality, and enterprise-grade security.
 
 ### Added
 

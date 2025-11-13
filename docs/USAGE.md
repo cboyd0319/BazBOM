@@ -83,7 +83,7 @@ bazbom scan .
 <plugin>
     <groupId>io.bazbom</groupId>
     <artifactId>bazbom-maven-plugin</artifactId>
-    <version>6.0.0</version>
+    <version>6.5.0</version>
 </plugin>
 ```
 
