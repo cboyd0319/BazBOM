@@ -14,6 +14,7 @@ use std::path::Path;
 pub mod compliance;
 pub mod developer;
 pub mod executive;
+pub mod pdf;
 pub mod trend;
 
 /// Types of reports that can be generated

@@ -4,52 +4,28 @@
 /// - JAR bytecode comparison for API surface changes
 /// - Configuration file migration detection
 
-use anyhow::{Context, Result};
-use std::path::Path;
+use anyhow::Result;
 
 /// JAR bytecode analysis for detecting API breaking changes
+///
+/// Note: The actual JAR bytecode comparison implementation is in the `bazbom` crate
+/// (bazbom::shading module) to avoid cyclic dependencies. This module provides
+/// the API documentation.
+///
+/// To use bytecode comparison:
+/// ```rust,ignore
+/// use bazbom::shading::compare_jars_for_breaking_changes;
+/// let changes = compare_jars_for_breaking_changes(old_jar, new_jar)?;
+/// ```
 pub mod bytecode {
-    use super::*;
-    use bazbom::shading::{compare_jars_for_breaking_changes, ApiChange, ApiChangeType};
-
-    /// Analyze two JAR versions for breaking changes
+    /// Placeholder for JAR bytecode analysis
     ///
-    /// Downloads and compares JAR files from Maven Central or local cache,
-    /// detecting removed/added methods, fields, and classes.
-    pub async fn detect_jar_breaking_changes(
-        old_jar: &Path,
-        new_jar: &Path,
-    ) -> Result<Vec<ApiChange>> {
-        compare_jars_for_breaking_changes(old_jar, new_jar)
-    }
-
-    /// Check if a list of API changes contains breaking changes
-    pub fn has_breaking_changes(changes: &[ApiChange]) -> bool {
-        changes.iter().any(|change| {
-            matches!(
-                change.changeType,
-                ApiChangeType::RemovedMethod
-                    | ApiChangeType::RemovedField
-                    | ApiChangeType::RemovedClass
-            )
-        })
-    }
-
-    /// Count breaking vs non-breaking changes
-    pub fn count_changes(changes: &[ApiChange]) -> (usize, usize) {
-        let breaking = changes
-            .iter()
-            .filter(|c| {
-                matches!(
-                    c.changeType,
-                    ApiChangeType::RemovedMethod
-                        | ApiChangeType::RemovedField
-                        | ApiChangeType::RemovedClass
-                )
-            })
-            .count();
-        let non_breaking = changes.len() - breaking;
-        (breaking, non_breaking)
+    /// The actual implementation is in `bazbom::shading::compare_jars_for_breaking_changes`.
+    /// This module documents that bytecode analysis is available in the main bazbom crate.
+    pub fn bytecode_analysis_available() -> bool {
+        // This is a marker function indicating that bytecode analysis is available
+        // in the bazbom::shading module
+        true
     }
 }
 
