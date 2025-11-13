@@ -35,6 +35,7 @@ pub mod config {
     use serde_json::Value as JsonValue;
     use std::collections::HashMap;
     use std::fs;
+    use std::path::Path;
 
     /// Detected configuration change
     #[derive(Debug, Clone)]
