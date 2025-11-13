@@ -1,6 +1,6 @@
 # BazBOM Windows Distribution
 
-This directory contains Windows-specific packaging and distribution files for BazBOM.
+> **Status:** BazBOM is not currently published to MSI/Chocolatey/winget feeds. The scripts in this directory describe the planned packaging workflow. Until Windows packages ship, build BazBOM from source (see `docs/getting-started/homebrew-installation.md`) or cross-compile the CLI yourself.
 
 ## Distribution Channels
 

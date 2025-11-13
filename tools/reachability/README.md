@@ -23,14 +23,14 @@ cd tools/reachability
 mvn clean package
 ```
 
-This produces `target/bazbom-reachability-0.1.0-SNAPSHOT.jar` (~690KB).
+This produces `target/bazbom-reachability-6.5.0.jar` (~700KB).
 
 ## Usage
 
 Run the JAR with the following arguments:
 
 ```bash
-java -jar bazbom-reachability-0.1.0-SNAPSHOT.jar \
+java -jar bazbom-reachability-6.5.0.jar \
   --classpath "/path/to/app.jar:/path/to/lib1.jar:/path/to/lib2.jar" \
   --entrypoints "com.example.Main.main" \
   --output reachability.json
@@ -59,7 +59,7 @@ The tool produces JSON output with the following structure:
 ```json
 {
   "tool": "bazbom-reachability",
-  "version": "0.1.0",
+  "version": "6.5.0",
   "classpath": "/path/to/app.jar",
   "entrypoints": "",
   "detectedEntrypoints": [
@@ -89,7 +89,7 @@ The tool produces JSON output with the following structure:
 Analyze a simple JAR file:
 
 ```bash
-java -jar bazbom-reachability-0.1.0-SNAPSHOT.jar \
+java -jar bazbom-reachability-6.5.0.jar \
   --classpath "myapp.jar" \
   --output reachability.json
 ```

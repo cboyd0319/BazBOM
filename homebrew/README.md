@@ -1,6 +1,6 @@
 # Homebrew Tap Infrastructure
 
-This directory contains the infrastructure for creating and maintaining the BazBOM Homebrew tap.
+> **Status:** No public Homebrew tap has been published yet. This directory is kept for future packaging efforts. Users must currently build BazBOM from source (see `docs/getting-started/homebrew-installation.md`).
 
 ## Files
 
@@ -32,7 +32,7 @@ mkdir -p Formula
 cat > README.md << 'EOF'
 # Homebrew Tap for BazBOM
 
-Official Homebrew tap for [BazBOM](https://github.com/cboyd0319/BazBOM) - Enterprise-grade build-time SBOM, SCA, and dependency graph for JVM projects.
+Official Homebrew tap for [BazBOM](https://github.com/cboyd0319/BazBOM) - Polyglot reachability-first SBOM, SCA, and dependency graph analysis.
 
 ## Installation
 
@@ -49,8 +49,9 @@ See the [main BazBOM repository](https://github.com/cboyd0319/BazBOM) for usage 
 
 BazBOM provides:
 - Build-time SBOM generation (SPDX 2.3, CycloneDX 1.5)
-- Software Composition Analysis with OSV/NVD/GHSA integration
-- Dependency graphs for Maven, Gradle, and Bazel
+- Polyglot reachability analysis across JVM, JavaScript/TypeScript, Python, Go, Rust, Ruby, and PHP
+- Software Composition Analysis with OSV/NVD/GHSA/KEV/EPSS integration
+- Dependency graphs for Bazel, Maven, Gradle, npm, pip, Go modules, Cargo, Bundler, and Composer
 - Zero telemetry, offline-first operation
 - Memory-safe Rust implementation
 
@@ -70,7 +71,7 @@ After creating a GitHub release with signed binaries:
 
 ```bash
 # From the BazBOM repository root
-./homebrew/generate-formula.sh 0.1.0
+./homebrew/generate-formula.sh 6.5.0
 
 # This will:
 # - Fetch SHA256 hashes from the release assets
@@ -89,7 +90,7 @@ cp homebrew/bazbom.rb /path/to/homebrew-bazbom/Formula/
 # Commit and push
 cd /path/to/homebrew-bazbom
 git add Formula/bazbom.rb
-git commit -m "Update formula for v0.1.0"
+git commit -m "Update formula for v6.5.0"
 git push
 ```
 

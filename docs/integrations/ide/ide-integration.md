@@ -96,9 +96,12 @@ When you select the fix:
 
 #### Prerequisites
 
-1. **BazBOM CLI** must be installed and in your PATH:
+1. **BazBOM CLI** must be installed and in your PATH (build from source):
    ```bash
-   curl -fsSL https://bazbom.io/install.sh | bash
+   git clone https://github.com/cboyd0319/BazBOM.git ~/src/BazBOM
+   cd ~/src/BazBOM
+   cargo build --release -p bazbom
+   sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
    ```
 
 2. **Advisory database** must be synced:

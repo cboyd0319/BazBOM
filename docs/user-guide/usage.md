@@ -1162,13 +1162,13 @@ cd tools/reachability
 mvn clean package
 ```
 
-This creates `target/bazbom-reachability-1.0.0.jar` (~690KB).
+This creates `target/bazbom-reachability-6.5.0.jar` (~690KB).
 
 **Usage:**
 
 ```bash
 # Set environment variable
-export BAZBOM_REACHABILITY_JAR=/path/to/BazBOM/tools/reachability/target/bazbom-reachability-1.0.0.jar
+export BAZBOM_REACHABILITY_JAR=/path/to/BazBOM/tools/reachability/target/bazbom-reachability-6.5.0.jar
 
 # Run scan with reachability analysis
 bazbom scan . --reachability --out-dir ./reports
@@ -1483,34 +1483,19 @@ BAZBOM_REACHABILITY_JAR=/custom/path/analyzer.jar bazbom scan . --reachability
 
 ### Python CLI Wrapper (Transition Phase)
 
-### Quick Install (Recommended)
+### Source Install (Current Status)
 
-Install BazBOM with zero configuration:
+BazBOM is not yet packaged for any platform. Build it from this repository:
 
 ```bash
-# Recommended: Download and inspect first (safest)
-curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh -o install.sh
-cat install.sh  # Review the script
-bash install.sh
-
-# Alternative: One-line install (if you trust the source)
-curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
-
-# Or download and run locally
-wget https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh
-chmod +x install.sh
-./install.sh
+git clone https://github.com/cboyd0319/BazBOM.git ~/src/BazBOM
+cd ~/src/BazBOM
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or export PATH="$PWD/target/release:$PATH"
+bazbom --version
 ```
 
-** Security Note**: Always review scripts before running them, especially when using pipe-to-bash (`| bash`). The recommended approach is to download, inspect, and then execute.
-
-The installer will:
--  Detect your platform (Linux/macOS, amd64/arm64)
--  Check prerequisites (Python 3, Git)
--  Check for RipGrep (optional, enables 100x faster scanning)
--  Install BazBOM to `~/.bazbom`
--  Add `bazbom` command to your PATH
--  Auto-configure Bazel projects (if detected)
+See [docs/getting-started/homebrew-installation.md](../getting-started/homebrew-installation.md) for troubleshooting tips, PATH configuration, and update instructions.
 
 ### Optional: Install RipGrep for 100x Faster Scanning
 
@@ -1540,15 +1525,21 @@ See [../integrations/ripgrep-integration.md](../integrations/ripgrep-integration
 ### Manual Installation
 
 ```bash
-# Clone repository
-git clone https://github.com/cboyd0319/BazBOM.git ~/.bazbom
+# Clone repository (if you need a dedicated workspace)
+git clone https://github.com/cboyd0319/BazBOM.git ~/.local/src/BazBOM
+cd ~/.local/src/BazBOM
 
-# Add to PATH
-echo 'export PATH="$HOME/.bazbom:$PATH"' >> ~/.bashrc
+# Build release binary
+cargo build --release -p bazbom
+
+# Add to PATH without sudo
+mkdir -p ~/.local/bin
+cp target/release/bazbom ~/.local/bin/
+echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc  # adjust for your shell
 source ~/.bashrc
 
 # Verify installation
-bazbom version
+bazbom --version
 ```
 
 ## Quick Start with BazBOM CLI

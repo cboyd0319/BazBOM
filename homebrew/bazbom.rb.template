@@ -1,5 +1,7 @@
+# Placeholder template for a future BazBOM Homebrew formula. No public tap is available yet.
+
 class Bazbom < Formula
-  desc "Build-time SBOM, SCA, and dependency graph for JVM projects"
+  desc "Polyglot reachability-first SBOM, SCA, and dependency graph analysis"
   homepage "https://github.com/cboyd0319/BazBOM"
   version "VERSION"
   license "MIT"

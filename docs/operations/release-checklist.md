@@ -87,17 +87,13 @@ Once the release workflow completes:
 
 ## Post-Release
 
-1. [ ] Update Homebrew formula (if applicable)
-   - [ ] Update version in formula
-   - [ ] Update SHA256 checksums
-   - [ ] Test formula: `brew install --build-from-source bazbom`
-2. [ ] Announce release:
+1. [ ] Announce release:
    - [ ] GitHub Discussions
    - [ ] Project README badge (if needed)
-3. [ ] Monitor for issues:
+2. [ ] Monitor for issues:
    - [ ] Check GitHub issues for bug reports
    - [ ] Review GitHub Actions for any workflow failures
-4. [ ] Update project board/milestone
+3. [ ] Update project board/milestone
    - [ ] Close release milestone
    - [ ] Create next milestone (if needed)
 

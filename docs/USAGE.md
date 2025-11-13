@@ -4,7 +4,7 @@ Common tasks with BazBOM: generate SBOMs, scan for vulnerabilities, apply polici
 
 ## Prerequisites
 
-- Rust CLI: [Homebrew](getting-started/homebrew-installation.md) or [build from source](../README.md#option-2-build-from-source-rust-cli)
+- Rust CLI: [Build from source](getting-started/homebrew-installation.md) (clone this repo, compile, add to PATH)
 - Java 11+ (optional, only for reachability analysis)
 - For Maven projects: Maven plugin in `pom.xml`
 - For Gradle projects: Gradle plugin in `build.gradle`
@@ -107,7 +107,7 @@ bazbom scan .
 
 ```kotlin
 plugins {
-    id("io.bazbom.gradle-plugin") version "6.0.0"
+    id("io.bazbom.gradle-plugin") version "6.5.0"
 }
 ```
 
@@ -157,7 +157,7 @@ bazbom scan-container my-app:latest --out sbom.json
 
 **Output:** SBOM with extracted JAR metadata (groupId:artifactId:version).
 
-**Gotcha:** Container scanning is beta. Only detects JVM dependencies. Use Syft for non-JVM layers.
+**Coverage:** Container scanning shares the same polyglot detectors used for source scans (JVM, npm, pip, Go modules, Cargo, Bundler, Composer) and reuses reachability analysis to flag exploitable packages. When an ecosystem is missing, BazBOM gracefully emits a warning so you can fall back to Syft/Trivy if needed.
 
 ## Vulnerability Scanning
 

@@ -7,16 +7,15 @@
 ## Installation
 
 ```bash
-# Homebrew (macOS/Linux)
-brew tap cboyd0319/bazbom && brew install bazbom
-
-# Pre-built binary
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-$(uname -m)-$(uname -s | tr '[:upper:]' '[:lower:]').tar.gz
-tar -xzf bazbom-*.tar.gz && sudo mv bazbom /usr/local/bin/
-
-# From source
-cargo build --release -p bazbom && sudo cp target/release/bazbom /usr/local/bin/
+# Clone and build (current distribution)
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
+bazbom --version
 ```
+
+> Package manager installs (Homebrew, winget, etc.) are not yet published. Track [docs/getting-started/homebrew-installation.md](getting-started/homebrew-installation.md) for the latest status.
 
 ---
 
@@ -345,9 +344,10 @@ bazbom scan examples/maven_spring_boot/
 # Enable verbose logging
 RUST_LOG=debug bazbom scan .
 
-# Check for updates
-brew upgrade bazbom  # Homebrew
-# Or download latest from GitHub releases
+# Check for updates (manual build)
+git -C /path/to/BazBOM pull
+cargo build --release -p bazbom
+sudo install -m 0755 /path/to/BazBOM/target/release/bazbom /usr/local/bin/bazbom
 ```
 
 ---

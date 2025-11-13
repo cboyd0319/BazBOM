@@ -15,23 +15,23 @@
 
 ---
 
-## 📊 Current State (6.0.0 Baseline)
+## 📊 Current State (6.5.0 Baseline)
 
 ### ✅ Strengths
-- ✅ **Zero critical vulnerabilities** (1 unmaintained dep warning only)
-- ✅ Comprehensive polyglot support (6 ecosystems)
-- ✅ Build-time accuracy (Maven, Gradle, Bazel)
-- ✅ Developer-friendly UX
-- ✅ 244+ passing tests
-- ✅ Clean architecture (18 crates)
+- ✅ **Zero critical vulnerabilities** (cargo audit + CodeQL + Semgrep clean)
+- ✅ Comprehensive polyglot + reachability support (7 languages with AST/call graph analysis)
+- ✅ Build-time accuracy (Bazel, Maven, Gradle, npm, pip, Go modules, Cargo, Bundler, Composer)
+- ✅ Developer-friendly UX (quick commands, TUI, watch mode, smart defaults)
+- ✅ 360+ passing tests + 30 production crates with unified versioning
+- ✅ Supply chain posture: SLSA Level 3 provenance, Sigstore signing, SBOM+VEX artifacts
 
 ### ⚠️ Gaps for Marketplace
-- ⚠️ No GitHub Actions integration
-- ⚠️ No SLSA provenance/attestations
-- ⚠️ No Sigstore signing
-- ⚠️ Limited binary distribution
-- ⚠️ No automated security scanning
-- ⚠️ 1 unmaintained dependency (paste → ratatui)
+- ⚠️ Need turnkey GitHub Marketplace listing (pricing, billing, SLA, legal)
+- ⚠️ Need polished onboarding inside `bazbom install github` (guided auth, status checks)
+- ⚠️ Need signed IDE extension packages + marketplace marketing assets
+- ⚠️ Need distribution parity (winget, apt, brew bottles) + auto-update story
+- ⚠️ Need customer-facing audit artifacts (attestations + compliance bundles per release)
+- ⚠️ Need dedicated support rotation + escalation SOP for Marketplace customers
 
 ---
 

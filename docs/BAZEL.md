@@ -45,10 +45,13 @@ sequenceDiagram
 ### 1. Install BazBOM
 
 ```bash
-# Via Homebrew
-brew tap cboyd0319/bazbom
-brew install bazbom
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
 ```
+
+> Package manager taps are not available yet; building from source is required today.
 
 ### 2. Verify Bazel Setup
 

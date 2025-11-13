@@ -127,7 +127,7 @@ The codebase follows Rust best practices:
 
 | Command | Status | Purpose |
 |---------|--------|---------|
-| `bazbom --version` | ✅ Working | Version: 6.0.0 |
+| `bazbom --version` | ✅ Working | Version: 6.5.0 |
 | `bazbom --help` | ✅ Working | Shows all commands |
 | `bazbom scan` | ✅ Working | SBOM generation + scanning |
 | `bazbom policy` | ✅ Working | Policy enforcement |
@@ -200,7 +200,7 @@ The codebase follows Rust best practices:
 **Getting Started:** ✅
 - Quickstart guide
 - 90-second quickstart
-- Homebrew installation
+- Manual source installation
 - IDE setup
 
 **User Guides:** ✅
@@ -350,15 +350,15 @@ The codebase follows Rust best practices:
 
 ## 8. Usability Assessment
 
-### Installation: ✅ SUPER EASY
+### Installation: ⚠️ SOURCE BUILD ONLY (Today)
 
-**Multiple Installation Options:**
-1. ✅ **Homebrew** - One-line install (`brew install bazbom`)
-2. ✅ **Pre-built Binaries** - Download and run
-3. ✅ **Build from Source** - `cargo build --release`
-4. ✅ **Shell Installer** - `curl | bash` (with safety review)
-5. ✅ **GitHub Action** - Add to workflow YAML
-6. ✅ **Bazel Integration** - Native workspace integration
+BazBOM currently ships exclusively as source. Installation remains straightforward:
+
+1. Clone this repository
+2. Run `cargo build --release -p bazbom`
+3. Copy `target/release/bazbom` onto your `PATH`
+
+Homebrew/winget/Chocolatey packages and pre-built installers are tracked on the roadmap but have not been published yet.
 
 ### Configuration: ✅ ZERO-CONFIG DEFAULT
 

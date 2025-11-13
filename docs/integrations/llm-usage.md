@@ -559,9 +559,14 @@ jobs:
           ollama serve &
           ollama pull codellama
       
+      - uses: dtolnay/rust-toolchain@stable
+
       - name: Install BazBOM
         run: |
-          curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+          git clone --depth 1 https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+          cd /tmp/bazbom
+          cargo build --release -p bazbom
+          sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
       
       - name: Scan with AI
         env:

@@ -12,13 +12,12 @@ Real-time vulnerability scanning for Java projects using Maven, Gradle, or Bazel
 
 ## Requirements
 
-- **BazBOM CLI**: Must be installed and available in PATH
+- **BazBOM CLI**: Must be installed and available in PATH (build from source)
   ```bash
-  # Install via Homebrew (macOS/Linux)
-  brew install cboyd0319/tap/bazbom
-  
-  # Or download from releases
-  # https://github.com/cboyd0319/BazBOM/releases
+  git clone https://github.com/cboyd0319/BazBOM.git ~/src/BazBOM
+  cd ~/src/BazBOM
+  cargo build --release -p bazbom
+  sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
   ```
 
 - **Advisory Database**: Sync the advisory database before first use

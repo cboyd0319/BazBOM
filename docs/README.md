@@ -19,7 +19,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - **[QUICKREF.md](QUICKREF.md)** – One-page cheat sheet (installation, commands, workflows)
 - [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – zero to first scan with defaults
 - [Quick Start Guide](getting-started/quickstart.md) – five-minute walkthrough with CI tips
-- [Homebrew Installation](getting-started/homebrew-installation.md) – signed packages and tap management
+- [Manual Source Installation](getting-started/homebrew-installation.md) – clone, build, and add BazBOM to PATH
 - [Shell Completions](getting-started/shell-completions.md) – Bash, Zsh, Fish completion setup
 - [IDE Setup Checklist](getting-started/ide-setup.md) – configure IntelliJ / VS Code extensions
 

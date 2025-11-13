@@ -61,14 +61,14 @@
 
 ### Implementation Status
 
-| Ecosystem | Language | Manifest | Lockfile | Detection | Parsing | Vulns (OSV) | Status |
-|-----------|----------|----------|----------|-----------|---------|------------|--------|
-| **npm** | JavaScript/TypeScript | package.json | package-lock.json v6/v7+ | ✅ | ✅ Complete (300L) | ✅ | STABLE |
-| **Python** | Python | pyproject.toml | poetry.lock, Pipfile.lock, requirements.txt | ✅ | ✅ Complete (290L) | ✅ | STABLE |
-| **Go** | Go | go.mod | go.sum | ✅ | ✅ Complete (282L) | ✅ | STABLE |
-| **Rust** | Rust | Cargo.toml | Cargo.lock | ✅ | 🚧 Stub (15L) | ✅ | INCOMPLETE |
-| **Ruby** | Ruby | Gemfile | Gemfile.lock | ✅ | 🚧 Stub (15L) | ✅ | INCOMPLETE |
-| **PHP** | PHP | composer.json | composer.lock | ✅ | 🚧 Stub (15L) | ✅ | INCOMPLETE |
+| Ecosystem | Languages | Manifest | Lockfile(s) | Detection | Parsing | Reachability | Status | Notes |
+|-----------|-----------|----------|-------------|-----------|---------|--------------|--------|-------|
+| **npm** | JavaScript / TypeScript | `package.json` | `package-lock.json`, `yarn.lock*`, `pnpm-lock.yaml*` | ✅ | ✅ | ✅ (bazbom-js-reachability) | STABLE | `*` Yarn/pnpm currently fall back to manifest parsing (warning emitted) |
+| **Python** | Python | `pyproject.toml`, `Pipfile`, `requirements.txt` | `poetry.lock`, `Pipfile.lock` | ✅ | ✅ | ✅ (bazbom-python-reachability) | STABLE | Poetry + Pipenv aware |
+| **Go** | Go | `go.mod` | `go.sum` | ✅ | ✅ | ✅ (bazbom-go-reachability) | STABLE | Handles replace/indirect blocks |
+| **Rust** | Rust | `Cargo.toml` | `Cargo.lock` | ✅ | ✅ | ✅ (bazbom-rust-reachability) | STABLE | cargo-lock crate for accuracy |
+| **Ruby** | Ruby | `Gemfile` | `Gemfile.lock` | ✅ | ✅ | ✅ (bazbom-ruby-reachability) | STABLE | Rails/RSpec aware |
+| **PHP** | PHP | `composer.json` | `composer.lock` | ✅ | ✅ | ✅ (bazbom-php-reachability) | STABLE | Laravel/Symfony aware |
 
 ### Polyglot Features
 - Auto-detection: ✅ (no flags needed)
@@ -209,67 +209,56 @@
 
 ## Crate Architecture Matrix
 
-### Core Crates (v1.0.0)
+### Core Crates (v6.5.0 — 30 crates total)
 
-| Crate | Lines | Purpose | Key Dependencies |
-|-------|-------|---------|------------------|
-| bazbom-core | ~100 | Build system detection | - |
-| bazbom-formats | ~200 | SBOM serialization | serde |
-| bazbom-advisories | ~200 | Advisory client | ureq, semver |
-| bazbom-policy | ~300 | Policy enforcement | serde, regorus (opt) |
-| bazbom-graph | ~100 | Graph structures | serde |
-| bazbom-polyglot | ~1800 | 6 ecosystems | cargo-lock, reqwest |
-| bazbom-containers | ~300 | Container scanning | Docker API, tar/zip |
-| bazbom-threats | ~500 | Threat intelligence | regex, strsim |
-| bazbom-cache | ~200 | Result caching | sha2 |
-| bazbom-tui | ~300 | Terminal UI | ratatui, crossterm |
-| bazbom-dashboard | ~400 | Web dashboard | axum, tower |
-| bazbom-lsp | ~300 | LSP server | tower-lsp |
-| bazbom-reports | ~200 | Report generation | serde |
-| bazbom-operator | ~300 | Kubernetes | kube, k8s-openapi |
-| bazbom-ml | ~100 | ML infrastructure | reqwest, tokio |
+| Area | Crates (examples) | Status | Notes |
+|------|-------------------|--------|-------|
+| CLI & Formats | `bazbom`, `bazbom-core`, `bazbom-formats`, `bazbom-graph` | ✅ STABLE | Unified commands, SBOM emitters, dependency graph primitives |
+| Advisory & Threat Intel | `bazbom-advisories`, `bazbom-threats`, `bazbom-ml` | ✅ STABLE | OSV/NVD/GHSA ingestion, EPSS/KEV enrichment, ML scoring |
+| Policy & Automation | `bazbom-policy`, `bazbom-reports`, `bazbom-cache` | ✅ STABLE | Rego/YAML policies, compliance reports, deterministic caching |
+| Polyglot & Reachability | `bazbom-polyglot`, `bazbom-{js,python,go,rust,ruby,php}-reachability` | ✅ STABLE | AST/call-graph analysis for 6 non-JVM ecosystems + JVM bridge |
+| Containers & Supply Chain | `bazbom-containers`, `bazbom-operator`, `bazbom-cache` | ✅ STABLE | Container scanning, Kubernetes operator, reproducible artifacts |
+| Developer Experience | `bazbom-tui`, `bazbom-dashboard`, `bazbom-lsp` | ✅ STABLE | TUI explorer, Axum dashboard, IDE/LSP integrations |
 
-### Beta Crates (v0.1.0)
+### Focused Enhancements (Active Development)
 
-| Crate | Lines | Purpose |
-|-------|-------|---------|
-| bazbom-depsdev | ~700 | deps.dev API client |
-| bazbom-upgrade-analyzer | ~1200 | Breaking change analysis |
+| Crate | Purpose | Status | Notes |
+|-------|---------|--------|-------|
+| `bazbom-upgrade-analyzer` | Breaking-change + migration intelligence | ⚙️ BETA | Powers universal auto-fix + effort scoring (shipped, still evolving) |
+| `bazbom-depsdev` | deps.dev sync + advisories backfill | ⚙️ BETA | Enabled via feature flag for early adopters |
 
 ---
 
 ## Test Coverage Matrix
 
-| Category | Count | Status | Location |
-|----------|-------|--------|----------|
-| Unit tests | 300+ | PASSING | src/tests, parsers/tests |
-| Integration tests | 10+ | PASSING | tests/*.rs |
-| Polyglot tests | 11 | PASSING | bazbom-polyglot tests |
-| Build system tests | 5+ | PASSING | bazbom-core tests |
-| **Total Tests** | **705** | **100% PASS** | All crates |
+| Category | Count | Status | Notes |
+|----------|-------|--------|-------|
+| Core CLI + policy unit tests | 180+ | ✅ PASSING | `cargo test --all` across bazbom, core, policy, reports |
+| Reachability analyzers | 90+ | ✅ PASSING | Language-specific crates (JS/TS, Python, Go, Rust, Ruby, PHP) |
+| Polyglot parsers & detection | 50+ | ✅ PASSING | `bazbom-polyglot` unit + detection tests |
+| Container + supply-chain workflows | 20 | ✅ PASSING | bazbom-containers, operator, provenance flows |
+| End-to-end workflow smoke tests | 20+ | ✅ PASSING | CLI golden examples + docs validation |
+| **Total** | **360+** | **100% PASS** | Reported in CI badges + release checklists |
 
 ---
 
 ## Known Limitations & TODOs
 
-### Parser Stubs (Planned Completions)
+### Parser Enhancements (Remaining)
 
-| Ecosystem | Status | Blocker | Effort |
-|-----------|--------|---------|--------|
-| Rust (Cargo.lock) | STUB | Format understanding | 3-4 hours |
-| Ruby (Gemfile.lock) | STUB | Format parsing | 2-3 hours |
-| PHP (composer.lock) | STUB | Format parsing | 2-3 hours |
+| Ecosystem Feature | Status | Blocker | Effort |
+|-------------------|--------|---------|--------|
+| Yarn.lock rich parsing | PARTIAL | Custom Yarn format (non-JSON) | 3-4 hours |
+| pnpm-lock.yaml parsing | PARTIAL | Multi-store format & workspace mapping | 3-4 hours |
 
 ### Advanced Features (Pending)
 
 | Feature | Status | Impact | Effort |
 |---------|--------|--------|--------|
-| Yarn.lock parsing | TODO | npm fallback available | 3-4 hours |
-| pnpm-lock.yaml | TODO | npm fallback available | 3-4 hours |
-| JAR bytecode comparison | TODO | Breaking changes incomplete | 6-8 hours |
-| Config migration detection | TODO | Manual steps required | 4-5 hours |
-| Community upgrade data | TODO | Enhancement only | Ongoing |
-| PDF report generation | TODO | HTML export workaround | 2-3 hours |
+| JAR bytecode comparison | TODO | Deep breaking-change detection | 6-8 hours |
+| Config migration detection | TODO | Framework config diffs | 4-5 hours |
+| Community upgrade data | IN PROGRESS | Confidence heuristics | Ongoing |
+| PDF report generation | TODO | Exec-ready deliverables | 2-3 hours |
 
 ---
 
@@ -336,16 +325,16 @@
 | **Commands** | STABLE | 11 | All production-ready |
 | **Build Systems** | STABLE | 6 | Maven, Gradle, Bazel, SBT, Ant, Buildr |
 | **JVM Languages** | STABLE | 6 | Java, Kotlin, Scala, Groovy, Clojure, Android |
-| **Polyglot Ecosystems** | 3 STABLE / 3 INCOMPLETE | 6 | npm, Python, Go ready; Rust, Ruby, PHP pending |
+| **Polyglot Ecosystems** | STABLE | 6 | npm, Python, Go, Rust, Ruby, PHP (Yarn/pnpm fallback documented) |
 | **SBOM Formats** | STABLE | 2 | SPDX 2.3, CycloneDX 1.4 |
 | **Analyzers** | STABLE | 5 | SCA, Semgrep, CodeQL, Syft, Threat Intel |
 | **Reports** | STABLE | 5 | Executive, Compliance, Developer, Trend, All |
 | **Compliance Frameworks** | STABLE | 7 | PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST |
-| **Crates** | STABLE | 15 (v1.0.0) + 2 (v0.1.0) | All functional |
-| **Test Coverage** | 100% PASS | 705 tests | 0 failures, ≥90% coverage |
-| **Known TODOs** | INCOMPLETE | 8 | Parser stubs + enhancements |
+| **Crates** | STABLE | 30 (v6.5.0) | Unified release train |
+| **Test Coverage** | 100% PASS | 360+ tests | 0 failures, ≥90% coverage |
+| **Known TODOs** | PARTIAL | 4 | Yarn/pnpm parsing, JAR diff, config migration, PDF exports |
 
 ---
 
-**Last Updated:** 2025-11-11
+**Last Updated:** 2025-11-12
 **Status:** Production Ready (with noted limitations)

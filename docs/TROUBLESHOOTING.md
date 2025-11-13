@@ -18,10 +18,11 @@ bash: bazbom: command not found
 # Verify installation
 which bazbom
 
-# If missing, reinstall
-brew install bazbom
-# OR
-sudo cp target/release/bazbom /usr/local/bin/
+# If missing, rebuild from source
+git clone https://github.com/cboyd0319/BazBOM.git ~/src/BazBOM  # skip if you already have it
+cd ~/src/BazBOM
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
 
 # Verify
 bazbom --version
@@ -565,7 +566,7 @@ ls -lh ~/.bazbom/db/
 
 | Symptom | Quick Fix |
 |---------|-----------|
-| Command not found | `brew install bazbom` |
+| Command not found | Rebuild from source and add `target/release` (or `/usr/local/bin` copy) to PATH |
 | Java not found | Install OpenJDK 17+ |
 | No build system | Check for pom.xml/build.gradle/BUILD |
 | Empty SBOM | Verify dependencies with `mvn dependency:tree` |

@@ -123,11 +123,14 @@ jobs:
         with:
           fetch-depth: 0  # Need history for git diff
       
-      - name: Setup BazBOM
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Build BazBOM from source
         run: |
-          # Install BazBOM (using Homebrew as example)
-          brew tap cboyd0319/bazbom
-          brew install bazbom
+          git clone --depth 1 https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+          cd /tmp/bazbom
+          cargo build --release -p bazbom
+          echo "/tmp/bazbom/target/release" >> $GITHUB_PATH
       
       - name: Get Changed Files
         id: changes

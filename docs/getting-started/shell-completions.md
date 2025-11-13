@@ -9,9 +9,8 @@ BazBOM CLI commands can be made easier with shell completions for Bash, Zsh, Fis
 ### Bash
 
 ```bash
-# macOS (Homebrew)
+# macOS
 brew install bash-completion
-bazbom --help > /dev/null  # Homebrew auto-installs completions
 
 # Linux
 sudo mkdir -p /etc/bash_completion.d/
@@ -22,9 +21,8 @@ sudo mkdir -p /etc/bash_completion.d/
 ### Zsh
 
 ```bash
-# macOS (Homebrew)
+# macOS
 brew install zsh-completions
-bazbom --help > /dev/null  # Homebrew auto-installs completions
 
 # Manual install
 mkdir -p ~/.zsh/completion
@@ -36,9 +34,6 @@ autoload -Uz compinit && compinit
 ### Fish
 
 ```bash
-# macOS (Homebrew)
-bazbom --help > /dev/null  # Homebrew auto-installs completions
-
 # Manual install
 mkdir -p ~/.config/fish/completions/
 # Completions will be auto-generated in future release
@@ -312,21 +307,9 @@ bazbom scan --format <TAB>   # Should show: spdx, cyclonedx
 
 ---
 
-## Homebrew Auto-Install
+## Package Manager Status
 
-If you installed BazBOM via Homebrew, completions are automatically installed:
-
-```bash
-# Bash (macOS)
-brew install bash-completion
-# Then restart shell
-
-# Zsh (macOS)
-# Completions auto-loaded from $(brew --prefix)/share/zsh/site-functions
-
-# Fish (macOS)
-# Completions auto-loaded from $(brew --prefix)/share/fish/vendor_completions.d
-```
+BazBOM does not yet ship via Homebrew or any other package manager, so completions are not auto-installed. Use the manual snippets above and regenerate them after you rebuild the CLI.
 
 ---
 

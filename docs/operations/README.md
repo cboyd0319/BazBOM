@@ -2,7 +2,7 @@
 
 - [Release Process](release-process.md)
 - [Release Checklist](release-checklist.md)
-- [Homebrew Tap Creation](homebrew-tap-creation.md)
+- [Package Manager Planning](homebrew-tap-creation.md)
 - [Provenance & SLSA](provenance.md)
 - [Performance Tuning](performance.md)
 - [Validation Workflows](validation.md)

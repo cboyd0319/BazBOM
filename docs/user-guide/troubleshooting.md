@@ -651,25 +651,26 @@ bazel build //... --aspects=//tools/supplychain:aspects.bzl%sbom_aspect --output
 
 ### Binary Not Found After Installation
 
-**Symptom**: `bazbom: command not found` after installing via Homebrew or downloading binary
+**Symptom**: `bazbom: command not found` after building from source
 
-**Solution**: Verify binary is in PATH:
+**Solution**: Ensure the binary exists and is reachable:
 
 ```bash
-# Check if binary exists
+# Verify the binary was built
+ls -lh /path/to/BazBOM/target/release/bazbom
+
+# Temporarily add the directory to PATH
+export PATH=\"/path/to/BazBOM/target/release:$PATH\"
+
+# Optional: copy into a global location
+sudo install -m 0755 /path/to/BazBOM/target/release/bazbom /usr/local/bin/bazbom
+
+# Confirm
 which bazbom
-
-# If installed via Homebrew
-brew list bazbom | grep bin
-
-# Manually add to PATH if needed
-export PATH="$HOME/.local/bin:$PATH"
-
-# Or for Homebrew
-export PATH="$(brew --prefix)/bin:$PATH"
+bazbom --version
 ```
 
-Add the PATH export to your shell configuration file (`.bashrc`, `.zshrc`, etc.) for persistence.
+Add the PATH export (or keep the `/usr/local/bin` copy) in your shell configuration file for persistence.
 
 ### Build System Not Detected
 

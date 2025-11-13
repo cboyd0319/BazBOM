@@ -690,6 +690,8 @@ bazbom scan --watch
 
 ### Add to BazBOM Dependencies
 
+> The `install.sh` installer is currently dormant while distribution stays source-only. Keep this snippet handy for when automated installers return.
+
 Update `install.sh`:
 ```bash
 # Check for ripgrep (optional but recommended)

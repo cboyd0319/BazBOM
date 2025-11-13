@@ -196,9 +196,11 @@ sbom-scan:
   stage: security
   image: ubuntu:latest
   
-  before_script:
-    - apt-get update && apt-get install -y curl
-    - curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+before_script:
+    - apt-get update && apt-get install -y git curl pkg-config libssl-dev
+    - git clone https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+    - (cd /tmp/bazbom && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && source $HOME/.cargo/env && cargo build --release -p bazbom)
+    - install -m 0755 /tmp/bazbom/target/release/bazbom /usr/local/bin/bazbom
   
   script:
     - bazbom db sync
@@ -219,7 +221,18 @@ pipeline {
     stages {
         stage('Install BazBOM') {
             steps {
-                sh 'curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash'
+                sh '''
+                  set -e
+                  if ! command -v cargo >/dev/null; then
+                    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+                  fi
+                  source "$HOME/.cargo/env"
+                  rm -rf bazbom-src
+                  git clone https://github.com/cboyd0319/BazBOM.git bazbom-src
+                  cd bazbom-src
+                  cargo build --release -p bazbom
+                  sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
+                '''
             }
         }
         
@@ -253,15 +266,19 @@ version: 2.1
 jobs:
   sbom-scan:
     docker:
-      - image: cimg/base:stable
-    
+      - image: cimg/rust:1.77
+   
     steps:
       - checkout
       
       - run:
           name: Install BazBOM
           command: |
-            curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+            sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev git
+            git clone --depth 1 https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+            cd /tmp/bazbom
+            cargo build --release -p bazbom
+            sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
       
       - restore_cache:
           keys:
@@ -529,9 +546,14 @@ jobs:
             ~/.bazbom/db
           key: ${{ runner.os }}-deps-${{ hashFiles('**/pom.xml', '**/*.gradle*') }}
       
-      - name: Install BazBOM
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install BazBOM (build from source)
         run: |
-          curl -fsSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+          git clone --depth 1 https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+          cd /tmp/bazbom
+          cargo build --release -p bazbom
+          sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
           bazbom --version
       
       - name: Sync Advisory Database

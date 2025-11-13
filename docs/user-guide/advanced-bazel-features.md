@@ -313,8 +313,11 @@ bazbom report stage2/sbom.spdx.json --format html
 # GitHub Actions example
 - name: BazBOM Scan
   run: |
-    # Install BazBOM
-    curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | bash
+    # Install BazBOM (build from source)
+    git clone --depth 1 https://github.com/cboyd0319/BazBOM.git /tmp/bazbom
+    cd /tmp/bazbom
+    cargo build --release -p bazbom
+    sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
     
     # Scan with optimization
     bazbom scan \

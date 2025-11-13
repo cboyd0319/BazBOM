@@ -45,7 +45,7 @@ Generates a security findings report (placeholder - will invoke BazBOM CLI).
 
 ```groovy
 plugins {
-    id 'io.bazbom.gradle-plugin' version '0.1.0-SNAPSHOT'
+    id 'io.bazbom.gradle-plugin' version '6.5.0'
 }
 ```
 
@@ -53,7 +53,7 @@ plugins {
 
 ```kotlin
 plugins {
-    id("io.bazbom.gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("io.bazbom.gradle-plugin") version "6.5.0"
 }
 ```
 
@@ -191,7 +191,7 @@ pluginManagement {
 
 ```kotlin
 plugins {
-    id("io.bazbom.gradle-plugin") version "0.1.0-SNAPSHOT"
+    id("io.bazbom.gradle-plugin") version "6.5.0"
 }
 ```
 

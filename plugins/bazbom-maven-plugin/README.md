@@ -44,7 +44,7 @@ Add the plugin to your `pom.xml`:
         <plugin>
             <groupId>io.bazbom</groupId>
             <artifactId>bazbom-maven-plugin</artifactId>
-            <version>0.1.0-SNAPSHOT</version>
+            <version>6.5.0</version>
             <executions>
                 <execution>
                     <goals>
@@ -79,7 +79,7 @@ mvn io.bazbom:bazbom-maven-plugin:graph
 <plugin>
     <groupId>io.bazbom</groupId>
     <artifactId>bazbom-maven-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>6.5.0</version>
     <configuration>
         <outputFile>${project.build.directory}/custom-graph.json</outputFile>
     </configuration>
@@ -92,7 +92,7 @@ mvn io.bazbom:bazbom-maven-plugin:graph
 <plugin>
     <groupId>io.bazbom</groupId>
     <artifactId>bazbom-maven-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>6.5.0</version>
     <configuration>
         <includeTestDependencies>false</includeTestDependencies>
     </configuration>
@@ -191,7 +191,7 @@ Then use it in a test project:
 
 ```bash
 cd /path/to/test/project
-mvn io.bazbom:bazbom-maven-plugin:0.1.0-SNAPSHOT:graph
+mvn io.bazbom:bazbom-maven-plugin:6.5.0:graph
 ```
 
 ### Debugging

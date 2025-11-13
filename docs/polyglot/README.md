@@ -1,7 +1,7 @@
 # 🌍 BazBOM Polyglot Support
 
-**Version:** 6.0.0 (2025-11-11)
-**Status:** ✅ Production Ready - All 6 Ecosystems Supported
+**Version:** 6.5.0 (2025-11-12)  
+**Status:** ✅ Production Ready - All 6 ecosystems supported with reachability data
 
 ## Overview
 
@@ -57,6 +57,12 @@ bazbom scan ./my-monorepo --cyclonedx --out-dir ./output
 - ✅ CVE ID extraction and mapping
 - ✅ CVSS score parsing and severity classification
 - ✅ Fixed version detection where available
+
+### Reachability Integration
+- ✅ Reuses all 7 language-specific analyzers (JVM, JS/TS, Python, Go, Rust, Ruby, PHP) 
+- ✅ Tags each package with reachable/unreachable call graph data
+- ✅ Highlights exploitable dependencies in CLI/TUI output
+- ✅ Falls back gracefully when analyzers are unavailable
 
 ## Architecture
 

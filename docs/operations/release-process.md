@@ -35,7 +35,7 @@ The release process builds binaries for the following platforms:
 
    ```bash
    git add .
-   git commit -m "chore: prepare release v0.1.0"
+   git commit -m "chore: prepare release vX.Y.Z"
    git push
    ```
 
@@ -44,11 +44,11 @@ The release process builds binaries for the following platforms:
 Create and push a version tag to trigger the release workflow:
 
 ```bash
-git tag -a v0.1.0 -m "Release v0.1.0"
-git push origin v0.1.0
+git tag -a vX.Y.Z -m "Release vX.Y.Z"
+git push origin vX.Y.Z
 ```
 
-The tag must follow the pattern `v*` (e.g., `v0.1.0`, `v1.2.3`).
+The tag must follow the pattern `v*` (e.g., `v6.5.0`, `v7.0.0-beta.1`).
 
 ### Step 3: Automated Build Process
 
@@ -127,16 +127,13 @@ All releases are published to GitHub Releases:
 https://github.com/cboyd0319/BazBOM/releases
 ```
 
-### Homebrew Tap
+### Package Managers (Future Work)
 
-BazBOM is distributed via a Homebrew tap. See [../getting-started/homebrew-installation.md](../getting-started/homebrew-installation.md) for installation instructions.
+BazBOM is not yet available through any package manager. Everyone installs by cloning this repository and compiling the CLI. When the Homebrew/winget/Chocolatey work lands, add the verification steps back here.
 
 ### Distribution Channels
 
-BazBOM is available through:
-
-- Homebrew tap (macOS and Linux)
-- Direct binary downloads (GitHub Releases)
+- Direct source + binary tarballs via GitHub Releases (primary)
 - Build from source (Cargo)
 
 ## Release Checklist
@@ -152,7 +149,6 @@ Use this checklist when creating a release:
 - [ ] Binaries verified with cosign
 - [ ] Checksums verified
 - [ ] Release notes published
-- [ ] Homebrew formula updated (if applicable)
 - [ ] Documentation updated (if needed)
 
 ## Troubleshooting

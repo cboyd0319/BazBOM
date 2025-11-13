@@ -39,43 +39,23 @@ BazBOM is a **developer-friendly security scanner** that uses reachability analy
 
 ## Installation
 
-### Homebrew (macOS/Linux) - Recommended
-```bash
-brew tap cboyd0319/bazbom
-brew install bazbom
-bazbom --version
-```
+> **Current distribution:** BazBOM is only available by cloning this repository and building from source. Package managers (Homebrew, winget, etc.) are planned but not yet published.
 
-### Pre-built Binaries
-```bash
-# macOS (Apple Silicon)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-aarch64-apple-darwin.tar.gz
-tar -xzf bazbom-aarch64-apple-darwin.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# macOS (Intel)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz
-tar -xzf bazbom-x86_64-apple-darwin.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# Linux (x86_64)
-curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
-tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
-sudo mv bazbom /usr/local/bin/
-
-# Verify installation
-bazbom --version
-```
-
-### From Source (Rust)
+### Build from Source (macOS/Linux)
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
 cargo build --release -p bazbom
-sudo cp target/release/bazbom /usr/local/bin/
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
+bazbom --version
 ```
 
-[More installation options →](docs/getting-started/quickstart.md) (Docker, npm, CI/CD)
+If you prefer not to copy into `/usr/local/bin`, add `target/release` to your `PATH` instead:
+```bash
+export PATH="$PWD/target/release:$PATH"
+```
+
+[Detailed source installation guide →](docs/getting-started/homebrew-installation.md)
 
 ---
 
@@ -90,7 +70,7 @@ sudo cp target/release/bazbom /usr/local/bin/
 - ✅ **Exploit Intelligence** - EPSS/KEV integration, POC links, difficulty scoring
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
 
-🦀 **30 crates** • **267 tests** • **18MB binary** • **Homebrew ready**
+🦀 **30 crates** • **267 tests** • **18MB binary** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 
@@ -351,7 +331,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 ### **Getting Started**
 - [90-Second Quickstart](docs/getting-started/quickstart-90-seconds.md) - Fastest path to first scan
 - [5-Minute Tutorial](docs/getting-started/quickstart.md) - Complete guide
-- [Homebrew Installation](docs/getting-started/homebrew-installation.md) - macOS/Linux setup
+- [Manual Source Installation](docs/getting-started/homebrew-installation.md) - build BazBOM from this repo
 - [Shell Completions](docs/getting-started/shell-completions.md) - bash/zsh/fish
 
 ### **User Guides**

@@ -509,9 +509,9 @@ test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured
 - ✅ Unified SPDX 2.3 SBOM generation
 - ✅ Zero compilation errors
 
-**Released:** Version 6.0.0 (2025-11-11)
+**Released:** Version 6.5.0 (2025-11-12)
 
 ---
 
-*Generated: 2025-11-11*
+*Generated: 2025-11-12*
 *Team BazBOM - Making security comprehensive for polyglot monorepos*

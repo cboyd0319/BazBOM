@@ -8,23 +8,14 @@ Get BazBOM running in your IDE in 5 minutes.
 
 ### 1. Install BazBOM CLI
 
-**macOS/Linux:**
-```bash
-curl -fsSL https://bazbom.io/install.sh | bash
-```
-
-**Or with Homebrew:**
-```bash
-brew install bazbom
-```
-
-**Or build from source:**
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
-cargo build --release
-sudo cp target/release/bazbom /usr/local/bin/
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
 ```
+
+> Package-manager installers (Homebrew, Chocolatey, winget, etc.) are not available yet. Building from source is the supported workflow today. See [Manual Source Installation](homebrew-installation.md) for troubleshooting tips.
 
 **Verify installation:**
 ```bash

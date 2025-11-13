@@ -2,6 +2,8 @@
 
 This guide provides step-by-step instructions for creating and maintaining the BazBOM Homebrew tap repository.
 
+> **Status:** BazBOM does not currently ship a public Homebrew tap. These instructions remain as the future plan for when packaging work resumes. Until then, ask users to build from source via [docs/getting-started/homebrew-installation.md](../getting-started/homebrew-installation.md).
+
 ## Overview
 
 A Homebrew tap is a third-party repository that contains formulae (package definitions) for Homebrew. Before submitting to the official homebrew-core, BazBOM uses a user-owned tap for initial distribution and testing.
@@ -54,27 +56,27 @@ homebrew-bazbom/
 
    ```ruby
    class Bazbom < Formula
-     desc "Build-time SBOM, SCA, and dependency graph for JVM projects"
+     desc "Polyglot reachability-first SBOM, SCA, and dependency graph"
      homepage "https://github.com/cboyd0319/BazBOM"
-     version "6.0.0"
+     version "6.5.0"
      license "MIT"
 
      on_macos do
        if Hardware::CPU.arm?
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-aarch64-apple-darwin.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v6.5.0/bazbom-aarch64-apple-darwin.tar.gz"
          sha256 "INSERT_AARCH64_MACOS_SHA256_HERE"
        else
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v6.5.0/bazbom-x86_64-apple-darwin.tar.gz"
          sha256 "INSERT_X86_64_MACOS_SHA256_HERE"
        end
      end
 
      on_linux do
        if Hardware::CPU.arm?
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-aarch64-unknown-linux-gnu.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v6.5.0/bazbom-aarch64-unknown-linux-gnu.tar.gz"
          sha256 "INSERT_AARCH64_LINUX_SHA256_HERE"
        else
-         url "https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-unknown-linux-gnu.tar.gz"
+         url "https://github.com/cboyd0319/BazBOM/releases/download/v6.5.0/bazbom-x86_64-unknown-linux-gnu.tar.gz"
          sha256 "INSERT_X86_64_LINUX_SHA256_HERE"
        end
      end
@@ -101,7 +103,7 @@ After creating a release in the main BazBOM repository, generate checksums for e
 
 ```bash
 # Download release artifacts
-VERSION="0.1.0"
+VERSION="6.5.0"
 for platform in aarch64-apple-darwin x86_64-apple-darwin aarch64-unknown-linux-gnu x86_64-unknown-linux-gnu; do
   curl -LO "https://github.com/cboyd0319/BazBOM/releases/download/v${VERSION}/bazbom-${platform}.tar.gz"
   sha256sum "bazbom-${platform}.tar.gz" | awk '{print $1}'
@@ -257,7 +259,7 @@ When releasing a new version:
 
 ### Version Strings
 
-- Use semantic versioning (e.g., "0.1.0", "1.2.3")
+- Use semantic versioning (e.g., "6.5.0", "7.0.0-beta.1")
 - Match the version from BazBOM releases
 - Do not include "v" prefix in version string
 
@@ -310,7 +312,7 @@ brew install --verbose bazbom
 brew fetch bazbom --force
 
 # Check download URLs
-curl -I https://github.com/cboyd0319/BazBOM/releases/download/v1.0.0/bazbom-x86_64-apple-darwin.tar.gz
+curl -I https://github.com/cboyd0319/BazBOM/releases/download/v6.5.0/bazbom-x86_64-apple-darwin.tar.gz
 ```
 
 ### Binary Not Found After Install
