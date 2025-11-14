@@ -3,8 +3,18 @@ name: Supply Chain Security
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - '.github/workflows/supplychain.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - '.github/workflows/supplychain.yml'
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
@@ -29,6 +39,7 @@ jobs:
     permissions:
       contents: read
       security-events: write  # For SARIF upload
+      id-token: write  # For SBOM attestation
 
     steps:
       - name: Checkout code
@@ -42,16 +53,30 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "rust-sbom"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
-      - name: Install cargo-sbom
-        run: cargo install cargo-sbom
+      - name: Install cargo-sbom (with retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: cargo install cargo-sbom
 
       - name: Generate Rust SBOM
         run: |
           echo "Generating SBOM for Rust dependencies..."
           cargo sbom > rust-sbom.spdx.json || echo "Note: cargo-sbom may have issues with workspace"
           echo "✓ SBOM generation complete"
+
+      - name: Generate SBOM provenance attestation
+        uses: actions/attest-sbom@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          subject-path: rust-sbom.spdx.json
+          sbom-path: rust-sbom.spdx.json
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -83,7 +108,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "bazbom-self-scan"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
       - name: Build BazBOM
         run: cargo build --release -p bazbom
@@ -95,38 +122,8 @@ jobs:
           ./target/release/bazbom --version
           echo "✓ BazBOM self-scan complete"
 
-  # Dependency audit for known vulnerabilities
-  cargo-audit:
-    name: Cargo Security Audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
-        with:
-          shared-key: "cargo-audit"
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-
-      - name: Run cargo audit
-        run: |
-          echo "Running cargo audit for Rust dependencies..."
-          cargo audit || echo "Note: cargo audit may find advisories"
-          echo "✓ Security audit complete"
-        continue-on-error: true  # Don't fail on advisories, just report
+  # NOTE: cargo-audit has been moved to dependency-review.yml to avoid duplication
+  # It runs on every PR and provides detailed security advisory reporting
 
   # License compliance check
   license-check:
@@ -149,14 +146,21 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "license-check"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
+      - name: Install cargo-deny (with retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: cargo install cargo-deny
 
       - name: Check licenses
         run: |
           echo "Checking license compliance..."
-          cargo deny check licenses || echo "Note: Some license checks may fail"
-          echo "✓ License check complete"
-        continue-on-error: true  # Don't fail CI, just report
+          echo "This will fail if any dependencies use disallowed licenses (GPL, AGPL, etc.)"
+          cargo deny check licenses
+          echo "✓ License check complete - All dependencies use allowed licenses"

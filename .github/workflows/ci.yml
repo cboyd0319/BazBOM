@@ -1,4 +1,7 @@
-name: CI
+name: CI (Docs & Bazel)
+
+# This workflow handles documentation linting and Bazel validation.
+# Rust build/test/lint is handled by rust.yml to avoid duplication.
 
 on:
   push:
@@ -17,40 +20,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Primary CI: Rust build and test
-  rust-ci:
-    name: Rust Build and Test
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
-        with:
-          shared-key: "rust-ci"
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Clippy (linting)
-        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
-
-      - name: Build
-        run: cargo build --workspace --all-targets --locked
-
-      - name: Test
-        run: cargo test --workspace --all-features --no-fail-fast
+  # NOTE: Rust build, test, and linting moved to rust.yml to avoid duplication
+  # rust.yml includes: fmt, clippy, build, test, coverage
+  # This workflow focuses on documentation and Bazel validation
 
   # Documentation lint
   lint-docs:

@@ -45,15 +45,19 @@ jobs:
       
       - name: Install BazBOM
         run: |
-          # Option 1: Install from Homebrew (fastest)
-          brew tap cboyd0319/bazbom
-          brew install bazbom
-          
-          # Option 2: Install from release binary
-          # curl -LO https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-unknown-linux-gnu.tar.gz
+          # Option 1: One-line install script (recommended)
+          curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+
+          # Option 2: Download specific version
+          # VERSION="6.5.0"
+          # curl -LO "https://github.com/cboyd0319/BazBOM/releases/download/v${VERSION}/bazbom-x86_64-unknown-linux-gnu.tar.gz"
           # tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
-          # sudo mv bazbom /usr/local/bin/
-          
+          # sudo install -m 755 bazbom /usr/local/bin/bazbom
+
+          # Option 3: Homebrew (coming soon)
+          # brew tap cboyd0319/bazbom
+          # brew install bazbom
+
           # Verify installation
           bazbom --version
       
@@ -219,7 +223,7 @@ jobs:
       
       - name: Upload SARIF to GitHub Security
         if: steps.scan.outputs.scan_completed == 'true'
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: reports/sca_findings.sarif
           category: bazbom-incremental-scan
@@ -239,22 +243,22 @@ jobs:
 #   runs-on: ubuntu-latest
 #   if: github.ref == 'refs/heads/main'
 #   timeout-minutes: 60
-#   
+#
 #   steps:
 #     - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-#     
+#
 #     - name: Install BazBOM
 #       run: |
-#         brew tap cboyd0319/bazbom
-#         brew install bazbom
-#     
+#         curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+#         bazbom --version
+#
 #     - name: Full Workspace Scan
 #       run: |
 #         bazbom scan . \
 #           --bazel-targets-query 'kind(java_binary, //...)' \
 #           --format spdx \
 #           --out-dir ./reports
-#     
+#
 #     - name: Upload to Release
 #       uses: actions/upload-artifact@v4
 #       with:
