@@ -1,5 +1,12 @@
 name: Version Bump Automation
 
+# IMPORTANT: Repository Setting Required
+# For this workflow to create pull requests, you must enable:
+# Settings → Actions → General → Workflow permissions →
+# ✓ "Allow GitHub Actions to create and approve pull requests"
+#
+# Alternative: Set a PAT_TOKEN secret with repo scope and the workflow will use it instead.
+
 on:
   workflow_dispatch:
     inputs:
@@ -28,7 +35,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -51,7 +58,7 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: "chore: bump version to ${{ inputs.version }}"
           branch: version-bump-${{ inputs.version }}
           title: "chore: bump version to ${{ inputs.version }}"

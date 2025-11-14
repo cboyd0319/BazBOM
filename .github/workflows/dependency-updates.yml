@@ -1,6 +1,14 @@
 name: Automated Dependency Updates
 
 # Weekly automated Cargo dependency updates to stay current with security patches
+#
+# IMPORTANT: Repository Setting Required
+# For this workflow to create pull requests, you must enable:
+# Settings → Actions → General → Workflow permissions →
+# ✓ "Allow GitHub Actions to create and approve pull requests"
+#
+# Alternative: Set a PAT_TOKEN secret with repo scope.
+# See .github/WORKFLOW_SETUP.md for detailed instructions.
 
 on:
   schedule:
@@ -24,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -93,7 +101,7 @@ jobs:
         if: env.NO_UPDATES == 'false'
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: "chore(deps): Update Rust dependencies"
           branch: automated/cargo-update-${{ github.run_number }}
           title: "chore(deps): Weekly Rust dependency updates"
