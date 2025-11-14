@@ -33,11 +33,15 @@ impl RustReachabilityAnalyzer {
 
         // Step 2: Build call graph
         self.build_call_graph()?;
-        info!("Built call graph with {} functions", self.call_graph.functions.len());
+        info!(
+            "Built call graph with {} functions",
+            self.call_graph.functions.len()
+        );
 
         // Step 3: Mark entrypoints
         for entrypoint in &entrypoints {
-            let func_id = format!("{}::{}",
+            let func_id = format!(
+                "{}::{}",
                 entrypoint.file.display(),
                 entrypoint.function_name
             );
@@ -52,7 +56,8 @@ impl RustReachabilityAnalyzer {
         // Step 5: Generate report
         let report = self.generate_report()?;
 
-        info!("Analysis complete: {}/{} functions reachable",
+        info!(
+            "Analysis complete: {}/{} functions reachable",
             report.reachable_functions.len(),
             report.all_functions.len()
         );
@@ -146,17 +151,20 @@ impl RustReachabilityAnalyzer {
     fn generate_report(&self) -> Result<ReachabilityReport> {
         let all_functions = self.call_graph.functions.clone();
 
-        let reachable_functions: HashSet<_> = all_functions.values()
+        let reachable_functions: HashSet<_> = all_functions
+            .values()
             .filter(|f| f.reachable)
             .map(|f| f.id.clone())
             .collect();
 
-        let unreachable_functions: HashSet<_> = all_functions.values()
+        let unreachable_functions: HashSet<_> = all_functions
+            .values()
             .filter(|f| !f.reachable)
             .map(|f| f.id.clone())
             .collect();
 
-        let entrypoints: Vec<_> = all_functions.values()
+        let entrypoints: Vec<_> = all_functions
+            .values()
             .filter(|f| f.is_entrypoint)
             .map(|f| f.id.clone())
             .collect();
@@ -175,32 +183,39 @@ impl RustReachabilityAnalyzer {
         &self,
         vulnerabilities: Vec<VulnerabilityReachability>,
     ) -> Vec<VulnerabilityReachability> {
-        vulnerabilities.into_iter().map(|mut vuln| {
-            // Check if any vulnerable function is reachable
-            let is_reachable = vuln.vulnerable_functions.iter().any(|func_name| {
-                self.call_graph.functions.values().any(|f| {
-                    f.name.contains(func_name) && f.reachable
-                })
-            });
+        vulnerabilities
+            .into_iter()
+            .map(|mut vuln| {
+                // Check if any vulnerable function is reachable
+                let is_reachable = vuln.vulnerable_functions.iter().any(|func_name| {
+                    self.call_graph
+                        .functions
+                        .values()
+                        .any(|f| f.name.contains(func_name) && f.reachable)
+                });
 
-            vuln.reachable = is_reachable;
+                vuln.reachable = is_reachable;
 
-            // Try to find call chain if reachable
-            if is_reachable {
-                for func_name in &vuln.vulnerable_functions {
-                    if let Some(func) = self.call_graph.functions.values()
-                        .find(|f| f.name.contains(func_name))
-                    {
-                        if let Some(chain) = self.call_graph.find_call_chain(&func.id) {
-                            vuln.call_chain = Some(chain);
-                            break;
+                // Try to find call chain if reachable
+                if is_reachable {
+                    for func_name in &vuln.vulnerable_functions {
+                        if let Some(func) = self
+                            .call_graph
+                            .functions
+                            .values()
+                            .find(|f| f.name.contains(func_name))
+                        {
+                            if let Some(chain) = self.call_graph.find_call_chain(&func.id) {
+                                vuln.call_chain = Some(chain);
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            vuln
-        }).collect()
+                vuln
+            })
+            .collect()
     }
 
     fn should_skip_entry(entry: &walkdir::DirEntry) -> bool {

@@ -97,7 +97,10 @@ impl ScanOrchestrator {
         if self.incremental {
             if let Ok(skip_scan) = self.check_incremental_scan() {
                 if skip_scan {
-                    println!("   {} No significant changes detected, using cached results", "✅".green());
+                    println!(
+                        "   {} No significant changes detected, using cached results",
+                        "✅".green()
+                    );
                     return Ok(());
                 }
             }
@@ -109,12 +112,18 @@ impl ScanOrchestrator {
             if let Ok(cached_result) = self.try_use_cache() {
                 if cached_result {
                     println!("   {} Using cached scan results (cache hit)", "⚡".yellow());
-                    println!("   {} Set BAZBOM_DISABLE_CACHE=1 to disable caching", "ℹ️".to_string().dimmed());
+                    println!(
+                        "   {} Set BAZBOM_DISABLE_CACHE=1 to disable caching",
+                        "ℹ️".to_string().dimmed()
+                    );
                     return Ok(());
                 }
             }
         } else {
-            println!("   {} Cache disabled via BAZBOM_DISABLE_CACHE", "⊘".dimmed());
+            println!(
+                "   {} Cache disabled via BAZBOM_DISABLE_CACHE",
+                "⊘".dimmed()
+            );
         }
 
         // Build phase list based on what's enabled
@@ -596,8 +605,8 @@ impl ScanOrchestrator {
     }
 
     fn scan_single_container(&self, image_path: &std::path::Path) -> Result<()> {
-        use bazbom_containers::{ContainerScanner, ScanEvent};
         use crate::container_ux::{ContainerScanProgress, ContainerSummary};
+        use bazbom_containers::{ContainerScanner, ScanEvent};
         use std::time::Instant;
 
         // Track scan start time
@@ -610,32 +619,36 @@ impl ScanOrchestrator {
         let mut progress: Option<ContainerScanProgress> = None;
 
         // Scan with progress tracking
-        let scan_result = scanner.scan_with_progress(|event| {
-            match event {
-                ScanEvent::ImageMetadata { name, layers } => {
-                    progress = Some(ContainerScanProgress::new(&name, layers));
-                }
-                ScanEvent::LayerStart { digest, size, .. } => {
-                    if let Some(ref mut p) = progress {
-                        p.start_layer(
-                            &digest,
-                            size as f64 / 1_048_576.0, // Convert bytes to MB
-                        );
+        let scan_result = scanner
+            .scan_with_progress(|event| {
+                match event {
+                    ScanEvent::ImageMetadata { name, layers } => {
+                        progress = Some(ContainerScanProgress::new(&name, layers));
                     }
-                }
-                ScanEvent::LayerComplete { artifacts_found, .. } => {
-                    if let Some(ref mut p) = progress {
-                        p.complete_layer(artifacts_found, 0); // 0 vulns for now
+                    ScanEvent::LayerStart { digest, size, .. } => {
+                        if let Some(ref mut p) = progress {
+                            p.start_layer(
+                                &digest,
+                                size as f64 / 1_048_576.0, // Convert bytes to MB
+                            );
+                        }
                     }
-                }
-                ScanEvent::Complete => {
-                    if let Some(ref mut p) = progress {
-                        p.finish();
+                    ScanEvent::LayerComplete {
+                        artifacts_found, ..
+                    } => {
+                        if let Some(ref mut p) = progress {
+                            p.complete_layer(artifacts_found, 0); // 0 vulns for now
+                        }
                     }
+                    ScanEvent::Complete => {
+                        if let Some(ref mut p) = progress {
+                            p.finish();
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
-            }
-        }).context("Container scan failed")?;
+            })
+            .context("Container scan failed")?;
 
         println!(); // Add spacing after progress
 
@@ -674,10 +687,10 @@ impl ScanOrchestrator {
             total_size_mb,
             java_artifacts: scan_result.artifacts.len(),
             vulnerabilities: total_vulns,
-            critical_vulns: 0,  // Would be populated by vulnerability scan
-            high_vulns: 0,      // Would be populated by vulnerability scan
-            medium_vulns: 0,    // Would be populated by vulnerability scan
-            low_vulns: 0,       // Would be populated by vulnerability scan
+            critical_vulns: 0, // Would be populated by vulnerability scan
+            high_vulns: 0,     // Would be populated by vulnerability scan
+            medium_vulns: 0,   // Would be populated by vulnerability scan
+            low_vulns: 0,      // Would be populated by vulnerability scan
             scan_duration,
         };
         summary.print();
@@ -1072,7 +1085,10 @@ impl ScanOrchestrator {
 
         // Scan for polyglot ecosystems
         println!("[bazbom] scanning for polyglot ecosystems...");
-        let workspace_path = self.context.workspace.to_str()
+        let workspace_path = self
+            .context
+            .workspace
+            .to_str()
             .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
 
         // Try to use existing runtime, or create a new one if not in async context
@@ -1092,7 +1108,10 @@ impl ScanOrchestrator {
 
         // Display detected ecosystems
         if !polyglot_results.is_empty() {
-            println!("\n📦 Detected {} polyglot ecosystems:", polyglot_results.len());
+            println!(
+                "\n📦 Detected {} polyglot ecosystems:",
+                polyglot_results.len()
+            );
             for result in &polyglot_results {
                 let icon = match result.ecosystem.as_str() {
                     "Node.js/npm" => "📦",
@@ -1105,22 +1124,31 @@ impl ScanOrchestrator {
                 };
                 println!(
                     "  {} {} - {} packages, {} vulnerabilities",
-                    icon,
-                    result.ecosystem,
-                    result.total_packages,
-                    result.total_vulnerabilities
+                    icon, result.ecosystem, result.total_packages, result.total_vulnerabilities
                 );
 
                 // Show vulnerability summary if any found
                 if result.total_vulnerabilities > 0 {
-                    let critical = result.vulnerabilities.iter()
-                        .filter(|v| v.severity == "CRITICAL").count();
-                    let high = result.vulnerabilities.iter()
-                        .filter(|v| v.severity == "HIGH").count();
-                    let medium = result.vulnerabilities.iter()
-                        .filter(|v| v.severity == "MEDIUM").count();
-                    let low = result.vulnerabilities.iter()
-                        .filter(|v| v.severity == "LOW").count();
+                    let critical = result
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "CRITICAL")
+                        .count();
+                    let high = result
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "HIGH")
+                        .count();
+                    let medium = result
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "MEDIUM")
+                        .count();
+                    let low = result
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "LOW")
+                        .count();
 
                     if critical > 0 || high > 0 {
                         println!(
@@ -1139,7 +1167,10 @@ impl ScanOrchestrator {
         if !polyglot_results.is_empty() {
             let polyglot_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
             let polyglot_sbom_path = self.context.sbom_dir.join("polyglot-sbom.json");
-            std::fs::write(&polyglot_sbom_path, serde_json::to_string_pretty(&polyglot_sbom)?)?;
+            std::fs::write(
+                &polyglot_sbom_path,
+                serde_json::to_string_pretty(&polyglot_sbom)?,
+            )?;
             println!("[bazbom] wrote polyglot SBOM to {:?}", polyglot_sbom_path);
         }
 

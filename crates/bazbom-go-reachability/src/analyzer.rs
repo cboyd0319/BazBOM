@@ -4,7 +4,9 @@ use crate::ast_parser::{parse_file, FunctionExtractor};
 use crate::call_graph::CallGraph;
 use crate::entrypoints::EntrypointDetector;
 use crate::error::Result;
-use crate::models::{FunctionNode, ReachabilityReport, ReflectionWarning, VulnerabilityReachability};
+use crate::models::{
+    FunctionNode, ReachabilityReport, ReflectionWarning, VulnerabilityReachability,
+};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
@@ -44,7 +46,8 @@ impl GoReachabilityAnalyzer {
 
         // 3. Mark entrypoints in the call graph
         for entrypoint in &entrypoints {
-            let entrypoint_id = format!("{}:{}", entrypoint.file.display(), entrypoint.function_name);
+            let entrypoint_id =
+                format!("{}:{}", entrypoint.file.display(), entrypoint.function_name);
 
             if let Err(e) = self.call_graph.mark_entrypoint(&entrypoint_id) {
                 debug!("Could not mark entrypoint {}: {}", entrypoint_id, e);
@@ -270,7 +273,13 @@ func main() {
         let mut analyzer = GoReachabilityAnalyzer::new();
         let report = analyzer.analyze(temp_dir.path()).unwrap();
 
-        assert!(report.all_functions.len() >= 2, "Should have found at least 2 functions");
-        assert!(!report.entrypoints.is_empty(), "Should have found main entrypoint");
+        assert!(
+            report.all_functions.len() >= 2,
+            "Should have found at least 2 functions"
+        );
+        assert!(
+            !report.entrypoints.is_empty(),
+            "Should have found main entrypoint"
+        );
     }
 }

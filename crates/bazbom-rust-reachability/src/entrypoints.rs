@@ -4,7 +4,7 @@ use crate::ast_parser::parse_file;
 use crate::error::Result;
 use crate::models::{Entrypoint, EntrypointType};
 use std::path::{Path, PathBuf};
-use syn::{visit::Visit, ItemFn, Attribute};
+use syn::{visit::Visit, Attribute, ItemFn};
 use tracing::{debug, info};
 use walkdir::WalkDir;
 
@@ -101,12 +101,17 @@ impl EntrypointVisitor {
 
         // Check for tokio::main
         if Self::has_attribute(attrs, "tokio::main") || Self::has_attribute(attrs, "tokio::test") {
-            debug!("Found #[tokio::main] or #[tokio::test] function: {}", func_name);
+            debug!(
+                "Found #[tokio::main] or #[tokio::test] function: {}",
+                func_name
+            );
             return Some(EntrypointType::TokioMain);
         }
 
         // Check for actix_web::main
-        if Self::has_attribute(attrs, "actix_web::main") || Self::has_attribute(attrs, "actix_rt::main") {
+        if Self::has_attribute(attrs, "actix_web::main")
+            || Self::has_attribute(attrs, "actix_rt::main")
+        {
             debug!("Found #[actix_web::main] function: {}", func_name);
             return Some(EntrypointType::ActixMain);
         }
@@ -122,7 +127,9 @@ impl EntrypointVisitor {
 
     fn has_attribute(attrs: &[Attribute], name: &str) -> bool {
         attrs.iter().any(|attr| {
-            attr.path().segments.iter()
+            attr.path()
+                .segments
+                .iter()
                 .map(|seg| seg.ident.to_string())
                 .collect::<Vec<_>>()
                 .join("::")
@@ -181,7 +188,9 @@ fn main() {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::Main));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::Main));
     }
 
     #[test]
@@ -207,8 +216,12 @@ fn test_subtraction() {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(entrypoints.len() >= 2);
-        assert!(entrypoints.iter().any(|e| e.function_name == "test_addition"));
-        assert!(entrypoints.iter().any(|e| e.function_name == "test_subtraction"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "test_addition"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "test_subtraction"));
     }
 
     #[test]
@@ -229,7 +242,9 @@ async fn main() {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::TokioMain));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::TokioMain));
     }
 
     #[test]

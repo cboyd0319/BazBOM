@@ -83,15 +83,19 @@ impl DependencyGraph {
         // Define attributes
         output.push_str(r#"  <key id="name" for="node" attr.name="name" attr.type="string"/>"#);
         output.push('\n');
-        output.push_str(r#"  <key id="version" for="node" attr.name="version" attr.type="string"/>"#);
+        output
+            .push_str(r#"  <key id="version" for="node" attr.name="version" attr.type="string"/>"#);
         output.push('\n');
         output.push_str(r#"  <key id="purl" for="node" attr.name="purl" attr.type="string"/>"#);
         output.push('\n');
-        output.push_str(r#"  <key id="license" for="node" attr.name="license" attr.type="string"/>"#);
+        output
+            .push_str(r#"  <key id="license" for="node" attr.name="license" attr.type="string"/>"#);
         output.push('\n');
         output.push_str(r#"  <key id="scope" for="node" attr.name="scope" attr.type="string"/>"#);
         output.push('\n');
-        output.push_str(r#"  <key id="relationship" for="edge" attr.name="relationship" attr.type="string"/>"#);
+        output.push_str(
+            r#"  <key id="relationship" for="edge" attr.name="relationship" attr.type="string"/>"#,
+        );
         output.push('\n');
 
         output.push_str(r#"  <graph id="dependency_graph" edgedefault="directed">"#);
@@ -103,23 +107,38 @@ impl DependencyGraph {
             output.push_str(&format!(r#"    <node id="{}">"#, node_id));
             output.push('\n');
 
-            output.push_str(&format!(r#"      <data key="name">{}</data>"#, xml_escape(&component.name)));
+            output.push_str(&format!(
+                r#"      <data key="name">{}</data>"#,
+                xml_escape(&component.name)
+            ));
             output.push('\n');
-            output.push_str(&format!(r#"      <data key="version">{}</data>"#, xml_escape(&component.version)));
+            output.push_str(&format!(
+                r#"      <data key="version">{}</data>"#,
+                xml_escape(&component.version)
+            ));
             output.push('\n');
 
             if let Some(ref purl) = component.purl {
-                output.push_str(&format!(r#"      <data key="purl">{}</data>"#, xml_escape(purl)));
+                output.push_str(&format!(
+                    r#"      <data key="purl">{}</data>"#,
+                    xml_escape(purl)
+                ));
                 output.push('\n');
             }
 
             if let Some(ref license) = component.license {
-                output.push_str(&format!(r#"      <data key="license">{}</data>"#, xml_escape(license)));
+                output.push_str(&format!(
+                    r#"      <data key="license">{}</data>"#,
+                    xml_escape(license)
+                ));
                 output.push('\n');
             }
 
             if let Some(ref scope) = component.scope {
-                output.push_str(&format!(r#"      <data key="scope">{}</data>"#, xml_escape(scope)));
+                output.push_str(&format!(
+                    r#"      <data key="scope">{}</data>"#,
+                    xml_escape(scope)
+                ));
                 output.push('\n');
             }
 
@@ -171,10 +190,7 @@ impl DependencyGraph {
             let label = format!("{}\\n{}", component.name, component.version);
             let label_escaped = dot_escape(&label);
 
-            output.push_str(&format!(
-                r#"  "{}" [label="{}""#,
-                node_id, label_escaped
-            ));
+            output.push_str(&format!(r#"  "{}" [label="{}""#, node_id, label_escaped));
 
             // Add color based on scope
             if let Some(ref scope) = component.scope {

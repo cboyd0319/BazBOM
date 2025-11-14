@@ -1,6 +1,6 @@
+use crate::smart_defaults::SmartDefaults;
 use anyhow::Result;
 use std::path::PathBuf;
-use crate::smart_defaults::SmartDefaults;
 
 /// Handle the `bazbom scan` command
 ///
@@ -38,7 +38,8 @@ pub fn handle_scan(
 
     // Show what we detected (if any smart defaults were applied)
     let smart_defaults_enabled = std::env::var("BAZBOM_NO_SMART_DEFAULTS").is_err();
-    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr) {
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr)
+    {
         defaults.print_detection();
     }
 
@@ -49,7 +50,10 @@ pub fn handle_scan(
     }
 
     if defaults.enable_reachability && !reachability && !fast && smart_defaults_enabled {
-        println!("  → Enabling reachability analysis (repo < {}MB)", defaults.repo_size / 1_000_000);
+        println!(
+            "  → Enabling reachability analysis (repo < {}MB)",
+            defaults.repo_size / 1_000_000
+        );
         reachability = true;
     }
 
@@ -63,7 +67,8 @@ pub fn handle_scan(
         diff = true;
     }
 
-    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr) {
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr)
+    {
         println!();
     }
 
@@ -155,7 +160,8 @@ fn apply_profile(profile_name: &str, project_path: &str) -> anyhow::Result<()> {
 
     let config = Config::load(&config_path)?;
 
-    let profile = config.get_profile(profile_name)
+    let profile = config
+        .get_profile(profile_name)
         .ok_or_else(|| anyhow::anyhow!("Profile '{}' not found in bazbom.toml", profile_name))?;
 
     println!("[bazbom] Loaded profile '{}':", profile_name);
@@ -179,8 +185,8 @@ fn apply_profile(profile_name: &str, project_path: &str) -> anyhow::Result<()> {
 
 /// Compare current scan with baseline findings
 fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) -> Result<()> {
-    use std::collections::HashSet;
     use colored::Colorize;
+    use std::collections::HashSet;
 
     println!();
     println!("{}", "🔄 Diff Mode: Comparing with baseline".bold().cyan());
@@ -188,11 +194,20 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
 
     // Load baseline
     if !std::path::Path::new(baseline_path).exists() {
-        println!("{}", format!("Error: Baseline file not found: {}", baseline_path).red().bold());
+        println!(
+            "{}",
+            format!("Error: Baseline file not found: {}", baseline_path)
+                .red()
+                .bold()
+        );
         println!();
         println!("Generate a baseline first:");
         println!("  {} {}", "bazbom scan".green(), scan_path.dimmed());
-        println!("  {} {}", "mv".green(), format!("{}/sca_findings.sarif baseline-findings.json", out_dir).dimmed());
+        println!(
+            "  {} {}",
+            "mv".green(),
+            format!("{}/sca_findings.sarif baseline-findings.json", out_dir).dimmed()
+        );
         println!();
         return Ok(());
     }
@@ -208,7 +223,10 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
     let current_content = if std::path::Path::new(&current_findings_path).exists() {
         std::fs::read_to_string(&current_findings_path)?
     } else {
-        println!("{}", "  No current findings found - using empty results".yellow());
+        println!(
+            "{}",
+            "  No current findings found - using empty results".yellow()
+        );
         r#"{"version":"2.1.0","runs":[]}"#.to_string()
     };
 
@@ -231,7 +249,16 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
     println!();
 
     if !new_vulns.is_empty() {
-        println!("{} {} new {}", "⚠️".red(), new_vulns.len(), if new_vulns.len() == 1 { "vulnerability" } else { "vulnerabilities" });
+        println!(
+            "{} {} new {}",
+            "⚠️".red(),
+            new_vulns.len(),
+            if new_vulns.len() == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
+        );
         for cve in &new_vulns {
             println!("  {} {}", "+".red(), cve.red());
         }
@@ -239,7 +266,16 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
     }
 
     if !fixed_vulns.is_empty() {
-        println!("{} {} fixed {}", "✓".green(), fixed_vulns.len(), if fixed_vulns.len() == 1 { "vulnerability" } else { "vulnerabilities" });
+        println!(
+            "{} {} fixed {}",
+            "✓".green(),
+            fixed_vulns.len(),
+            if fixed_vulns.len() == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
+        );
         for cve in &fixed_vulns {
             println!("  {} {}", "-".green(), cve.green());
         }
@@ -247,7 +283,16 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
     }
 
     if !unchanged_vulns.is_empty() {
-        println!("{} {} unchanged {}", "→".dimmed(), unchanged_vulns.len(), if unchanged_vulns.len() == 1 { "vulnerability" } else { "vulnerabilities" });
+        println!(
+            "{} {} unchanged {}",
+            "→".dimmed(),
+            unchanged_vulns.len(),
+            if unchanged_vulns.len() == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
+        );
     }
 
     println!();

@@ -5,9 +5,9 @@
 //! vulnerability information across multiple ecosystems.
 
 pub mod client;
-pub mod models;
 pub mod error;
+pub mod models;
 
 pub use client::DepsDevClient;
-pub use models::*;
 pub use error::{DepsDevError, Result};
+pub use models::*;

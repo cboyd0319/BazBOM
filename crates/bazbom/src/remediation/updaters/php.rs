@@ -47,7 +47,10 @@ impl DependencyUpdater for PhpUpdater {
         fs::write(file_path, formatted + "\n")
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {} in composer.json: {}", package, new_version);
+        println!(
+            "  [+] Updated {} in composer.json: {}",
+            package, new_version
+        );
         Ok(())
     }
 

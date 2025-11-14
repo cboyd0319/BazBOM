@@ -7,13 +7,13 @@
 //! - Properties resolution
 //! - Scope handling (compile, test, runtime, provided)
 
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
 
 /// Scan Maven ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -66,10 +66,13 @@ pub struct MavenDependency {
 /// Maven POM structure (simplified)
 #[derive(Debug, Deserialize)]
 struct Pom {
+    #[allow(dead_code)]
     #[serde(rename = "groupId", default)]
     group_id: Option<String>,
+    #[allow(dead_code)]
     #[serde(rename = "artifactId", default)]
     artifact_id: Option<String>,
+    #[allow(dead_code)]
     #[serde(default)]
     version: Option<String>,
     #[serde(default)]
@@ -78,6 +81,7 @@ struct Pom {
     dependencies: Option<Dependencies>,
     #[serde(rename = "dependencyManagement", default)]
     dependency_management: Option<DependencyManagement>,
+    #[allow(dead_code)]
     #[serde(default)]
     parent: Option<Parent>,
     #[serde(default)]
@@ -104,10 +108,13 @@ struct DependencyManagement {
 
 #[derive(Debug, Deserialize)]
 struct Parent {
+    #[allow(dead_code)]
     #[serde(rename = "groupId")]
     group_id: String,
+    #[allow(dead_code)]
     #[serde(rename = "artifactId")]
     artifact_id: String,
+    #[allow(dead_code)]
     #[serde(default)]
     version: Option<String>,
 }
@@ -138,8 +145,7 @@ pub fn parse_pom_with_modules(pom_path: &Path) -> Result<Vec<MavenDependency>> {
         .with_context(|| format!("Failed to read pom.xml: {}", pom_path.display()))?;
 
     // Check if this is a multi-module project
-    let pom: Pom = serde_xml_rs::from_str(&content)
-        .context("Failed to parse pom.xml")?;
+    let pom: Pom = serde_xml_rs::from_str(&content).context("Failed to parse pom.xml")?;
 
     // Parse root dependencies
     let root_deps = parse_pom_content(&content)?;
@@ -162,7 +168,8 @@ pub fn parse_pom_with_modules(pom_path: &Path) -> Result<Vec<MavenDependency>> {
                 match parse_pom_with_modules(&module_pom_path) {
                     Ok(module_deps) => {
                         for dep in module_deps {
-                            let key = format!("{}:{}:{}", dep.group_id, dep.artifact_id, dep.version);
+                            let key =
+                                format!("{}:{}:{}", dep.group_id, dep.artifact_id, dep.version);
                             if seen.insert(key) {
                                 all_dependencies.push(dep);
                             }
@@ -190,8 +197,7 @@ pub fn parse_pom(pom_path: &Path) -> Result<Vec<MavenDependency>> {
 /// Parse pom.xml content
 pub fn parse_pom_content(content: &str) -> Result<Vec<MavenDependency>> {
     // Parse XML
-    let pom: Pom = serde_xml_rs::from_str(content)
-        .context("Failed to parse pom.xml")?;
+    let pom: Pom = serde_xml_rs::from_str(content).context("Failed to parse pom.xml")?;
 
     let mut dependencies = Vec::new();
     let properties = pom.properties.unwrap_or_default();
@@ -218,7 +224,10 @@ pub fn parse_pom_content(content: &str) -> Result<Vec<MavenDependency>> {
             } else {
                 // Try to find version in dependency management
                 let key = format!("{}:{}", dep.group_id, dep.artifact_id);
-                dep_management.get(&key).cloned().unwrap_or_else(|| "unknown".to_string())
+                dep_management
+                    .get(&key)
+                    .cloned()
+                    .unwrap_or_else(|| "unknown".to_string())
             };
 
             // Skip if no version could be resolved

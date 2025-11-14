@@ -1,8 +1,8 @@
 //! Unified SBOM generation for polyglot projects
 
+use crate::ecosystems::{EcosystemScanResult, Package};
 use anyhow::Result;
 use serde_json::json;
-use crate::ecosystems::{EcosystemScanResult, Package};
 
 /// Generate a unified SPDX SBOM from multiple ecosystem scan results
 pub fn generate_polyglot_sbom(results: &[EcosystemScanResult]) -> Result<serde_json::Value> {
@@ -40,7 +40,8 @@ pub fn generate_polyglot_sbom(results: &[EcosystemScanResult]) -> Result<serde_j
 
 /// Create SPDX package entry
 fn create_spdx_package(package: &Package) -> serde_json::Value {
-    let spdx_id = format!("SPDXRef-Package-{}-{}",
+    let spdx_id = format!(
+        "SPDXRef-Package-{}-{}",
         sanitize_for_spdx_id(&package.name),
         sanitize_for_spdx_id(&package.version)
     );
@@ -86,7 +87,13 @@ fn generate_relationships(packages: &[serde_json::Value]) -> Vec<serde_json::Val
 /// Sanitize string for use in SPDX ID (alphanumeric, hyphen, dot only)
 fn sanitize_for_spdx_id(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_alphanumeric() || c == '-' || c == '.' { c } else { '-' })
+        .map(|c| {
+            if c.is_alphanumeric() || c == '-' || c == '.' {
+                c
+            } else {
+                '-'
+            }
+        })
         .collect()
 }
 

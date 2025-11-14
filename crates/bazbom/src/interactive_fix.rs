@@ -116,7 +116,9 @@ impl InteractiveFix {
                 _ => {}
             }
             // Then by severity
-            b.severity.priority_score().cmp(&a.severity.priority_score())
+            b.severity
+                .priority_score()
+                .cmp(&a.severity.priority_score())
         });
 
         let total = self.vulnerabilities.len();
@@ -147,7 +149,10 @@ impl InteractiveFix {
                     skipped += 1;
                 }
                 Action::SkipAllLowPriority => {
-                    println!("   {} Skipping all remaining low priority vulnerabilities", "⊘".dimmed());
+                    println!(
+                        "   {} Skipping all remaining low priority vulnerabilities",
+                        "⊘".dimmed()
+                    );
                     skipped += total - idx;
                     break;
                 }
@@ -166,36 +171,66 @@ impl InteractiveFix {
     /// Print the session header
     fn print_header(&self) {
         println!();
-        println!("{}", "╔═══════════════════════════════════════════════════════════════════╗".bright_magenta().bold());
-        println!("{} {} {}",
+        println!(
+            "{}",
+            "╔═══════════════════════════════════════════════════════════════════╗"
+                .bright_magenta()
+                .bold()
+        );
+        println!(
+            "{} {} {}",
             "║".bright_magenta().bold(),
-            "🛠️  INTERACTIVE FIX MODE - Let's fix these vulnerabilities!".bright_cyan().bold(),
+            "🛠️  INTERACTIVE FIX MODE - Let's fix these vulnerabilities!"
+                .bright_cyan()
+                .bold(),
             "║".bright_magenta().bold()
         );
-        println!("{}", "╚═══════════════════════════════════════════════════════════════════╝".bright_magenta().bold());
+        println!(
+            "{}",
+            "╚═══════════════════════════════════════════════════════════════════╝"
+                .bright_magenta()
+                .bold()
+        );
         println!();
-        println!("Found {} vulnerabilities. Let's go through them one by one.", self.vulnerabilities.len().to_string().bold());
+        println!(
+            "Found {} vulnerabilities. Let's go through them one by one.",
+            self.vulnerabilities.len().to_string().bold()
+        );
     }
 
     /// Print a vulnerability card
     fn print_vulnerability_card(&self, current: usize, total: usize, vuln: &FixableVulnerability) {
-        println!("{}", "┌──────────────────────────────────────────────────────────────┐".cyan());
-        println!("{} {:<58} {}",
+        println!(
+            "{}",
+            "┌──────────────────────────────────────────────────────────────┐".cyan()
+        );
+        println!(
+            "{} {:<58} {}",
             "│".cyan(),
             format!("{}/{}: {}", current, total, vuln.cve_id).bold(),
             "│".cyan()
         );
-        println!("{}", "├──────────────────────────────────────────────────────────────┤".cyan());
+        println!(
+            "{}",
+            "├──────────────────────────────────────────────────────────────┤".cyan()
+        );
 
         // Package info
-        println!("{} 📦 {:<50} {}",
+        println!(
+            "{} 📦 {:<50} {}",
             "│".cyan(),
-            format!("{} {} → {}", vuln.package, vuln.current_version.yellow(), vuln.fixed_version.green()),
+            format!(
+                "{} {} → {}",
+                vuln.package,
+                vuln.current_version.yellow(),
+                vuln.fixed_version.green()
+            ),
             "│".cyan()
         );
 
         // Severity
-        let severity_line = format!("{} Severity: {} {}",
+        let severity_line = format!(
+            "{} Severity: {} {}",
             "│".cyan(),
             vuln.severity.emoji(),
             vuln.severity.label()
@@ -204,7 +239,8 @@ impl InteractiveFix {
 
         // CISA KEV warning
         if vuln.in_cisa_kev {
-            println!("{} 🚨 {:<50} {}",
+            println!(
+                "{} 🚨 {:<50} {}",
                 "│".cyan(),
                 "ACTIVELY EXPLOITED - Fix immediately!".red().bold(),
                 "│".cyan()
@@ -218,24 +254,20 @@ impl InteractiveFix {
             } else {
                 format!("EPSS: {:.1}%", epss * 100.0).normal()
             };
-            println!("{} {:<58} {}",
-                "│".cyan(),
-                epss_display,
-                "│".cyan()
-            );
+            println!("{} {:<58} {}", "│".cyan(), epss_display, "│".cyan());
         }
 
         // Effort estimate
-        let effort = format!("⏱️  Estimated effort: {:.1} hrs", vuln.estimated_effort_hours);
-        println!("{} {:<58} {}",
-            "│".cyan(),
-            effort,
-            "│".cyan()
+        let effort = format!(
+            "⏱️  Estimated effort: {:.1} hrs",
+            vuln.estimated_effort_hours
         );
+        println!("{} {:<58} {}", "│".cyan(), effort, "│".cyan());
 
         // Breaking changes warning
         if vuln.breaking_changes > 0 {
-            println!("{} {} {:<50} {}",
+            println!(
+                "{} {} {:<50} {}",
                 "│".cyan(),
                 "⚠️ ".yellow(),
                 format!("{} breaking changes detected", vuln.breaking_changes).yellow(),
@@ -243,7 +275,10 @@ impl InteractiveFix {
             );
         }
 
-        println!("{}", "└──────────────────────────────────────────────────────────────┘".cyan());
+        println!(
+            "{}",
+            "└──────────────────────────────────────────────────────────────┘".cyan()
+        );
     }
 
     /// Prompt for action
@@ -294,7 +329,10 @@ impl InteractiveFix {
     async fn explain_fix(&self, vuln: &FixableVulnerability) -> Result<()> {
         println!();
         println!("{}", "═".repeat(60).bright_blue());
-        println!("{}", format!("📖 Detailed Analysis: {}", vuln.cve_id).bold());
+        println!(
+            "{}",
+            format!("📖 Detailed Analysis: {}", vuln.cve_id).bold()
+        );
         println!("{}", "═".repeat(60).bright_blue());
         println!();
 
@@ -303,38 +341,63 @@ impl InteractiveFix {
         println!();
 
         println!("{}", "Fix Details:".bold());
-        println!("  {} Upgrade {} from {} to {}",
+        println!(
+            "  {} Upgrade {} from {} to {}",
             "•".cyan(),
             vuln.package.bright_white(),
             vuln.current_version.yellow(),
             vuln.fixed_version.green()
         );
-        println!("  {} Estimated effort: {:.1} hours", "•".cyan(), vuln.estimated_effort_hours);
-        println!("  {} Breaking changes: {}", "•".cyan(), vuln.breaking_changes);
+        println!(
+            "  {} Estimated effort: {:.1} hours",
+            "•".cyan(),
+            vuln.estimated_effort_hours
+        );
+        println!(
+            "  {} Breaking changes: {}",
+            "•".cyan(),
+            vuln.breaking_changes
+        );
         println!();
 
         if vuln.breaking_changes > 0 {
             println!("{}", "⚠️  Breaking Changes:".yellow().bold());
-            println!("  Run {} for detailed analysis",
-                format!("bazbom fix {} --explain", vuln.package).bright_white().bold()
+            println!(
+                "  Run {} for detailed analysis",
+                format!("bazbom fix {} --explain", vuln.package)
+                    .bright_white()
+                    .bold()
             );
             println!();
         }
 
         println!("{}", "Why you should fix this:".bold());
         if vuln.in_cisa_kev {
-            println!("  {} This vulnerability is being {} in the wild",
+            println!(
+                "  {} This vulnerability is being {} in the wild",
                 "🚨".red(),
                 "ACTIVELY EXPLOITED".red().bold()
             );
-            println!("  {} Attackers have weaponized exploits available", "•".red());
-            println!("  {} Fix this {} to protect your application", "•".red(), "IMMEDIATELY".red().bold());
+            println!(
+                "  {} Attackers have weaponized exploits available",
+                "•".red()
+            );
+            println!(
+                "  {} Fix this {} to protect your application",
+                "•".red(),
+                "IMMEDIATELY".red().bold()
+            );
         } else if vuln.severity == Severity::Critical {
-            println!("  {} Critical severity - high impact if exploited", "•".red());
+            println!(
+                "  {} Critical severity - high impact if exploited",
+                "•".red()
+            );
             if let Some(epss) = vuln.epss_score {
                 if epss > 0.5 {
-                    println!("  {} High probability of exploitation (EPSS: {:.1}%)",
-                        "•".yellow(), epss * 100.0
+                    println!(
+                        "  {} High probability of exploitation (EPSS: {:.1}%)",
+                        "•".yellow(),
+                        epss * 100.0
                     );
                 }
             }
@@ -359,9 +422,9 @@ impl InteractiveFix {
     /// Apply a fix
     async fn apply_fix(&self, vuln: &FixableVulnerability) -> Result<()> {
         use crate::progress::simple_spinner;
-        use crate::remediation::build_systems::{apply_maven_fix, apply_gradle_fix};
-        use crate::remediation::updaters::DependencyUpdater;
+        use crate::remediation::build_systems::{apply_gradle_fix, apply_maven_fix};
         use crate::remediation::types::RemediationSuggestion;
+        use crate::remediation::updaters::DependencyUpdater;
         use std::path::Path;
 
         let spinner = simple_spinner(&format!("Applying fix for {}...", vuln.cve_id));
@@ -383,9 +446,17 @@ impl InteractiveFix {
             "Critical - In CISA KEV".to_string()
         } else if let Some(epss) = vuln.epss_score {
             if epss > 0.5 {
-                format!("{} - High Exploitation Probability (EPSS: {:.1}%)", severity_str, epss * 100.0)
+                format!(
+                    "{} - High Exploitation Probability (EPSS: {:.1}%)",
+                    severity_str,
+                    epss * 100.0
+                )
             } else {
-                format!("{} - Low Exploitation Probability (EPSS: {:.1}%)", severity_str, epss * 100.0)
+                format!(
+                    "{} - Low Exploitation Probability (EPSS: {:.1}%)",
+                    severity_str,
+                    epss * 100.0
+                )
             }
         } else {
             severity_str.to_string()
@@ -398,7 +469,10 @@ impl InteractiveFix {
         }
         if let Some(epss) = vuln.epss_score {
             if epss > 0.5 {
-                why_fix.push_str(&format!("\n\n📊 High exploitation probability: {:.1}% (EPSS score)", epss * 100.0));
+                why_fix.push_str(&format!(
+                    "\n\n📊 High exploitation probability: {:.1}% (EPSS score)",
+                    epss * 100.0
+                ));
             }
         }
 
@@ -419,7 +493,10 @@ impl InteractiveFix {
         };
 
         // Add CVE reference
-        let references = vec![format!("https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", vuln.cve_id)];
+        let references = vec![format!(
+            "https://cve.mitre.org/cgi-bin/cvename.cgi?name={}",
+            vuln.cve_id
+        )];
 
         let suggestion = RemediationSuggestion {
             vulnerability_id: vuln.cve_id.clone(),
@@ -526,30 +603,52 @@ impl InteractiveFix {
     /// Print session summary
     fn print_summary(&self, fixed: usize, skipped: usize, total: usize) {
         println!();
-        println!("{}", "╔═══════════════════════════════════════════════════════════════╗".bright_green().bold());
-        println!("{} {:^61} {}",
+        println!(
+            "{}",
+            "╔═══════════════════════════════════════════════════════════════╗"
+                .bright_green()
+                .bold()
+        );
+        println!(
+            "{} {:^61} {}",
             "║".bright_green().bold(),
             "✨ INTERACTIVE FIX SESSION COMPLETE!",
             "║".bright_green().bold()
         );
-        println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_green().bold());
-        println!("{} {:<59} {}",
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════╣"
+                .bright_green()
+                .bold()
+        );
+        println!(
+            "{} {:<59} {}",
             "║".bright_green().bold(),
             format!("Fixed:   {} / {}", fixed, total).green().bold(),
             "║".bright_green().bold()
         );
-        println!("{} {:<59} {}",
+        println!(
+            "{} {:<59} {}",
             "║".bright_green().bold(),
             format!("Skipped: {} / {}", skipped, total).dimmed(),
             "║".bright_green().bold()
         );
-        println!("{}", "╚═══════════════════════════════════════════════════════════════╝".bright_green().bold());
+        println!(
+            "{}",
+            "╚═══════════════════════════════════════════════════════════════╝"
+                .bright_green()
+                .bold()
+        );
         println!();
 
         if fixed > 0 {
             println!("{}", "Next steps:".bold());
             println!("  {} Run tests to verify fixes", "•".cyan());
-            println!("  {} Commit changes: {}", "•".cyan(), "git add . && git commit -m 'fix: resolve security vulnerabilities'".dimmed());
+            println!(
+                "  {} Commit changes: {}",
+                "•".cyan(),
+                "git add . && git commit -m 'fix: resolve security vulnerabilities'".dimmed()
+            );
             println!("  {} Create PR for review", "•".cyan());
             println!();
         }

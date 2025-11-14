@@ -187,7 +187,8 @@ impl App {
                         SearchMode::Glob => {
                             // Glob pattern search
                             // Convert glob to regex: * -> .*, ? -> .
-                            let mut pattern = self.search_query
+                            let mut pattern = self
+                                .search_query
                                 .replace(".", r"\.")
                                 .replace("*", ".*")
                                 .replace("?", ".");
@@ -613,12 +614,12 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
     let filtered_deps = app.filtered_dependencies();
 
     let mut lines = vec![
-        Line::from(vec![
-            Span::styled(
-                "Dependency Graph (Tree View)",
-                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-            ),
-        ]),
+        Line::from(vec![Span::styled(
+            "Dependency Graph (Tree View)",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        )]),
         Line::from(""),
     ];
 
@@ -645,7 +646,9 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
                 Span::raw(scope_prefix),
                 Span::styled(
                     format!(" {} ({} deps)", scope, scopes[scope].len()),
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
                 ),
             ]));
 
@@ -657,8 +660,16 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
 
                 // Dependency name and version
                 let vuln_indicator = if !dep.vulnerabilities.is_empty() {
-                    let critical = dep.vulnerabilities.iter().filter(|v| v.severity == "CRITICAL").count();
-                    let high = dep.vulnerabilities.iter().filter(|v| v.severity == "HIGH").count();
+                    let critical = dep
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "CRITICAL")
+                        .count();
+                    let high = dep
+                        .vulnerabilities
+                        .iter()
+                        .filter(|v| v.severity == "HIGH")
+                        .count();
 
                     if critical > 0 {
                         format!(" [🔴 {} CRITICAL]", critical)
@@ -706,10 +717,15 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
                         };
 
                         lines.push(Line::from(vec![
-                            Span::raw(format!("{}  {}   {}", scope_connector, vuln_connector, vuln_prefix)),
+                            Span::raw(format!(
+                                "{}  {}   {}",
+                                scope_connector, vuln_connector, vuln_prefix
+                            )),
                             Span::styled(
                                 &vuln.cve,
-                                Style::default().fg(severity_color).add_modifier(Modifier::BOLD),
+                                Style::default()
+                                    .fg(severity_color)
+                                    .add_modifier(Modifier::BOLD),
                             ),
                             Span::styled(
                                 format!(" ({}, CVSS: {:.1})", vuln.severity, vuln.cvss),
@@ -720,10 +736,19 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
 
                     if dep.vulnerabilities.len() > 3 {
                         lines.push(Line::from(vec![
-                            Span::raw(format!("{}  {}   ", scope_connector, if is_last_dep { " " } else { "│" })),
+                            Span::raw(format!(
+                                "{}  {}   ",
+                                scope_connector,
+                                if is_last_dep { " " } else { "│" }
+                            )),
                             Span::styled(
-                                format!("... {} more vulnerabilities", dep.vulnerabilities.len() - 3),
-                                Style::default().fg(Color::Gray).add_modifier(Modifier::ITALIC),
+                                format!(
+                                    "... {} more vulnerabilities",
+                                    dep.vulnerabilities.len() - 3
+                                ),
+                                Style::default()
+                                    .fg(Color::Gray)
+                                    .add_modifier(Modifier::ITALIC),
                             ),
                         ]));
                     }
@@ -736,8 +761,11 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
         }
     }
 
-    let paragraph = Paragraph::new(lines)
-        .block(Block::default().borders(Borders::ALL).title("Dependency Graph"));
+    let paragraph = Paragraph::new(lines).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title("Dependency Graph"),
+    );
 
     f.render_widget(paragraph, area);
 }

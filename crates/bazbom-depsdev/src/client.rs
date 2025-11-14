@@ -101,10 +101,7 @@ impl DepsDevClient {
         } else {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!(
-                "HTTP {}: {}",
-                status, body
-            )))
+            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
         }
     }
 
@@ -166,10 +163,7 @@ impl DepsDevClient {
         } else {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!(
-                "HTTP {}: {}",
-                status, body
-            )))
+            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
         }
     }
 
@@ -217,10 +211,7 @@ impl DepsDevClient {
         } else {
             let status = response.status();
             let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!(
-                "HTTP {}: {}",
-                status, body
-            )))
+            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
         }
     }
 
@@ -268,11 +259,7 @@ mod tests {
     async fn test_get_version() {
         let client = DepsDevClient::new();
         let result = client
-            .get_version(
-                System::Maven,
-                "com.google.guava:guava",
-                "32.0.0-jre",
-            )
+            .get_version(System::Maven, "com.google.guava:guava", "32.0.0-jre")
             .await;
 
         assert!(result.is_ok());

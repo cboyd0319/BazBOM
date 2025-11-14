@@ -29,8 +29,8 @@ pub use types::{
 pub use updaters::{get_updater, DependencyUpdater};
 pub use version::parse_semantic_version;
 
-use anyhow::Result;
 use anyhow::Context;
+use anyhow::Result;
 use bazbom_advisories::Vulnerability;
 
 /// Handle the fix command
@@ -77,7 +77,10 @@ pub fn handle_fix_command(
         return Ok(());
     }
 
-    println!("🔍 Found {} vulnerabilities to analyze\n", vulnerabilities.len());
+    println!(
+        "🔍 Found {} vulnerabilities to analyze\n",
+        vulnerabilities.len()
+    );
 
     // 2. Detect build system and project root
     let project_root = Path::new(".");
@@ -94,19 +97,30 @@ pub fn handle_fix_command(
     }
 
     if llm {
-        println!("⚠️  LLM analysis (provider: {}, model: {:?}) not yet available\n", llm_provider, llm_model);
+        println!(
+            "⚠️  LLM analysis (provider: {}, model: {:?}) not yet available\n",
+            llm_provider, llm_model
+        );
     }
 
     // 4. Display suggestions
     if suggest || (!apply_flag && !pr) {
         println!("=== Remediation Suggestions ===\n");
-        println!("Total vulnerabilities: {}", report.summary.total_vulnerabilities);
+        println!(
+            "Total vulnerabilities: {}",
+            report.summary.total_vulnerabilities
+        );
         println!("Fixable: {}", report.summary.fixable);
         println!("Unfixable: {}", report.summary.unfixable);
         println!();
 
         for (i, suggestion) in suggestions.iter().enumerate() {
-            println!("{}. {} ({})", i + 1, suggestion.vulnerability_id, suggestion.severity);
+            println!(
+                "{}. {} ({})",
+                i + 1,
+                suggestion.vulnerability_id,
+                suggestion.severity
+            );
             println!("   Package: {}", suggestion.affected_package);
             println!("   Current: {}", suggestion.current_version);
             if let Some(ref fixed) = suggestion.fixed_version {
@@ -164,7 +178,8 @@ pub fn handle_fix_command(
                 return Ok(());
             }
 
-            let result = apply_fixes_with_testing(&confirmed_fixes, build_system, project_root, false)?;
+            let result =
+                apply_fixes_with_testing(&confirmed_fixes, build_system, project_root, false)?;
 
             println!("\n✅ Applied {} fixes successfully", result.applied.len());
             if !result.failed.is_empty() {
@@ -180,7 +195,8 @@ pub fn handle_fix_command(
             println!("🔧 Automatic mode - applying all fixes\n");
 
             let fixable_cloned: Vec<RemediationSuggestion> = fixable.into_iter().cloned().collect();
-            let result = apply_fixes_with_testing(&fixable_cloned, build_system, project_root, false)?;
+            let result =
+                apply_fixes_with_testing(&fixable_cloned, build_system, project_root, false)?;
 
             println!("\n✅ Applied {} fixes successfully", result.applied.len());
             if !result.failed.is_empty() {
@@ -217,7 +233,11 @@ pub fn handle_fix_command(
         // Get GitHub token from environment
         let github_token = std::env::var("GITHUB_TOKEN")
             .or_else(|_| std::env::var("GH_TOKEN"))
-            .map_err(|_| anyhow::anyhow!("GitHub token not found. Set GITHUB_TOKEN or GH_TOKEN environment variable"))?;
+            .map_err(|_| {
+                anyhow::anyhow!(
+                    "GitHub token not found. Set GITHUB_TOKEN or GH_TOKEN environment variable"
+                )
+            })?;
 
         // Detect repo from git remote
         let repo_output = std::process::Command::new("git")
@@ -230,7 +250,9 @@ pub fn handle_fix_command(
             anyhow::bail!("No git remote found. Make sure this is a git repository.");
         }
 
-        let remote_url = String::from_utf8_lossy(&repo_output.stdout).trim().to_string();
+        let remote_url = String::from_utf8_lossy(&repo_output.stdout)
+            .trim()
+            .to_string();
 
         // Extract owner/repo from URL (handles both HTTPS and SSH)
         let repo = if remote_url.contains("github.com") {
@@ -247,7 +269,10 @@ pub fn handle_fix_command(
             github_token,
             repo,
             "main".to_string(), // base branch
-            format!("bazbom/security-fixes-{}", chrono::Utc::now().format("%Y%m%d")),
+            format!(
+                "bazbom/security-fixes-{}",
+                chrono::Utc::now().format("%Y%m%d")
+            ),
         )?;
 
         println!("📝 Creating GitHub pull request...");

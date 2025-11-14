@@ -11,10 +11,7 @@ pub struct PythonUpdater;
 impl DependencyUpdater for PythonUpdater {
     fn update_version(&self, file_path: &Path, package: &str, new_version: &str) -> Result<()> {
         // Determine which file type we're updating
-        let file_name = file_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
+        let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
         match file_name {
             "requirements.txt" => self.update_requirements_txt(file_path, package, new_version),
@@ -121,7 +118,10 @@ impl PythonUpdater {
         fs::write(file_path, updated_lines.join("\n") + "\n")
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {} in requirements.txt: {}", package, new_version);
+        println!(
+            "  [+] Updated {} in requirements.txt: {}",
+            package, new_version
+        );
         Ok(())
     }
 
@@ -136,8 +136,9 @@ impl PythonUpdater {
             .with_context(|| format!("Failed to read {}", file_path.display()))?;
 
         // Parse as TOML
-        let mut toml: toml::Value = toml::from_str(&content)
-            .with_context(|| format!("Failed to parse pyproject.toml at {}", file_path.display()))?;
+        let mut toml: toml::Value = toml::from_str(&content).with_context(|| {
+            format!("Failed to parse pyproject.toml at {}", file_path.display())
+        })?;
 
         let mut found = false;
 
@@ -167,7 +168,10 @@ impl PythonUpdater {
             .and_then(|d| d.as_table_mut())
         {
             if poetry_deps.contains_key(package) {
-                poetry_deps.insert(package.to_string(), toml::Value::String(new_version.to_string()));
+                poetry_deps.insert(
+                    package.to_string(),
+                    toml::Value::String(new_version.to_string()),
+                );
                 found = true;
             }
         }
@@ -176,23 +180,21 @@ impl PythonUpdater {
             anyhow::bail!("Package {} not found in pyproject.toml", package);
         }
 
-        let updated_content = toml::to_string(&toml)
-            .context("Failed to serialize pyproject.toml")?;
+        let updated_content =
+            toml::to_string(&toml).context("Failed to serialize pyproject.toml")?;
 
         fs::write(file_path, updated_content)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {} in pyproject.toml: {}", package, new_version);
+        println!(
+            "  [+] Updated {} in pyproject.toml: {}",
+            package, new_version
+        );
         Ok(())
     }
 
     /// Update setup.py file (legacy)
-    fn update_setup_py(
-        &self,
-        _file_path: &Path,
-        _package: &str,
-        _new_version: &str,
-    ) -> Result<()> {
+    fn update_setup_py(&self, _file_path: &Path, _package: &str, _new_version: &str) -> Result<()> {
         // setup.py is Python code, so it's harder to parse reliably
         // For now, we'll just warn the user
         anyhow::bail!(
@@ -249,7 +251,9 @@ mod tests {
         fs::write(&req_path, content).unwrap();
 
         let updater = PythonUpdater;
-        updater.update_version(&req_path, "django", "3.2.18").unwrap();
+        updater
+            .update_version(&req_path, "django", "3.2.18")
+            .unwrap();
 
         let updated = fs::read_to_string(&req_path).unwrap();
         assert!(updated.contains("django==3.2.18"));
@@ -261,11 +265,26 @@ mod tests {
     fn test_extract_package_name() {
         let updater = PythonUpdater;
 
-        assert_eq!(updater.extract_package_name("django==3.2.0"), Some("django".to_string()));
-        assert_eq!(updater.extract_package_name("requests>=2.28.0"), Some("requests".to_string()));
-        assert_eq!(updater.extract_package_name("flask<=2.0.1"), Some("flask".to_string()));
-        assert_eq!(updater.extract_package_name("numpy~=1.20.0"), Some("numpy".to_string()));
-        assert_eq!(updater.extract_package_name("pandas[extra]==1.3.0"), Some("pandas".to_string()));
+        assert_eq!(
+            updater.extract_package_name("django==3.2.0"),
+            Some("django".to_string())
+        );
+        assert_eq!(
+            updater.extract_package_name("requests>=2.28.0"),
+            Some("requests".to_string())
+        );
+        assert_eq!(
+            updater.extract_package_name("flask<=2.0.1"),
+            Some("flask".to_string())
+        );
+        assert_eq!(
+            updater.extract_package_name("numpy~=1.20.0"),
+            Some("numpy".to_string())
+        );
+        assert_eq!(
+            updater.extract_package_name("pandas[extra]==1.3.0"),
+            Some("pandas".to_string())
+        );
     }
 
     #[test]

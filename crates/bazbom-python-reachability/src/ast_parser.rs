@@ -12,18 +12,16 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
     let mut parser = Parser::new();
     let language = tree_sitter_python::LANGUAGE.into();
 
-    parser
-        .set_language(&language)
-        .map_err(|e| PythonReachabilityError::ParseError(format!("Failed to set language: {}", e)))?;
+    parser.set_language(&language).map_err(|e| {
+        PythonReachabilityError::ParseError(format!("Failed to set language: {}", e))
+    })?;
 
-    parser
-        .parse(&source_code, None)
-        .ok_or_else(|| {
-            PythonReachabilityError::ParseError(format!(
-                "Failed to parse file: {}",
-                file_path.display()
-            ))
-        })
+    parser.parse(&source_code, None).ok_or_else(|| {
+        PythonReachabilityError::ParseError(format!(
+            "Failed to parse file: {}",
+            file_path.display()
+        ))
+    })
 }
 
 /// Extracted function information from Python AST
@@ -60,7 +58,7 @@ pub struct DynamicCodeDetection {
 #[derive(Debug, Clone)]
 pub struct ExtractedImport {
     pub module: String,
-    pub imported_names: Vec<String>,  // Empty for "import foo", contains names for "from foo import bar"
+    pub imported_names: Vec<String>, // Empty for "import foo", contains names for "from foo import bar"
     pub alias: Option<String>,
 }
 
@@ -350,7 +348,11 @@ class MyClass:
         let mut extractor = FunctionExtractor::new();
         extractor.extract(code, &tree).unwrap();
 
-        let method = extractor.functions.iter().find(|f| f.name == "method").unwrap();
+        let method = extractor
+            .functions
+            .iter()
+            .find(|f| f.name == "method")
+            .unwrap();
         assert!(method.is_method);
         assert_eq!(method.class_name.as_deref(), Some("MyClass"));
     }
@@ -372,9 +374,18 @@ def dangerous():
         let mut extractor = FunctionExtractor::new();
         extractor.extract(code, &tree).unwrap();
 
-        assert!(extractor.dynamic_code.iter().any(|d| matches!(d.dynamic_type, DynamicCodeType::Exec)));
-        assert!(extractor.dynamic_code.iter().any(|d| matches!(d.dynamic_type, DynamicCodeType::Eval)));
-        assert!(extractor.dynamic_code.iter().any(|d| matches!(d.dynamic_type, DynamicCodeType::Getattr)));
+        assert!(extractor
+            .dynamic_code
+            .iter()
+            .any(|d| matches!(d.dynamic_type, DynamicCodeType::Exec)));
+        assert!(extractor
+            .dynamic_code
+            .iter()
+            .any(|d| matches!(d.dynamic_type, DynamicCodeType::Eval)));
+        assert!(extractor
+            .dynamic_code
+            .iter()
+            .any(|d| matches!(d.dynamic_type, DynamicCodeType::Getattr)));
     }
 
     #[test]
@@ -394,8 +405,15 @@ def view():
         let mut extractor = FunctionExtractor::new();
         extractor.extract(code, &tree).unwrap();
 
-        let view_func = extractor.functions.iter().find(|f| f.name == "view").unwrap();
+        let view_func = extractor
+            .functions
+            .iter()
+            .find(|f| f.name == "view")
+            .unwrap();
         assert!(view_func.decorators.iter().any(|d| d.contains("app.route")));
-        assert!(view_func.decorators.iter().any(|d| d.contains("login_required")));
+        assert!(view_func
+            .decorators
+            .iter()
+            .any(|d| d.contains("login_required")));
     }
 }

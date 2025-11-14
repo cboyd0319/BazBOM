@@ -38,7 +38,11 @@ impl ScanSummary {
     /// Get severity emoji for a count
     #[allow(dead_code)]
     fn severity_emoji(count: usize) -> &'static str {
-        if count > 0 { "⚠️ " } else { "✓" }
+        if count > 0 {
+            "⚠️ "
+        } else {
+            "✓"
+        }
     }
 
     /// Get color for severity level
@@ -56,47 +60,99 @@ impl ScanSummary {
     /// Print the beautiful summary dashboard
     pub fn print(&self) {
         println!();
-        println!("{}", "╔═══════════════════════════════════════════════════════════════╗".bright_cyan().bold());
-        println!("{} {:^61} {}",
+        println!(
+            "{}",
+            "╔═══════════════════════════════════════════════════════════════╗"
+                .bright_cyan()
+                .bold()
+        );
+        println!(
+            "{} {:^61} {}",
             "║".bright_cyan().bold(),
             "📊 SCAN SUMMARY",
             "║".bright_cyan().bold()
         );
-        println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Cache status
         if self.cache_hit {
-            println!("{} {} {}                                                {}",
+            println!(
+                "{} {} {}                                                {}",
                 "║".bright_cyan().bold(),
                 "⚡".yellow(),
                 "Cache Hit - Using Cached Results".dimmed(),
                 "║".bright_cyan().bold()
             );
-            println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+            println!(
+                "{}",
+                "╠═══════════════════════════════════════════════════════════════╣"
+                    .bright_cyan()
+                    .bold()
+            );
         }
 
         // Dependencies
         if let Some(targets) = self.targets_analyzed {
-            self.print_row("Bazel Targets Analyzed:", &targets.to_string().bright_white().bold().to_string());
+            self.print_row(
+                "Bazel Targets Analyzed:",
+                &targets.to_string().bright_white().bold().to_string(),
+            );
         }
-        self.print_row("Dependencies Scanned:", &self.dependencies_scanned.to_string().bright_white().bold().to_string());
+        self.print_row(
+            "Dependencies Scanned:",
+            &self
+                .dependencies_scanned
+                .to_string()
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
 
         if let Some(files) = self.files_scanned {
-            self.print_row("Files Scanned:", &files.to_string().bright_white().bold().to_string());
+            self.print_row(
+                "Files Scanned:",
+                &files.to_string().bright_white().bold().to_string(),
+            );
         }
 
         // Separator
-        println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Vulnerabilities - color coded by severity
         let vuln_display = if self.vulnerabilities_found == 0 {
-            format!("{} {}", "✅", self.vulnerabilities_found.to_string().green().bold())
+            format!(
+                "{} {}",
+                "✅",
+                self.vulnerabilities_found.to_string().green().bold()
+            )
         } else if self.critical_count > 0 || self.high_count > 5 {
-            format!("{} {}", "🔴", self.vulnerabilities_found.to_string().red().bold())
+            format!(
+                "{} {}",
+                "🔴",
+                self.vulnerabilities_found.to_string().red().bold()
+            )
         } else if self.high_count > 0 {
-            format!("{} {}", "🟠", self.vulnerabilities_found.to_string().yellow().bold())
+            format!(
+                "{} {}",
+                "🟠",
+                self.vulnerabilities_found.to_string().yellow().bold()
+            )
         } else {
-            format!("{} {}", "🟡", self.vulnerabilities_found.to_string().yellow())
+            format!(
+                "{} {}",
+                "🟡",
+                self.vulnerabilities_found.to_string().yellow()
+            )
         };
 
         self.print_row("Vulnerabilities Found:", &vuln_display);
@@ -106,58 +162,87 @@ impl ScanSummary {
             if self.critical_count > 0 {
                 self.print_row(
                     "  ├─ Critical:",
-                    &format!("{:>3}  {}", self.critical_count, "🔴")
+                    &format!("{:>3}  {}", self.critical_count, "🔴"),
                 );
             }
             if self.high_count > 0 {
-                self.print_row(
-                    "  ├─ High:",
-                    &format!("{:>3}  {}", self.high_count, "🟠")
-                );
+                self.print_row("  ├─ High:", &format!("{:>3}  {}", self.high_count, "🟠"));
             }
             if self.medium_count > 0 {
                 self.print_row(
                     "  ├─ Medium:",
-                    &format!("{:>3}  {}", self.medium_count, "🟡")
+                    &format!("{:>3}  {}", self.medium_count, "🟡"),
                 );
             }
             if self.low_count > 0 {
-                self.print_row(
-                    "  └─ Low:",
-                    &format!("{:>3}  {}", self.low_count, "🟢")
-                );
+                self.print_row("  └─ Low:", &format!("{:>3}  {}", self.low_count, "🟢"));
             }
         }
 
         // Other issues
         if self.license_issues > 0 || self.policy_violations > 0 {
-            println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+            println!(
+                "{}",
+                "╠═══════════════════════════════════════════════════════════════╣"
+                    .bright_cyan()
+                    .bold()
+            );
         }
 
         if self.license_issues > 0 {
             self.print_row(
                 "License Issues:",
-                &format!("{} {}", "⚠️ ", self.license_issues.to_string().yellow().bold())
+                &format!(
+                    "{} {}",
+                    "⚠️ ",
+                    self.license_issues.to_string().yellow().bold()
+                ),
             );
         }
 
         if self.policy_violations > 0 {
             self.print_row(
                 "Policy Violations:",
-                &format!("{} {}", "❌", self.policy_violations.to_string().red().bold())
+                &format!(
+                    "{} {}",
+                    "❌",
+                    self.policy_violations.to_string().red().bold()
+                ),
             );
         }
 
         // Performance metrics
-        println!("{}", "╠═══════════════════════════════════════════════════════════════╣".bright_cyan().bold());
-        self.print_row("⏱️  Scan Duration:", &format_duration(self.scan_duration).bright_white().bold().to_string());
-        self.print_row("📁 Reports:", &self.reports_dir.bright_blue().underline().to_string());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
+        self.print_row(
+            "⏱️  Scan Duration:",
+            &format_duration(self.scan_duration)
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
+        self.print_row(
+            "📁 Reports:",
+            &self.reports_dir.bright_blue().underline().to_string(),
+        );
 
         if self.uploaded_to_github {
-            self.print_row("📤 GitHub Upload:", &"✅ Complete".green().bold().to_string());
+            self.print_row(
+                "📤 GitHub Upload:",
+                &"✅ Complete".green().bold().to_string(),
+            );
         }
 
-        println!("{}", "╚═══════════════════════════════════════════════════════════════╝".bright_cyan().bold());
+        println!(
+            "{}",
+            "╚═══════════════════════════════════════════════════════════════╝"
+                .bright_cyan()
+                .bold()
+        );
         println!();
 
         // Next steps
@@ -170,7 +255,8 @@ impl ScanSummary {
         let value_display_len = console::strip_ansi_codes(value).len();
         let padding = 40usize.saturating_sub(value_display_len);
 
-        println!("{} {:<23} {:>width$} {}",
+        println!(
+            "{} {:<23} {:>width$} {}",
             "║".bright_cyan().bold(),
             label,
             value,
@@ -185,12 +271,14 @@ impl ScanSummary {
 
         if self.vulnerabilities_found > 0 {
             if self.critical_count > 0 || self.high_count > 0 {
-                println!("  {} Run {} to fix critical vulnerabilities",
+                println!(
+                    "  {} Run {} to fix critical vulnerabilities",
                     "🔥".red(),
                     "'bazbom fix --interactive'".bright_white().bold()
                 );
             } else {
-                println!("  {} Run {} to fix vulnerabilities",
+                println!(
+                    "  {} Run {} to fix vulnerabilities",
                     "•".cyan(),
                     "'bazbom fix --interactive'".bright_white().bold()
                 );
@@ -198,23 +286,23 @@ impl ScanSummary {
         }
 
         if self.total_findings() > 0 {
-            println!("  {} View detailed report: {}",
+            println!(
+                "  {} View detailed report: {}",
                 "•".cyan(),
                 "'bazbom explore'".bright_white().bold()
             );
         }
 
         if !self.uploaded_to_github {
-            println!("  {} Upload to GitHub: {}",
+            println!(
+                "  {} Upload to GitHub: {}",
                 "•".cyan(),
                 "Configure GitHub Code Scanning".dimmed()
             );
         }
 
         if self.total_findings() == 0 {
-            println!("  {}  All clear! No action needed.",
-                "✨".green()
-            );
+            println!("  {}  All clear! No action needed.", "✨".green());
         }
 
         println!();

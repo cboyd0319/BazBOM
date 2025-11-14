@@ -45,7 +45,7 @@ fn demo_scan_summary() {
 }
 
 fn demo_container_scan() {
-    use bazbom::container_ux::{ContainerSummary, print_layer_breakdown};
+    use bazbom::container_ux::{print_layer_breakdown, ContainerSummary};
 
     println!("═══════════════════════════════════════════════════");
     println!(" DEMO 2: Container Image Scanning");
@@ -53,10 +53,10 @@ fn demo_container_scan() {
 
     // Layer breakdown
     let layers = vec![
-        ("sha256:5d0da3dc4634".to_string(), 77.8, 0, 0),   // Base layer
-        ("sha256:9a7ddd6b8d0a".to_string(), 23.1, 0, 0),   // System deps
+        ("sha256:5d0da3dc4634".to_string(), 77.8, 0, 0), // Base layer
+        ("sha256:9a7ddd6b8d0a".to_string(), 23.1, 0, 0), // System deps
         ("sha256:1b2c3d4e5f6a".to_string(), 150.5, 25, 3), // App layer
-        ("sha256:7g8h9i0j1k2l".to_string(), 45.2, 17, 2),  // Dependencies
+        ("sha256:7g8h9i0j1k2l".to_string(), 45.2, 17, 2), // Dependencies
     ];
 
     print_layer_breakdown(&layers);
@@ -64,7 +64,8 @@ fn demo_container_scan() {
     // Summary
     let summary = ContainerSummary {
         image_name: "mycompany/java-app:v1.2.3".to_string(),
-        image_digest: "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string(),
+        image_digest: "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+            .to_string(),
         total_layers: 4,
         total_size_mb: 296.6,
         base_image: Some("eclipse-temurin:17-jre-alpine".to_string()),

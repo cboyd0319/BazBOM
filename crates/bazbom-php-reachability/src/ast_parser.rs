@@ -12,11 +12,12 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
     let language = tree_sitter_php::LANGUAGE_PHP.into();
     parser.set_language(&language)?;
 
-    parser
-        .parse(&source_code, None)
-        .ok_or_else(|| PhpReachabilityError::ParseError(
-            format!("Failed to parse PHP file: {}", file_path.display())
+    parser.parse(&source_code, None).ok_or_else(|| {
+        PhpReachabilityError::ParseError(format!(
+            "Failed to parse PHP file: {}",
+            file_path.display()
         ))
+    })
 }
 
 #[derive(Debug, Clone)]
@@ -150,9 +151,17 @@ impl FunctionExtractor {
             let line = node.start_position().row + 1;
 
             // Check for dynamic code patterns
-            if matches!(callee.as_str(), "eval" | "assert" | "create_function"
-                                       | "call_user_func" | "call_user_func_array"
-                                       | "preg_replace" | "include" | "require") {
+            if matches!(
+                callee.as_str(),
+                "eval"
+                    | "assert"
+                    | "create_function"
+                    | "call_user_func"
+                    | "call_user_func_array"
+                    | "preg_replace"
+                    | "include"
+                    | "require"
+            ) {
                 self.has_dynamic_code = true;
             }
 

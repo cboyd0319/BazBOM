@@ -1,6 +1,6 @@
-use anyhow::Result;
 use crate::commands::upgrade_intelligence;
-use bazbom::interactive_fix::{InteractiveFix, FixableVulnerability, Severity};
+use anyhow::Result;
+use bazbom::interactive_fix::{FixableVulnerability, InteractiveFix, Severity};
 
 /// Handle the `bazbom fix` command
 ///
@@ -74,17 +74,9 @@ fn estimate_breaking_changes(current_version: &str, fixed_version: &str) -> usiz
                 parts[2].parse().ok()?,
             ))
         } else if parts.len() == 2 {
-            Some((
-                parts[0].parse().ok()?,
-                parts[1].parse().ok()?,
-                0,
-            ))
+            Some((parts[0].parse().ok()?, parts[1].parse().ok()?, 0))
         } else if parts.len() == 1 {
-            Some((
-                parts[0].parse().ok()?,
-                0,
-                0,
-            ))
+            Some((parts[0].parse().ok()?, 0, 0))
         } else {
             None
         }
@@ -140,7 +132,8 @@ fn estimate_effort_hours(
     };
 
     if let (Some((from_major, from_minor)), Some((to_major, to_minor))) =
-        (parse_version(current_version), parse_version(fixed_version)) {
+        (parse_version(current_version), parse_version(fixed_version))
+    {
         if from_major != to_major {
             hours += 4.0; // Major version bump
         } else if from_minor != to_minor {
@@ -157,27 +150,26 @@ fn estimate_effort_hours(
 
 /// Load vulnerabilities from scan results
 fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
+    use serde_json::Value;
     use std::fs;
     use std::path::PathBuf;
-    use serde_json::Value;
 
     // Try multiple locations for findings file
-    let possible_paths = vec![
+    let possible_paths = [
         PathBuf::from("./bazbom-findings/sca_findings.json"),
         PathBuf::from("./sca_findings.json"),
         PathBuf::from(".bazbom-cache/sca_findings.json"),
     ];
 
-    let findings_path = possible_paths
-        .iter()
-        .find(|p| p.exists())
-        .ok_or_else(|| anyhow::anyhow!(
+    let findings_path = possible_paths.iter().find(|p| p.exists()).ok_or_else(|| {
+        anyhow::anyhow!(
             "No scan results found. Run 'bazbom scan' first to generate findings.\n\
              Expected locations:\n  - {}\n  - {}\n  - {}",
             possible_paths[0].display(),
             possible_paths[1].display(),
             possible_paths[2].display()
-        ))?;
+        )
+    })?;
 
     let content = fs::read_to_string(findings_path)?;
     let findings: Value = serde_json::from_str(&content)?;
@@ -188,31 +180,36 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
     if let Some(vulns) = findings.get("vulnerabilities").and_then(|v| v.as_array()) {
         for vuln in vulns {
             // Extract vulnerability data
-            let cve_id = vuln.get("id")
+            let cve_id = vuln
+                .get("id")
                 .or_else(|| vuln.get("cve"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("UNKNOWN")
                 .to_string();
 
-            let package = vuln.get("package")
+            let package = vuln
+                .get("package")
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown")
                 .to_string();
 
-            let current_version = vuln.get("version")
+            let current_version = vuln
+                .get("version")
                 .or_else(|| vuln.get("current_version"))
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown")
                 .to_string();
 
-            let fixed_version = vuln.get("fixed_version")
+            let fixed_version = vuln
+                .get("fixed_version")
                 .or_else(|| vuln.get("recommended_version"))
                 .and_then(|v| v.as_str())
                 .map(|s| s.to_string());
 
             // Only include if there's a fix available
             if let Some(fixed) = fixed_version {
-                let severity_str = vuln.get("severity")
+                let severity_str = vuln
+                    .get("severity")
                     .and_then(|v| v.as_str())
                     .unwrap_or("MEDIUM");
 
@@ -223,16 +220,19 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
                     _ => Severity::Low,
                 };
 
-                let epss_score = vuln.get("epss_score")
+                let epss_score = vuln
+                    .get("epss_score")
                     .or_else(|| vuln.get("epss"))
                     .and_then(|v| v.as_f64());
 
-                let in_cisa_kev = vuln.get("in_cisa_kev")
+                let in_cisa_kev = vuln
+                    .get("in_cisa_kev")
                     .or_else(|| vuln.get("cisa_kev"))
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
 
-                let description = vuln.get("description")
+                let description = vuln
+                    .get("description")
                     .or_else(|| vuln.get("title"))
                     .and_then(|v| v.as_str())
                     .unwrap_or("No description available")
@@ -242,12 +242,8 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
                 let breaking_changes = estimate_breaking_changes(&current_version, &fixed);
 
                 // Estimate effort hours based on severity, version diff, and breaking changes
-                let estimated_effort_hours = estimate_effort_hours(
-                    severity_str,
-                    &current_version,
-                    &fixed,
-                    breaking_changes,
-                );
+                let estimated_effort_hours =
+                    estimate_effort_hours(severity_str, &current_version, &fixed, breaking_changes);
 
                 fixable_vulns.push(FixableVulnerability {
                     cve_id,
@@ -267,20 +263,18 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
 
     // Fall back to demo data if no real vulnerabilities found
     if fixable_vulns.is_empty() {
-        Ok(vec![
-            FixableVulnerability {
-                cve_id: "DEMO-1234".to_string(),
-                package: "example:package".to_string(),
-                current_version: "1.0.0".to_string(),
-                fixed_version: "1.0.1".to_string(),
-                severity: Severity::Medium,
-                epss_score: Some(0.15),
-                in_cisa_kev: false,
-                description: "Demo vulnerability - no actual scan results found".to_string(),
-                breaking_changes: 0,
-                estimated_effort_hours: 1.0,
-            },
-        ])
+        Ok(vec![FixableVulnerability {
+            cve_id: "DEMO-1234".to_string(),
+            package: "example:package".to_string(),
+            current_version: "1.0.0".to_string(),
+            fixed_version: "1.0.1".to_string(),
+            severity: Severity::Medium,
+            epss_score: Some(0.15),
+            in_cisa_kev: false,
+            description: "Demo vulnerability - no actual scan results found".to_string(),
+            breaking_changes: 0,
+            estimated_effort_hours: 1.0,
+        }])
     } else {
         Ok(fixable_vulns)
     }

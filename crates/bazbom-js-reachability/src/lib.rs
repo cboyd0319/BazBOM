@@ -30,8 +30,8 @@ pub mod ast_parser;
 pub mod call_graph;
 pub mod entrypoints;
 pub mod error;
-pub mod module_resolver;
 pub mod models;
+pub mod module_resolver;
 
 pub use analyzer::JsReachabilityAnalyzer;
 pub use call_graph::CallGraph;

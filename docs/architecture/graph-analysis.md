@@ -571,7 +571,7 @@ bazel run //tools/supplychain:graph_query -- \
 
 ## References
 
-- [GraphML Specification](http://graphml.graphdrawing.org/)
+- [GraphML Specification](https://graphml.graphdrawing.org/)
 - [Gephi Documentation](https://gephi.org/users/)
 - [yEd User Manual](https://yed.yworks.com/support/manual/)
 - [Bazel Query Documentation](https://bazel.build/query/guide)

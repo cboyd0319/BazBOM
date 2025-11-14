@@ -22,10 +22,9 @@ pub fn handle_status(verbose: bool, findings: Option<String>) -> Result<()> {
     }
 
     // Parse scan results
-    let content = fs::read_to_string(&findings_path)
-        .context("Failed to read scan results")?;
-    let sarif: serde_json::Value = serde_json::from_str(&content)
-        .context("Failed to parse SARIF")?;
+    let content = fs::read_to_string(&findings_path).context("Failed to read scan results")?;
+    let sarif: serde_json::Value =
+        serde_json::from_str(&content).context("Failed to parse SARIF")?;
 
     // Extract vulnerability stats
     let stats = extract_vulnerability_stats(&sarif);
@@ -98,7 +97,9 @@ fn extract_vulnerability_stats(sarif: &serde_json::Value) -> VulnerabilityStats 
 
                     // Check if reachable (example - adjust based on your SARIF format)
                     if let Some(properties) = result.get("properties") {
-                        if let Some(reachable) = properties.get("reachable").and_then(|r| r.as_bool()) {
+                        if let Some(reachable) =
+                            properties.get("reachable").and_then(|r| r.as_bool())
+                        {
                             if reachable {
                                 stats.reachable += 1;
                             }
@@ -124,7 +125,7 @@ fn calculate_security_score(stats: &VulnerabilityStats) -> u8 {
     score = score.saturating_sub((stats.critical * 15) as u8);
     score = score.saturating_sub((stats.high * 8) as u8);
     score = score.saturating_sub((stats.medium * 3) as u8);
-    score = score.saturating_sub((stats.low * 1) as u8);
+    score = score.saturating_sub(stats.low as u8);
 
     // Extra penalty for reachable vulns
     score = score.saturating_sub((stats.reachable * 5) as u8);
@@ -159,13 +160,20 @@ fn get_last_scan_time(path: &Path) -> Result<String> {
 /// Display security status with beautiful formatting
 fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbose: bool) {
     println!();
-    println!("{}", "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓".bright_blue());
-    println!("{} {} {}",
+    println!(
+        "{}",
+        "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓".bright_blue()
+    );
+    println!(
+        "{} {} {}",
         "┃".bright_blue(),
         "🛡️  SECURITY STATUS".bold().bright_cyan(),
         "                        ┃".bright_blue()
     );
-    println!("{}", "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫".bright_blue());
+    println!(
+        "{}",
+        "┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫".bright_blue()
+    );
 
     // Security score
     let score_color = if score >= 80 {
@@ -176,9 +184,16 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
         "red"
     };
 
-    let score_emoji = if score >= 80 { "✅" } else if score >= 60 { "⚠️" } else { "🚨" };
+    let score_emoji = if score >= 80 {
+        "✅"
+    } else if score >= 60 {
+        "⚠️"
+    } else {
+        "🚨"
+    };
 
-    println!("┃  {} Security Score: {:<28} ┃",
+    println!(
+        "┃  {} Security Score: {:<28} ┃",
         score_emoji,
         format!("{}/100", score).color(score_color).bold()
     );
@@ -186,40 +201,65 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
 
     // Vulnerability counts
     if stats.total == 0 {
-        println!("┃  {}  {}                   ┃",
+        println!(
+            "┃  {}  {}                   ┃",
             "✨".green(),
             "NO VULNERABILITIES!".green().bold()
         );
     } else {
-        println!("┃  Total Vulnerabilities: {:<19} ┃", stats.total.to_string().bold());
+        println!(
+            "┃  Total Vulnerabilities: {:<19} ┃",
+            stats.total.to_string().bold()
+        );
 
         if stats.critical > 0 {
-            println!("┃    {} Critical:  {:<27} ┃", "🚨", stats.critical.to_string().red().bold());
+            println!(
+                "┃    🚨 Critical:  {:<27} ┃",
+                stats.critical.to_string().red().bold()
+            );
         }
         if stats.high > 0 {
-            println!("┃    {} High:      {:<27} ┃", "⚠️", stats.high.to_string().yellow().bold());
+            println!(
+                "┃    ⚠️  High:      {:<27} ┃",
+                stats.high.to_string().yellow().bold()
+            );
         }
         if stats.medium > 0 {
-            println!("┃    {} Medium:    {:<27} ┃", "⚡", stats.medium.to_string().cyan());
+            println!(
+                "┃    ⚡ Medium:    {:<27} ┃",
+                stats.medium.to_string().cyan()
+            );
         }
         if stats.low > 0 {
-            println!("┃    {} Low:       {:<27} ┃", "ℹ️", stats.low.to_string().white());
+            println!(
+                "┃    ℹ️  Low:       {:<27} ┃",
+                stats.low.to_string().white()
+            );
         }
 
         println!("┃                                              ┃");
 
         if stats.reachable > 0 {
-            println!("┃  {} Reachable: {:<25} ┃",
+            println!(
+                "┃  {} Reachable: {:<25} ┃",
                 "🎯".red(),
-                format!("{} ({}%)", stats.reachable, (stats.reachable * 100) / stats.total.max(1))
-                    .red().bold()
+                format!(
+                    "{} ({}%)",
+                    stats.reachable,
+                    (stats.reachable * 100) / stats.total.max(1)
+                )
+                .red()
+                .bold()
             );
         }
     }
 
     println!("┃                                              ┃");
     println!("┃  Last Scan: {:<32} ┃", last_scan.dimmed());
-    println!("{}", "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛".bright_blue());
+    println!(
+        "{}",
+        "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛".bright_blue()
+    );
     println!();
 
     // Recommendations
@@ -250,7 +290,8 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
         print_bar("  Medium", stats.medium, stats.total, "cyan");
         print_bar("  Low", stats.low, stats.total, "white");
         println!();
-        println!("  Reachability: {}% of vulnerabilities are reachable",
+        println!(
+            "  Reachability: {}% of vulnerabilities are reachable",
             (stats.reachable * 100) / stats.total.max(1)
         );
         println!();
@@ -263,7 +304,8 @@ fn print_bar(label: &str, count: usize, total: usize, color: &str) {
     let bar_length = (percentage / 2).min(40); // Max 40 chars
     let bar = "█".repeat(bar_length);
 
-    println!("    {:<10} {:>3} | {} {}%",
+    println!(
+        "    {:<10} {:>3} | {} {}%",
         label,
         count,
         bar.color(color),

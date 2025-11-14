@@ -22,11 +22,7 @@ impl ModuleResolver {
     /// - `from package.module import func` -> package/module.py
     /// - `from . import sibling` -> ./sibling.py (relative import)
     /// - `from .. import parent` -> ../parent.py (relative import)
-    pub fn resolve_import(
-        &self,
-        module_name: &str,
-        from_file: &Path,
-    ) -> Result<Vec<PathBuf>> {
+    pub fn resolve_import(&self, module_name: &str, from_file: &Path) -> Result<Vec<PathBuf>> {
         // Handle relative imports
         if module_name.starts_with('.') {
             return self.resolve_relative_import(module_name, from_file);
@@ -37,28 +33,23 @@ impl ModuleResolver {
     }
 
     /// Resolve relative imports (e.g., from . import foo, from .. import bar)
-    fn resolve_relative_import(
-        &self,
-        module_name: &str,
-        from_file: &Path,
-    ) -> Result<Vec<PathBuf>> {
+    fn resolve_relative_import(&self, module_name: &str, from_file: &Path) -> Result<Vec<PathBuf>> {
         let dot_count = module_name.chars().take_while(|c| *c == '.').count();
         let module_part = &module_name[dot_count..];
 
         // Get the directory of the current file
-        let current_dir = from_file
-            .parent()
-            .ok_or_else(|| {
-                PythonReachabilityError::ModuleResolutionError(format!(
-                    "Cannot get parent directory of {:?}",
-                    from_file
-                ))
-            })?;
+        let current_dir = from_file.parent().ok_or_else(|| {
+            PythonReachabilityError::ModuleResolutionError(format!(
+                "Cannot get parent directory of {:?}",
+                from_file
+            ))
+        })?;
 
         // Navigate up the directory tree
         let mut target_dir = current_dir.to_path_buf();
         for _ in 1..dot_count {
-            target_dir = target_dir.parent()
+            target_dir = target_dir
+                .parent()
                 .ok_or_else(|| {
                     PythonReachabilityError::ModuleResolutionError(format!(
                         "Cannot navigate up from {:?}",
@@ -74,7 +65,10 @@ impl ModuleResolver {
             target_dir = target_dir.join(module_path);
         }
 
-        debug!("Resolved relative import {} to {:?}", module_name, target_dir);
+        debug!(
+            "Resolved relative import {} to {:?}",
+            module_name, target_dir
+        );
 
         // Try to find the module file
         self.find_module_file(&target_dir)
@@ -85,7 +79,10 @@ impl ModuleResolver {
         let module_path = module_name.replace('.', "/");
         let search_path = self.project_root.join(&module_path);
 
-        debug!("Resolving absolute import {} at {:?}", module_name, search_path);
+        debug!(
+            "Resolving absolute import {} at {:?}",
+            module_name, search_path
+        );
 
         self.find_module_file(&search_path)
     }
@@ -160,7 +157,9 @@ mod tests {
         fs::write(src_dir.join("utils.py"), "def helper(): pass").unwrap();
 
         let resolver = ModuleResolver::new(temp_dir.path().to_path_buf());
-        let resolved = resolver.resolve_import("src.utils", Path::new("main.py")).unwrap();
+        let resolved = resolver
+            .resolve_import("src.utils", Path::new("main.py"))
+            .unwrap();
 
         assert!(!resolved.is_empty());
         assert!(resolved[0].ends_with("utils.py"));
@@ -176,7 +175,9 @@ mod tests {
         fs::write(package_dir.join("__init__.py"), "# package").unwrap();
 
         let resolver = ModuleResolver::new(temp_dir.path().to_path_buf());
-        let resolved = resolver.resolve_import("mypackage", Path::new("main.py")).unwrap();
+        let resolved = resolver
+            .resolve_import("mypackage", Path::new("main.py"))
+            .unwrap();
 
         assert!(!resolved.is_empty());
         assert!(resolved[0].ends_with("__init__.py"));

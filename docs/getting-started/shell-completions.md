@@ -373,5 +373,5 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for details.
 
 - [Clap Documentation](https://docs.rs/clap/latest/clap/)
 - [Bash Completion Tutorial](https://github.com/scop/bash-completion)
-- [Zsh Completion Guide](http://zsh.sourceforge.net/Doc/Release/Completion-System.html)
+- [Zsh Completion Guide](https://zsh.sourceforge.net/Doc/Release/Completion-System.html)
 - [Fish Completion Guide](https://fishshell.com/docs/current/completions.html)

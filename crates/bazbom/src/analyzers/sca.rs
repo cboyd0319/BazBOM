@@ -371,7 +371,11 @@ impl ScaAnalyzer {
         Some(Priority::P3)
     }
 
-    fn enrich_with_reachability(&self, ctx: &Context, matches: &mut [VulnerabilityMatch]) -> Result<()> {
+    fn enrich_with_reachability(
+        &self,
+        ctx: &Context,
+        matches: &mut [VulnerabilityMatch],
+    ) -> Result<()> {
         // Load reachability data from polyglot-sbom.json
         let polyglot_sbom_path = ctx.sbom_dir.join("polyglot-sbom.json");
 
@@ -382,16 +386,20 @@ impl ScaAnalyzer {
 
         let content = std::fs::read_to_string(&polyglot_sbom_path)
             .context("Failed to read polyglot-sbom.json")?;
-        let sbom: serde_json::Value = serde_json::from_str(&content)
-            .context("Failed to parse polyglot-sbom.json")?;
+        let sbom: serde_json::Value =
+            serde_json::from_str(&content).context("Failed to parse polyglot-sbom.json")?;
 
         // Extract reachability data from ecosystems
-        let mut reachability_map: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+        let mut reachability_map: std::collections::HashMap<String, bool> =
+            std::collections::HashMap::new();
 
         if let Some(ecosystems) = sbom.get("ecosystems").and_then(|e| e.as_array()) {
             for ecosystem in ecosystems {
                 if let Some(reachability) = ecosystem.get("reachability") {
-                    if let Some(vulnerable_packages) = reachability.get("vulnerable_packages_reachable").and_then(|v| v.as_object()) {
+                    if let Some(vulnerable_packages) = reachability
+                        .get("vulnerable_packages_reachable")
+                        .and_then(|v| v.as_object())
+                    {
                         for (package, is_reachable) in vulnerable_packages {
                             if let Some(reachable_bool) = is_reachable.as_bool() {
                                 reachability_map.insert(package.clone(), reachable_bool);
@@ -403,7 +411,10 @@ impl ScaAnalyzer {
         }
 
         if !reachability_map.is_empty() {
-            println!("[bazbom] loaded reachability data for {} packages", reachability_map.len());
+            println!(
+                "[bazbom] loaded reachability data for {} packages",
+                reachability_map.len()
+            );
 
             // Enrich vulnerability matches with reachability data
             for vuln_match in matches.iter_mut() {
@@ -412,7 +423,8 @@ impl ScaAnalyzer {
                     vuln_match.reachable = Some(is_reachable);
                 } else {
                     // Try fuzzy matching (e.g., "@org/package" vs "org/package")
-                    let simplified_name = vuln_match.component_name
+                    let simplified_name = vuln_match
+                        .component_name
                         .trim_start_matches('@')
                         .replace(':', "/");
 
@@ -423,11 +435,16 @@ impl ScaAnalyzer {
             }
 
             let reachable_count = matches.iter().filter(|m| m.reachable == Some(true)).count();
-            let unreachable_count = matches.iter().filter(|m| m.reachable == Some(false)).count();
+            let unreachable_count = matches
+                .iter()
+                .filter(|m| m.reachable == Some(false))
+                .count();
 
             if reachable_count > 0 || unreachable_count > 0 {
-                println!("[bazbom] reachability analysis: {} reachable, {} unreachable",
-                    reachable_count, unreachable_count);
+                println!(
+                    "[bazbom] reachability analysis: {} reachable, {} unreachable",
+                    reachable_count, unreachable_count
+                );
             }
         }
 
@@ -469,10 +486,14 @@ impl ScaAnalyzer {
                 // Add reachability information
                 match m.reachable {
                     Some(true) => {
-                        message_parts.push("[!] Code is REACHABLE - vulnerability is exploitable".to_string());
+                        message_parts.push(
+                            "[!] Code is REACHABLE - vulnerability is exploitable".to_string(),
+                        );
                     }
                     Some(false) => {
-                        message_parts.push("[✓] Code is UNREACHABLE - vulnerability not exploitable".to_string());
+                        message_parts.push(
+                            "[✓] Code is UNREACHABLE - vulnerability not exploitable".to_string(),
+                        );
                     }
                     None => {
                         // Reachability unknown, don't add a message

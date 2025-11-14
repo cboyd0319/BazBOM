@@ -246,9 +246,20 @@ impl Default for DockerClient {
 #[derive(Debug, Clone)]
 pub enum ScanEvent {
     Phase(String),
-    ImageMetadata { name: String, layers: usize },
-    LayerStart { index: usize, total: usize, digest: String, size: u64 },
-    LayerComplete { index: usize, artifacts_found: usize },
+    ImageMetadata {
+        name: String,
+        layers: usize,
+    },
+    LayerStart {
+        index: usize,
+        total: usize,
+        digest: String,
+        size: u64,
+    },
+    LayerComplete {
+        index: usize,
+        artifacts_found: usize,
+    },
     Complete,
 }
 
@@ -359,11 +370,12 @@ impl ContainerScanner {
             // Convert to JavaArtifacts with full metadata
             let mut layer_artifacts = Vec::new();
             for candidate in candidates {
-                let maven_coords = if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
-                    self.extract_maven_metadata(&candidate.path).ok()
-                } else {
-                    None
-                };
+                let maven_coords =
+                    if candidate.artifact_type == crate::oci_parser::ArtifactType::Jar {
+                        self.extract_maven_metadata(&candidate.path).ok()
+                    } else {
+                        None
+                    };
 
                 let sha256 = self.calculate_file_hash(&candidate.path)?;
 

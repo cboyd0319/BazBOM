@@ -56,8 +56,8 @@ impl DependencyUpdater for NpmUpdater {
         }
 
         // Write back with pretty formatting
-        let formatted = serde_json::to_string_pretty(&pkg_json)
-            .context("Failed to serialize package.json")?;
+        let formatted =
+            serde_json::to_string_pretty(&pkg_json).context("Failed to serialize package.json")?;
 
         fs::write(file_path, formatted + "\n")
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;

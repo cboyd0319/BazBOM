@@ -48,15 +48,13 @@ pub mod ast_parser;
 pub mod call_graph;
 pub mod entrypoints;
 pub mod error;
-pub mod module_resolver;
 pub mod models;
+pub mod module_resolver;
 
 pub use analyzer::PythonReachabilityAnalyzer;
 pub use call_graph::CallGraph;
 pub use error::{PythonReachabilityError, Result};
-pub use models::{
-    DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability,
-};
+pub use models::{DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability};
 
 use std::path::Path;
 

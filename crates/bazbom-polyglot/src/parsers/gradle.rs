@@ -9,12 +9,12 @@
 //! - String notation and map notation
 //! - Version catalogs (libs.versions.toml)
 
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
-use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package};
 
 /// Scan Gradle ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -132,8 +132,12 @@ pub fn parse_gradle_with_modules(gradle_path: &Path) -> Result<Vec<GradleDepende
 
 /// Parse settings.gradle to extract included modules
 fn parse_settings_gradle(settings_path: &Path) -> Result<Vec<String>> {
-    let content = fs::read_to_string(settings_path)
-        .with_context(|| format!("Failed to read settings.gradle: {}", settings_path.display()))?;
+    let content = fs::read_to_string(settings_path).with_context(|| {
+        format!(
+            "Failed to read settings.gradle: {}",
+            settings_path.display()
+        )
+    })?;
 
     let mut modules = Vec::new();
 

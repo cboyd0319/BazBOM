@@ -21,13 +21,26 @@ impl ContainerScanProgress {
     pub fn new(image_name: &str, total_layers: usize) -> Self {
         // Print header
         println!();
-        println!("{}", "╔═══════════════════════════════════════════════════════════════════╗".bright_blue().bold());
-        println!("{} {} {}",
+        println!(
+            "{}",
+            "╔═══════════════════════════════════════════════════════════════════╗"
+                .bright_blue()
+                .bold()
+        );
+        println!(
+            "{} {} {}",
             "║".bright_blue().bold(),
-            format!("🐳 CONTAINER SCAN: {}", image_name).bright_cyan().bold(),
+            format!("🐳 CONTAINER SCAN: {}", image_name)
+                .bright_cyan()
+                .bold(),
             " ║".bright_blue().bold()
         );
-        println!("{}", "╚═══════════════════════════════════════════════════════════════════╝".bright_blue().bold());
+        println!(
+            "{}",
+            "╚═══════════════════════════════════════════════════════════════════╝"
+                .bright_blue()
+                .bold()
+        );
         println!();
 
         let spinner = ProgressBar::new(total_layers as u64);
@@ -35,7 +48,7 @@ impl ContainerScanProgress {
             ProgressStyle::default_bar()
                 .template("  [{bar:40.cyan/blue}] {pos}/{len} layers | {msg}")
                 .unwrap()
-                .progress_chars("█▓▒░")
+                .progress_chars("█▓▒░"),
         );
 
         Self {
@@ -67,16 +80,16 @@ impl ContainerScanProgress {
             "✓ clean".dimmed()
         };
 
-        self.spinner.set_message(format!("Layer {}/{}: {}",
-            self.current_layer,
-            self.total_layers,
-            status
+        self.spinner.set_message(format!(
+            "Layer {}/{}: {}",
+            self.current_layer, self.total_layers, status
         ));
     }
 
     /// Finish the scan
     pub fn finish(&self) {
-        self.spinner.finish_with_message("Scan complete!".green().to_string());
+        self.spinner
+            .finish_with_message("Scan complete!".green().to_string());
         println!();
     }
 }
@@ -101,13 +114,24 @@ pub struct ContainerSummary {
 impl ContainerSummary {
     /// Print beautiful container summary
     pub fn print(&self) {
-        println!("{}", "╔═══════════════════════════════════════════════════════════════════╗".bright_cyan().bold());
-        println!("{} {:^67} {}",
+        println!(
+            "{}",
+            "╔═══════════════════════════════════════════════════════════════════╗"
+                .bright_cyan()
+                .bold()
+        );
+        println!(
+            "{} {:^67} {}",
             "║".bright_cyan().bold(),
             "🐳 CONTAINER SCAN SUMMARY",
             "║".bright_cyan().bold()
         );
-        println!("{}", "╠═══════════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Image info
         self.print_row("Image:", &self.image_name.bright_white().bold().to_string());
@@ -122,23 +146,59 @@ impl ContainerSummary {
             self.print_row("Base Image:", &base.bright_white().to_string());
         }
 
-        println!("{}", "╠═══════════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Layer info
-        self.print_row("Total Layers:", &self.total_layers.to_string().bright_white().bold().to_string());
-        self.print_row("Total Size:", &format!("{:.1} MB", self.total_size_mb).bright_white().bold().to_string());
+        self.print_row(
+            "Total Layers:",
+            &self
+                .total_layers
+                .to_string()
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
+        self.print_row(
+            "Total Size:",
+            &format!("{:.1} MB", self.total_size_mb)
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
 
-        println!("{}", "╠═══════════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Findings
-        self.print_row("Java Artifacts:", &self.java_artifacts.to_string().bright_white().bold().to_string());
+        self.print_row(
+            "Java Artifacts:",
+            &self
+                .java_artifacts
+                .to_string()
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
 
         let vuln_display = if self.vulnerabilities == 0 {
             format!("{} {}", "✅", "0".green().bold())
         } else if self.critical_vulns > 0 {
             format!("{} {}", "🔴", self.vulnerabilities.to_string().red().bold())
         } else if self.high_vulns > 0 {
-            format!("{} {}", "🟠", self.vulnerabilities.to_string().yellow().bold())
+            format!(
+                "{} {}",
+                "🟠",
+                self.vulnerabilities.to_string().yellow().bold()
+            )
         } else {
             format!("{} {}", "🟡", self.vulnerabilities.to_string().yellow())
         };
@@ -147,25 +207,47 @@ impl ContainerSummary {
 
         if self.vulnerabilities > 0 {
             if self.critical_vulns > 0 {
-                self.print_row("  ├─ Critical:", &format!("{:>3}  {}", self.critical_vulns, "🔴"));
+                self.print_row(
+                    "  ├─ Critical:",
+                    &format!("{:>3}  {}", self.critical_vulns, "🔴"),
+                );
             }
             if self.high_vulns > 0 {
                 self.print_row("  ├─ High:", &format!("{:>3}  {}", self.high_vulns, "🟠"));
             }
             if self.medium_vulns > 0 {
-                self.print_row("  ├─ Medium:", &format!("{:>3}  {}", self.medium_vulns, "🟡"));
+                self.print_row(
+                    "  ├─ Medium:",
+                    &format!("{:>3}  {}", self.medium_vulns, "🟡"),
+                );
             }
             if self.low_vulns > 0 {
                 self.print_row("  └─ Low:", &format!("{:>3}  {}", self.low_vulns, "🟢"));
             }
         }
 
-        println!("{}", "╠═══════════════════════════════════════════════════════════════════╣".bright_cyan().bold());
+        println!(
+            "{}",
+            "╠═══════════════════════════════════════════════════════════════════╣"
+                .bright_cyan()
+                .bold()
+        );
 
         // Performance
-        self.print_row("Scan Duration:", &crate::summary::format_duration(self.scan_duration).bright_white().bold().to_string());
+        self.print_row(
+            "Scan Duration:",
+            &crate::summary::format_duration(self.scan_duration)
+                .bright_white()
+                .bold()
+                .to_string(),
+        );
 
-        println!("{}", "╚═══════════════════════════════════════════════════════════════════╝".bright_cyan().bold());
+        println!(
+            "{}",
+            "╚═══════════════════════════════════════════════════════════════════╝"
+                .bright_cyan()
+                .bold()
+        );
         println!();
 
         // Next steps
@@ -176,7 +258,8 @@ impl ContainerSummary {
         let value_display_len = console::strip_ansi_codes(value).len();
         let padding = 45usize.saturating_sub(value_display_len);
 
-        println!("{} {:<23} {:>width$} {}",
+        println!(
+            "{} {:<23} {:>width$} {}",
             "║".bright_cyan().bold(),
             label,
             value,
@@ -189,25 +272,27 @@ impl ContainerSummary {
         println!("{}", "Next steps:".bold().bright_white());
 
         if self.vulnerabilities > 0 {
-            println!("  {} Vulnerabilities found in container image",
+            println!(
+                "  {} Vulnerabilities found in container image",
                 "⚠️ ".yellow()
             );
-            println!("    Run {} to analyze Java dependencies",
+            println!(
+                "    Run {} to analyze Java dependencies",
                 "'bazbom scan <extracted-layers>'".bright_white().bold()
             );
         }
 
         if self.java_artifacts > 0 {
-            println!("  ☕ {} Java artifacts detected",
-                self.java_artifacts
-            );
-            println!("    Consider scanning with {} for full dependency analysis",
+            println!("  ☕ {} Java artifacts detected", self.java_artifacts);
+            println!(
+                "    Consider scanning with {} for full dependency analysis",
                 "'--with-semgrep'".bright_white().bold()
             );
         }
 
         if self.vulnerabilities == 0 && self.java_artifacts == 0 {
-            println!("  {}  No Java artifacts or vulnerabilities found",
+            println!(
+                "  {}  No Java artifacts or vulnerabilities found",
                 "✨".green()
             );
         }
@@ -221,7 +306,10 @@ pub fn print_layer_breakdown(layers: &[(String, f64, usize, usize)]) {
     println!("{}", "Layer Breakdown:".bold().bright_white());
     println!();
 
-    let max_size = layers.iter().map(|(_, size, _, _)| *size).fold(0.0f64, f64::max);
+    let max_size = layers
+        .iter()
+        .map(|(_, size, _, _)| *size)
+        .fold(0.0f64, f64::max);
 
     for (i, (layer_id, size_mb, artifacts, vulns)) in layers.iter().enumerate() {
         let is_last = i == layers.len() - 1;
@@ -239,7 +327,8 @@ pub fn print_layer_breakdown(layers: &[(String, f64, usize, usize)]) {
             "clean".dimmed()
         };
 
-        println!("  {} {} {:<30} {:.1} MB | {}",
+        println!(
+            "  {} {} {:<30} {:.1} MB | {}",
             tree_char.cyan(),
             &layer_id[..12.min(layer_id.len())].dimmed(),
             bar.cyan(),
@@ -259,7 +348,8 @@ mod tests {
     fn test_container_summary() {
         let summary = ContainerSummary {
             image_name: "myapp:latest".to_string(),
-            image_digest: "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890".to_string(),
+            image_digest: "sha256:abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+                .to_string(),
             total_layers: 8,
             total_size_mb: 245.6,
             base_image: Some("eclipse-temurin:17-jre".to_string()),

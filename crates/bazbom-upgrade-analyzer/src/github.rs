@@ -121,7 +121,10 @@ impl GitHubAnalyzer {
                     }
 
                     // Extract bullet points or numbered items
-                    if content.starts_with('-') || content.starts_with('*') || content.starts_with(char::is_numeric) {
+                    if content.starts_with('-')
+                        || content.starts_with('*')
+                        || content.starts_with(char::is_numeric)
+                    {
                         let description = content
                             .trim_start_matches('-')
                             .trim_start_matches('*')
@@ -255,6 +258,8 @@ mod tests {
         let changes = analyzer.extract_breaking_changes("2.0.0", body);
         assert_eq!(changes.len(), 2);
         assert!(changes[0].description.contains("Removed deprecated API X"));
-        assert!(changes[1].description.contains("Changed signature of method Y"));
+        assert!(changes[1]
+            .description
+            .contains("Changed signature of method Y"));
     }
 }

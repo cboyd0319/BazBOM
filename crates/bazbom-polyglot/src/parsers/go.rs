@@ -2,18 +2,16 @@
 //!
 //! Parses go.mod and go.sum files
 
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::fs;
-use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
 /// Scan Go ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "Go".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
+    let mut result =
+        EcosystemScanResult::new("Go".to_string(), ecosystem.root_path.display().to_string());
 
     // Parse go.mod if available
     if let Some(ref manifest_path) = ecosystem.manifest_file {
@@ -68,8 +66,7 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 ///
 ///   replace github.com/old/module => github.com/new/module v1.2.3
 fn parse_go_mod(file_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(file_path)
-        .context("Failed to read go.mod")?;
+    let content = fs::read_to_string(file_path).context("Failed to read go.mod")?;
 
     let mut replacements: HashMap<String, (String, String)> = HashMap::new();
     let mut in_require_block = false;
@@ -113,7 +110,10 @@ fn parse_go_mod(file_path: &std::path::Path, result: &mut EcosystemScanResult) -
         // Handle replace directives
         if line.starts_with("replace ") {
             if let Some((old_module, new_module, new_version)) = parse_replace_line(line) {
-                replacements.insert(old_module.to_string(), (new_module.to_string(), new_version.to_string()));
+                replacements.insert(
+                    old_module.to_string(),
+                    (new_module.to_string(), new_version.to_string()),
+                );
             }
             continue;
         }
@@ -203,7 +203,10 @@ fn create_go_package(module: &str, version: &str) -> Package {
 }
 
 /// Apply replacement directives to packages
-fn apply_replacements(result: &mut EcosystemScanResult, replacements: &HashMap<String, (String, String)>) {
+fn apply_replacements(
+    result: &mut EcosystemScanResult,
+    replacements: &HashMap<String, (String, String)>,
+) {
     // Rebuild module path from namespace + name
     for package in &mut result.packages {
         let module_path = if let Some(ref ns) = package.namespace {
@@ -261,7 +264,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let go_mod = temp.path().join("go.mod");
 
-        fs::write(&go_mod, r#"
+        fs::write(
+            &go_mod,
+            r#"
 module github.com/example/project
 
 go 1.19
@@ -272,7 +277,9 @@ require (
 )
 
 require github.com/gorilla/mux v1.8.0 // indirect
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Go,
@@ -285,24 +292,18 @@ require github.com/gorilla/mux v1.8.0 // indirect
         assert_eq!(result.total_packages, 3);
 
         // Check gin
-        assert!(result.packages.iter().any(|p|
-            p.name == "gin" &&
-            p.namespace == Some("github.com/gin-gonic".to_string()) &&
-            p.version == "1.7.0"
-        ));
+        assert!(result.packages.iter().any(|p| p.name == "gin"
+            && p.namespace == Some("github.com/gin-gonic".to_string())
+            && p.version == "1.7.0"));
 
         // Check pq
-        assert!(result.packages.iter().any(|p|
-            p.name == "pq" &&
-            p.namespace == Some("github.com/lib".to_string()) &&
-            p.version == "1.10.0"
-        ));
+        assert!(result.packages.iter().any(|p| p.name == "pq"
+            && p.namespace == Some("github.com/lib".to_string())
+            && p.version == "1.10.0"));
 
         // Check mux
-        assert!(result.packages.iter().any(|p|
-            p.name == "mux" &&
-            p.namespace == Some("github.com/gorilla".to_string()) &&
-            p.version == "1.8.0"
-        ));
+        assert!(result.packages.iter().any(|p| p.name == "mux"
+            && p.namespace == Some("github.com/gorilla".to_string())
+            && p.version == "1.8.0"));
     }
 }

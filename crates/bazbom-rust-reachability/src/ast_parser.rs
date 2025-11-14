@@ -2,14 +2,13 @@
 
 use crate::error::{Result, RustReachabilityError};
 use std::path::Path;
-use syn::{visit::Visit, File, ItemFn, Expr, Attribute};
+use syn::{visit::Visit, Attribute, Expr, File, ItemFn};
 
 /// Parse a Rust file into an AST
 pub fn parse_file(file_path: &Path) -> Result<File> {
     let source_code = std::fs::read_to_string(file_path)?;
 
-    syn::parse_file(&source_code)
-        .map_err(|e| RustReachabilityError::ParseError(format!("{}", e)))
+    syn::parse_file(&source_code).map_err(|e| RustReachabilityError::ParseError(format!("{}", e)))
 }
 
 #[derive(Debug, Clone)]
@@ -49,17 +48,16 @@ impl FunctionExtractor {
     }
 
     fn extract_attributes(attrs: &[Attribute]) -> Vec<String> {
-        attrs.iter()
-            .filter_map(|attr| {
-                attr.path().get_ident().map(|ident| ident.to_string())
-            })
+        attrs
+            .iter()
+            .filter_map(|attr| attr.path().get_ident().map(|ident| ident.to_string()))
             .collect()
     }
 
     fn is_test_function(attrs: &[Attribute]) -> bool {
-        attrs.iter().any(|attr| {
-            attr.path().is_ident("test") || attr.path().is_ident("tokio::test")
-        })
+        attrs
+            .iter()
+            .any(|attr| attr.path().is_ident("test") || attr.path().is_ident("tokio::test"))
     }
 
     fn extract_call_from_expr(&mut self, expr: &Expr) {
@@ -96,13 +94,14 @@ impl FunctionExtractor {
 
     fn get_function_name_from_expr(&self, expr: &Expr) -> Option<String> {
         match expr {
-            Expr::Path(path) => {
-                path.path.segments.iter()
-                    .map(|seg| seg.ident.to_string())
-                    .collect::<Vec<_>>()
-                    .join("::")
-                    .into()
-            }
+            Expr::Path(path) => path
+                .path
+                .segments
+                .iter()
+                .map(|seg| seg.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::")
+                .into(),
             _ => None,
         }
     }
@@ -186,7 +185,13 @@ fn test_something() {}
         extractor.extract(&ast);
 
         assert_eq!(extractor.functions.len(), 3);
-        assert!(extractor.functions.iter().any(|f| f.name == "public_func" && f.is_pub));
-        assert!(extractor.functions.iter().any(|f| f.name == "test_something" && f.is_test));
+        assert!(extractor
+            .functions
+            .iter()
+            .any(|f| f.name == "public_func" && f.is_pub));
+        assert!(extractor
+            .functions
+            .iter()
+            .any(|f| f.name == "test_something" && f.is_test));
     }
 }

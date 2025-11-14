@@ -41,12 +41,13 @@ impl ModuleResolver {
 
     /// Resolve relative import (./foo, ../bar)
     fn resolve_relative(&self, specifier: &str, from_file: &Path) -> Result<PathBuf> {
-        let from_dir = from_file.parent().ok_or_else(|| {
-            JsReachabilityError::ModuleResolutionError {
-                module: specifier.to_string(),
-                reason: "Invalid from_file path".to_string(),
-            }
-        })?;
+        let from_dir =
+            from_file
+                .parent()
+                .ok_or_else(|| JsReachabilityError::ModuleResolutionError {
+                    module: specifier.to_string(),
+                    reason: "Invalid from_file path".to_string(),
+                })?;
 
         let resolved = from_dir.join(specifier);
         self.resolve_with_extensions(&resolved, specifier)
@@ -61,7 +62,10 @@ impl ModuleResolver {
     /// Resolve from node_modules
     fn resolve_node_modules(&self, specifier: &str, from_file: &Path) -> Result<PathBuf> {
         // Start from the directory of the importing file
-        let mut current_dir = from_file.parent().map(|p| p.to_path_buf()).unwrap_or_else(|| self.project_root.clone());
+        let mut current_dir = from_file
+            .parent()
+            .map(|p| p.to_path_buf())
+            .unwrap_or_else(|| self.project_root.clone());
 
         loop {
             let node_modules = current_dir.join("node_modules");

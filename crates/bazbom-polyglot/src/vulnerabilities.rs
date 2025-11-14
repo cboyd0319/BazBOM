@@ -2,9 +2,9 @@
 //!
 //! https://osv.dev/docs/
 
+use crate::ecosystems::{Package, Vulnerability};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use crate::ecosystems::{Package, Vulnerability};
 
 const OSV_API_URL: &str = "https://api.osv.dev/v1/query";
 
@@ -117,8 +117,10 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
                 }
             }
             Err(e) => {
-                eprintln!("Warning: Failed to query OSV for {}@{}: {}",
-                    package.name, package.version, e);
+                eprintln!(
+                    "Warning: Failed to query OSV for {}@{}: {}",
+                    package.name, package.version, e
+                );
             }
         }
 
@@ -131,7 +133,10 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
 }
 
 /// Query OSV API
-async fn query_osv(client: &reqwest::Client, request: &OsvQueryRequest) -> Result<OsvQueryResponse> {
+async fn query_osv(
+    client: &reqwest::Client,
+    request: &OsvQueryRequest,
+) -> Result<OsvQueryResponse> {
     let response = client
         .post(OSV_API_URL)
         .json(request)
@@ -154,13 +159,17 @@ async fn query_osv(client: &reqwest::Client, request: &OsvQueryRequest) -> Resul
 /// Convert OSV vulnerability to our format
 fn convert_osv_vulnerability(osv: &OsvVulnerability, package: &Package) -> Option<Vulnerability> {
     // Extract CVE ID from aliases if available
-    let cve_id = osv.aliases.iter()
+    let cve_id = osv
+        .aliases
+        .iter()
         .find(|alias| alias.starts_with("CVE-"))
         .cloned()
         .unwrap_or_else(|| osv.id.clone());
 
     // Extract CVSS score
-    let cvss_score = osv.severity.iter()
+    let cvss_score = osv
+        .severity
+        .iter()
         .find(|s| s.severity_type == "CVSS_V3")
         .and_then(|s| parse_cvss_score(&s.score));
 
@@ -183,9 +192,7 @@ fn convert_osv_vulnerability(osv: &OsvVulnerability, package: &Package) -> Optio
     let fixed_version = find_fixed_version(&osv.affected, &package.version);
 
     // Extract references
-    let references: Vec<String> = osv.references.iter()
-        .map(|r| r.url.clone())
-        .collect();
+    let references: Vec<String> = osv.references.iter().map(|r| r.url.clone()).collect();
 
     Some(Vulnerability {
         id: cve_id,
@@ -208,7 +215,8 @@ fn parse_cvss_score(score_str: &str) -> Option<f64> {
     // Full parsing would require a CVSS calculator
 
     // Try to find a numeric score in the string
-    score_str.split('/')
+    score_str
+        .split('/')
         .filter_map(|part| {
             if part.starts_with("S:") || part.starts_with("score:") {
                 part.split(':').nth(1)?.parse::<f64>().ok()
