@@ -95,38 +95,8 @@ jobs:
           ./target/release/bazbom --version
           echo "✓ BazBOM self-scan complete"
 
-  # Dependency audit for known vulnerabilities
-  cargo-audit:
-    name: Cargo Security Audit
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    permissions:
-      contents: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-        with:
-          persist-credentials: false
-
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
-        with:
-          shared-key: "cargo-audit"
-
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
-
-      - name: Run cargo audit
-        run: |
-          echo "Running cargo audit for Rust dependencies..."
-          cargo audit || echo "Note: cargo audit may find advisories"
-          echo "✓ Security audit complete"
-        continue-on-error: true  # Don't fail on advisories, just report
+  # NOTE: cargo-audit has been moved to dependency-review.yml to avoid duplication
+  # It runs on every PR and provides detailed security advisory reporting
 
   # License compliance check
   license-check:
