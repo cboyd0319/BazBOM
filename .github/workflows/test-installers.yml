@@ -68,8 +68,8 @@ jobs:
           VERSION=$(cargo pkgid -p bazbom | cut -d'#' -f2)
 
           # Create test install script pointing to mock server
-          sed "s|https://github.com/cboyd0319/BazBOM|http://localhost:8888|g" install.sh > /tmp/test-install.sh
-          sed -i.bak "s|https://api.github.com/repos/cboyd0319/BazBOM|http://localhost:8888|g" /tmp/test-install.sh
+          sed "s|https://github.com/cboyd0319/BazBOM|http://localhost:8888|g" install.sh | \
+            sed "s|https://api.github.com/repos/cboyd0319/BazBOM|http://localhost:8888|g" > /tmp/test-install.sh
           chmod +x /tmp/test-install.sh
 
           # Test installation
@@ -222,3 +222,4 @@ jobs:
           echo "| Package Script | ${{ needs.test-package-script.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Homebrew Formula | ${{ needs.test-homebrew-formula-generation.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Makefile | ${{ needs.test-makefile.result }} |" >> $GITHUB_STEP_SUMMARY
+
