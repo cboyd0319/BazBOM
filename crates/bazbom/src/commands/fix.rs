@@ -51,8 +51,6 @@ pub async fn handle_fix(
 
 /// Run interactive fix mode with beautiful TUI
 async fn run_interactive_mode() -> Result<()> {
-    // TODO: Load actual vulnerabilities from scan results
-    // For now, use demo data
     let vulnerabilities = load_vulnerabilities_from_scan()?;
 
     if vulnerabilities.is_empty() {
@@ -62,6 +60,99 @@ async fn run_interactive_mode() -> Result<()> {
 
     let mut session = InteractiveFix::new(vulnerabilities);
     session.run().await
+}
+
+/// Estimate breaking changes based on version difference using semver analysis
+fn estimate_breaking_changes(current_version: &str, fixed_version: &str) -> usize {
+    // Parse version numbers (major.minor.patch)
+    let parse_version = |v: &str| -> Option<(u32, u32, u32)> {
+        let parts: Vec<&str> = v.split('.').collect();
+        if parts.len() >= 3 {
+            Some((
+                parts[0].parse().ok()?,
+                parts[1].parse().ok()?,
+                parts[2].parse().ok()?,
+            ))
+        } else if parts.len() == 2 {
+            Some((
+                parts[0].parse().ok()?,
+                parts[1].parse().ok()?,
+                0,
+            ))
+        } else if parts.len() == 1 {
+            Some((
+                parts[0].parse().ok()?,
+                0,
+                0,
+            ))
+        } else {
+            None
+        }
+    };
+
+    match (parse_version(current_version), parse_version(fixed_version)) {
+        (Some((from_major, from_minor, _)), Some((to_major, to_minor, _))) => {
+            if from_major != to_major {
+                // Major version change = likely many breaking changes
+                8
+            } else if from_minor != to_minor {
+                // Minor version change = possible breaking changes
+                2
+            } else {
+                // Patch version change = minimal/no breaking changes
+                0
+            }
+        }
+        _ => {
+            // Non-semver versions - assume some risk
+            1
+        }
+    }
+}
+
+/// Estimate effort in hours based on severity, version difference, and breaking changes
+fn estimate_effort_hours(
+    severity: &str,
+    current_version: &str,
+    fixed_version: &str,
+    breaking_changes: usize,
+) -> f64 {
+    let mut hours = 0.5; // Base overhead for any update
+
+    // Factor in severity
+    hours += match severity {
+        "CRITICAL" => 2.0,
+        "HIGH" => 1.0,
+        "MEDIUM" => 0.5,
+        _ => 0.25,
+    };
+
+    // Factor in version change magnitude
+    let parse_version = |v: &str| -> Option<(u32, u32)> {
+        let parts: Vec<&str> = v.split('.').collect();
+        if parts.len() >= 2 {
+            Some((parts[0].parse().ok()?, parts[1].parse().ok()?))
+        } else if parts.len() == 1 {
+            Some((parts[0].parse().ok()?, 0))
+        } else {
+            None
+        }
+    };
+
+    if let (Some((from_major, from_minor)), Some((to_major, to_minor))) =
+        (parse_version(current_version), parse_version(fixed_version)) {
+        if from_major != to_major {
+            hours += 4.0; // Major version bump
+        } else if from_minor != to_minor {
+            hours += 1.0; // Minor version bump
+        }
+    }
+
+    // Factor in breaking changes (30 min per change)
+    hours += (breaking_changes as f64) * 0.5;
+
+    // Round to nearest 0.25 hours
+    (hours * 4.0).round() / 4.0
 }
 
 /// Load vulnerabilities from scan results
@@ -147,6 +238,17 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
                     .unwrap_or("No description available")
                     .to_string();
 
+                // Estimate breaking changes based on version difference
+                let breaking_changes = estimate_breaking_changes(&current_version, &fixed);
+
+                // Estimate effort hours based on severity, version diff, and breaking changes
+                let estimated_effort_hours = estimate_effort_hours(
+                    severity_str,
+                    &current_version,
+                    &fixed,
+                    breaking_changes,
+                );
+
                 fixable_vulns.push(FixableVulnerability {
                     cve_id,
                     package,
@@ -156,8 +258,8 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
                     epss_score,
                     in_cisa_kev,
                     description,
-                    breaking_changes: 0, // TODO: Could be estimated from version diff
-                    estimated_effort_hours: 1.0, // TODO: Could be ML-based estimate
+                    breaking_changes,
+                    estimated_effort_hours,
                 });
             }
         }
