@@ -53,10 +53,11 @@ Visit [BazBOM Releases](https://github.com/cboyd0319/BazBOM/releases/latest) and
 - Linux (x86_64/ARM64)
 - Windows (x86_64)
 
-**Homebrew (coming soon):**
+**Homebrew (not yet published):**
 ```bash
-brew tap cboyd0319/bazbom
-brew install bazbom
+# Not yet available - use install script or build from source
+# brew tap cboyd0319/bazbom
+# brew install bazbom
 ```
 
 **Cargo (Rust developers):**
