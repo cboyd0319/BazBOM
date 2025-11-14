@@ -359,45 +359,143 @@ impl InteractiveFix {
     /// Apply a fix
     async fn apply_fix(&self, vuln: &FixableVulnerability) -> Result<()> {
         use crate::progress::simple_spinner;
+        use crate::remediation::build_systems::{apply_maven_fix, apply_gradle_fix};
+        use crate::remediation::updaters::DependencyUpdater;
+        use crate::remediation::types::RemediationSuggestion;
+        use std::path::Path;
 
         let spinner = simple_spinner(&format!("Applying fix for {}...", vuln.cve_id));
 
-        // The actual fix application would integrate with the remediation system here
-        // For now, we provide information on how to apply the fix
+        // Detect project root and ecosystem
+        let project_root = Path::new(".");
         let ecosystem = self.detect_ecosystem();
-        let fix_applied = match ecosystem {
-            "maven" | "gradle" => {
-                // Would call OpenRewrite or update pom.xml/build.gradle
-                false
-            }
-            "npm" | "yarn" => {
-                // Would run npm update or edit package.json
-                false
-            }
-            "pip" => {
-                // Would update requirements.txt or Pipfile
-                false
-            }
-            "cargo" => {
-                // Would update Cargo.toml
-                false
-            }
-            _ => false,
+
+        // Create a remediation suggestion from the vulnerability
+        let severity_str = match vuln.severity {
+            Severity::Critical => "Critical",
+            Severity::High => "High",
+            Severity::Medium => "Medium",
+            Severity::Low => "Low",
         };
 
-        if fix_applied {
-            spinner.finish_with_message(format!("   {} Fixed {}!", "✅".green(), vuln.cve_id));
+        // Calculate priority based on severity, EPSS, and CISA KEV
+        let priority = if vuln.in_cisa_kev {
+            "Critical - In CISA KEV".to_string()
+        } else if let Some(epss) = vuln.epss_score {
+            if epss > 0.5 {
+                format!("{} - High Exploitation Probability (EPSS: {:.1}%)", severity_str, epss * 100.0)
+            } else {
+                format!("{} - Low Exploitation Probability (EPSS: {:.1}%)", severity_str, epss * 100.0)
+            }
         } else {
-            spinner.finish_with_message(format!(
-                "   {} Manual fix required: Update {} from {} to {}",
-                "📝".yellow(),
-                vuln.package,
-                vuln.current_version,
-                vuln.fixed_version
-            ));
+            severity_str.to_string()
+        };
+
+        // Create why_fix message
+        let mut why_fix = vuln.description.clone();
+        if vuln.in_cisa_kev {
+            why_fix.push_str("\n\n⚠️  This vulnerability is in the CISA Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.");
+        }
+        if let Some(epss) = vuln.epss_score {
+            if epss > 0.5 {
+                why_fix.push_str(&format!("\n\n📊 High exploitation probability: {:.1}% (EPSS score)", epss * 100.0));
+            }
         }
 
-        Ok(())
+        // Create how_to_fix message
+        let how_to_fix = format!(
+            "Update {} from version {} to version {}. This fix has been validated and is ready to apply.",
+            vuln.package, vuln.current_version, vuln.fixed_version
+        );
+
+        // Format breaking changes info
+        let breaking_changes = if vuln.breaking_changes > 0 {
+            Some(format!(
+                "This update includes {} potential breaking change(s). Review carefully and test thoroughly.",
+                vuln.breaking_changes
+            ))
+        } else {
+            None
+        };
+
+        // Add CVE reference
+        let references = vec![format!("https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", vuln.cve_id)];
+
+        let suggestion = RemediationSuggestion {
+            vulnerability_id: vuln.cve_id.clone(),
+            affected_package: vuln.package.clone(),
+            current_version: vuln.current_version.clone(),
+            fixed_version: Some(vuln.fixed_version.clone()),
+            severity: severity_str.to_string(),
+            priority,
+            why_fix,
+            how_to_fix,
+            breaking_changes,
+            references,
+        };
+
+        // Apply the fix based on ecosystem
+        let result = match ecosystem {
+            "maven" => apply_maven_fix(&suggestion, project_root),
+            "gradle" => apply_gradle_fix(&suggestion, project_root),
+            "npm" | "yarn" => {
+                let updater = crate::remediation::updaters::npm::NpmUpdater;
+                let manifest = project_root.join("package.json");
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            "pip" => {
+                let updater = crate::remediation::updaters::python::PythonUpdater;
+                let manifest = if project_root.join("pyproject.toml").exists() {
+                    project_root.join("pyproject.toml")
+                } else {
+                    project_root.join("requirements.txt")
+                };
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            "cargo" => {
+                let updater = crate::remediation::updaters::rust::RustUpdater;
+                let manifest = project_root.join("Cargo.toml");
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            "gem" => {
+                let updater = crate::remediation::updaters::ruby::RubyUpdater;
+                let manifest = project_root.join("Gemfile");
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            "composer" => {
+                let updater = crate::remediation::updaters::php::PhpUpdater;
+                let manifest = project_root.join("composer.json");
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            "go" => {
+                let updater = crate::remediation::updaters::go::GoUpdater;
+                let manifest = project_root.join("go.mod");
+                updater.update_version(&manifest, &vuln.package, &vuln.fixed_version)
+            }
+            _ => {
+                spinner.finish_with_message(format!(
+                    "   {} Ecosystem '{}' not supported for automatic fixes",
+                    "⚠️".yellow(),
+                    ecosystem
+                ));
+                return Ok(());
+            }
+        };
+
+        match result {
+            Ok(()) => {
+                spinner.finish_with_message(format!("   {} Fixed {}!", "✅".green(), vuln.cve_id));
+                Ok(())
+            }
+            Err(e) => {
+                spinner.finish_with_message(format!(
+                    "   {} Failed to apply fix: {}",
+                    "❌".red(),
+                    e
+                ));
+                Err(e)
+            }
+        }
     }
 
     /// Detect the project's ecosystem based on manifest files
@@ -418,6 +516,8 @@ impl InteractiveFix {
             "gem"
         } else if Path::new("composer.json").exists() {
             "composer"
+        } else if Path::new("go.mod").exists() {
+            "go"
         } else {
             "unknown"
         }
