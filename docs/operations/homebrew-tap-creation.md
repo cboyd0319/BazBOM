@@ -83,9 +83,9 @@ homebrew-bazbom/
 
      def install
        bin.install "bazbom"
-       
-       # Generate and install shell completions
-       generate_completions_from_executable(bin/"bazbom", "completions")
+
+       # TODO: Add shell completions once 'bazbom completions' subcommand is implemented
+       # generate_completions_from_executable(bin/"bazbom", "completions")
      end
 
      test do

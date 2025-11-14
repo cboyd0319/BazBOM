@@ -7,6 +7,18 @@
 
 set -euo pipefail
 
+# Cross-platform SHA256 function
+sha256_hash() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo "Error: Neither sha256sum nor shasum found" >&2
+        exit 1
+    fi
+}
+
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -97,7 +109,7 @@ DIST_DIR="dist"
 mkdir -p "$DIST_DIR"
 ARCHIVE="$DIST_DIR/bazbom-${TARGET}.tar.gz"
 tar -czf "$ARCHIVE" -C target/release bazbom
-SHA256=$(sha256sum "$ARCHIVE" | awk '{print $1}')
+SHA256=$(sha256_hash "$ARCHIVE")
 echo "$SHA256" > "$ARCHIVE.sha256"
 success "Package created: $ARCHIVE"
 echo "         SHA256: $SHA256"

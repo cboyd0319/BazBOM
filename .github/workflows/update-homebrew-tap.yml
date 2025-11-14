@@ -104,8 +104,8 @@ jobs:
             def install
               bin.install "bazbom"
 
-              # Generate and install shell completions
-              generate_completions_from_executable(bin/"bazbom", "completions")
+              # TODO: Add shell completions once 'bazbom completions' subcommand is implemented
+              # generate_completions_from_executable(bin/"bazbom", "completions")
             end
 
             test do
@@ -122,12 +122,26 @@ jobs:
 
       - name: Checkout homebrew-bazbom repository
         uses: actions/checkout@v4
+        continue-on-error: true
+        id: checkout_tap
         with:
           repository: ${{ github.repository_owner }}/homebrew-bazbom
           path: homebrew-bazbom
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check if tap repository exists
+        id: check_tap
+        run: |
+          if [ ! -d "homebrew-bazbom/.git" ]; then
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️  WARNING: homebrew-bazbom repository not found"
+            echo "ℹ️  Create it with: gh repo create homebrew-bazbom --public"
+          else
+            echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Update formula in tap
+        if: steps.check_tap.outputs.exists == 'true'
         run: |
           VERSION="${{ steps.version.outputs.version }}"
 
@@ -149,6 +163,7 @@ jobs:
           fi
 
       - name: Test formula
+        if: steps.check_tap.outputs.exists == 'true'
         run: |
           cd homebrew-bazbom
 
@@ -163,6 +178,24 @@ jobs:
       - name: Summary
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+
+          if [ "${{ steps.check_tap.outputs.exists }}" != "true" ]; then
+            cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## ⚠️ Homebrew Tap Repository Not Found
+
+          The \`homebrew-bazbom\` repository does not exist yet.
+
+          ### Create the repository:
+
+          \`\`\`bash
+          gh repo create ${{ github.repository_owner }}/homebrew-bazbom --public --description "Homebrew tap for BazBOM"
+          \`\`\`
+
+          Then re-run this workflow to update the formula.
+          EOF
+            exit 0
+          fi
+
           cat >> $GITHUB_STEP_SUMMARY << EOF
           ## Homebrew Tap Updated
 

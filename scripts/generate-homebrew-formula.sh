@@ -4,6 +4,18 @@
 
 set -euo pipefail
 
+# Cross-platform SHA256 function
+sha256_hash() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo "Error: Neither sha256sum nor shasum found" >&2
+        exit 1
+    fi
+}
+
 VERSION="${1:-6.5.0}"
 REPO="cboyd0319/BazBOM"
 
@@ -28,7 +40,7 @@ for platform in "${PLATFORMS[@]}"; do
     echo "  Downloading: $url"
 
     if curl -fsSL "$url" -o "bazbom-${platform}.tar.gz" 2>/dev/null; then
-        checksum=$(sha256sum "bazbom-${platform}.tar.gz" | awk '{print $1}')
+        checksum=$(sha256_hash "bazbom-${platform}.tar.gz")
         CHECKSUMS[$platform]=$checksum
         echo "    ✓ SHA256: $checksum"
     else
@@ -71,8 +83,8 @@ class Bazbom < Formula
   def install
     bin.install "bazbom"
 
-    # Generate and install shell completions
-    generate_completions_from_executable(bin/"bazbom", "completions")
+    # TODO: Add shell completions once 'bazbom completions' subcommand is implemented
+    # generate_completions_from_executable(bin/"bazbom", "completions")
   end
 
   test do

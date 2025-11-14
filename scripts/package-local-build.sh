@@ -4,6 +4,18 @@
 
 set -euo pipefail
 
+# Cross-platform SHA256 function
+sha256_hash() {
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum >/dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo "Error: Neither sha256sum nor shasum found" >&2
+        exit 1
+    fi
+}
+
 echo "Packaging BazBOM local build..."
 echo ""
 
@@ -71,7 +83,7 @@ echo "Creating archive: $ARCHIVE"
 tar -czf "$ARCHIVE" -C target/release bazbom
 
 # Generate SHA256 checksum
-SHA256=$(sha256sum "$ARCHIVE" | awk '{print $1}')
+SHA256=$(sha256_hash "$ARCHIVE")
 echo "$SHA256" > "$ARCHIVE.sha256"
 
 # Display results
