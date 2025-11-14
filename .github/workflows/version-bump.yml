@@ -41,25 +41,13 @@ jobs:
             exit 1
           fi
           echo "Version format valid: $VERSION"
-      
-      - name: Create version bump branch
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b version-bump-${{ inputs.version }}
-      
+
       - name: Run version bump via script
         run: |
           # Make script executable and run it non-interactively
           chmod +x tools/dev/bump-version.sh
           echo "y" | tools/dev/bump-version.sh ${{ inputs.version }}
-      
-      - name: Commit changes
-        run: |
-          git add -A
-          git commit -m "chore: bump version to ${{ inputs.version }}" || echo "No changes to commit"
-          git push origin version-bump-${{ inputs.version }}
-      
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
@@ -69,14 +57,14 @@ jobs:
           title: "chore: bump version to ${{ inputs.version }}"
           body: |
             ## Version Bump: ${{ inputs.version }}
-            
+
             This PR updates the version across all crates and CHANGELOG.md.
-            
+
             ### Changes
             - Updated all `Cargo.toml` files to version ${{ inputs.version }}
             - Updated `CHANGELOG.md` with release date
             - Regenerated `Cargo.lock`
-            
+
             ### Post-merge steps
             After merging this PR:
             1. Create and push the git tag: `git tag -a v${{ inputs.version }} -m "Release v${{ inputs.version }}"`
@@ -86,3 +74,5 @@ jobs:
             release
             automated
           draft: false
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
