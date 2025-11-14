@@ -15,7 +15,7 @@ serde_json = "1.0"
 thiserror = "2.0"
 
 # Lockfile parsers
-cargo-lock = "9.0"  # Rust Cargo.lock parser
+cargo-lock = "11.0"  # Rust Cargo.lock parser
 serde_yaml = "0.9"  # YAML parsing
 toml = "0.9"  # Python poetry.lock TOML parser
 
