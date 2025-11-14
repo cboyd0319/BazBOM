@@ -1155,10 +1155,53 @@ mod tests {
 
     #[test]
     fn test_fingerprint_class() {
-        let dummy_bytes = b"dummy class bytes";
-        let fingerprint = fingerprint_class(dummy_bytes).unwrap();
+        // Create a minimal valid Java class file
+        // Magic: CAFEBABE, Minor: 0000, Major: 0034 (Java 8)
+        // CP Count: 0004 (4 entries including index 0)
+        let mut class_bytes = vec![
+            0xCA, 0xFE, 0xBA, 0xBE, // magic
+            0x00, 0x00, // minor version
+            0x00, 0x34, // major version (Java 8)
+            0x00, 0x04, // constant pool count (4)
+            // CP entry 1: CONSTANT_Utf8 "java/lang/Object"
+            0x01, 0x00, 0x10, // tag=1, length=16
+            0x6A, 0x61, 0x76, 0x61, 0x2F, 0x6C, 0x61, 0x6E, 0x67, 0x2F, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74,
+            // CP entry 2: CONSTANT_Class (ref to entry 1)
+            0x07, 0x00, 0x01,
+            // CP entry 3: CONSTANT_Utf8 "TestClass"
+            0x01, 0x00, 0x09, // tag=1, length=9
+            0x54, 0x65, 0x73, 0x74, 0x43, 0x6C, 0x61, 0x73, 0x73,
+            // Access flags: public (0x0021)
+            0x00, 0x21,
+            // This class: 0 (invalid for testing, but minimal)
+            0x00, 0x00,
+            // Super class: entry 2
+            0x00, 0x02,
+            // Interfaces count: 0
+            0x00, 0x00,
+            // Fields count: 0
+            0x00, 0x00,
+            // Methods count: 0
+            0x00, 0x00,
+            // Attributes count: 0
+            0x00, 0x00,
+        ];
 
-        assert_eq!(fingerprint.bytecodeHash.len(), 64); // Blake3 hash length
+        let fingerprint = fingerprint_class(&class_bytes).unwrap();
+
+        // Verify the hash is Blake3 length (64 hex chars)
+        assert_eq!(fingerprint.bytecodeHash.len(), 64);
+        // Verify class name was extracted
+        assert!(!fingerprint.className.is_empty());
+    }
+
+    #[test]
+    fn test_fingerprint_class_invalid_bytes() {
+        // Test that invalid bytes return an error
+        let dummy_bytes = b"dummy class bytes";
+        let result = fingerprint_class(dummy_bytes);
+
+        assert!(result.is_err(), "Should fail on invalid class bytes");
     }
 
     #[test]
