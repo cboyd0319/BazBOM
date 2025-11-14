@@ -56,11 +56,20 @@ pub struct DynamicCodeDetection {
     pub description: String,
 }
 
+/// Extracted import information
+#[derive(Debug, Clone)]
+pub struct ExtractedImport {
+    pub module: String,
+    pub imported_names: Vec<String>,  // Empty for "import foo", contains names for "from foo import bar"
+    pub alias: Option<String>,
+}
+
 /// Function extractor that walks the Python AST
 pub struct FunctionExtractor {
     pub functions: Vec<ExtractedFunction>,
     pub calls: Vec<ExtractedCall>,
     pub dynamic_code: Vec<DynamicCodeDetection>,
+    pub imports: Vec<ExtractedImport>,
     current_class: Option<String>,
     current_function: Option<String>,
 }
@@ -71,6 +80,7 @@ impl FunctionExtractor {
             functions: Vec::new(),
             calls: Vec::new(),
             dynamic_code: Vec::new(),
+            imports: Vec::new(),
             current_class: None,
             current_function: None,
         }

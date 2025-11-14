@@ -464,16 +464,66 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
 
 /// Find current and target versions for a package
 fn find_upgrade_versions(package: &str) -> Result<(String, String)> {
-    // TODO: Parse from actual findings or pom.xml
-    // For now, return example data based on package name
-    let (current, target) = if package.contains("log4j-core") {
-        ("2.17.0", "2.20.0")
-    } else if package.contains("spring-boot") {
-        ("2.7.0", "3.2.0")
-    } else {
-        // Try to read from findings
-        ("1.0.0", "2.0.0") // Fallback
-    };
+    use std::fs;
+    use std::path::PathBuf;
 
-    Ok((current.to_string(), target.to_string()))
+    // Try to read from findings files first
+    let possible_paths = vec![
+        PathBuf::from("./bazbom-findings/sca_findings.json"),
+        PathBuf::from("./sca_findings.json"),
+        PathBuf::from(".bazbom-cache/sca_findings.json"),
+    ];
+
+    for findings_path in possible_paths {
+        if findings_path.exists() {
+            if let Ok(content) = fs::read_to_string(&findings_path) {
+                if let Ok(findings) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(vulns) = findings.get("vulnerabilities").and_then(|v| v.as_array()) {
+                        for vuln in vulns {
+                            if let Some(pkg) = vuln.get("package").and_then(|p| p.as_str()) {
+                                if pkg.contains(package) {
+                                    let current = vuln.get("version")
+                                        .or_else(|| vuln.get("current_version"))
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("unknown");
+
+                                    let target = vuln.get("fixed_version")
+                                        .or_else(|| vuln.get("recommended_version"))
+                                        .and_then(|v| v.as_str())
+                                        .unwrap_or("latest");
+
+                                    return Ok((current.to_string(), target.to_string()));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Fallback to parsing from manifest files
+    if package.contains(":") {
+        // Maven-style coordinate
+        if PathBuf::from("pom.xml").exists() {
+            if let Ok(pom_content) = fs::read_to_string("pom.xml") {
+                // Simple regex-based extraction (full XML parsing would be better)
+                let parts: Vec<&str> = package.split(':').collect();
+                if parts.len() >= 2 {
+                    let artifact_id = parts[1];
+                    if let Some(start) = pom_content.find(&format!("<artifactId>{}</artifactId>", artifact_id)) {
+                        if let Some(version_start) = pom_content[start..].find("<version>") {
+                            if let Some(version_end) = pom_content[start + version_start..].find("</version>") {
+                                let version = &pom_content[start + version_start + 9..start + version_start + version_end];
+                                return Ok((version.to_string(), "latest".to_string()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Ultimate fallback
+    Ok(("unknown".to_string(), "latest".to_string()))
 }

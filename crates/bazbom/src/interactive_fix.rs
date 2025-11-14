@@ -362,12 +362,65 @@ impl InteractiveFix {
 
         let spinner = simple_spinner(&format!("Applying fix for {}...", vuln.cve_id));
 
-        // TODO: Actually apply the fix via OpenRewrite or dependency updates
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        // The actual fix application would integrate with the remediation system here
+        // For now, we provide information on how to apply the fix
+        let ecosystem = self.detect_ecosystem();
+        let fix_applied = match ecosystem {
+            "maven" | "gradle" => {
+                // Would call OpenRewrite or update pom.xml/build.gradle
+                false
+            }
+            "npm" | "yarn" => {
+                // Would run npm update or edit package.json
+                false
+            }
+            "pip" => {
+                // Would update requirements.txt or Pipfile
+                false
+            }
+            "cargo" => {
+                // Would update Cargo.toml
+                false
+            }
+            _ => false,
+        };
 
-        spinner.finish_with_message(format!("   {} Fixed {}!", "✅".green(), vuln.cve_id));
+        if fix_applied {
+            spinner.finish_with_message(format!("   {} Fixed {}!", "✅".green(), vuln.cve_id));
+        } else {
+            spinner.finish_with_message(format!(
+                "   {} Manual fix required: Update {} from {} to {}",
+                "📝".yellow(),
+                vuln.package,
+                vuln.current_version,
+                vuln.fixed_version
+            ));
+        }
 
         Ok(())
+    }
+
+    /// Detect the project's ecosystem based on manifest files
+    fn detect_ecosystem(&self) -> &str {
+        use std::path::Path;
+
+        if Path::new("pom.xml").exists() {
+            "maven"
+        } else if Path::new("build.gradle").exists() || Path::new("build.gradle.kts").exists() {
+            "gradle"
+        } else if Path::new("package.json").exists() {
+            "npm"
+        } else if Path::new("requirements.txt").exists() || Path::new("Pipfile").exists() {
+            "pip"
+        } else if Path::new("Cargo.toml").exists() {
+            "cargo"
+        } else if Path::new("Gemfile").exists() {
+            "gem"
+        } else if Path::new("composer.json").exists() {
+            "composer"
+        } else {
+            "unknown"
+        }
     }
 
     /// Print session summary

@@ -1792,6 +1792,24 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
         println!();
     }
 
+    // Extract Java artifacts count from SBOM if available
+    let java_artifacts = if let Ok(sbom_content) = std::fs::read_to_string(opts.output_dir.join("sbom").join("spdx.json")) {
+        if let Ok(sbom) = serde_json::from_str::<serde_json::Value>(&sbom_content) {
+            sbom.get("components")
+                .and_then(|c| c.as_array())
+                .map(|arr| arr.iter().filter(|comp| {
+                    comp.get("type").and_then(|t| t.as_str()) == Some("library") &&
+                    comp.get("group").and_then(|g| g.as_str()).map(|g| g.contains('.') || g.contains('/'))
+                        .unwrap_or(false)
+                }).count())
+                .unwrap_or(0)
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
     // Show container summary
     let summary = ContainerSummary {
         image_name: filtered_results.image_name.clone(),
@@ -1799,7 +1817,7 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
         base_image: filtered_results.base_image.clone(),
         total_layers: filtered_results.layers.len(),
         total_size_mb: filtered_results.layers.iter().map(|l| l.size_mb).sum(),
-        java_artifacts: 0, // TODO: Extract from SBOM
+        java_artifacts,
         vulnerabilities: filtered_results.total_vulnerabilities,
         critical_vulns: filtered_results.critical_count,
         high_vulns: filtered_results.high_count,

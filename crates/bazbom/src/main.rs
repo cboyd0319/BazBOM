@@ -359,7 +359,7 @@ async fn main() -> Result<()> {
                 None,              // autofix
                 None,              // containers
                 true,              // no_upload
-                None,              // target - TODO: auto-detect main module
+                auto_detect_main_module("."),  // target - auto-detected
                 false,             // incremental
                 "main".into(),     // base
                 false,             // diff

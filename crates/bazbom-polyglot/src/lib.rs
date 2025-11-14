@@ -38,11 +38,13 @@
 pub mod detection;
 pub mod ecosystems;
 pub mod parsers;
+pub mod reachability_integration;
 pub mod sbom;
 pub mod vulnerabilities;
 
 pub use detection::{detect_ecosystems, Ecosystem, EcosystemType};
 pub use ecosystems::{EcosystemScanResult, Package, Vulnerability, ReachabilityData};
+pub use reachability_integration::analyze_reachability;
 pub use sbom::generate_polyglot_sbom;
 
 use anyhow::Result;
@@ -65,6 +67,13 @@ pub async fn scan_directory(path: &str) -> Result<Vec<EcosystemScanResult>> {
                         Err(e) => {
                             eprintln!("Warning: Failed to scan vulnerabilities for {}: {}", result.ecosystem, e);
                         }
+                    }
+                }
+
+                // Perform reachability analysis if vulnerabilities found
+                if !result.vulnerabilities.is_empty() {
+                    if let Err(e) = reachability_integration::analyze_reachability(&mut result, ecosystem.root_path.as_path()).await {
+                        eprintln!("Warning: Failed to analyze reachability for {}: {}", result.ecosystem, e);
                     }
                 }
 

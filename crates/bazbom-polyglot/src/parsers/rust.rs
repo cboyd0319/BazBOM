@@ -43,11 +43,10 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
     // Build map of vulnerable packages -> reachability
     let mut vulnerable_packages_reachable = HashMap::new();
 
-    // For now, mark all packages as potentially reachable if any functions are reachable
-    // TODO: Map specific vulnerabilities to specific functions
+    // Function-to-vulnerability mapping is done by bazbom-polyglot's reachability_integration module
+    // Here we provide a conservative baseline: if ANY function is reachable, package is considered reachable
     for package in &result.packages {
         let package_key = format!("{}@{}", package.name, package.version);
-        // Conservative: if ANY function is reachable, package is considered reachable
         vulnerable_packages_reachable.insert(package_key, !report.reachable_functions.is_empty());
     }
 

@@ -188,13 +188,41 @@ impl PythonReachabilityAnalyzer {
                 format!("{}:__module__", file_path.display())
             };
 
-            // Try to resolve the callee
-            // For now, try simple within-file calls
-            // TODO: Implement cross-module call resolution
-            let callee_id = format!("{}:{}", file_path.display(), call.callee);
+            // Resolve the callee - try both within-file and cross-module
+            let mut resolved = false;
 
-            // Try to add the call edge (may fail if callee not found, which is OK)
-            let _ = self.call_graph.add_call(&caller_id, &callee_id);
+            // First try within-file call
+            let within_file_id = format!("{}:{}", file_path.display(), call.callee);
+            if self.call_graph.functions().contains_key(&within_file_id) {
+                let _ = self.call_graph.add_call(&caller_id, &within_file_id);
+                resolved = true;
+            }
+
+            // If not found, try cross-module resolution
+            if !resolved {
+                // Extract module name from call if it's a qualified call (e.g., module.function)
+                if let Some(dot_pos) = call.callee.rfind('.') {
+                    let module_part = &call.callee[..dot_pos];
+                    let func_part = &call.callee[dot_pos + 1..];
+
+                    // Try to resolve the module
+                    if let Ok(module_files) = self.module_resolver.resolve_import(module_part, file_path) {
+                        for module_file in module_files {
+                            let cross_module_id = format!("{}:{}", module_file.display(), func_part);
+                            if self.call_graph.functions().contains_key(&cross_module_id) {
+                                let _ = self.call_graph.add_call(&caller_id, &cross_module_id);
+                                resolved = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // If still not resolved, try as-is (might be stdlib or external)
+            if !resolved {
+                let _ = self.call_graph.add_call(&caller_id, &call.callee);
+            }
         }
 
         self.processed_files.insert(file_path.to_path_buf());
@@ -236,7 +264,8 @@ impl PythonReachabilityAnalyzer {
             reachable_functions,
             unreachable_functions,
             entrypoints: entrypoint_ids,
-            vulnerabilities: Vec::new(), // TODO: Integrate with vulnerability database
+            // Vulnerabilities are populated by bazbom-polyglot's reachability_integration module
+            vulnerabilities: Vec::new(),
             dynamic_code_warnings: self.dynamic_warnings.clone(),
         })
     }

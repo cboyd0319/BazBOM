@@ -65,45 +65,121 @@ async fn run_interactive_mode() -> Result<()> {
 }
 
 /// Load vulnerabilities from scan results
-/// TODO: Integrate with actual scan results
 fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
-    // Demo data for now - in production, this would load from bazbom-findings/
-    Ok(vec![
-        FixableVulnerability {
-            cve_id: "CVE-2024-1234".to_string(),
-            package: "org.apache.logging.log4j:log4j-core".to_string(),
-            current_version: "2.17.0".to_string(),
-            fixed_version: "2.20.0".to_string(),
-            severity: Severity::Critical,
-            epss_score: Some(0.85),
-            in_cisa_kev: true,
-            description: "Remote code execution vulnerability allowing arbitrary code execution via JNDI injection".to_string(),
-            breaking_changes: 2,
-            estimated_effort_hours: 4.0,
-        },
-        FixableVulnerability {
-            cve_id: "CVE-2024-5678".to_string(),
-            package: "com.fasterxml.jackson.core:jackson-databind".to_string(),
-            current_version: "2.14.0".to_string(),
-            fixed_version: "2.15.2".to_string(),
-            severity: Severity::High,
-            epss_score: Some(0.45),
-            in_cisa_kev: false,
-            description: "Deserialization vulnerability allowing remote code execution".to_string(),
-            breaking_changes: 0,
-            estimated_effort_hours: 1.5,
-        },
-        FixableVulnerability {
-            cve_id: "CVE-2024-9012".to_string(),
-            package: "org.springframework:spring-core".to_string(),
-            current_version: "5.3.0".to_string(),
-            fixed_version: "5.3.25".to_string(),
-            severity: Severity::Medium,
-            epss_score: Some(0.15),
-            in_cisa_kev: false,
-            description: "Information disclosure via path traversal".to_string(),
-            breaking_changes: 1,
-            estimated_effort_hours: 2.5,
-        },
-    ])
+    use std::fs;
+    use std::path::PathBuf;
+    use serde_json::Value;
+
+    // Try multiple locations for findings file
+    let possible_paths = vec![
+        PathBuf::from("./bazbom-findings/sca_findings.json"),
+        PathBuf::from("./sca_findings.json"),
+        PathBuf::from(".bazbom-cache/sca_findings.json"),
+    ];
+
+    let findings_path = possible_paths
+        .iter()
+        .find(|p| p.exists())
+        .ok_or_else(|| anyhow::anyhow!(
+            "No scan results found. Run 'bazbom scan' first to generate findings.\n\
+             Expected locations:\n  - {}\n  - {}\n  - {}",
+            possible_paths[0].display(),
+            possible_paths[1].display(),
+            possible_paths[2].display()
+        ))?;
+
+    let content = fs::read_to_string(findings_path)?;
+    let findings: Value = serde_json::from_str(&content)?;
+
+    let mut fixable_vulns = Vec::new();
+
+    // Parse vulnerabilities from findings JSON
+    if let Some(vulns) = findings.get("vulnerabilities").and_then(|v| v.as_array()) {
+        for vuln in vulns {
+            // Extract vulnerability data
+            let cve_id = vuln.get("id")
+                .or_else(|| vuln.get("cve"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("UNKNOWN")
+                .to_string();
+
+            let package = vuln.get("package")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+
+            let current_version = vuln.get("version")
+                .or_else(|| vuln.get("current_version"))
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown")
+                .to_string();
+
+            let fixed_version = vuln.get("fixed_version")
+                .or_else(|| vuln.get("recommended_version"))
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string());
+
+            // Only include if there's a fix available
+            if let Some(fixed) = fixed_version {
+                let severity_str = vuln.get("severity")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("MEDIUM");
+
+                let severity = match severity_str.to_uppercase().as_str() {
+                    "CRITICAL" => Severity::Critical,
+                    "HIGH" => Severity::High,
+                    "MEDIUM" => Severity::Medium,
+                    _ => Severity::Low,
+                };
+
+                let epss_score = vuln.get("epss_score")
+                    .or_else(|| vuln.get("epss"))
+                    .and_then(|v| v.as_f64());
+
+                let in_cisa_kev = vuln.get("in_cisa_kev")
+                    .or_else(|| vuln.get("cisa_kev"))
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+
+                let description = vuln.get("description")
+                    .or_else(|| vuln.get("title"))
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("No description available")
+                    .to_string();
+
+                fixable_vulns.push(FixableVulnerability {
+                    cve_id,
+                    package,
+                    current_version,
+                    fixed_version: fixed,
+                    severity,
+                    epss_score,
+                    in_cisa_kev,
+                    description,
+                    breaking_changes: 0, // TODO: Could be estimated from version diff
+                    estimated_effort_hours: 1.0, // TODO: Could be ML-based estimate
+                });
+            }
+        }
+    }
+
+    // Fall back to demo data if no real vulnerabilities found
+    if fixable_vulns.is_empty() {
+        Ok(vec![
+            FixableVulnerability {
+                cve_id: "DEMO-1234".to_string(),
+                package: "example:package".to_string(),
+                current_version: "1.0.0".to_string(),
+                fixed_version: "1.0.1".to_string(),
+                severity: Severity::Medium,
+                epss_score: Some(0.15),
+                in_cisa_kev: false,
+                description: "Demo vulnerability - no actual scan results found".to_string(),
+                breaking_changes: 0,
+                estimated_effort_hours: 1.0,
+            },
+        ])
+    } else {
+        Ok(fixable_vulns)
+    }
 }
