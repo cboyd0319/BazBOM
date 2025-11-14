@@ -28,6 +28,9 @@ jobs:
           - os: macos-14
             target: aarch64-apple-darwin
             arch: aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            arch: x86_64
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
@@ -38,9 +41,14 @@ jobs:
       - name: Build
         run: cargo build --release -p bazbom --target ${{ matrix.target }}
       - name: Package artifact
+        shell: bash
         run: |
           mkdir -p dist
-          BIN=target/${{ matrix.target }}/release/bazbom
+          if [[ "${{ matrix.target }}" == *"windows"* ]]; then
+            BIN=target/${{ matrix.target }}/release/bazbom.exe
+          else
+            BIN=target/${{ matrix.target }}/release/bazbom
+          fi
           TAR=dist/bazbom-${{ matrix.target }}.tar.gz
           tar -C $(dirname "$BIN") -czf "$TAR" $(basename "$BIN")
       - name: Upload artifact

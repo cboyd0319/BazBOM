@@ -2,17 +2,30 @@
 
 Get from zero to first security scan in 90 seconds. No configuration required.
 
-## 1. Install (manual build, ~60 seconds)
+## 1. Install (~10 seconds)
 
+**Quick install (macOS/Linux):**
+```bash
+curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+```
+
+**Or download pre-built binary:**
+Visit [github.com/cboyd0319/BazBOM/releases/latest](https://github.com/cboyd0319/BazBOM/releases/latest)
+
+**Or build from source (~60 seconds):**
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
 cargo build --release -p bazbom
-sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
-bazbom --version
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 ```
 
-> Package managers (Homebrew, winget, etc.) are planned but not yet published. Building from source is the supported path today.
+**Or use Cargo (Rust developers):**
+```bash
+cargo install --git https://github.com/cboyd0319/BazBOM bazbom
+```
+
+> See [Installation Guide](homebrew-installation.md) for all methods including Homebrew (coming soon).
 
 ## 2. First Scan (30 seconds)
 

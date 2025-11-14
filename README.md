@@ -39,9 +39,33 @@ BazBOM is a **developer-friendly security scanner** that uses reachability analy
 
 ## Installation
 
-> **Current distribution:** BazBOM is only available by cloning this repository and building from source. Package managers (Homebrew, winget, etc.) are planned but not yet published.
+### 🚀 Quick Install (Recommended)
 
-### Build from Source (macOS/Linux)
+**One-line install (macOS/Linux):**
+```bash
+curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+```
+
+**Or download pre-built binaries:**
+
+Visit [BazBOM Releases](https://github.com/cboyd0319/BazBOM/releases/latest) and download for your platform:
+- macOS (Intel/Apple Silicon)
+- Linux (x86_64/ARM64)
+- Windows (x86_64)
+
+**Homebrew (coming soon):**
+```bash
+brew tap cboyd0319/bazbom
+brew install bazbom
+```
+
+**Cargo (Rust developers):**
+```bash
+cargo install --git https://github.com/cboyd0319/BazBOM bazbom
+```
+
+### Build from Source
+
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
@@ -50,12 +74,7 @@ sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 bazbom --version
 ```
 
-If you prefer not to copy into `/usr/local/bin`, add `target/release` to your `PATH` instead:
-```bash
-export PATH="$PWD/target/release:$PATH"
-```
-
-[Detailed source installation guide →](docs/getting-started/homebrew-installation.md)
+[Complete installation guide →](docs/getting-started/homebrew-installation.md)
 
 ---
 

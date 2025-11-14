@@ -4,23 +4,47 @@ Get BazBOM running in minutes with the essential steps below. Need an even faste
 
 ## Prerequisites
 
-- macOS or Linux shell with Git access
+- macOS, Linux, or Windows
+- Java 11 or newer (only needed for JVM reachability analysis features)
+
+**For building from source only:**
+- Git
 - Rust 1.70+ installed via [rustup](https://rustup.rs/)
-- Java 11 or newer when you enable reachability or bytecode analysis features
 
-## 1. Install BazBOM (from source)
+## 1. Install BazBOM
 
-> **Current status:** BazBOM is only available by cloning this repository and compiling the CLI. Package managers (Homebrew, winget, etc.) are planned but not released yet.
+### Quick Install (Recommended)
+
+**One-line install (macOS/Linux):**
+```bash
+curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+```
+
+**Download pre-built binary:**
+Visit [github.com/cboyd0319/BazBOM/releases/latest](https://github.com/cboyd0319/BazBOM/releases/latest) and download for your platform.
+
+**Cargo (Rust developers):**
+```bash
+cargo install --git https://github.com/cboyd0319/BazBOM bazbom
+```
+
+**Homebrew (coming soon):**
+```bash
+brew tap cboyd0319/bazbom
+brew install bazbom
+```
+
+### Build from Source
 
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
 cargo build --release -p bazbom
-sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom  # or add target/release to PATH
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 bazbom --version
 ```
 
-See [Manual Source Installation](./homebrew-installation.md) for troubleshooting, PATH guidance, and update instructions.
+See [Installation Guide](./homebrew-installation.md) for all methods, troubleshooting, and update instructions.
 
 ## 2. Initialise a workspace
 
