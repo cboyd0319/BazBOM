@@ -43,19 +43,13 @@ impl CallGraph {
 
     /// Add a call edge from caller to callee
     pub fn add_call(&mut self, caller_id: &str, callee_id: &str) -> Result<()> {
-        let caller_idx = self
-            .node_indices
-            .get(caller_id)
-            .ok_or_else(|| {
-                JsReachabilityError::CallGraphError(format!("Caller not found: {}", caller_id))
-            })?;
+        let caller_idx = self.node_indices.get(caller_id).ok_or_else(|| {
+            JsReachabilityError::CallGraphError(format!("Caller not found: {}", caller_id))
+        })?;
 
-        let callee_idx = self
-            .node_indices
-            .get(callee_id)
-            .ok_or_else(|| {
-                JsReachabilityError::CallGraphError(format!("Callee not found: {}", callee_id))
-            })?;
+        let callee_idx = self.node_indices.get(callee_id).ok_or_else(|| {
+            JsReachabilityError::CallGraphError(format!("Callee not found: {}", callee_id))
+        })?;
 
         self.graph.add_edge(*caller_idx, *callee_idx, ());
 
@@ -74,10 +68,7 @@ impl CallGraph {
         self.functions
             .get_mut(function_id)
             .ok_or_else(|| {
-                JsReachabilityError::CallGraphError(format!(
-                    "Function not found: {}",
-                    function_id
-                ))
+                JsReachabilityError::CallGraphError(format!("Function not found: {}", function_id))
             })?
             .is_entrypoint = true;
 
@@ -105,11 +96,7 @@ impl CallGraph {
             }
         }
 
-        let reachable_count = self
-            .functions
-            .values()
-            .filter(|f| f.reachable)
-            .count();
+        let reachable_count = self.functions.values().filter(|f| f.reachable).count();
 
         info!(
             "Reachability analysis complete: {} / {} functions reachable",
@@ -136,10 +123,7 @@ impl CallGraph {
     }
 
     /// Find the call chain from an entrypoint to a target function
-    pub fn find_call_chain(
-        &self,
-        target_id: &str,
-    ) -> Option<Vec<String>> {
+    pub fn find_call_chain(&self, target_id: &str) -> Option<Vec<String>> {
         // Find an entrypoint that can reach the target
         for entrypoint in self.functions.values().filter(|f| f.is_entrypoint) {
             if let Some(chain) = self.find_path(&entrypoint.id, target_id) {
@@ -205,18 +189,12 @@ impl CallGraph {
 
     /// Get reachable functions
     pub fn reachable_functions(&self) -> Vec<&FunctionNode> {
-        self.functions
-            .values()
-            .filter(|f| f.reachable)
-            .collect()
+        self.functions.values().filter(|f| f.reachable).collect()
     }
 
     /// Get unreachable functions
     pub fn unreachable_functions(&self) -> Vec<&FunctionNode> {
-        self.functions
-            .values()
-            .filter(|f| !f.reachable)
-            .collect()
+        self.functions.values().filter(|f| !f.reachable).collect()
     }
 }
 

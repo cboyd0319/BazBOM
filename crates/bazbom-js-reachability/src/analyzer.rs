@@ -46,7 +46,8 @@ impl JsReachabilityAnalyzer {
 
         // 3. Mark entrypoints in the call graph
         for entrypoint in &entrypoints {
-            let entrypoint_id = format!("{}:{}", entrypoint.file.display(), entrypoint.function_name);
+            let entrypoint_id =
+                format!("{}:{}", entrypoint.file.display(), entrypoint.function_name);
             if let Err(e) = self.call_graph.mark_entrypoint(&entrypoint_id) {
                 debug!("Could not mark entrypoint {}: {}", entrypoint_id, e);
             }

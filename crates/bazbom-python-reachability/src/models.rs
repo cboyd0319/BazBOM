@@ -37,13 +37,7 @@ pub struct FunctionNode {
 }
 
 impl FunctionNode {
-    pub fn new(
-        id: FunctionId,
-        name: String,
-        file: PathBuf,
-        line: usize,
-        column: usize,
-    ) -> Self {
+    pub fn new(id: FunctionId, name: String, file: PathBuf, line: usize, column: usize) -> Self {
         Self {
             id,
             name,

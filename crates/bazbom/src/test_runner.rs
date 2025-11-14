@@ -125,9 +125,7 @@ fn run_python_tests(project_root: &Path) -> Result<Output> {
     println!("[bazbom] Running Python tests...");
 
     // Try pytest first (most common)
-    let pytest_result = Command::new("pytest")
-        .current_dir(project_root)
-        .output();
+    let pytest_result = Command::new("pytest").current_dir(project_root).output();
 
     if let Ok(output) = pytest_result {
         Ok(output)

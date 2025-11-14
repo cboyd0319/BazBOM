@@ -2,12 +2,12 @@
 //!
 //! Parses Cargo.toml and Cargo.lock files
 
-use anyhow::{Context, Result};
-use cargo_lock::Lockfile;
-use std::fs;
-use std::collections::HashMap;
 use crate::detection::Ecosystem;
 use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
+use anyhow::{Context, Result};
+use cargo_lock::Lockfile;
+use std::collections::HashMap;
+use std::fs;
 
 /// Scan Rust ecosystem with reachability analysis
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -62,9 +62,11 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 }
 
 /// Parse Cargo.lock using the cargo-lock crate
-fn parse_cargo_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let lockfile = Lockfile::load(lockfile_path)
-        .context("Failed to parse Cargo.lock")?;
+fn parse_cargo_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let lockfile = Lockfile::load(lockfile_path).context("Failed to parse Cargo.lock")?;
 
     for package in &lockfile.packages {
         // Extract name and version
@@ -80,7 +82,9 @@ fn parse_cargo_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanR
             } else if src_str.contains("github.com") {
                 // Extract github org/user from source
                 // e.g., "git+https://github.com/tokio-rs/tokio?branch=master#abc123"
-                src_str.split("github.com/").nth(1)
+                src_str
+                    .split("github.com/")
+                    .nth(1)
                     .and_then(|s| s.split('/').next())
                     .map(|org| format!("github.com/{}", org))
             } else {
@@ -89,7 +93,9 @@ fn parse_cargo_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanR
         });
 
         // Extract dependencies
-        let dependencies: Vec<String> = package.dependencies.iter()
+        let dependencies: Vec<String> = package
+            .dependencies
+            .iter()
             .map(|dep| dep.name.to_string())
             .collect();
 
@@ -110,12 +116,13 @@ fn parse_cargo_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanR
 }
 
 /// Parse Cargo.toml (basic fallback, less accurate)
-fn parse_cargo_toml(manifest_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(manifest_path)
-        .context("Failed to read Cargo.toml")?;
+fn parse_cargo_toml(
+    manifest_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(manifest_path).context("Failed to read Cargo.toml")?;
 
-    let toml_value: toml::Value = toml::from_str(&content)
-        .context("Failed to parse Cargo.toml")?;
+    let toml_value: toml::Value = toml::from_str(&content).context("Failed to parse Cargo.toml")?;
 
     // Parse [dependencies] section
     if let Some(deps) = toml_value.get("dependencies").and_then(|v| v.as_table()) {
@@ -137,7 +144,10 @@ fn parse_cargo_toml(manifest_path: &std::path::Path, result: &mut EcosystemScanR
     }
 
     // Parse [dev-dependencies] section
-    if let Some(dev_deps) = toml_value.get("dev-dependencies").and_then(|v| v.as_table()) {
+    if let Some(dev_deps) = toml_value
+        .get("dev-dependencies")
+        .and_then(|v| v.as_table())
+    {
         for (name, version_spec) in dev_deps {
             let version = extract_version_from_toml(version_spec);
 
@@ -163,12 +173,11 @@ fn parse_cargo_toml(manifest_path: &std::path::Path, result: &mut EcosystemScanR
 fn extract_version_from_toml(value: &toml::Value) -> String {
     match value {
         toml::Value::String(s) => s.clone(),
-        toml::Value::Table(t) => {
-            t.get("version")
-                .and_then(|v| v.as_str())
-                .unwrap_or("*")
-                .to_string()
-        }
+        toml::Value::Table(t) => t
+            .get("version")
+            .and_then(|v| v.as_str())
+            .unwrap_or("*")
+            .to_string(),
         _ => "*".to_string(),
     }
 }
@@ -192,7 +201,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let cargo_toml = temp.path().join("Cargo.toml");
 
-        fs::write(&cargo_toml, r#"
+        fs::write(
+            &cargo_toml,
+            r#"
 [package]
 name = "test-crate"
 version = "0.1.0"
@@ -203,7 +214,9 @@ tokio = { version = "1.0", features = ["full"] }
 
 [dev-dependencies]
 tempfile = "3.0"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Rust,
@@ -215,9 +228,18 @@ tempfile = "3.0"
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
-        assert!(result.packages.iter().any(|p| p.name == "serde" && p.version == "1.0"));
-        assert!(result.packages.iter().any(|p| p.name == "tokio" && p.version == "1.0"));
-        assert!(result.packages.iter().any(|p| p.name == "tempfile" && p.version == "3.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "serde" && p.version == "1.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "tokio" && p.version == "1.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "tempfile" && p.version == "3.0"));
     }
 
     #[tokio::test]
@@ -225,7 +247,9 @@ tempfile = "3.0"
         let temp = TempDir::new().unwrap();
         let cargo_lock = temp.path().join("Cargo.lock");
 
-        fs::write(&cargo_lock, r#"
+        fs::write(
+            &cargo_lock,
+            r#"
 # This file is automatically @generated by Cargo.
 # It is not intended for manual editing.
 version = 3
@@ -250,7 +274,9 @@ name = "serde_derive"
 version = "1.0.193"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "43576ca501357b9b071ac53cdc7da8ef0cbd9493d8df094cd821777ea6e894d3"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Rust,
@@ -262,9 +288,18 @@ checksum = "43576ca501357b9b071ac53cdc7da8ef0cbd9493d8df094cd821777ea6e894d3"
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
-        assert!(result.packages.iter().any(|p| p.name == "anyhow" && p.version == "1.0.75"));
-        assert!(result.packages.iter().any(|p| p.name == "serde" && p.version == "1.0.193"));
-        assert!(result.packages.iter().any(|p| p.name == "serde_derive" && p.version == "1.0.193"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "anyhow" && p.version == "1.0.75"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "serde" && p.version == "1.0.193"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "serde_derive" && p.version == "1.0.193"));
 
         // Check that serde has serde_derive as dependency
         let serde_pkg = result.packages.iter().find(|p| p.name == "serde").unwrap();

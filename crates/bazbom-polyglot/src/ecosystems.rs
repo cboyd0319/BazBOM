@@ -10,7 +10,7 @@ pub struct Package {
     pub version: String,
     pub ecosystem: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub namespace: Option<String>,  // e.g., "@types" for npm, "github.com/user" for Go
+    pub namespace: Option<String>, // e.g., "@types" for npm, "github.com/user" for Go
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub dependencies: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -47,7 +47,7 @@ impl Package {
 /// Vulnerability information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Vulnerability {
-    pub id: String,  // CVE-YYYY-NNNNN or GHSA-xxxx
+    pub id: String, // CVE-YYYY-NNNNN or GHSA-xxxx
     pub package_name: String,
     pub package_version: String,
     pub severity: String,

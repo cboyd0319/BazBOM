@@ -108,8 +108,7 @@ pub fn init_tracing() {
 
     tracing_subscriber::fmt()
         .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("info"))
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
         )
         .init();
 }
@@ -170,11 +169,15 @@ fn test_example() {
         let report = analyze_rust_project(temp_dir.path()).unwrap();
 
         // main and helper should be reachable
-        assert!(report.reachable_functions.iter()
+        assert!(report
+            .reachable_functions
+            .iter()
             .any(|id| id.contains("main") || id.contains("helper")));
 
         // unused should be unreachable
-        assert!(report.unreachable_functions.iter()
+        assert!(report
+            .unreachable_functions
+            .iter()
             .any(|id| id.contains("unused")));
     }
 }

@@ -43,19 +43,13 @@ impl CallGraph {
 
     /// Add a call edge from caller to callee
     pub fn add_call(&mut self, caller_id: &str, callee_id: &str) -> Result<()> {
-        let caller_idx = self
-            .node_indices
-            .get(caller_id)
-            .ok_or_else(|| {
-                PythonReachabilityError::CallGraphError(format!("Caller not found: {}", caller_id))
-            })?;
+        let caller_idx = self.node_indices.get(caller_id).ok_or_else(|| {
+            PythonReachabilityError::CallGraphError(format!("Caller not found: {}", caller_id))
+        })?;
 
-        let callee_idx = self
-            .node_indices
-            .get(callee_id)
-            .ok_or_else(|| {
-                PythonReachabilityError::CallGraphError(format!("Callee not found: {}", callee_id))
-            })?;
+        let callee_idx = self.node_indices.get(callee_id).ok_or_else(|| {
+            PythonReachabilityError::CallGraphError(format!("Callee not found: {}", callee_id))
+        })?;
 
         self.graph.add_edge(*caller_idx, *callee_idx, ());
 
@@ -112,11 +106,7 @@ impl CallGraph {
             }
         }
 
-        let reachable_count = self
-            .functions
-            .values()
-            .filter(|f| f.reachable)
-            .count();
+        let reachable_count = self.functions.values().filter(|f| f.reachable).count();
 
         info!(
             "Reachability analysis complete: {} / {} functions reachable",
@@ -209,18 +199,12 @@ impl CallGraph {
 
     /// Get reachable functions
     pub fn reachable_functions(&self) -> Vec<&FunctionNode> {
-        self.functions
-            .values()
-            .filter(|f| f.reachable)
-            .collect()
+        self.functions.values().filter(|f| f.reachable).collect()
     }
 
     /// Get unreachable functions
     pub fn unreachable_functions(&self) -> Vec<&FunctionNode> {
-        self.functions
-            .values()
-            .filter(|f| !f.reachable)
-            .collect()
+        self.functions.values().filter(|f| !f.reachable).collect()
     }
 }
 
@@ -361,21 +345,25 @@ mod tests {
     fn test_mark_all_reachable() {
         let mut graph = CallGraph::new();
 
-        graph.add_function(FunctionNode::new(
-            "func1".to_string(),
-            "func1".to_string(),
-            PathBuf::from("test.py"),
-            1,
-            0,
-        )).unwrap();
+        graph
+            .add_function(FunctionNode::new(
+                "func1".to_string(),
+                "func1".to_string(),
+                PathBuf::from("test.py"),
+                1,
+                0,
+            ))
+            .unwrap();
 
-        graph.add_function(FunctionNode::new(
-            "func2".to_string(),
-            "func2".to_string(),
-            PathBuf::from("test.py"),
-            5,
-            0,
-        )).unwrap();
+        graph
+            .add_function(FunctionNode::new(
+                "func2".to_string(),
+                "func2".to_string(),
+                PathBuf::from("test.py"),
+                5,
+                0,
+            ))
+            .unwrap();
 
         // Before marking all reachable
         assert_eq!(graph.reachable_functions().len(), 0);

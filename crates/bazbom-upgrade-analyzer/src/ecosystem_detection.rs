@@ -82,7 +82,10 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
     }
 
     // For simple lowercase names, use heuristics based on common packages
-    if package.chars().all(|c| c.is_lowercase() || c == '-' || c == '_' || c == '.' || c.is_numeric()) {
+    if package
+        .chars()
+        .all(|c| c.is_lowercase() || c == '-' || c == '_' || c == '.' || c.is_numeric())
+    {
         // Common npm packages (very popular ones)
         if matches!(
             package,
@@ -105,14 +108,7 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         // Common Python packages
         if matches!(
             package,
-            "django"
-                | "flask"
-                | "numpy"
-                | "pandas"
-                | "requests"
-                | "pytest"
-                | "setuptools"
-                | "pip"
+            "django" | "flask" | "numpy" | "pandas" | "requests" | "pytest" | "setuptools" | "pip"
         ) {
             return System::PyPI;
         }
@@ -120,14 +116,7 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         // Common Rust crates
         if matches!(
             package,
-            "serde"
-                | "tokio"
-                | "reqwest"
-                | "anyhow"
-                | "clap"
-                | "actix"
-                | "hyper"
-                | "async_std"
+            "serde" | "tokio" | "reqwest" | "anyhow" | "clap" | "actix" | "hyper" | "async_std"
         ) {
             return System::Cargo;
         }
@@ -188,24 +177,40 @@ pub fn detect_ecosystem_with_confidence(package: &str) -> (System, f64) {
     }
 
     // Python with hyphens: medium confidence
-    if package.contains('-') && package.chars().all(|c| c.is_lowercase() || c == '-' || c.is_numeric()) {
+    if package.contains('-')
+        && package
+            .chars()
+            .all(|c| c.is_lowercase() || c == '-' || c.is_numeric())
+    {
         return (System::PyPI, 0.6);
     }
 
     // Simple lowercase: low confidence, guess npm
-    if package.chars().all(|c| c.is_lowercase() || c == '-' || c == '_' || c.is_numeric()) {
+    if package
+        .chars()
+        .all(|c| c.is_lowercase() || c == '-' || c == '_' || c.is_numeric())
+    {
         // Common npm packages
-        if matches!(package, "express" | "react" | "lodash" | "axios" | "vue" | "webpack") {
+        if matches!(
+            package,
+            "express" | "react" | "lodash" | "axios" | "vue" | "webpack"
+        ) {
             return (System::Npm, 0.7);
         }
 
         // Common Rust crates
-        if matches!(package, "serde" | "tokio" | "reqwest" | "anyhow" | "clap" | "actix") {
+        if matches!(
+            package,
+            "serde" | "tokio" | "reqwest" | "anyhow" | "clap" | "actix"
+        ) {
             return (System::Cargo, 0.7);
         }
 
         // Common Python packages
-        if matches!(package, "django" | "flask" | "numpy" | "pandas" | "requests") {
+        if matches!(
+            package,
+            "django" | "flask" | "numpy" | "pandas" | "requests"
+        ) {
             return (System::PyPI, 0.7);
         }
 
@@ -241,10 +246,7 @@ mod tests {
     fn test_npm_detection() {
         // Scoped packages
         assert_eq!(detect_ecosystem_from_package("@types/node"), System::Npm);
-        assert_eq!(
-            detect_ecosystem_from_package("@angular/core"),
-            System::Npm
-        );
+        assert_eq!(detect_ecosystem_from_package("@angular/core"), System::Npm);
 
         // Simple names (common npm packages)
         assert_eq!(detect_ecosystem_from_package("express"), System::Npm);
@@ -262,10 +264,7 @@ mod tests {
             detect_ecosystem_from_package("golang.org/x/crypto"),
             System::Go
         );
-        assert_eq!(
-            detect_ecosystem_from_package("go.uber.org/zap"),
-            System::Go
-        );
+        assert_eq!(detect_ecosystem_from_package("go.uber.org/zap"), System::Go);
     }
 
     #[test]
@@ -309,6 +308,9 @@ mod tests {
         assert_eq!(detect_ecosystem_from_package("  "), System::Maven);
 
         // Special characters
-        assert_eq!(detect_ecosystem_from_package("package@1.0.0"), System::Maven);
+        assert_eq!(
+            detect_ecosystem_from_package("package@1.0.0"),
+            System::Maven
+        );
     }
 }

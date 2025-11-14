@@ -82,7 +82,11 @@ fn auto_detect_main_module(base_path: &str) -> Option<String> {
             let dir_name = entry.file_name().to_string_lossy().to_string();
 
             // Skip common non-project directories
-            if dir_name.starts_with('.') || dir_name == "node_modules" || dir_name == "target" || dir_name == "build" {
+            if dir_name.starts_with('.')
+                || dir_name == "node_modules"
+                || dir_name == "target"
+                || dir_name == "build"
+            {
                 continue;
             }
 
@@ -220,151 +224,155 @@ async fn main() -> Result<()> {
 
             handle_scan(
                 scan_path,
-                None,              // profile
-                false,             // reachability
-                true,              // fast
-                "spdx".into(),     // format
-                ".".into(),        // out_dir
-                false,             // json
-                None,              // bazel_targets_query
-                None,              // bazel_targets
-                None,              // bazel_affected_by_files
-                "//...".into(),    // bazel_universe
-                false,             // cyclonedx
-                false,             // with_semgrep
-                None,              // with_codeql
-                None,              // autofix
-                None,              // containers
-                true,              // no_upload
-                None,              // target
-                false,             // incremental
-                "main".into(),     // base
-                false,             // diff
-                None,              // baseline
-                false,             // benchmark
-                false,             // ml_risk
+                None,           // profile
+                false,          // reachability
+                true,           // fast
+                "spdx".into(),  // format
+                ".".into(),     // out_dir
+                false,          // json
+                None,           // bazel_targets_query
+                None,           // bazel_targets
+                None,           // bazel_affected_by_files
+                "//...".into(), // bazel_universe
+                false,          // cyclonedx
+                false,          // with_semgrep
+                None,           // with_codeql
+                None,           // autofix
+                None,           // containers
+                true,           // no_upload
+                None,           // target
+                false,          // incremental
+                "main".into(),  // base
+                false,          // diff
+                None,           // baseline
+                false,          // benchmark
+                false,          // ml_risk
             )
-        },
+        }
 
         Commands::Ci { path, out_dir } => {
             println!("🤖 Running CI-optimized scan (JSON + SARIF)...\n");
             handle_scan(
                 path,
-                None,              // profile
-                false,             // reachability (too slow for CI)
-                true,              // fast
-                "sarif".into(),    // format
-                out_dir,           // out_dir
-                true,              // json
-                None,              // bazel_targets_query
-                None,              // bazel_targets
-                None,              // bazel_affected_by_files
-                "//...".into(),    // bazel_universe
-                false,             // cyclonedx
-                false,             // with_semgrep
-                None,              // with_codeql
-                None,              // autofix
-                None,              // containers
-                true,              // no_upload
-                None,              // target
-                false,             // incremental
-                "main".into(),     // base
-                false,             // diff
-                None,              // baseline
-                false,             // benchmark
-                false,             // ml_risk
+                None,           // profile
+                false,          // reachability (too slow for CI)
+                true,           // fast
+                "sarif".into(), // format
+                out_dir,        // out_dir
+                true,           // json
+                None,           // bazel_targets_query
+                None,           // bazel_targets
+                None,           // bazel_affected_by_files
+                "//...".into(), // bazel_universe
+                false,          // cyclonedx
+                false,          // with_semgrep
+                None,           // with_codeql
+                None,           // autofix
+                None,           // containers
+                true,           // no_upload
+                None,           // target
+                false,          // incremental
+                "main".into(),  // base
+                false,          // diff
+                None,           // baseline
+                false,          // benchmark
+                false,          // ml_risk
             )
-        },
+        }
 
-        Commands::Pr { path, base, baseline } => {
+        Commands::Pr {
+            path,
+            base,
+            baseline,
+        } => {
             println!("📋 Running PR-optimized scan (incremental + diff)...\n");
             handle_scan(
                 path,
-                None,              // profile
-                false,             // reachability
-                false,             // fast
-                "sarif".into(),    // format
-                ".".into(),        // out_dir
-                true,              // json
-                None,              // bazel_targets_query
-                None,              // bazel_targets
-                None,              // bazel_affected_by_files
-                "//...".into(),    // bazel_universe
-                false,             // cyclonedx
-                false,             // with_semgrep
-                None,              // with_codeql
-                None,              // autofix
-                None,              // containers
-                false,             // no_upload
-                None,              // target
-                true,              // incremental
-                base,              // base
-                true,              // diff
-                baseline,          // baseline
-                false,             // benchmark
-                false,             // ml_risk
+                None,           // profile
+                false,          // reachability
+                false,          // fast
+                "sarif".into(), // format
+                ".".into(),     // out_dir
+                true,           // json
+                None,           // bazel_targets_query
+                None,           // bazel_targets
+                None,           // bazel_affected_by_files
+                "//...".into(), // bazel_universe
+                false,          // cyclonedx
+                false,          // with_semgrep
+                None,           // with_codeql
+                None,           // autofix
+                None,           // containers
+                false,          // no_upload
+                None,           // target
+                true,           // incremental
+                base,           // base
+                true,           // diff
+                baseline,       // baseline
+                false,          // benchmark
+                false,          // ml_risk
             )
-        },
+        }
 
         Commands::Full { path, out_dir } => {
             println!("💪 Running FULL scan with ALL features enabled...\n");
             handle_scan(
                 path,
-                None,              // profile
-                true,              // reachability
-                false,             // fast
-                "spdx".into(),     // format
-                out_dir,           // out_dir
-                false,             // json
-                None,              // bazel_targets_query
-                None,              // bazel_targets
-                None,              // bazel_affected_by_files
-                "//...".into(),    // bazel_universe
-                true,              // cyclonedx
-                false,             // with_semgrep
-                None,              // with_codeql
-                None,              // autofix
-                None,              // containers
-                false,             // no_upload
-                None,              // target
-                false,             // incremental
-                "main".into(),     // base
-                false,             // diff
-                None,              // baseline
-                true,              // benchmark
-                true,              // ml_risk
+                None,           // profile
+                true,           // reachability
+                false,          // fast
+                "spdx".into(),  // format
+                out_dir,        // out_dir
+                false,          // json
+                None,           // bazel_targets_query
+                None,           // bazel_targets
+                None,           // bazel_affected_by_files
+                "//...".into(), // bazel_universe
+                true,           // cyclonedx
+                false,          // with_semgrep
+                None,           // with_codeql
+                None,           // autofix
+                None,           // containers
+                false,          // no_upload
+                None,           // target
+                false,          // incremental
+                "main".into(),  // base
+                false,          // diff
+                None,           // baseline
+                true,           // benchmark
+                true,           // ml_risk
             )
-        },
+        }
 
         Commands::Quick { path } => {
             println!("⚡ Running super-fast smoke test (< 5 seconds)...\n");
             handle_scan(
                 path,
-                None,              // profile
-                false,             // reachability
-                true,              // fast
-                "spdx".into(),     // format
-                ".".into(),        // out_dir
-                false,             // json
-                None,              // bazel_targets_query
-                None,              // bazel_targets
-                None,              // bazel_affected_by_files
-                "//...".into(),    // bazel_universe
-                false,             // cyclonedx
-                false,             // with_semgrep
-                None,              // with_codeql
-                None,              // autofix
-                None,              // containers
-                true,              // no_upload
-                auto_detect_main_module("."),  // target - auto-detected
-                false,             // incremental
-                "main".into(),     // base
-                false,             // diff
-                None,              // baseline
-                false,             // benchmark
-                false,             // ml_risk
+                None,                         // profile
+                false,                        // reachability
+                true,                         // fast
+                "spdx".into(),                // format
+                ".".into(),                   // out_dir
+                false,                        // json
+                None,                         // bazel_targets_query
+                None,                         // bazel_targets
+                None,                         // bazel_affected_by_files
+                "//...".into(),               // bazel_universe
+                false,                        // cyclonedx
+                false,                        // with_semgrep
+                None,                         // with_codeql
+                None,                         // autofix
+                None,                         // containers
+                true,                         // no_upload
+                auto_detect_main_module("."), // target - auto-detected
+                false,                        // incremental
+                "main".into(),                // base
+                false,                        // diff
+                None,                         // baseline
+                false,                        // benchmark
+                false,                        // ml_risk
             )
-        },
+        }
 
         Commands::ContainerScan {
             image,
@@ -398,7 +406,7 @@ async fn main() -> Result<()> {
 
             commands::container_scan::handle_container_scan(opts).await?;
             Ok(())
-        },
+        }
         Commands::Policy { action } => handle_policy(action),
         Commands::Fix {
             package,
@@ -423,9 +431,10 @@ async fn main() -> Result<()> {
                 llm,
                 llm_provider,
                 llm_model,
-            ).await?;
+            )
+            .await?;
             Ok(())
-        },
+        }
         Commands::License { action } => handle_license(action),
         Commands::Db { action } => handle_db(action),
         Commands::InstallHooks { policy, fast } => handle_install_hooks(policy, fast),
@@ -440,14 +449,26 @@ async fn main() -> Result<()> {
                 ci_templates::list_templates();
                 Ok(())
             }
-        },
+        }
         Commands::Init { path } => handle_init(&path),
         Commands::Explore { sbom, findings } => handle_explore(sbom, findings),
         Commands::Dashboard { port, open, export } => handle_dashboard(port, open, export),
-        Commands::Explain { cve_id, findings, verbose } => handle_explain(cve_id, findings, verbose),
+        Commands::Explain {
+            cve_id,
+            findings,
+            verbose,
+        } => handle_explain(cve_id, findings, verbose),
         Commands::Status { verbose, findings } => handle_status(verbose, findings),
-        Commands::Compare { base, target, verbose } => handle_compare(base, target, verbose),
-        Commands::Watch { path, interval, critical_only } => handle_watch(path, interval, critical_only),
+        Commands::Compare {
+            base,
+            target,
+            verbose,
+        } => handle_compare(base, target, verbose),
+        Commands::Watch {
+            path,
+            interval,
+            critical_only,
+        } => handle_watch(path, interval, critical_only),
         Commands::Team { action } => handle_team(action),
         Commands::Report { action } => handle_report(action),
     }

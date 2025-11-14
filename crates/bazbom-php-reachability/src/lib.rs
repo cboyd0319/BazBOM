@@ -54,7 +54,7 @@ pub mod error;
 pub mod models;
 
 pub use analyzer::PhpReachabilityAnalyzer;
-pub use error::{Result, PhpReachabilityError};
+pub use error::{PhpReachabilityError, Result};
 pub use models::{
     Entrypoint, EntrypointType, FunctionId, FunctionNode, ReachabilityReport,
     VulnerabilityReachability,

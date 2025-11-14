@@ -7,7 +7,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::ecosystems::{EcosystemScanResult, ReachabilityData, Vulnerability};
+use crate::ecosystems::{EcosystemScanResult, ReachabilityData};
 
 /// Perform reachability analysis on vulnerable packages for a scanned ecosystem
 pub async fn analyze_reachability(
@@ -338,10 +338,8 @@ mod tests {
     #[tokio::test]
     async fn test_reachability_integration() {
         // This is a placeholder test - in practice we'd need test fixtures
-        let mut result = EcosystemScanResult::new(
-            "Node.js/npm".to_string(),
-            "/tmp/test".to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Node.js/npm".to_string(), "/tmp/test".to_string());
 
         // Should not crash on empty vulnerabilities
         assert!(analyze_reachability(&mut result, Path::new("/tmp/test"))

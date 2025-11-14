@@ -54,7 +54,10 @@ impl VersionKey {
         if self.system == System::Maven {
             let parts: Vec<&str> = self.name.split(':').collect();
             if parts.len() == 2 {
-                return format!("pkg:{}/{}/{}@{}", system_lower, parts[0], parts[1], self.version);
+                return format!(
+                    "pkg:{}/{}/{}@{}",
+                    system_lower, parts[0], parts[1], self.version
+                );
             }
         }
 
@@ -160,9 +163,9 @@ pub struct DependencyGraph {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DependencyEdge {
-    pub from_node: usize,     // Index into nodes array
-    pub to_node: usize,       // Index into nodes array
-    pub requirement: String,  // Version requirement
+    pub from_node: usize,    // Index into nodes array
+    pub to_node: usize,      // Index into nodes array
+    pub requirement: String, // Version requirement
 }
 
 impl DependencyGraph {

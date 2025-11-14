@@ -126,7 +126,10 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
             match name {
                 // Node.js/npm
                 "package.json" => {
-                    let lockfile = find_lockfile(&dir_path, &["package-lock.json", "yarn.lock", "pnpm-lock.yaml"]);
+                    let lockfile = find_lockfile(
+                        &dir_path,
+                        &["package-lock.json", "yarn.lock", "pnpm-lock.yaml"],
+                    );
                     ecosystems.push(Ecosystem::new(
                         EcosystemType::Npm,
                         dir_path.clone(),
@@ -137,7 +140,10 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
 
                 // Python
                 "requirements.txt" | "pyproject.toml" | "Pipfile" | "setup.py" => {
-                    let lockfile = find_lockfile(&dir_path, &["poetry.lock", "Pipfile.lock", "requirements-lock.txt"]);
+                    let lockfile = find_lockfile(
+                        &dir_path,
+                        &["poetry.lock", "Pipfile.lock", "requirements-lock.txt"],
+                    );
                     ecosystems.push(Ecosystem::new(
                         EcosystemType::Python,
                         dir_path.clone(),
@@ -196,7 +202,7 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
                         EcosystemType::Maven,
                         dir_path.clone(),
                         Some(file_path.to_path_buf()),
-                        None,  // Maven doesn't use a traditional lockfile
+                        None, // Maven doesn't use a traditional lockfile
                     ));
                 }
 

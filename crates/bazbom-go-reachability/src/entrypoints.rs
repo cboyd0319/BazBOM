@@ -5,7 +5,7 @@ use crate::error::Result;
 use crate::models::{Entrypoint, EntrypointType};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use tracing::{info, debug};
+use tracing::{debug, info};
 use walkdir::WalkDir;
 
 /// Detects Go entrypoints in a project
@@ -57,7 +57,13 @@ impl EntrypointDetector {
         // Check if this is package main
         let is_main_package = source.contains("package main");
 
-        Self::visit_node(&root_node, &source, file_path, &mut entrypoints, is_main_package);
+        Self::visit_node(
+            &root_node,
+            &source,
+            file_path,
+            &mut entrypoints,
+            is_main_package,
+        );
 
         Ok(entrypoints)
     }
@@ -170,7 +176,9 @@ func main() {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::Main));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::Main));
     }
 
     #[test]
@@ -196,7 +204,11 @@ func TestSubtraction(t *testing.T) {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(entrypoints.len() >= 2);
-        assert!(entrypoints.iter().any(|e| e.function_name == "TestAddition"));
-        assert!(entrypoints.iter().any(|e| e.function_name == "TestSubtraction"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "TestAddition"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "TestSubtraction"));
     }
 }

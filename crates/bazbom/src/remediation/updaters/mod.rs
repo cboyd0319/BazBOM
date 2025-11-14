@@ -1,11 +1,11 @@
 // Dependency updaters for different package ecosystems
 
-pub mod npm;
-pub mod python;
 pub mod go;
-pub mod rust;
-pub mod ruby;
+pub mod npm;
 pub mod php;
+pub mod python;
+pub mod ruby;
+pub mod rust;
 
 use anyhow::Result;
 use bazbom_depsdev::System;

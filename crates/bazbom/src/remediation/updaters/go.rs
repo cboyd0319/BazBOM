@@ -104,12 +104,7 @@ impl DependencyUpdater for GoUpdater {
 impl GoUpdater {
     /// Update a single require line if it matches the package
     /// Returns Some(updated_line) if updated, None if not matching
-    fn update_require_line(
-        &self,
-        line: &str,
-        package: &str,
-        new_version: &str,
-    ) -> Option<String> {
+    fn update_require_line(&self, line: &str, package: &str, new_version: &str) -> Option<String> {
         let trimmed = line.trim();
 
         // Parse lines like:
@@ -142,7 +137,10 @@ impl GoUpdater {
             let indent_str = " ".repeat(indent);
 
             if trimmed.starts_with("require ") {
-                return Some(format!("{}require {} {}", indent_str, package, normalized_version));
+                return Some(format!(
+                    "{}require {} {}",
+                    indent_str, package, normalized_version
+                ));
             } else {
                 return Some(format!("{}{} {}", indent_str, package, normalized_version));
             }

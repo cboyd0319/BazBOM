@@ -231,45 +231,42 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
     match provider {
         "github" | "github-actions" => {
             let dir = Path::new(".github/workflows");
-            fs::create_dir_all(dir)
-                .context("Failed to create .github/workflows directory")?;
-            
+            fs::create_dir_all(dir).context("Failed to create .github/workflows directory")?;
+
             let file_path = dir.join("bazbom.yml");
             fs::write(&file_path, GITHUB_ACTIONS_TEMPLATE)
                 .context("Failed to write GitHub Actions workflow")?;
-            
+
             println!("✅ Created GitHub Actions workflow: .github/workflows/bazbom.yml");
             println!("\n📋 Next steps:");
             println!("  1. Commit the workflow file: git add .github/workflows/bazbom.yml");
             println!("  2. Push to trigger the workflow");
             println!("  3. View results in GitHub Security tab");
-        },
+        }
 
         "gitlab" => {
             let file_path = Path::new(".gitlab-ci.yml");
-            
+
             let content = if file_path.exists() {
                 let existing = fs::read_to_string(file_path)?;
                 format!("{}\n\n{}", existing, GITLAB_CI_TEMPLATE)
             } else {
                 GITLAB_CI_TEMPLATE.to_string()
             };
-            
-            fs::write(file_path, content)
-                .context("Failed to write GitLab CI configuration")?;
-            
+
+            fs::write(file_path, content).context("Failed to write GitLab CI configuration")?;
+
             println!("✅ Updated .gitlab-ci.yml with BazBOM job");
             println!("\n📋 Next steps:");
             println!("  1. Review changes: cat .gitlab-ci.yml");
             println!("  2. Commit and push");
             println!("  3. View results in GitLab Security Dashboard");
-        },
+        }
 
         "circleci" => {
             let dir = Path::new(".circleci");
-            fs::create_dir_all(dir)
-                .context("Failed to create .circleci directory")?;
-            
+            fs::create_dir_all(dir).context("Failed to create .circleci directory")?;
+
             let file_path = dir.join("config.yml");
             let content = if file_path.exists() {
                 let existing = fs::read_to_string(&file_path)?;
@@ -277,24 +274,22 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
             } else {
                 CIRCLECI_TEMPLATE.to_string()
             };
-            
-            fs::write(&file_path, content)
-                .context("Failed to write CircleCI configuration")?;
-            
+
+            fs::write(&file_path, content).context("Failed to write CircleCI configuration")?;
+
             println!("✅ Updated .circleci/config.yml with BazBOM job");
-        },
+        }
 
         "jenkins" => {
             let file_path = Path::new("Jenkinsfile.bazbom");
-            fs::write(file_path, JENKINS_TEMPLATE)
-                .context("Failed to write Jenkinsfile")?;
-            
+            fs::write(file_path, JENKINS_TEMPLATE).context("Failed to write Jenkinsfile")?;
+
             println!("✅ Created Jenkinsfile.bazbom");
             println!("\n📋 Next steps:");
             println!("  1. Review the file: cat Jenkinsfile.bazbom");
             println!("  2. Integrate into your main Jenkinsfile or use directly");
             println!("  3. Configure Jenkins pipeline to use this file");
-        },
+        }
 
         "travis" => {
             let file_path = Path::new(".travis.yml");
@@ -304,12 +299,11 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
             } else {
                 TRAVIS_CI_TEMPLATE.to_string()
             };
-            
-            fs::write(file_path, content)
-                .context("Failed to write Travis CI configuration")?;
-            
+
+            fs::write(file_path, content).context("Failed to write Travis CI configuration")?;
+
             println!("✅ Updated .travis.yml with BazBOM job");
-        },
+        }
 
         _ => {
             anyhow::bail!("Unknown CI provider: {}\n\nSupported providers:\n  • github / github-actions\n  • gitlab\n  • circleci\n  • jenkins\n  • travis", provider);
@@ -336,6 +330,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::const_is_empty)]
     fn test_templates_not_empty() {
         assert!(!GITHUB_ACTIONS_TEMPLATE.is_empty());
         assert!(!GITLAB_CI_TEMPLATE.is_empty());

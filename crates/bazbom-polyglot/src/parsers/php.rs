@@ -2,19 +2,17 @@
 //!
 //! Parses composer.json and composer.lock files
 
-use anyhow::{Context, Result};
-use serde_json::Value;
-use std::fs;
-use std::collections::HashMap;
 use crate::detection::Ecosystem;
 use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
+use anyhow::{Context, Result};
+use serde_json::Value;
+use std::collections::HashMap;
+use std::fs;
 
 /// Scan PHP ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "PHP".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
+    let mut result =
+        EcosystemScanResult::new("PHP".to_string(), ecosystem.root_path.display().to_string());
 
     // Parse composer.lock if available (most accurate)
     if let Some(ref lockfile_path) = ecosystem.lockfile {
@@ -70,12 +68,13 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 ///   ],
 ///   "packages-dev": [...]
 /// }
-fn parse_composer_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(lockfile_path)
-        .context("Failed to read composer.lock")?;
+fn parse_composer_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(lockfile_path).context("Failed to read composer.lock")?;
 
-    let json: Value = serde_json::from_str(&content)
-        .context("Failed to parse composer.lock")?;
+    let json: Value = serde_json::from_str(&content).context("Failed to parse composer.lock")?;
 
     // Parse production packages
     if let Some(packages) = json.get("packages").and_then(|p| p.as_array()) {
@@ -101,7 +100,9 @@ fn parse_composer_lock(lockfile_path: &std::path::Path, result: &mut EcosystemSc
 /// Parse a single package from composer.lock
 fn parse_composer_package(package: &Value) -> Option<Package> {
     let name = package.get("name")?.as_str()?.to_string();
-    let version = package.get("version")?.as_str()?
+    let version = package
+        .get("version")?
+        .as_str()?
         .trim_start_matches('v') // Remove 'v' prefix if present
         .to_string();
 
@@ -119,7 +120,7 @@ fn parse_composer_package(package: &Value) -> Option<Package> {
     // Split vendor/package into namespace and name
     let (namespace, _pkg_name) = if let Some(pos) = name.find('/') {
         let vendor = &name[..pos];
-        let pkg = &name[pos+1..];
+        let pkg = &name[pos + 1..];
         (Some(format!("packagist.org/{}", vendor)), pkg.to_string())
     } else {
         (Some("packagist.org".to_string()), name.clone())
@@ -131,15 +132,18 @@ fn parse_composer_package(package: &Value) -> Option<Package> {
         ecosystem: "Packagist".to_string(),
         namespace,
         dependencies,
-        license: package.get("license")
+        license: package
+            .get("license")
             .and_then(|l| l.as_array())
             .and_then(|arr| arr.first())
             .and_then(|v| v.as_str())
             .map(|s| s.to_string()),
-        description: package.get("description")
+        description: package
+            .get("description")
             .and_then(|d| d.as_str())
             .map(|s| s.to_string()),
-        homepage: package.get("homepage")
+        homepage: package
+            .get("homepage")
             .and_then(|h| h.as_str())
             .map(|s| s.to_string()),
         repository: None, // Could extract from "source" if needed
@@ -147,12 +151,13 @@ fn parse_composer_package(package: &Value) -> Option<Package> {
 }
 
 /// Parse composer.json (basic fallback)
-fn parse_composer_json(manifest_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(manifest_path)
-        .context("Failed to read composer.json")?;
+fn parse_composer_json(
+    manifest_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(manifest_path).context("Failed to read composer.json")?;
 
-    let json: Value = serde_json::from_str(&content)
-        .context("Failed to parse composer.json")?;
+    let json: Value = serde_json::from_str(&content).context("Failed to parse composer.json")?;
 
     // Parse "require" section
     if let Some(require) = json.get("require").and_then(|r| r.as_object()) {
@@ -163,7 +168,7 @@ fn parse_composer_json(manifest_path: &std::path::Path, result: &mut EcosystemSc
 
                 let (namespace, _) = if let Some(pos) = name.find('/') {
                     let vendor = &name[..pos];
-                    (Some(format!("packagist.org/{}", vendor)), &name[pos+1..])
+                    (Some(format!("packagist.org/{}", vendor)), &name[pos + 1..])
                 } else {
                     (Some("packagist.org".to_string()), name.as_str())
                 };
@@ -191,7 +196,7 @@ fn parse_composer_json(manifest_path: &std::path::Path, result: &mut EcosystemSc
 
                 let (namespace, _) = if let Some(pos) = name.find('/') {
                     let vendor = &name[..pos];
-                    (Some(format!("packagist.org/{}", vendor)), &name[pos+1..])
+                    (Some(format!("packagist.org/{}", vendor)), &name[pos + 1..])
                 } else {
                     (Some("packagist.org".to_string()), name.as_str())
                 };
@@ -272,7 +277,9 @@ mod tests {
         assert_eq!(result.ecosystem, "Packagist");
         assert_eq!(result.namespace, Some("packagist.org/symfony".to_string()));
         assert_eq!(result.license, Some("MIT".to_string()));
-        assert!(result.dependencies.contains(&"symfony/polyfill-php80".to_string()));
+        assert!(result
+            .dependencies
+            .contains(&"symfony/polyfill-php80".to_string()));
         assert!(!result.dependencies.contains(&"php".to_string())); // PHP should be excluded
     }
 
@@ -281,7 +288,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let composer_lock = temp.path().join("composer.lock");
 
-        fs::write(&composer_lock, r#"{
+        fs::write(
+            &composer_lock,
+            r#"{
     "packages": [
         {
             "name": "symfony/console",
@@ -309,7 +318,9 @@ mod tests {
             }
         }
     ]
-}"#).unwrap();
+}"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Php,
@@ -321,12 +332,27 @@ mod tests {
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
-        assert!(result.packages.iter().any(|p| p.name == "symfony/console" && p.version == "5.4.0"));
-        assert!(result.packages.iter().any(|p| p.name == "guzzlehttp/guzzle" && p.version == "7.4.0"));
-        assert!(result.packages.iter().any(|p| p.name == "phpunit/phpunit" && p.version == "9.5.10"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "symfony/console" && p.version == "5.4.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "guzzlehttp/guzzle" && p.version == "7.4.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "phpunit/phpunit" && p.version == "9.5.10"));
 
         // Check dependencies
-        let symfony = result.packages.iter().find(|p| p.name == "symfony/console").unwrap();
-        assert!(symfony.dependencies.contains(&"symfony/polyfill-php80".to_string()));
+        let symfony = result
+            .packages
+            .iter()
+            .find(|p| p.name == "symfony/console")
+            .unwrap();
+        assert!(symfony
+            .dependencies
+            .contains(&"symfony/polyfill-php80".to_string()));
     }
 }

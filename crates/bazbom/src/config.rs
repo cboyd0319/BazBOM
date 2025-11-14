@@ -335,7 +335,10 @@ cyclonedx = true
         assert_eq!(strict.with_semgrep, Some(true));
         assert_eq!(strict.with_codeql, Some("security-extended".to_string()));
         assert_eq!(strict.ml_risk, Some(true));
-        assert_eq!(strict.fail_on, Some(vec!["critical".to_string(), "high".to_string()]));
+        assert_eq!(
+            strict.fail_on,
+            Some(vec!["critical".to_string(), "high".to_string()])
+        );
 
         // Test fast profile
         let fast = config.get_profile("fast").unwrap();

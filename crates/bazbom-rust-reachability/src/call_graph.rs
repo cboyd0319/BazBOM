@@ -55,7 +55,9 @@ impl CallGraph {
     pub fn analyze_reachability(&mut self) -> Result<()> {
         info!("Analyzing Rust code reachability");
 
-        let entrypoints: Vec<_> = self.functions.values()
+        let entrypoints: Vec<_> = self
+            .functions
+            .values()
             .filter(|f| f.is_entrypoint)
             .map(|f| f.id.clone())
             .collect();
@@ -110,7 +112,9 @@ impl CallGraph {
         let target_idx = self.node_indices.get(target_id)?;
 
         // Find all entrypoints
-        let entrypoints: Vec<_> = self.functions.values()
+        let entrypoints: Vec<_> = self
+            .functions
+            .values()
             .filter(|f| f.is_entrypoint)
             .filter_map(|f| self.node_indices.get(&f.id))
             .copied()
@@ -126,14 +130,14 @@ impl CallGraph {
                 let mut current = *target_idx;
 
                 while current != entry_idx {
-                    let predecessors: Vec<_> = self.graph
+                    let predecessors: Vec<_> = self
+                        .graph
                         .neighbors_directed(current, Direction::Incoming)
                         .collect();
 
-                    if let Some(&pred) = predecessors.iter()
-                        .find(|&&pred| distances.contains_key(&pred)
-                            && distances[&pred] == distances[&current] - 1)
-                    {
+                    if let Some(&pred) = predecessors.iter().find(|&&pred| {
+                        distances.contains_key(&pred) && distances[&pred] == distances[&current] - 1
+                    }) {
                         path.push(pred);
                         current = pred;
                     } else {
@@ -144,7 +148,8 @@ impl CallGraph {
                 path.reverse();
 
                 // Convert indices to function IDs
-                let func_chain: Vec<_> = path.iter()
+                let func_chain: Vec<_> = path
+                    .iter()
                     .filter_map(|&idx| self.graph.node_weight(idx))
                     .cloned()
                     .collect();

@@ -4,7 +4,7 @@ use crate::github::GitHubAnalyzer;
 use crate::models::*;
 use crate::semver::analyze_semver_risk;
 use anyhow::{Context, Result};
-use bazbom_depsdev::{DepsDevClient, DependencyGraph, DependencyNode, Relation, System};
+use bazbom_depsdev::{DependencyGraph, DependencyNode, DepsDevClient, Relation, System};
 use futures::future::join_all;
 use std::collections::HashMap;
 use tracing::{debug, info, warn};
@@ -100,7 +100,11 @@ impl UpgradeAnalyzer {
 
         // 7. Try to find migration guide
         let migration_guide_url = if let Some(ref repo) = direct_analysis.github_repo {
-            self.github.find_migration_guide(repo, to_version).await.ok().flatten()
+            self.github
+                .find_migration_guide(repo, to_version)
+                .await
+                .ok()
+                .flatten()
         } else {
             None
         };
@@ -141,7 +145,10 @@ impl UpgradeAnalyzer {
             return Ok(cached.clone());
         }
 
-        debug!("Analyzing package: {} {} -> {}", package, from_version, to_version);
+        debug!(
+            "Analyzing package: {} {} -> {}",
+            package, from_version, to_version
+        );
 
         // 1. Get semver-based risk
         let semver_risk = analyze_semver_risk(from_version, to_version);
@@ -156,7 +163,11 @@ impl UpgradeAnalyzer {
 
         // 3. If we have a GitHub repo, fetch breaking changes from release notes
         let breaking_changes = if let Some(ref repo) = github_repo {
-            match self.github.analyze_upgrade(repo, from_version, to_version).await {
+            match self
+                .github
+                .analyze_upgrade(repo, from_version, to_version)
+                .await
+            {
                 Ok(changes) => changes,
                 Err(e) => {
                     warn!("Failed to fetch GitHub release notes: {}", e);
@@ -224,9 +235,14 @@ impl UpgradeAnalyzer {
                     let parent = parent_package.to_string();
 
                     analysis_futures.push(async move {
-                        (pkg, from_ver, to_ver, UpgradeReason::VersionAlignment {
-                            required_by: parent,
-                        })
+                        (
+                            pkg,
+                            from_ver,
+                            to_ver,
+                            UpgradeReason::VersionAlignment {
+                                required_by: parent,
+                            },
+                        )
                     });
                 }
                 None => {
@@ -270,18 +286,22 @@ impl UpgradeAnalyzer {
         }
 
         // Execute all analyses in parallel
-        let futures_to_analyze = analysis_futures.into_iter().map(|future| {
-            async move {
+        let futures_to_analyze = analysis_futures
+            .into_iter()
+            .map(|future| async move {
                 let (pkg, from_ver, to_ver, reason) = future.await;
                 (pkg, from_ver, to_ver, reason)
-            }
-        }).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         let results = join_all(futures_to_analyze).await;
 
         // Now analyze each changed dependency
         for (pkg, from_ver, to_ver, reason) in results {
-            match self.analyze_single_package(System::Maven, &pkg, &from_ver, &to_ver).await {
+            match self
+                .analyze_single_package(System::Maven, &pkg, &from_ver, &to_ver)
+                .await
+            {
                 Ok(analysis) => {
                     required_upgrades.push(RequiredUpgrade {
                         package: pkg,
@@ -325,7 +345,10 @@ impl UpgradeAnalyzer {
         }
 
         // Check for removed dependencies (critical)
-        if required_upgrades.iter().any(|u| matches!(u.reason, UpgradeReason::Removed)) {
+        if required_upgrades
+            .iter()
+            .any(|u| matches!(u.reason, UpgradeReason::Removed))
+        {
             max_risk = max_risk.max(RiskLevel::Critical);
         }
 
@@ -363,7 +386,10 @@ impl UpgradeAnalyzer {
             .count();
 
         if removed_count > 0 {
-            notes.push(format!("⚠️  {} dependencies will be removed", removed_count));
+            notes.push(format!(
+                "⚠️  {} dependencies will be removed",
+                removed_count
+            ));
         }
 
         // Check for new dependencies

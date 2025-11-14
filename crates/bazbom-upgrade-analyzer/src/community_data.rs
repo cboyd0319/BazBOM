@@ -4,8 +4,8 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpgradeSuccessData {
@@ -48,6 +48,19 @@ impl CommunityDatabase {
         Ok(Self { data, cache_path })
     }
 
+    /// Create a new community database with a custom cache path (for testing)
+    #[cfg(test)]
+    pub fn with_path(cache_path: PathBuf) -> Result<Self> {
+        if let Some(parent) = cache_path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        // Start with empty data for test isolation
+        let data = HashMap::new();
+
+        Ok(Self { data, cache_path })
+    }
+
     /// Initialize with sample community data
     fn initialize_sample_data() -> HashMap<String, HashMap<String, UpgradeSuccessData>> {
         let mut data = HashMap::new();
@@ -71,7 +84,10 @@ impl CommunityDatabase {
                 last_updated: chrono::Utc::now().to_rfc3339(),
             },
         );
-        data.insert("org.springframework.boot:spring-boot".to_string(), spring_boot);
+        data.insert(
+            "org.springframework.boot:spring-boot".to_string(),
+            spring_boot,
+        );
 
         // Jackson upgrade data
         let mut jackson = HashMap::new();
@@ -84,13 +100,14 @@ impl CommunityDatabase {
                 failure_count: 50,
                 total_attempts: 2850,
                 success_rate: 0.98,
-                common_issues: vec![
-                    "Minor serialization behavior changes".to_string(),
-                ],
+                common_issues: vec!["Minor serialization behavior changes".to_string()],
                 last_updated: chrono::Utc::now().to_rfc3339(),
             },
         );
-        data.insert("com.fasterxml.jackson.core:jackson-databind".to_string(), jackson);
+        data.insert(
+            "com.fasterxml.jackson.core:jackson-databind".to_string(),
+            jackson,
+        );
 
         // Log4j upgrade data
         let mut log4j = HashMap::new();
@@ -149,10 +166,14 @@ impl CommunityDatabase {
     ) -> Result<()> {
         let version_key = format!("{}->{}", from_version, to_version);
 
-        let package_data = self.data.entry(package.to_string()).or_insert_with(HashMap::new);
+        let package_data = self
+            .data
+            .entry(package.to_string())
+            .or_default();
 
-        let success_data = package_data.entry(version_key).or_insert_with(|| {
-            UpgradeSuccessData {
+        let success_data = package_data
+            .entry(version_key)
+            .or_insert_with(|| UpgradeSuccessData {
                 from_version: from_version.to_string(),
                 to_version: to_version.to_string(),
                 success_count: 0,
@@ -161,8 +182,7 @@ impl CommunityDatabase {
                 success_rate: 0.0,
                 common_issues: Vec::new(),
                 last_updated: chrono::Utc::now().to_rfc3339(),
-            }
-        });
+            });
 
         // Update counts
         success_data.total_attempts += 1;
@@ -276,18 +296,18 @@ mod tests {
     #[test]
     fn test_get_success_rate() {
         let db = CommunityDatabase::new().unwrap();
-        let rate = db.get_success_rate(
-            "org.springframework.boot:spring-boot",
-            "2.7",
-            "3.0",
-        );
+        let rate = db.get_success_rate("org.springframework.boot:spring-boot", "2.7", "3.0");
         assert!(rate.is_some());
         assert!(rate.unwrap() > 0.0);
     }
 
     #[test]
     fn test_submit_feedback() {
-        let mut db = CommunityDatabase::new().unwrap();
+        // Use temporary directory for test isolation
+        let temp_dir = tempfile::tempdir().unwrap();
+        let cache_path = temp_dir.path().join("test_upgrade_data.json");
+        let mut db = CommunityDatabase::with_path(cache_path).unwrap();
+
         let result = db.submit_feedback(
             "test:package",
             "1.0",

@@ -4,7 +4,12 @@ use colored::Colorize;
 /// Handle the `bazbom compare` command
 pub fn handle_compare(base: String, target: Option<String>, verbose: bool) -> Result<()> {
     println!();
-    println!("{}", "🔄 Comparing security posture between branches".bold().cyan());
+    println!(
+        "{}",
+        "🔄 Comparing security posture between branches"
+            .bold()
+            .cyan()
+    );
     println!();
 
     let target_ref = target.unwrap_or_else(|| "HEAD".to_string());
@@ -29,7 +34,11 @@ pub fn handle_compare(base: String, target: Option<String>, verbose: bool) -> Re
     scan_git_ref(&target_ref, "./target-scan")?;
 
     // Compare results
-    compare_scan_results("./baseline-scan/sca_findings.sarif", "./target-scan/sca_findings.sarif", verbose)?;
+    compare_scan_results(
+        "./baseline-scan/sca_findings.sarif",
+        "./target-scan/sca_findings.sarif",
+        verbose,
+    )?;
 
     // Cleanup temp dirs
     let _ = std::fs::remove_dir_all("./baseline-scan");
@@ -70,7 +79,7 @@ fn verify_git_ref(git_ref: &str) -> Result<()> {
 fn scan_git_ref(git_ref: &str, output_dir: &str) -> Result<()> {
     // Create worktree for the ref
     let worktree_path = format!("{}-worktree", output_dir);
-    
+
     let _ = std::process::Command::new("git")
         .args(["worktree", "add", &worktree_path, git_ref])
         .output();
@@ -134,7 +143,16 @@ fn compare_scan_results(baseline_path: &str, target_path: &str, verbose: bool) -
     println!();
 
     if !new_vulns.is_empty() {
-        println!("{} {} new {}", "⚠️".red(), new_vulns.len(), if new_vulns.len() == 1 { "vulnerability" } else { "vulnerabilities" });
+        println!(
+            "{} {} new {}",
+            "⚠️".red(),
+            new_vulns.len(),
+            if new_vulns.len() == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
+        );
         if verbose {
             for cve in &new_vulns {
                 println!("  {} {}", "+".red(), cve.red());
@@ -144,7 +162,16 @@ fn compare_scan_results(baseline_path: &str, target_path: &str, verbose: bool) -
     }
 
     if !fixed_vulns.is_empty() {
-        println!("{} {} fixed {}", "✓".green(), fixed_vulns.len(), if fixed_vulns.len() == 1 { "vulnerability" } else { "vulnerabilities" });
+        println!(
+            "{} {} fixed {}",
+            "✓".green(),
+            fixed_vulns.len(),
+            if fixed_vulns.len() == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
+        );
         if verbose {
             for cve in &fixed_vulns {
                 println!("  {} {}", "-".green(), cve.green());
@@ -161,13 +188,28 @@ fn compare_scan_results(baseline_path: &str, target_path: &str, verbose: bool) -
     // Risk assessment
     let risk_delta = (new_vulns.len() as i32) - (fixed_vulns.len() as i32);
     if risk_delta > 0 {
-        println!("{} {} Security posture is WORSE", "📉".red(), "RISK:".red().bold());
+        println!(
+            "{} {} Security posture is WORSE",
+            "📉".red(),
+            "RISK:".red().bold()
+        );
         println!("   {} more vulnerabilities than baseline", risk_delta.abs());
     } else if risk_delta < 0 {
-        println!("{} {} Security posture is BETTER", "📈".green(), "IMPROVEMENT:".green().bold());
-        println!("   {} fewer vulnerabilities than baseline", risk_delta.abs());
+        println!(
+            "{} {} Security posture is BETTER",
+            "📈".green(),
+            "IMPROVEMENT:".green().bold()
+        );
+        println!(
+            "   {} fewer vulnerabilities than baseline",
+            risk_delta.abs()
+        );
     } else {
-        println!("{} {} Security posture is UNCHANGED", "→".dimmed(), "STATUS:".dimmed());
+        println!(
+            "{} {} Security posture is UNCHANGED",
+            "→".dimmed(),
+            "STATUS:".dimmed()
+        );
     }
     println!();
 

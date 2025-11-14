@@ -2,11 +2,11 @@
 //!
 //! Parses Gemfile and Gemfile.lock files
 
-use anyhow::{Context, Result};
-use std::fs;
-use std::collections::HashMap;
 use crate::detection::Ecosystem;
 use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
+use anyhow::{Context, Result};
+use std::collections::HashMap;
+use std::fs;
 
 /// Scan Ruby ecosystem
 pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
@@ -20,7 +20,9 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         parse_gemfile_lock(lockfile_path, &mut result)?;
     } else if let Some(ref manifest_path) = ecosystem.manifest_file {
         // Fallback to Gemfile (less accurate)
-        eprintln!("Warning: Gemfile found but no Gemfile.lock - run 'bundle lock' for accurate versions");
+        eprintln!(
+            "Warning: Gemfile found but no Gemfile.lock - run 'bundle lock' for accurate versions"
+        );
         parse_gemfile(manifest_path, &mut result)?;
     }
 
@@ -71,9 +73,11 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 ///   DEPENDENCIES
 ///     rails (~> 7.0.0)
 ///     puma
-fn parse_gemfile_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(lockfile_path)
-        .context("Failed to read Gemfile.lock")?;
+fn parse_gemfile_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(lockfile_path).context("Failed to read Gemfile.lock")?;
 
     let mut in_specs_section = false;
 
@@ -140,10 +144,7 @@ fn parse_gem_spec_line(line: &str) -> Option<(&str, &str)> {
     let version_part = parts[1].trim();
 
     // Extract version from parentheses
-    let version = version_part
-        .strip_prefix('(')?
-        .strip_suffix(')')?
-        .trim();
+    let version = version_part.strip_prefix('(')?.strip_suffix(')')?.trim();
 
     if !name.is_empty() && !version.is_empty() {
         Some((name, version))
@@ -154,8 +155,7 @@ fn parse_gem_spec_line(line: &str) -> Option<(&str, &str)> {
 
 /// Parse Gemfile (basic fallback)
 fn parse_gemfile(manifest_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(manifest_path)
-        .context("Failed to read Gemfile")?;
+    let content = fs::read_to_string(manifest_path).context("Failed to read Gemfile")?;
 
     for line in content.lines() {
         let line = line.trim();
@@ -206,10 +206,7 @@ fn parse_gemfile_line(line: &str) -> Option<(&str, &str)> {
     }
 
     // Extract name (remove quotes)
-    let name = parts[0]
-        .trim()
-        .trim_matches('\'')
-        .trim_matches('"');
+    let name = parts[0].trim().trim_matches('\'').trim_matches('"');
 
     // Extract version if present (second part)
     let version = if parts.len() > 1 {
@@ -248,14 +245,8 @@ mod tests {
             parse_gem_spec_line("rails (7.0.4)"),
             Some(("rails", "7.0.4"))
         );
-        assert_eq!(
-            parse_gem_spec_line("rack (2.2.4)"),
-            Some(("rack", "2.2.4"))
-        );
-        assert_eq!(
-            parse_gem_spec_line("puma (5.6.5)"),
-            Some(("puma", "5.6.5"))
-        );
+        assert_eq!(parse_gem_spec_line("rack (2.2.4)"), Some(("rack", "2.2.4")));
+        assert_eq!(parse_gem_spec_line("puma (5.6.5)"), Some(("puma", "5.6.5")));
     }
 
     #[test]
@@ -279,7 +270,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let gemfile_lock = temp.path().join("Gemfile.lock");
 
-        fs::write(&gemfile_lock, r#"
+        fs::write(
+            &gemfile_lock,
+            r#"
 GEM
   remote: https://rubygems.org/
   specs:
@@ -295,7 +288,9 @@ PLATFORMS
 DEPENDENCIES
   rails (~> 7.0.0)
   puma
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Ruby,
@@ -307,8 +302,17 @@ DEPENDENCIES
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
-        assert!(result.packages.iter().any(|p| p.name == "rails" && p.version == "7.0.4"));
-        assert!(result.packages.iter().any(|p| p.name == "rack" && p.version == "2.2.4"));
-        assert!(result.packages.iter().any(|p| p.name == "puma" && p.version == "5.6.5"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "rails" && p.version == "7.0.4"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "rack" && p.version == "2.2.4"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "puma" && p.version == "5.6.5"));
     }
 }

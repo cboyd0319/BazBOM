@@ -35,12 +35,7 @@ pub struct MethodNode {
 }
 
 impl MethodNode {
-    pub fn new(
-        id: MethodId,
-        name: String,
-        class_name: String,
-        descriptor: String,
-    ) -> Self {
+    pub fn new(id: MethodId, name: String, class_name: String, descriptor: String) -> Self {
         Self {
             id,
             name,

@@ -222,7 +222,11 @@ mod tests {
         let test_dir = temp_dir.path().join("test");
         fs::create_dir(&test_dir).unwrap();
 
-        fs::write(test_dir.join("example.test.js"), "test('example', () => {});").unwrap();
+        fs::write(
+            test_dir.join("example.test.js"),
+            "test('example', () => {});",
+        )
+        .unwrap();
 
         let detector = EntrypointDetector::new(temp_dir.path().to_path_buf());
         let entrypoints = detector.detect_test_files().unwrap();

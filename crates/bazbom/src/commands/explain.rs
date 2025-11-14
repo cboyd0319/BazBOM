@@ -21,10 +21,19 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
         println!("{}", "Error: Findings file not found".red().bold());
         println!();
         println!("Please run a scan first:");
-        println!("  {} {}", "bazbom scan --reachability".green(), "[path]".dimmed());
+        println!(
+            "  {} {}",
+            "bazbom scan --reachability".green(),
+            "[path]".dimmed()
+        );
         println!();
         println!("Or specify a findings file:");
-        println!("  {} {} {}", "bazbom explain".green(), cve_id.yellow(), "--findings=/path/to/findings.json".dimmed());
+        println!(
+            "  {} {} {}",
+            "bazbom explain".green(),
+            cve_id.yellow(),
+            "--findings=/path/to/findings.json".dimmed()
+        );
         println!();
         return Ok(());
     }
@@ -55,28 +64,58 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
     }
 
     if !found {
-        println!("{}", format!("No information found for {}", cve_id).yellow());
+        println!(
+            "{}",
+            format!("No information found for {}", cve_id).yellow()
+        );
         println!();
-        println!("{}", "This CVE may not affect your project, or the findings file may be outdated.".dimmed());
+        println!(
+            "{}",
+            "This CVE may not affect your project, or the findings file may be outdated.".dimmed()
+        );
     }
 
     println!();
     println!("{}", "📚 References:".bold());
-    println!("  • NVD:        https://nvd.nist.gov/vuln/detail/{}", cve_id);
-    println!("  • MITRE:      https://cve.mitre.org/cgi-bin/cvename.cgi?name={}", cve_id);
+    println!(
+        "  • NVD:        https://nvd.nist.gov/vuln/detail/{}",
+        cve_id
+    );
+    println!(
+        "  • MITRE:      https://cve.mitre.org/cgi-bin/cvename.cgi?name={}",
+        cve_id
+    );
     println!("  • GitHub:     https://github.com/advisories/{}", cve_id);
     println!();
 
     println!("{}", "🔓 Exploit Resources:".bold().yellow());
-    println!("  • ExploitDB:  https://www.exploit-db.com/search?cve={}", cve_id);
-    println!("  • GitHub POCs: https://github.com/search?q={}+POC&type=repositories", cve_id);
-    println!("  • Packet Storm: https://packetstormsecurity.com/search/?q={}", cve_id);
-    println!("  • Nuclei Templates: https://github.com/projectdiscovery/nuclei-templates/search?q={}", cve_id);
+    println!(
+        "  • ExploitDB:  https://www.exploit-db.com/search?cve={}",
+        cve_id
+    );
+    println!(
+        "  • GitHub POCs: https://github.com/search?q={}+POC&type=repositories",
+        cve_id
+    );
+    println!(
+        "  • Packet Storm: https://packetstormsecurity.com/search/?q={}",
+        cve_id
+    );
+    println!(
+        "  • Nuclei Templates: https://github.com/projectdiscovery/nuclei-templates/search?q={}",
+        cve_id
+    );
     println!();
 
     println!("{}", "💡 Tip:".dimmed());
-    println!("  {}", "Check if exploit code exists before prioritizing remediation.".dimmed());
-    println!("  {}", "Public exploits significantly increase risk.".dimmed());
+    println!(
+        "  {}",
+        "Check if exploit code exists before prioritizing remediation.".dimmed()
+    );
+    println!(
+        "  {}",
+        "Public exploits significantly increase risk.".dimmed()
+    );
     println!();
 
     Ok(())
@@ -85,8 +124,12 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
 /// Display vulnerability details from SARIF result
 fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: bool) -> Result<()> {
     println!("{}", "📦 Affected Package:".bold());
-    
-    if let Some(message) = result.get("message").and_then(|m| m.get("text")).and_then(|t| t.as_str()) {
+
+    if let Some(message) = result
+        .get("message")
+        .and_then(|m| m.get("text"))
+        .and_then(|t| t.as_str())
+    {
         println!("  {}", message);
     }
     println!();
@@ -100,7 +143,7 @@ fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: boo
         };
         println!("  Severity: {}", level_colored);
     }
-    
+
     if let Some(properties) = result.get("properties") {
         if let Some(cvss) = properties.get("cvss").and_then(|c| c.as_f64()) {
             println!("  CVSS Score: {:.1}", cvss);
@@ -112,14 +155,25 @@ fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: boo
     if let Some(properties) = result.get("properties") {
         if let Some(reachable) = properties.get("reachable").and_then(|r| r.as_bool()) {
             if reachable {
-                println!("  Status: {} {}", "REACHABLE".red().bold(), "(actively exploitable)".red());
+                println!(
+                    "  Status: {} {}",
+                    "REACHABLE".red().bold(),
+                    "(actively exploitable)".red()
+                );
             } else {
-                println!("  Status: {} {}", "UNREACHABLE".green().bold(), "(not called by your code)".green());
+                println!(
+                    "  Status: {} {}",
+                    "UNREACHABLE".green().bold(),
+                    "(not called by your code)".green()
+                );
             }
         } else {
-            println!("  Status: {}", "UNKNOWN (reachability not analyzed)".yellow());
+            println!(
+                "  Status: {}",
+                "UNKNOWN (reachability not analyzed)".yellow()
+            );
         }
-        
+
         if verbose {
             if let Some(call_chain) = properties.get("callChain").and_then(|c| c.as_array()) {
                 println!();

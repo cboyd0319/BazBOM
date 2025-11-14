@@ -3,7 +3,6 @@
 /// This module contains:
 /// - JAR bytecode comparison for API surface changes
 /// - Configuration file migration detection
-
 use anyhow::Result;
 
 /// JAR bytecode analysis for detecting API breaking changes
@@ -71,9 +70,7 @@ pub mod config {
         }
 
         // Check for Log4j configuration changes
-        if let Ok(log4j_changes) =
-            detect_log4j_migrations(project_path, from_version, to_version)
-        {
+        if let Ok(log4j_changes) = detect_log4j_migrations(project_path, from_version, to_version) {
             changes.extend(log4j_changes);
         }
 
@@ -147,8 +144,7 @@ pub mod config {
                 change_type: ConfigChangeType::ChangedFormat,
                 old_key: None,
                 new_key: None,
-                description: "Log4j 1.x to 2.x requires complete configuration rewrite"
-                    .to_string(),
+                description: "Log4j 1.x to 2.x requires complete configuration rewrite".to_string(),
             });
         }
 

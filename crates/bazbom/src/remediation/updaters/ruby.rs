@@ -145,10 +145,16 @@ impl RubyUpdater {
         // Check if version is specified
         if after_gem.contains(',') {
             // Has version specified
-            Some(format!("{}gem {}{}{}, {}~> {}{}", indent_str, quote, package, quote, quote, new_version, quote))
+            Some(format!(
+                "{}gem {}{}{}, {}~> {}{}",
+                indent_str, quote, package, quote, quote, new_version, quote
+            ))
         } else {
             // No version specified, add one
-            Some(format!("{}gem {}{}{}, {}~> {}{}", indent_str, quote, package, quote, quote, new_version, quote))
+            Some(format!(
+                "{}gem {}{}{}, {}~> {}{}",
+                indent_str, quote, package, quote, quote, new_version, quote
+            ))
         }
     }
 }

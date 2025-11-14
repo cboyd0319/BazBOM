@@ -15,22 +15,14 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
         .set_language(&language)
         .map_err(|e| JsReachabilityError::ParseError(format!("Failed to set language: {}", e)))?;
 
-    parser
-        .parse(&source_code, None)
-        .ok_or_else(|| {
-            JsReachabilityError::ParseError(format!(
-                "Failed to parse file: {}",
-                file_path.display()
-            ))
-        })
+    parser.parse(&source_code, None).ok_or_else(|| {
+        JsReachabilityError::ParseError(format!("Failed to parse file: {}", file_path.display()))
+    })
 }
 
 /// Determine the language (JS vs TS) based on file extension
 fn determine_language(file_path: &Path) -> Result<Language> {
-    let extension = file_path
-        .extension()
-        .and_then(|s| s.to_str())
-        .unwrap_or("");
+    let extension = file_path.extension().and_then(|s| s.to_str()).unwrap_or("");
 
     match extension {
         "ts" | "tsx" => Ok(tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into()),
@@ -136,9 +128,7 @@ fn visit_node(
 }
 
 fn get_node_text(node: tree_sitter::Node, source: &[u8]) -> String {
-    node.utf8_text(source)
-        .unwrap_or("")
-        .to_string()
+    node.utf8_text(source).unwrap_or("").to_string()
 }
 
 fn is_exported(node: &tree_sitter::Node) -> bool {

@@ -166,8 +166,7 @@ impl EntrypointDetector {
     ) -> Option<Entrypoint> {
         // Flask: @app.route("/path")
         if decorator_str.contains("route")
-            && (decorator_str.starts_with("app.")
-                || decorator_str.starts_with("blueprint."))
+            && (decorator_str.starts_with("app.") || decorator_str.starts_with("blueprint."))
         {
             let mut metadata = HashMap::new();
             // Try to extract path from decorator string
@@ -175,7 +174,10 @@ impl EntrypointDetector {
                 if let Some(end) = decorator_str.find(')') {
                     let args = &decorator_str[start + 1..end];
                     if let Some(path) = args.split(',').next() {
-                        metadata.insert("path".to_string(), path.trim_matches(|c| c == '"' || c == '\'').to_string());
+                        metadata.insert(
+                            "path".to_string(),
+                            path.trim_matches(|c| c == '"' || c == '\'').to_string(),
+                        );
                     }
                 }
             }
@@ -201,7 +203,10 @@ impl EntrypointDetector {
                 if let Some(end) = decorator_str.find(')') {
                     let args = &decorator_str[start + 1..end];
                     if let Some(path) = args.split(',').next() {
-                        metadata.insert("path".to_string(), path.trim_matches(|c| c == '"' || c == '\'').to_string());
+                        metadata.insert(
+                            "path".to_string(),
+                            path.trim_matches(|c| c == '"' || c == '\'').to_string(),
+                        );
                     }
                 }
             }
@@ -390,7 +395,9 @@ def test_subtraction():
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(entrypoints.len() >= 2);
-        assert!(entrypoints.iter().any(|e| e.function_name == "test_addition"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "test_addition"));
         assert!(entrypoints
             .iter()
             .any(|e| e.function_name == "test_subtraction"));

@@ -2,13 +2,13 @@
 //!
 //! Parses package.json and lockfiles (package-lock.json, yarn.lock, pnpm-lock.yaml)
 
-use anyhow::{Context, Result};
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::fs;
 use crate::detection::Ecosystem;
 use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
+use anyhow::{Context, Result};
+use serde::Deserialize;
 use serde_yaml;
+use std::collections::HashMap;
+use std::fs;
 
 /// package.json structure
 #[derive(Debug, Deserialize)]
@@ -67,14 +67,14 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
     // Parse package.json
     if let Some(ref manifest_path) = ecosystem.manifest_file {
-        let content = fs::read_to_string(manifest_path)
-            .context("Failed to read package.json")?;
-        let package_json: PackageJson = serde_json::from_str(&content)
-            .context("Failed to parse package.json")?;
+        let content = fs::read_to_string(manifest_path).context("Failed to read package.json")?;
+        let package_json: PackageJson =
+            serde_json::from_str(&content).context("Failed to parse package.json")?;
 
         // If we have a lockfile, parse it for exact versions
         if let Some(ref lockfile_path) = ecosystem.lockfile {
-            let lockfile_name = lockfile_path.file_name()
+            let lockfile_name = lockfile_path
+                .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("");
 
@@ -130,10 +130,13 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 }
 
 /// Parse package-lock.json (npm v7+)
-fn parse_package_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
+fn parse_package_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
-    let lock: PackageLockJson = serde_json::from_str(&content)
-        .context("Failed to parse package-lock.json")?;
+    let lock: PackageLockJson =
+        serde_json::from_str(&content).context("Failed to parse package-lock.json")?;
 
     // npm v7+ uses "packages" field
     if !lock.packages.is_empty() {
@@ -227,7 +230,7 @@ fn parse_v6_dependencies(
 /// Parse yarn.lock
 ///
 /// Yarn.lock uses a custom format that looks like:
-/// ```
+/// ```text
 /// package-name@version-range:
 ///   version "actual-version"
 ///   resolved "url"
@@ -236,9 +239,11 @@ fn parse_v6_dependencies(
 ///     dep1 "version"
 ///     dep2 "version"
 /// ```
-fn parse_yarn_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(lockfile_path)
-        .context("Failed to read yarn.lock")?;
+fn parse_yarn_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(lockfile_path).context("Failed to read yarn.lock")?;
 
     let mut current_package: Option<String> = None;
     let mut current_version: Option<String> = None;
@@ -256,7 +261,9 @@ fn parse_yarn_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanRe
         // Check if this is a package declaration line (no leading whitespace, ends with :)
         if !line.starts_with(' ') && !line.starts_with('\t') && trimmed.ends_with(':') {
             // Save the previous package if we have one
-            if let (Some(pkg_name), Some(version)) = (current_package.take(), current_version.take()) {
+            if let (Some(pkg_name), Some(version)) =
+                (current_package.take(), current_version.take())
+            {
                 add_yarn_package(result, &pkg_name, &version, &current_deps);
                 current_deps.clear();
             }
@@ -268,14 +275,18 @@ fn parse_yarn_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanRe
             let package_spec = trimmed.trim_end_matches(':');
 
             // Take the first package spec if there are multiple
-            let first_spec = package_spec.split(',').next().unwrap_or(package_spec).trim();
+            let first_spec = package_spec
+                .split(',')
+                .next()
+                .unwrap_or(package_spec)
+                .trim();
 
             // Extract package name (everything before the last @)
             if let Some(at_pos) = first_spec.rfind('@') {
                 // Handle scoped packages like @babel/code-frame@^7.0.0
-                let pkg = if first_spec.starts_with('@') {
+                let pkg = if let Some(stripped) = first_spec.strip_prefix('@') {
                     // Find the second @ for scoped packages
-                    if let Some(second_at) = first_spec[1..].find('@') {
+                    if let Some(second_at) = stripped.find('@') {
                         &first_spec[..second_at + 1]
                     } else {
                         first_spec
@@ -297,9 +308,10 @@ fn parse_yarn_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanRe
             if let Some(dep_name) = extract_dependency_name(trimmed) {
                 current_deps.push(dep_name);
             }
-        } else if !trimmed.starts_with("resolved ") &&
-                  !trimmed.starts_with("integrity ") &&
-                  !trimmed.is_empty() {
+        } else if !trimmed.starts_with("resolved ")
+            && !trimmed.starts_with("integrity ")
+            && !trimmed.is_empty()
+        {
             // If we hit a non-dependency field, we're out of dependencies
             if in_dependencies && !line.starts_with("    ") && !line.starts_with("\t\t") {
                 in_dependencies = false;
@@ -322,7 +334,7 @@ fn extract_quoted_value(line: &str) -> Option<String> {
         let value = parts[1].trim();
         // Remove quotes
         if value.starts_with('"') && value.ends_with('"') && value.len() >= 2 {
-            return Some(value[1..value.len()-1].to_string());
+            return Some(value[1..value.len() - 1].to_string());
         }
     }
     None
@@ -411,12 +423,14 @@ struct PnpmResolution {
 ///
 /// pnpm uses a YAML format with a "packages" section that contains all resolved dependencies
 /// in a flat structure with their full paths as keys.
-fn parse_pnpm_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(lockfile_path)
-        .context("Failed to read pnpm-lock.yaml")?;
+fn parse_pnpm_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(lockfile_path).context("Failed to read pnpm-lock.yaml")?;
 
-    let lockfile: PnpmLockfile = serde_yaml::from_str(&content)
-        .context("Failed to parse pnpm-lock.yaml")?;
+    let lockfile: PnpmLockfile =
+        serde_yaml::from_str(&content).context("Failed to parse pnpm-lock.yaml")?;
 
     // Parse packages section - this is where pnpm stores all resolved dependencies
     for (path, package) in &lockfile.packages {
@@ -540,14 +554,18 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let package_json = temp.path().join("package.json");
 
-        fs::write(&package_json, r#"{
+        fs::write(
+            &package_json,
+            r#"{
             "name": "test-package",
             "version": "1.0.0",
             "dependencies": {
                 "express": "^4.18.0",
                 "@types/node": "^18.0.0"
             }
-        }"#).unwrap();
+        }"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Npm,
@@ -559,6 +577,9 @@ mod tests {
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 2);
         assert!(result.packages.iter().any(|p| p.name == "express"));
-        assert!(result.packages.iter().any(|p| p.name == "node" && p.namespace == Some("@types".to_string())));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "node" && p.namespace == Some("@types".to_string())));
     }
 }

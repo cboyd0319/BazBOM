@@ -16,14 +16,9 @@ pub fn parse_file(file_path: &Path) -> Result<Tree> {
         .set_language(&language)
         .map_err(|e| GoReachabilityError::ParseError(format!("Failed to set language: {}", e)))?;
 
-    parser
-        .parse(&source_code, None)
-        .ok_or_else(|| {
-            GoReachabilityError::ParseError(format!(
-                "Failed to parse file: {}",
-                file_path.display()
-            ))
-        })
+    parser.parse(&source_code, None).ok_or_else(|| {
+        GoReachabilityError::ParseError(format!("Failed to parse file: {}", file_path.display()))
+    })
 }
 
 /// Extracted function information from Go AST
@@ -139,12 +134,16 @@ impl FunctionExtractor {
     }
 
     fn extract_method(&mut self, node: &tree_sitter::Node, source: &[u8]) {
-        let receiver_type = node.child_by_field_name("receiver")
+        let receiver_type = node
+            .child_by_field_name("receiver")
             .and_then(|receiver_node| {
                 // Extract receiver type from (r *ReceiverType)
                 let receiver_text = get_node_text(receiver_node, source);
                 // Simple extraction - just get the type name
-                receiver_text.split_whitespace().last().map(|s| s.trim_end_matches(')').to_string())
+                receiver_text
+                    .split_whitespace()
+                    .last()
+                    .map(|s| s.trim_end_matches(')').to_string())
             });
 
         if let Some(name_node) = node.child_by_field_name("name") {
@@ -186,7 +185,8 @@ impl FunctionExtractor {
                 self.reflections.push(ReflectionDetection {
                     line: pos.row + 1,
                     reflection_type: ReflectionType::ReflectCall,
-                    description: "reflect.Value.Call() detected - conservative analysis".to_string(),
+                    description: "reflect.Value.Call() detected - conservative analysis"
+                        .to_string(),
                 });
             } else if callee.contains("MethodByName") {
                 self.reflections.push(ReflectionDetection {
@@ -320,7 +320,11 @@ func (m *MyStruct) Method() {
         let mut extractor = FunctionExtractor::new();
         extractor.extract(code, &tree).unwrap();
 
-        let method = extractor.functions.iter().find(|f| f.name == "Method").unwrap();
+        let method = extractor
+            .functions
+            .iter()
+            .find(|f| f.name == "Method")
+            .unwrap();
         assert!(method.is_method);
         assert!(method.receiver_type.is_some());
     }
@@ -367,8 +371,16 @@ func privateFunc() {}
         let mut extractor = FunctionExtractor::new();
         extractor.extract(code, &tree).unwrap();
 
-        let public = extractor.functions.iter().find(|f| f.name == "PublicFunc").unwrap();
-        let private = extractor.functions.iter().find(|f| f.name == "privateFunc").unwrap();
+        let public = extractor
+            .functions
+            .iter()
+            .find(|f| f.name == "PublicFunc")
+            .unwrap();
+        let private = extractor
+            .functions
+            .iter()
+            .find(|f| f.name == "privateFunc")
+            .unwrap();
 
         assert!(public.is_exported);
         assert!(!private.is_exported);

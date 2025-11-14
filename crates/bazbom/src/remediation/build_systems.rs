@@ -210,7 +210,10 @@ pub fn apply_npm_fix(suggestion: &RemediationSuggestion, project_root: &Path) ->
 
     // Try devDependencies
     if !updated {
-        if let Some(deps) = json.get_mut("devDependencies").and_then(|d| d.as_object_mut()) {
+        if let Some(deps) = json
+            .get_mut("devDependencies")
+            .and_then(|d| d.as_object_mut())
+        {
             if let Some(version) = deps.get_mut(package_name) {
                 *version = serde_json::Value::String(format!("^{}", fixed_version));
                 updated = true;
@@ -270,10 +273,7 @@ pub fn apply_pip_fix(suggestion: &RemediationSuggestion, project_root: &Path) ->
     }
 
     if !match_found {
-        anyhow::bail!(
-            "Dependency {} not found in requirements.txt",
-            package_name
-        );
+        anyhow::bail!("Dependency {} not found in requirements.txt", package_name);
     }
 
     fs::write(&requirements_txt, updated)?;
@@ -303,7 +303,8 @@ pub fn apply_go_fix(suggestion: &RemediationSuggestion, project_root: &Path) -> 
     for line in content.lines() {
         // Match lines like "  github.com/foo/bar v1.2.3"
         if line.contains(package_name) && line.contains(&suggestion.current_version) {
-            let new_line = line.replace(&suggestion.current_version, &format!("v{}", fixed_version));
+            let new_line =
+                line.replace(&suggestion.current_version, &format!("v{}", fixed_version));
             updated = updated.replace(line, &new_line);
             match_found = true;
             println!(

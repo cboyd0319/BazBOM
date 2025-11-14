@@ -14,9 +14,10 @@
 //!
 //! ```rust,no_run
 //! use bazbom_java_reachability::analyze_java_project;
+//! use std::path::Path;
 //!
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
-//! let report = analyze_java_project("target/classes")?;
+//! let report = analyze_java_project(Path::new("target/classes"))?;
 //!
 //! println!("Found {} entrypoints", report.entrypoints.len());
 //! println!("Reachable: {}/{}",
@@ -37,7 +38,9 @@ pub mod models;
 pub use analyzer::JavaReachabilityAnalyzer;
 pub use call_graph::CallGraph;
 pub use error::{JavaReachabilityError, Result};
-pub use models::{MethodId, MethodNode, ReachabilityReport, ReflectionWarning, VulnerabilityReachability};
+pub use models::{
+    MethodId, MethodNode, ReachabilityReport, ReflectionWarning, VulnerabilityReachability,
+};
 
 use std::path::Path;
 
@@ -55,9 +58,10 @@ use std::path::Path;
 ///
 /// ```rust,no_run
 /// use bazbom_java_reachability::analyze_java_project;
+/// use std::path::Path;
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// let report = analyze_java_project("target/classes")?;
+/// let report = analyze_java_project(Path::new("target/classes"))?;
 /// println!("Analyzed {} methods", report.all_functions.len());
 /// # Ok(())
 /// # }

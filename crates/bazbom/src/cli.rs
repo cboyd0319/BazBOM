@@ -116,7 +116,9 @@ PROFILES:
 
     // ========== QUICK COMMAND ALIASES ==========
     /// Quick local dev scan (fast mode, no reachability)
-    #[command(name = "check", after_help = "EXAMPLES:
+    #[command(
+        name = "check",
+        after_help = "EXAMPLES:
   # Scan current directory
   bazbom check
 
@@ -127,7 +129,8 @@ WHAT IT DOES:
   • Fast mode (no reachability analysis)
   • No GitHub upload
   • Perfect for quick local validation
-  • Runs in < 10 seconds")]
+  • Runs in < 10 seconds"
+    )]
     #[command(name = "check")]
     Check {
         /// Path to project (defaults to current directory)
@@ -136,7 +139,9 @@ WHAT IT DOES:
     },
 
     /// CI-optimized scan (JSON + SARIF output, no GitHub upload)
-    #[command(name = "ci", after_help = "EXAMPLES:
+    #[command(
+        name = "ci",
+        after_help = "EXAMPLES:
   # In GitHub Actions
   bazbom ci
 
@@ -147,7 +152,8 @@ WHAT IT DOES:
   • Auto-detects CI environment
   • Outputs JSON + SARIF formats
   • No GitHub upload (use your CI's upload)
-  • Optimized for speed")]
+  • Optimized for speed"
+    )]
     #[command(name = "ci")]
     Ci {
         /// Path to project (defaults to current directory)
@@ -159,7 +165,9 @@ WHAT IT DOES:
     },
 
     /// PR-optimized scan (incremental + diff mode)
-    #[command(name = "pr", after_help = "EXAMPLES:
+    #[command(
+        name = "pr",
+        after_help = "EXAMPLES:
   # Compare with main branch
   bazbom pr
 
@@ -173,7 +181,8 @@ WHAT IT DOES:
   • Incremental analysis (only changed code)
   • Shows diff of vulnerabilities
   • Perfect for PR checks
-  • Shows what's new vs fixed")]
+  • Shows what's new vs fixed"
+    )]
     #[command(name = "pr")]
     Pr {
         /// Path to project (defaults to current directory)
@@ -188,7 +197,9 @@ WHAT IT DOES:
     },
 
     /// Full scan with all features (reachability + all formats)
-    #[command(name = "full", after_help = "EXAMPLES:
+    #[command(
+        name = "full",
+        after_help = "EXAMPLES:
   # Complete scan with everything
   bazbom full
 
@@ -200,7 +211,8 @@ WHAT IT DOES:
   • Both SPDX and CycloneDX SBOMs
   • ML risk scoring
   • Performance benchmarking
-  • Most comprehensive scan available")]
+  • Most comprehensive scan available"
+    )]
     #[command(name = "full")]
     Full {
         /// Path to project (defaults to current directory)
@@ -212,7 +224,9 @@ WHAT IT DOES:
     },
 
     /// Super-fast smoke test (< 5 seconds)
-    #[command(name = "quick", after_help = "EXAMPLES:
+    #[command(
+        name = "quick",
+        after_help = "EXAMPLES:
   # Lightning-fast validation
   bazbom quick
 
@@ -220,7 +234,8 @@ WHAT IT DOES:
   • Ultra-fast scan (< 5 seconds)
   • Basic dependency check
   • Critical vulnerabilities only
-  • Perfect for pre-commit hooks")]
+  • Perfect for pre-commit hooks"
+    )]
     #[command(name = "quick")]
     Quick {
         /// Path to project (defaults to current directory)
@@ -320,7 +335,9 @@ WHAT IT DOES:
         fast: bool,
     },
     /// Install CI/CD configuration templates
-    #[command(name = "install", after_help = "EXAMPLES:
+    #[command(
+        name = "install",
+        after_help = "EXAMPLES:
   # Install GitHub Actions workflow
   bazbom install github
 
@@ -338,7 +355,8 @@ SUPPORTED PROVIDERS:
   • gitlab    → GitLab CI (.gitlab-ci.yml)
   • circleci  → CircleCI (.circleci/config.yml)
   • jenkins   → Jenkins (Jenkinsfile.bazbom)
-  • travis    → Travis CI (.travis.yml)")]
+  • travis    → Travis CI (.travis.yml)"
+    )]
     Install {
         /// CI provider (github, gitlab, circleci, jenkins, travis)
         provider: Option<String>,

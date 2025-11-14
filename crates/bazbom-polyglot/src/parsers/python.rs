@@ -2,12 +2,12 @@
 //!
 //! Parses requirements.txt, poetry.lock, and Pipfile.lock
 
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
-use crate::detection::Ecosystem;
-use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 
 /// poetry.lock structure (TOML)
 #[derive(Debug, Deserialize)]
@@ -50,7 +50,8 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
     // Try to parse lockfiles first (most accurate)
     if let Some(ref lockfile_path) = ecosystem.lockfile {
-        let lockfile_name = lockfile_path.file_name()
+        let lockfile_name = lockfile_path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("");
 
@@ -73,7 +74,8 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         }
     } else if let Some(ref manifest_path) = ecosystem.manifest_file {
         // No lockfile, use manifest
-        let manifest_name = manifest_path.file_name()
+        let manifest_name = manifest_path
+            .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("");
 
@@ -125,9 +127,11 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 
 /// Parse requirements.txt format
 /// Supports: package==version, package>=version, package~=version
-fn parse_requirements_file(file_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
-    let content = fs::read_to_string(file_path)
-        .context("Failed to read requirements file")?;
+fn parse_requirements_file(
+    file_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
+    let content = fs::read_to_string(file_path).context("Failed to read requirements file")?;
 
     for line in content.lines() {
         let line = line.trim();
@@ -190,10 +194,12 @@ fn parse_requirement_line(line: &str) -> Option<(&str, &str)> {
 }
 
 /// Parse poetry.lock (TOML format)
-fn parse_poetry_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
+fn parse_poetry_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
-    let lock: PoetryLock = toml::from_str(&content)
-        .context("Failed to parse poetry.lock")?;
+    let lock: PoetryLock = toml::from_str(&content).context("Failed to parse poetry.lock")?;
 
     for pkg in &lock.package {
         result.add_package(Package {
@@ -213,10 +219,13 @@ fn parse_poetry_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScan
 }
 
 /// Parse Pipfile.lock (JSON format)
-fn parse_pipfile_lock(lockfile_path: &std::path::Path, result: &mut EcosystemScanResult) -> Result<()> {
+fn parse_pipfile_lock(
+    lockfile_path: &std::path::Path,
+    result: &mut EcosystemScanResult,
+) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
-    let lock: PipfileLock = serde_json::from_str(&content)
-        .context("Failed to parse Pipfile.lock")?;
+    let lock: PipfileLock =
+        serde_json::from_str(&content).context("Failed to parse Pipfile.lock")?;
 
     // Parse default (production) dependencies
     for (name, dep) in &lock.default {
@@ -276,10 +285,7 @@ mod tests {
             parse_requirement_line("six==1.16.0 ; python_version >= \"3.6\""),
             Some(("six", "1.16.0"))
         );
-        assert_eq!(
-            parse_requirement_line("# comment"),
-            None
-        );
+        assert_eq!(parse_requirement_line("# comment"), None);
     }
 
     #[tokio::test]
@@ -287,7 +293,9 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let requirements = temp.path().join("requirements.txt");
 
-        fs::write(&requirements, r#"
+        fs::write(
+            &requirements,
+            r#"
 # This is a comment
 Django==3.2.0
 requests>=2.25.0
@@ -295,7 +303,9 @@ pytest~=7.0
 
 # Another comment
 six==1.16.0 ; python_version >= "3.6"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let ecosystem = Ecosystem::new(
             crate::detection::EcosystemType::Python,
@@ -306,9 +316,21 @@ six==1.16.0 ; python_version >= "3.6"
 
         let result = scan(&ecosystem).await.unwrap();
         assert_eq!(result.total_packages, 4);
-        assert!(result.packages.iter().any(|p| p.name == "Django" && p.version == "3.2.0"));
-        assert!(result.packages.iter().any(|p| p.name == "requests" && p.version == "2.25.0"));
-        assert!(result.packages.iter().any(|p| p.name == "pytest" && p.version == "7.0"));
-        assert!(result.packages.iter().any(|p| p.name == "six" && p.version == "1.16.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "Django" && p.version == "3.2.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "requests" && p.version == "2.25.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "pytest" && p.version == "7.0"));
+        assert!(result
+            .packages
+            .iter()
+            .any(|p| p.name == "six" && p.version == "1.16.0"));
     }
 }

@@ -9,7 +9,12 @@ use std::time::Duration;
 /// Handle the `bazbom watch` command
 pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<()> {
     println!();
-    println!("{}", "🔍 Starting continuous security monitoring...".bold().green());
+    println!(
+        "{}",
+        "🔍 Starting continuous security monitoring..."
+            .bold()
+            .green()
+    );
     println!();
     println!("  {} {}", "Watching:".dimmed(), path.bold());
     println!("  {} {} seconds", "Interval:".dimmed(), interval);
@@ -18,14 +23,18 @@ pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<
     }
     println!();
     println!("{}", "Press Ctrl+C to stop".dimmed());
-    println!("{}", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed());
+    println!(
+        "{}",
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━".dimmed()
+    );
     println!();
 
     let project_path = PathBuf::from(&path);
     let mut file_hashes = HashMap::new();
 
     // Initial scan
-    println!("[{}] {} Running initial scan...", 
+    println!(
+        "[{}] {} Running initial scan...",
         chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
         "▶".green()
     );
@@ -40,7 +49,8 @@ pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<
     }
 
     println!();
-    println!("[{}] {} Monitoring {} files for changes...",
+    println!(
+        "[{}] {} Monitoring {} files for changes...",
         chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
         "👀".cyan(),
         watch_files.len()
@@ -68,7 +78,8 @@ pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<
 
         if !changed_files.is_empty() {
             println!();
-            println!("[{}] {} Detected changes in:",
+            println!(
+                "[{}] {} Detected changes in:",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
                 "⚡".yellow()
             );
@@ -76,7 +87,8 @@ pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<
                 println!("  {} {}", "•".dimmed(), file.display().to_string().cyan());
             }
             println!();
-            println!("[{}] {} Re-scanning...",
+            println!(
+                "[{}] {} Re-scanning...",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
                 "🔄".blue()
             );
@@ -179,17 +191,19 @@ fn run_scan(project_path: &Path, critical_only: bool) -> Result<()> {
 
     match status {
         Ok(s) if s.success() => {
-            println!("[{}] {} Scan complete - no critical issues",
+            println!(
+                "[{}] {} Scan complete - no critical issues",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
                 "✅".green()
             );
         }
         Ok(_) => {
-            println!("[{}] {} Vulnerabilities detected!",
+            println!(
+                "[{}] {} Vulnerabilities detected!",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
                 "⚠️".yellow()
             );
-            
+
             // Show quick summary
             if let Ok(findings) = fs::read_to_string("./sca_findings.sarif") {
                 if let Ok(sarif) = serde_json::from_str::<serde_json::Value>(&findings) {
@@ -198,7 +212,8 @@ fn run_scan(project_path: &Path, critical_only: bool) -> Result<()> {
             }
         }
         Err(e) => {
-            println!("[{}] {} Scan failed: {}",
+            println!(
+                "[{}] {} Scan failed: {}",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
                 "❌".red(),
                 e
@@ -231,16 +246,22 @@ fn show_quick_summary(sarif: &serde_json::Value, critical_only: bool) {
     }
 
     if critical_count > 0 {
-        println!("  {} {} critical {}", 
-            "🚨".red(), 
+        println!(
+            "  {} {} critical {}",
+            "🚨".red(),
             critical_count,
-            if critical_count == 1 { "vulnerability" } else { "vulnerabilities" }
+            if critical_count == 1 {
+                "vulnerability"
+            } else {
+                "vulnerabilities"
+            }
         );
     }
-    
+
     if !critical_only && high_count > 0 {
-        println!("  {} {} high-severity {}", 
-            "⚠️".yellow(), 
+        println!(
+            "  {} {} high-severity {}",
+            "⚠️".yellow(),
             high_count,
             if high_count == 1 { "issue" } else { "issues" }
         );
@@ -268,12 +289,12 @@ mod tests {
         use std::io::Write;
         let mut temp_file = tempfile::NamedTempFile::new().unwrap();
         temp_file.write_all(b"test content").unwrap();
-        
+
         let hash1 = compute_file_hash(temp_file.path()).unwrap();
         thread::sleep(Duration::from_millis(10));
         temp_file.write_all(b"more content").unwrap();
         let hash2 = compute_file_hash(temp_file.path()).unwrap();
-        
+
         assert_ne!(hash1, hash2);
     }
 }

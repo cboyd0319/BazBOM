@@ -55,12 +55,24 @@ impl EntrypointDetector {
 
         // Symfony controllers
         if path_str.contains("Controller") && source_str.contains("Route") {
-            Self::extract_methods(&root_node, &source, file_path, EntrypointType::SymfonyController, &mut entrypoints);
+            Self::extract_methods(
+                &root_node,
+                &source,
+                file_path,
+                EntrypointType::SymfonyController,
+                &mut entrypoints,
+            );
         }
 
         // Laravel controllers
         if path_str.contains("app/Http/Controllers") {
-            Self::extract_methods(&root_node, &source, file_path, EntrypointType::LaravelController, &mut entrypoints);
+            Self::extract_methods(
+                &root_node,
+                &source,
+                file_path,
+                EntrypointType::LaravelController,
+                &mut entrypoints,
+            );
         }
 
         // WordPress actions/filters
@@ -181,7 +193,9 @@ class UserController {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::LaravelController));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::LaravelController));
     }
 
     #[test]
@@ -205,6 +219,8 @@ class ExampleTest extends TestCase {
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.function_name == "testAddition"));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.function_name == "testAddition"));
     }
 }

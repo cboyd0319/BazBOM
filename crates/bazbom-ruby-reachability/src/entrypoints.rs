@@ -84,7 +84,10 @@ impl EntrypointDetector {
         }
 
         // Sinatra routes
-        if source_str.contains("Sinatra") || source_str.contains("get ") || source_str.contains("post ") {
+        if source_str.contains("Sinatra")
+            || source_str.contains("get ")
+            || source_str.contains("post ")
+        {
             Self::extract_sinatra_routes(&root_node, &source, file_path, &mut entrypoints);
         }
 
@@ -102,7 +105,13 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_public_methods(node, source, file_path, EntrypointType::RailsController, entrypoints);
+        Self::visit_for_public_methods(
+            node,
+            source,
+            file_path,
+            EntrypointType::RailsController,
+            entrypoints,
+        );
     }
 
     fn extract_job_perform(
@@ -111,7 +120,14 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_method_name(node, source, file_path, "perform", EntrypointType::RailsJob, entrypoints);
+        Self::visit_for_method_name(
+            node,
+            source,
+            file_path,
+            "perform",
+            EntrypointType::RailsJob,
+            entrypoints,
+        );
     }
 
     fn extract_mailer_actions(
@@ -120,7 +136,13 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_public_methods(node, source, file_path, EntrypointType::RailsMailer, entrypoints);
+        Self::visit_for_public_methods(
+            node,
+            source,
+            file_path,
+            EntrypointType::RailsMailer,
+            entrypoints,
+        );
     }
 
     fn extract_rspec_tests(
@@ -129,7 +151,14 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_blocks(node, source, file_path, &["it", "specify", "example"], EntrypointType::RSpecTest, entrypoints);
+        Self::visit_for_blocks(
+            node,
+            source,
+            file_path,
+            &["it", "specify", "example"],
+            EntrypointType::RSpecTest,
+            entrypoints,
+        );
     }
 
     fn extract_minitest_tests(
@@ -138,7 +167,14 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_method_prefix(node, source, file_path, "test_", EntrypointType::MinitestTest, entrypoints);
+        Self::visit_for_method_prefix(
+            node,
+            source,
+            file_path,
+            "test_",
+            EntrypointType::MinitestTest,
+            entrypoints,
+        );
     }
 
     fn extract_sinatra_routes(
@@ -147,7 +183,14 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_blocks(node, source, file_path, &["get", "post", "put", "patch", "delete"], EntrypointType::SinatraRoute, entrypoints);
+        Self::visit_for_blocks(
+            node,
+            source,
+            file_path,
+            &["get", "post", "put", "patch", "delete"],
+            EntrypointType::SinatraRoute,
+            entrypoints,
+        );
     }
 
     fn extract_rake_tasks(
@@ -156,7 +199,14 @@ impl EntrypointDetector {
         file_path: &Path,
         entrypoints: &mut Vec<Entrypoint>,
     ) {
-        Self::visit_for_blocks(node, source, file_path, &["task"], EntrypointType::RakeTask, entrypoints);
+        Self::visit_for_blocks(
+            node,
+            source,
+            file_path,
+            &["task"],
+            EntrypointType::RakeTask,
+            entrypoints,
+        );
     }
 
     fn visit_for_public_methods(
@@ -169,7 +219,11 @@ impl EntrypointDetector {
         if node.kind() == "method" {
             if let Some(name_node) = node.child_by_field_name("name") {
                 let method_name = get_node_text(&name_node, source);
-                debug!("Found {} method: {}", entry_type_str(&entry_type), method_name);
+                debug!(
+                    "Found {} method: {}",
+                    entry_type_str(&entry_type),
+                    method_name
+                );
                 entrypoints.push(Entrypoint {
                     file: file_path.to_path_buf(),
                     function_name: method_name,
@@ -181,7 +235,13 @@ impl EntrypointDetector {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            Self::visit_for_public_methods(&child, source, file_path, entry_type.clone(), entrypoints);
+            Self::visit_for_public_methods(
+                &child,
+                source,
+                file_path,
+                entry_type.clone(),
+                entrypoints,
+            );
         }
     }
 
@@ -209,7 +269,14 @@ impl EntrypointDetector {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            Self::visit_for_method_name(&child, source, file_path, target_name, entry_type.clone(), entrypoints);
+            Self::visit_for_method_name(
+                &child,
+                source,
+                file_path,
+                target_name,
+                entry_type.clone(),
+                entrypoints,
+            );
         }
     }
 
@@ -237,7 +304,14 @@ impl EntrypointDetector {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            Self::visit_for_method_prefix(&child, source, file_path, prefix, entry_type.clone(), entrypoints);
+            Self::visit_for_method_prefix(
+                &child,
+                source,
+                file_path,
+                prefix,
+                entry_type.clone(),
+                entrypoints,
+            );
         }
     }
 
@@ -265,7 +339,14 @@ impl EntrypointDetector {
 
         let mut cursor = node.walk();
         for child in node.children(&mut cursor) {
-            Self::visit_for_blocks(&child, source, file_path, block_names, entry_type.clone(), entrypoints);
+            Self::visit_for_blocks(
+                &child,
+                source,
+                file_path,
+                block_names,
+                entry_type.clone(),
+                entrypoints,
+            );
         }
     }
 
@@ -335,7 +416,9 @@ end
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(entrypoints.len() >= 2);
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::RSpecTest));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::RSpecTest));
     }
 
     #[test]
@@ -364,7 +447,9 @@ end
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::RailsController));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::RailsController));
     }
 
     #[test]
@@ -386,6 +471,8 @@ end
         let entrypoints = detector.detect_entrypoints().unwrap();
 
         assert!(!entrypoints.is_empty());
-        assert!(entrypoints.iter().any(|e| e.entrypoint_type == EntrypointType::RakeTask));
+        assert!(entrypoints
+            .iter()
+            .any(|e| e.entrypoint_type == EntrypointType::RakeTask));
     }
 }

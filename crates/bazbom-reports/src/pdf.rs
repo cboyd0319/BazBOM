@@ -2,7 +2,6 @@
 ///
 /// Provides PDF generation for BazBOM reports using printpdf.
 /// Generates executive summaries, compliance reports, and detailed vulnerability reports.
-
 use anyhow::{Context, Result};
 use printpdf::*;
 use std::fs::File;
@@ -32,9 +31,11 @@ pub fn generate_pdf(generator: &ReportGenerator, output_path: &Path) -> Result<(
     let current_layer = doc.get_page(page1).get_layer(layer1);
 
     // Use built-in fonts (Helvetica)
-    let font = doc.add_builtin_font(BuiltinFont::Helvetica)
+    let font = doc
+        .add_builtin_font(BuiltinFont::Helvetica)
         .context("Failed to load font")?;
-    let font_bold = doc.add_builtin_font(BuiltinFont::HelveticaBold)
+    let font_bold = doc
+        .add_builtin_font(BuiltinFont::HelveticaBold)
         .context("Failed to load bold font")?;
 
     // Title page
@@ -51,9 +52,11 @@ pub fn generate_pdf(generator: &ReportGenerator, output_path: &Path) -> Result<(
         let (page2, layer2) = doc.add_page(Mm(210.0), Mm(297.0), "Page 2");
         let current_layer = doc.get_page(page2).get_layer(layer2);
         y_position = Mm(270.0);
-        y_position = add_vulnerability_section(&current_layer, &font, &font_bold, generator, y_position)?;
+        y_position =
+            add_vulnerability_section(&current_layer, &font, &font_bold, generator, y_position)?;
     } else {
-        y_position = add_vulnerability_section(&current_layer, &font, &font_bold, generator, y_position)?;
+        y_position =
+            add_vulnerability_section(&current_layer, &font, &font_bold, generator, y_position)?;
     }
 
     // SBOM and Policy sections
@@ -69,8 +72,7 @@ pub fn generate_pdf(generator: &ReportGenerator, output_path: &Path) -> Result<(
     }
 
     // Save the PDF
-    let file = File::create(output_path)
-        .context("Failed to create PDF file")?;
+    let file = File::create(output_path).context("Failed to create PDF file")?;
     let mut writer = BufWriter::new(file);
     doc.save(&mut writer)
         .context("Failed to save PDF document")?;
@@ -93,17 +95,32 @@ fn add_title_page(
     y_pos -= Mm(15.0);
 
     // Project info
-    add_centered_text(layer, font, 14.0, &format!("Project: {}", sbom.project_name), y_pos);
+    add_centered_text(
+        layer,
+        font,
+        14.0,
+        &format!("Project: {}", sbom.project_name),
+        y_pos,
+    );
     y_pos -= Mm(8.0);
 
-    add_centered_text(layer, font, 14.0, &format!("Version: {}", sbom.project_version), y_pos);
+    add_centered_text(
+        layer,
+        font,
+        14.0,
+        &format!("Version: {}", sbom.project_version),
+        y_pos,
+    );
     y_pos -= Mm(8.0);
 
     add_centered_text(
         layer,
         font,
         12.0,
-        &format!("Scan Date: {}", sbom.scan_timestamp.format("%Y-%m-%d %H:%M UTC")),
+        &format!(
+            "Scan Date: {}",
+            sbom.scan_timestamp.format("%Y-%m-%d %H:%M UTC")
+        ),
         y_pos,
     );
     y_pos -= Mm(15.0);
@@ -228,7 +245,14 @@ fn add_executive_summary(
         "CRITICAL - Immediate remediation required"
     };
 
-    add_text(layer, font, 10.0, &format!("• {}", risk_level), Mm(25.0), y_pos);
+    add_text(
+        layer,
+        font,
+        10.0,
+        &format!("• {}", risk_level),
+        Mm(25.0),
+        y_pos,
+    );
     y_pos -= Mm(5.0);
 
     if !vulnerabilities.critical.is_empty() {
@@ -353,7 +377,10 @@ fn add_vulnerability_entry(
         layer,
         font_bold,
         10.0,
-        &format!("{} - {} {}", vuln.cve, vuln.package_name, vuln.package_version),
+        &format!(
+            "{} - {} {}",
+            vuln.cve, vuln.package_name, vuln.package_version
+        ),
         Mm(25.0),
         y_pos,
     );
@@ -481,7 +508,14 @@ fn add_policy_section(
         "NON-COMPLIANT - Policy violations found"
     };
 
-    add_text(layer, font_bold, 10.0, &format!("Status: {}", compliance_status), Mm(20.0), y_pos);
+    add_text(
+        layer,
+        font_bold,
+        10.0,
+        &format!("Status: {}", compliance_status),
+        Mm(20.0),
+        y_pos,
+    );
     y_pos -= Mm(6.0);
 
     add_text(

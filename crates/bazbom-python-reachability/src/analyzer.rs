@@ -4,7 +4,9 @@ use crate::ast_parser::{parse_file, FunctionExtractor};
 use crate::call_graph::CallGraph;
 use crate::entrypoints::EntrypointDetector;
 use crate::error::Result;
-use crate::models::{DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability};
+use crate::models::{
+    DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability,
+};
 use crate::module_resolver::ModuleResolver;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -65,7 +67,9 @@ impl PythonReachabilityAnalyzer {
         // 4. Perform reachability analysis
         // If dynamic code detected, mark all as reachable (conservative)
         if self.has_dynamic_code {
-            warn!("Dynamic code detected - using conservative analysis (all code marked reachable)");
+            warn!(
+                "Dynamic code detected - using conservative analysis (all code marked reachable)"
+            );
             self.call_graph.mark_all_reachable();
         } else {
             self.call_graph.analyze_reachability()?;
@@ -81,7 +85,10 @@ impl PythonReachabilityAnalyzer {
         );
 
         if !self.dynamic_warnings.is_empty() {
-            warn!("Found {} dynamic code warnings", self.dynamic_warnings.len());
+            warn!(
+                "Found {} dynamic code warnings",
+                self.dynamic_warnings.len()
+            );
         }
 
         Ok(report)
@@ -206,9 +213,12 @@ impl PythonReachabilityAnalyzer {
                     let func_part = &call.callee[dot_pos + 1..];
 
                     // Try to resolve the module
-                    if let Ok(module_files) = self.module_resolver.resolve_import(module_part, file_path) {
+                    if let Ok(module_files) =
+                        self.module_resolver.resolve_import(module_part, file_path)
+                    {
                         for module_file in module_files {
-                            let cross_module_id = format!("{}:{}", module_file.display(), func_part);
+                            let cross_module_id =
+                                format!("{}:{}", module_file.display(), func_part);
                             if self.call_graph.functions().contains_key(&cross_module_id) {
                                 let _ = self.call_graph.add_call(&caller_id, &cross_module_id);
                                 resolved = true;
@@ -347,10 +357,16 @@ if __name__ == "__main__":
         let report = analyzer.analyze(temp_dir.path()).unwrap();
 
         // Should have found functions
-        assert!(report.all_functions.len() >= 2, "Should have found at least 2 functions");
+        assert!(
+            report.all_functions.len() >= 2,
+            "Should have found at least 2 functions"
+        );
 
         // Should have found entrypoints
-        assert!(!report.entrypoints.is_empty(), "Should have found __main__ entrypoint");
+        assert!(
+            !report.entrypoints.is_empty(),
+            "Should have found __main__ entrypoint"
+        );
     }
 
     #[test]
@@ -360,7 +376,11 @@ if __name__ == "__main__":
         fs::create_dir(&venv).unwrap();
 
         fs::write(venv.join("package.py"), "def foo(): pass").unwrap();
-        fs::write(temp_dir.path().join("main.py"), "def bar(): pass\nif __name__ == '__main__': bar()").unwrap();
+        fs::write(
+            temp_dir.path().join("main.py"),
+            "def bar(): pass\nif __name__ == '__main__': bar()",
+        )
+        .unwrap();
 
         let mut analyzer = PythonReachabilityAnalyzer::new();
         let _ = analyzer.discover_and_parse_files(temp_dir.path());

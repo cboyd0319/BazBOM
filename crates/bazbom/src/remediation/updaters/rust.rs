@@ -22,7 +22,10 @@ impl DependencyUpdater for RustUpdater {
         // Update dependencies in [dependencies]
         if let Some(deps) = toml.get_mut("dependencies").and_then(|d| d.as_table_mut()) {
             if deps.contains_key(package) {
-                deps.insert(package.to_string(), toml::Value::String(new_version.to_string()));
+                deps.insert(
+                    package.to_string(),
+                    toml::Value::String(new_version.to_string()),
+                );
                 found = true;
             }
         }
@@ -33,7 +36,10 @@ impl DependencyUpdater for RustUpdater {
             .and_then(|d| d.as_table_mut())
         {
             if dev_deps.contains_key(package) {
-                dev_deps.insert(package.to_string(), toml::Value::String(new_version.to_string()));
+                dev_deps.insert(
+                    package.to_string(),
+                    toml::Value::String(new_version.to_string()),
+                );
                 found = true;
             }
         }
@@ -44,7 +50,10 @@ impl DependencyUpdater for RustUpdater {
             .and_then(|d| d.as_table_mut())
         {
             if build_deps.contains_key(package) {
-                build_deps.insert(package.to_string(), toml::Value::String(new_version.to_string()));
+                build_deps.insert(
+                    package.to_string(),
+                    toml::Value::String(new_version.to_string()),
+                );
                 found = true;
             }
         }
@@ -53,8 +62,7 @@ impl DependencyUpdater for RustUpdater {
             anyhow::bail!("Package {} not found in Cargo.toml", package);
         }
 
-        let updated_content = toml::to_string(&toml)
-            .context("Failed to serialize Cargo.toml")?;
+        let updated_content = toml::to_string(&toml).context("Failed to serialize Cargo.toml")?;
 
         fs::write(file_path, updated_content)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;

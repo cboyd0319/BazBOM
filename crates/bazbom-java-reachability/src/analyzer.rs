@@ -22,7 +22,10 @@ impl JavaReachabilityAnalyzer {
 
     /// Analyze a Java project to determine method reachability
     pub fn analyze(&mut self, project_root: &Path) -> Result<ReachabilityReport> {
-        tracing::info!("Starting Java reachability analysis for: {}", project_root.display());
+        tracing::info!(
+            "Starting Java reachability analysis for: {}",
+            project_root.display()
+        );
 
         // Step 1: Build call graph from bytecode
         tracing::debug!("Analyzing .class files...");
