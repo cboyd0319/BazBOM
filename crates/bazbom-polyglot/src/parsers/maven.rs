@@ -12,6 +12,43 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package};
+
+/// Scan Maven ecosystem
+pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
+    let mut result = EcosystemScanResult::new(
+        "Maven".to_string(),
+        ecosystem.root_path.display().to_string(),
+    );
+
+    // Parse pom.xml if available
+    if let Some(ref manifest_path) = ecosystem.manifest_file {
+        let dependencies = parse_pom(manifest_path)?;
+
+        for dep in dependencies {
+            // Skip test dependencies by default (can be made configurable)
+            if dep.scope == "test" {
+                continue;
+            }
+
+            result.packages.push(Package {
+                name: maven_package_id(&dep),
+                version: dep.version.clone(),
+                ecosystem: "Maven".to_string(),
+                namespace: Some(dep.group_id.clone()),
+                dependencies: Vec::new(),
+                license: None,
+                description: None,
+                homepage: None,
+                repository: None,
+            });
+        }
+    }
+
+    result.total_packages = result.packages.len();
+    Ok(result)
+}
 
 /// Maven dependency information
 #[derive(Debug, Clone, Serialize, Deserialize)]

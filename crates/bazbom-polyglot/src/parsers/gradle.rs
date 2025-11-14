@@ -13,6 +13,43 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use crate::detection::Ecosystem;
+use crate::ecosystems::{EcosystemScanResult, Package};
+
+/// Scan Gradle ecosystem
+pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
+    let mut result = EcosystemScanResult::new(
+        "Gradle".to_string(),
+        ecosystem.root_path.display().to_string(),
+    );
+
+    // Parse build.gradle or build.gradle.kts if available
+    if let Some(ref manifest_path) = ecosystem.manifest_file {
+        let dependencies = parse_gradle(manifest_path)?;
+
+        for dep in dependencies {
+            // Skip test dependencies by default (can be made configurable)
+            if dep.configuration.contains("test") || dep.configuration.contains("Test") {
+                continue;
+            }
+
+            result.packages.push(Package {
+                name: gradle_package_id(&dep),
+                version: dep.version.clone(),
+                ecosystem: "Gradle".to_string(),
+                namespace: Some(dep.group.clone()),
+                dependencies: Vec::new(),
+                license: None,
+                description: None,
+                homepage: None,
+                repository: None,
+            });
+        }
+    }
+
+    result.total_packages = result.packages.len();
+    Ok(result)
+}
 
 /// Gradle dependency information
 #[derive(Debug, Clone, Serialize, Deserialize)]
