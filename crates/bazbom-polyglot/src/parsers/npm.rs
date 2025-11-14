@@ -373,8 +373,10 @@ struct PnpmLockfile {
     #[allow(dead_code)]
     lockfile_version: Option<serde_yaml::Value>,
     #[serde(default)]
+    #[allow(dead_code)]
     dependencies: HashMap<String, PnpmDependency>,
     #[serde(default)]
+    #[allow(dead_code)]
     dev_dependencies: HashMap<String, PnpmDependency>,
     #[serde(default)]
     packages: HashMap<String, PnpmPackage>,
@@ -384,11 +386,13 @@ struct PnpmLockfile {
 struct PnpmDependency {
     #[allow(dead_code)]
     specifier: Option<String>,
+    #[allow(dead_code)]
     version: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct PnpmPackage {
+    #[allow(dead_code)]
     resolution: Option<PnpmResolution>,
     #[serde(default)]
     dependencies: HashMap<String, String>,

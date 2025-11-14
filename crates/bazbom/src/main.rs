@@ -5,15 +5,12 @@ mod advisory;
 mod bazel;
 mod ci_templates;
 mod commands;
-mod errors;
-mod output;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
 mod scan;
 mod shading;
 mod smart_defaults;
-mod suggestions;
 
 use bazbom::cli::{Cli, Commands};
 use commands::*;

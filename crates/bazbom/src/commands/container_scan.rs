@@ -645,43 +645,6 @@ fn get_ecosystem_version_semantics(package: &str) -> Option<&'static str> {
     }
 }
 
-fn analyze_upgrade_impact(current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
-    // Parse semver versions
-    let current_parts: Vec<&str> = current.split('.').collect();
-    let fixed_parts: Vec<&str> = fixed.split('.').collect();
-
-    if current_parts.is_empty() || fixed_parts.is_empty() {
-        return (None, None);
-    }
-
-    // Extract major versions
-    let current_major = current_parts[0].parse::<u32>().ok();
-    let fixed_major = fixed_parts[0].parse::<u32>().ok();
-
-    if let (Some(cur), Some(fix)) = (current_major, fixed_major) {
-        if fix > cur {
-            // Major version bump - likely breaking
-            let base_msg = format!("Major version upgrade {}→{} may require code changes", cur, fix);
-            return (Some(true), Some(base_msg));
-        } else if fix == cur && fixed_parts.len() > 1 && current_parts.len() > 1 {
-            // Minor version change
-            let current_minor = current_parts[1].parse::<u32>().ok();
-            let fixed_minor = fixed_parts[1].parse::<u32>().ok();
-            if let (Some(cur_min), Some(fix_min)) = (current_minor, fixed_minor) {
-                if fix_min > cur_min + 5 {
-                    return (
-                        Some(false),
-                        Some(format!("Minor version jump {}.{}→{}.{} - review changelog", cur, cur_min, fix, fix_min)),
-                    );
-                }
-            }
-            return (Some(false), Some("Patch update - low risk".to_string()));
-        }
-    }
-
-    (None, None)
-}
-
 /// Enhanced upgrade impact analysis with framework-specific knowledge
 fn analyze_upgrade_impact_with_package(package: &str, current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
     let current_parts: Vec<&str> = current.split('.').collect();

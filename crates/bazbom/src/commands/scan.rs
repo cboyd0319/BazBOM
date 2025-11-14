@@ -26,9 +26,9 @@ pub fn handle_scan(
     containers: Option<bazbom::cli::ContainerStrategy>,
     no_upload: bool,
     target: Option<String>,
-    incremental: bool,
+    mut incremental: bool,
     base: String,
-    diff: bool,
+    mut diff: bool,
     baseline: Option<String>,
     benchmark: bool,
     ml_risk: bool,
@@ -38,22 +38,32 @@ pub fn handle_scan(
 
     // Show what we detected (if any smart defaults were applied)
     let smart_defaults_enabled = std::env::var("BAZBOM_NO_SMART_DEFAULTS").is_err();
-    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability) {
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr) {
         defaults.print_detection();
     }
 
     // Auto-enable features based on environment (only if not explicitly set)
-    if defaults.is_ci && !json && smart_defaults_enabled {
+    if defaults.enable_json && !json && smart_defaults_enabled {
         println!("  → Enabling JSON output for CI");
         json = true;
     }
 
     if defaults.enable_reachability && !reachability && !fast && smart_defaults_enabled {
-        println!("  → Enabling reachability analysis (repo < 100MB)");
+        println!("  → Enabling reachability analysis (repo < {}MB)", defaults.repo_size / 1_000_000);
         reachability = true;
     }
 
-    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability) {
+    if defaults.enable_incremental && !incremental && smart_defaults_enabled {
+        println!("  → Enabling incremental mode for PR");
+        incremental = true;
+    }
+
+    if defaults.enable_diff && !diff && baseline.is_some() && smart_defaults_enabled {
+        println!("  → Enabling diff mode (baseline found)");
+        diff = true;
+    }
+
+    if smart_defaults_enabled && (defaults.is_ci || defaults.enable_reachability || defaults.is_pr) {
         println!();
     }
 

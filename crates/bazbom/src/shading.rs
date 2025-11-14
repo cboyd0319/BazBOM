@@ -509,19 +509,19 @@ fn extract_signatures(
 #[derive(Debug, Clone)]
 enum ConstantPoolEntry {
     Utf8(String),
-    Integer(i32),
-    Float(f32),
-    Long(i64),
-    Double(f64),
+    Integer(()), // Data parsed but never used
+    Float(()),   // Data parsed but never used
+    Long(()),    // Data parsed but never used
+    Double(()),  // Data parsed but never used
     Class(u16),
-    String(u16),
-    Fieldref(u16, u16),
-    Methodref(u16, u16),
-    InterfaceMethodref(u16, u16),
-    NameAndType(u16, u16),
-    MethodHandle(u8, u16),
-    MethodType(u16),
-    InvokeDynamic(u16, u16),
+    String(()),         // Data parsed but never used
+    Fieldref((), ()),   // Data parsed but never used
+    Methodref((), ()),  // Data parsed but never used
+    InterfaceMethodref((), ()), // Data parsed but never used
+    NameAndType((), ()), // Data parsed but never used
+    MethodHandle((), ()), // Data parsed but never used
+    MethodType(()),      // Data parsed but never used
+    InvokeDynamic((), ()), // Data parsed but never used
     Invalid, // Padding entry for Long/Double
 }
 
@@ -571,47 +571,28 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let value = i32::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                ]);
+                // Parse but don't store the value
                 pos += 4;
-                ConstantPoolEntry::Integer(value)
+                ConstantPoolEntry::Integer(())
             }
             4 => {
                 // CONSTANT_Float
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let value = f32::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                ]);
+                // Parse but don't store the value
                 pos += 4;
-                ConstantPoolEntry::Float(value)
+                ConstantPoolEntry::Float(())
             }
             5 => {
                 // CONSTANT_Long
                 if pos + 8 > class_bytes.len() {
                     return None;
                 }
-                let value = i64::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                    class_bytes[pos + 4],
-                    class_bytes[pos + 5],
-                    class_bytes[pos + 6],
-                    class_bytes[pos + 7],
-                ]);
+                // Parse but don't store the value
                 pos += 8;
                 // Long and Double take 2 constant pool entries
-                constant_pool.push(ConstantPoolEntry::Long(value));
+                constant_pool.push(ConstantPoolEntry::Long(()));
                 constant_pool.push(ConstantPoolEntry::Invalid);
                 i += 1;
                 continue;
@@ -621,18 +602,9 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 8 > class_bytes.len() {
                     return None;
                 }
-                let value = f64::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                    class_bytes[pos + 4],
-                    class_bytes[pos + 5],
-                    class_bytes[pos + 6],
-                    class_bytes[pos + 7],
-                ]);
+                // Parse but don't store the value
                 pos += 8;
-                constant_pool.push(ConstantPoolEntry::Double(value));
+                constant_pool.push(ConstantPoolEntry::Double(()));
                 constant_pool.push(ConstantPoolEntry::Invalid);
                 i += 1;
                 continue;
@@ -651,86 +623,72 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 2 > class_bytes.len() {
                     return None;
                 }
-                let string_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                // Parse but don't store the value
                 pos += 2;
-                ConstantPoolEntry::String(string_index)
+                ConstantPoolEntry::String(())
             }
             9 => {
                 // CONSTANT_Fieldref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::Fieldref(class_index, name_and_type_index)
+                ConstantPoolEntry::Fieldref((), ())
             }
             10 => {
                 // CONSTANT_Methodref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::Methodref(class_index, name_and_type_index)
+                ConstantPoolEntry::Methodref((), ())
             }
             11 => {
                 // CONSTANT_InterfaceMethodref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::InterfaceMethodref(class_index, name_and_type_index)
+                ConstantPoolEntry::InterfaceMethodref((), ())
             }
             12 => {
                 // CONSTANT_NameAndType
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let name_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let descriptor_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::NameAndType(name_index, descriptor_index)
+                ConstantPoolEntry::NameAndType((), ())
             }
             15 => {
                 // CONSTANT_MethodHandle
                 if pos + 3 > class_bytes.len() {
                     return None;
                 }
-                let reference_kind = class_bytes[pos];
-                let reference_index =
-                    u16::from_be_bytes([class_bytes[pos + 1], class_bytes[pos + 2]]);
+                // Parse but don't store the values
                 pos += 3;
-                ConstantPoolEntry::MethodHandle(reference_kind, reference_index)
+                ConstantPoolEntry::MethodHandle((), ())
             }
             16 => {
                 // CONSTANT_MethodType
                 if pos + 2 > class_bytes.len() {
                     return None;
                 }
-                let descriptor_index =
-                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                // Parse but don't store the value
                 pos += 2;
-                ConstantPoolEntry::MethodType(descriptor_index)
+                ConstantPoolEntry::MethodType(())
             }
             18 => {
                 // CONSTANT_InvokeDynamic
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let bootstrap_method_attr_index =
-                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::InvokeDynamic(bootstrap_method_attr_index, name_and_type_index)
+                ConstantPoolEntry::InvokeDynamic((), ())
             }
             _ => {
                 // Unknown tag
