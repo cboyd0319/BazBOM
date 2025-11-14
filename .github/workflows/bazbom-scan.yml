@@ -30,7 +30,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "bazbom-build"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
       - name: Build BazBOM
         run: cargo build --release -p bazbom

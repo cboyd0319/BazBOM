@@ -1,0 +1,99 @@
+# cargo-deny configuration for BazBOM
+# Enforces license compliance, checks for security advisories, bans, and sources
+
+# Note: This file contains all sections supported by cargo-deny.
+# See https://embarkstudios.github.io/cargo-deny for more information.
+
+# The graph table configures how the dependency graph is constructed and thus
+# which crates the checks are performed over
+[graph]
+# Targets to check - all platforms
+targets = []
+all-features = true
+
+# Advisories configuration - check against RustSec Advisory Database
+[advisories]
+# The path where the advisory database is cloned/fetched into
+db-path = "~/.cargo/advisory-db"
+# The url(s) of the advisory databases to use
+db-urls = ["https://github.com/rustsec/advisory-db"]
+# How to handle vulnerabilities
+vulnerability = "deny"
+# How to handle unmaintained crates
+unmaintained = "warn"
+# How to handle crates with security notices
+notice = "warn"
+# Ignore specific advisories (use with caution!)
+ignore = [
+    # Example: "RUSTSEC-2020-0001",
+]
+
+# License configuration - enforce allowed licenses
+[licenses]
+# We want to deny all licenses by default, then allow specific ones
+unlicensed = "deny"
+# Allow these licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "0BSD",
+]
+# Deny these licenses explicitly (copyleft licenses)
+deny = [
+    "GPL-1.0",
+    "GPL-2.0",
+    "GPL-3.0",
+    "AGPL-1.0",
+    "AGPL-3.0",
+    "LGPL-2.0",
+    "LGPL-2.1",
+    "LGPL-3.0",
+    "EUPL-1.0",
+    "EUPL-1.1",
+    "EUPL-1.2",
+]
+# Copyleft licenses  may apply transitively
+copyleft = "deny"
+# Allow OSI and FSF approved licenses
+allow-osi-fsf-free = "neither"
+# Confidence threshold for license detection (0.0 - 1.0)
+confidence-threshold = 0.8
+# Skip checking these crates
+exceptions = [
+    # Example: allow a specific crate with a different license
+    # { allow = ["ISC"], name = "example-crate", version = "*" },
+]
+
+# Crate bans configuration
+[bans]
+# Warn on multiple versions of the same crate (dependency duplication)
+multiple-versions = "warn"
+# Warn on wildcard dependencies (e.g., "*" or "0.1.*")
+wildcards = "allow"
+# Highlight the binary crate with highest version when there are multiple
+highlight = "lowest-version"
+# Skip specific crates from being checked
+skip = [
+    # Example: { name = "example-crate", version = "=0.1.0" },
+]
+# Skip trees of crates
+skip-tree = [
+    # Example: { name = "windows-sys", depth = 20 },
+]
+
+# Crate sources configuration
+[sources]
+# Lint level for what to happen when a crate from a crate registry that is not
+# in the allow list is encountered
+unknown-registry = "deny"
+# Lint level for what to happen when a crate from a git repository that is not
+# in the allow list is encountered
+unknown-git = "deny"
+# List of URLs for allowed crate registries. Defaults to crates.io
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# List of URLs for allowed git repositories
+allow-git = []

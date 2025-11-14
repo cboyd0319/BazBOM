@@ -39,6 +39,7 @@ jobs:
     permissions:
       contents: read
       security-events: write  # For SARIF upload
+      id-token: write  # For SBOM attestation
 
     steps:
       - name: Checkout code
@@ -52,7 +53,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "rust-sbom"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
       - name: Install cargo-sbom (with retry)
         uses: nick-fields/retry@v3
@@ -67,6 +70,13 @@ jobs:
           echo "Generating SBOM for Rust dependencies..."
           cargo sbom > rust-sbom.spdx.json || echo "Note: cargo-sbom may have issues with workspace"
           echo "✓ SBOM generation complete"
+
+      - name: Generate SBOM provenance attestation
+        uses: actions/attest-sbom@v1
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          subject-path: rust-sbom.spdx.json
+          sbom-path: rust-sbom.spdx.json
 
       - name: Upload SBOM artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -98,7 +108,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "bazbom-self-scan"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
       - name: Build BazBOM
         run: cargo build --release -p bazbom
@@ -134,7 +146,9 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
-          shared-key: "license-check"
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          # Restore-only to reuse cache from rust.yml build job
+          save-if: false
 
       - name: Install cargo-deny (with retry)
         uses: nick-fields/retry@v3
@@ -147,6 +161,6 @@ jobs:
       - name: Check licenses
         run: |
           echo "Checking license compliance..."
-          cargo deny check licenses || echo "Note: Some license checks may fail"
-          echo "✓ License check complete"
-        continue-on-error: true  # Don't fail CI, just report
+          echo "This will fail if any dependencies use disallowed licenses (GPL, AGPL, etc.)"
+          cargo deny check licenses
+          echo "✓ License check complete - All dependencies use allowed licenses"
