@@ -97,6 +97,14 @@ async fn scan_ecosystem(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
         EcosystemType::Rust => parsers::rust::scan(ecosystem).await,
         EcosystemType::Ruby => parsers::ruby::scan(ecosystem).await,
         EcosystemType::Php => parsers::php::scan(ecosystem).await,
+        EcosystemType::Maven | EcosystemType::Gradle => {
+            // Maven/Gradle parsers exist but scan functions not yet implemented
+            // Return empty result for now - will be implemented in follow-up
+            Ok(EcosystemScanResult::new(
+                ecosystem.name.clone(),
+                ecosystem.root_path.display().to_string(),
+            ))
+        }
     }
 }
 

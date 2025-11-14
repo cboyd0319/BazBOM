@@ -1366,6 +1366,11 @@ async fn run_polyglot_reachability(
             bazbom_polyglot::EcosystemType::Php => {
                 analyze_php_reachability(project_path, packages).await
             }
+            bazbom_polyglot::EcosystemType::Maven | bazbom_polyglot::EcosystemType::Gradle => {
+                // Java reachability analyzer not yet implemented
+                // Return empty result for now
+                Ok(std::collections::HashSet::new())
+            }
         };
 
         // Merge results from each ecosystem
