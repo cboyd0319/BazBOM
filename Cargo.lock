@@ -346,6 +346,7 @@ dependencies = [
  "bazbom-formats",
  "bazbom-go-reachability",
  "bazbom-graph",
+ "bazbom-java-reachability",
  "bazbom-js-reachability",
  "bazbom-ml",
  "bazbom-php-reachability",
@@ -519,6 +520,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bazbom-java-reachability"
+version = "6.5.0"
+dependencies = [
+ "anyhow",
+ "petgraph",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.17",
+ "tracing",
+ "tracing-subscriber",
+ "walkdir",
+]
+
+[[package]]
 name = "bazbom-js-reachability"
 version = "6.5.0"
 dependencies = [
@@ -621,6 +637,7 @@ dependencies = [
  "anyhow",
  "bazbom-core",
  "bazbom-go-reachability",
+ "bazbom-java-reachability",
  "bazbom-js-reachability",
  "bazbom-php-reachability",
  "bazbom-python-reachability",

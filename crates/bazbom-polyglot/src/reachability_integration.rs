@@ -26,6 +26,8 @@ pub async fn analyze_reachability(
         "Rust" => analyze_rust_reachability(result, project_root).await,
         "Ruby" => analyze_ruby_reachability(result, project_root).await,
         "PHP" => analyze_php_reachability(result, project_root).await,
+        "Maven" => analyze_maven_reachability(result, project_root).await,
+        "Gradle" => analyze_gradle_reachability(result, project_root).await,
         _ => Ok(()), // Unknown ecosystem, skip reachability
     }
 }
@@ -228,6 +230,92 @@ async fn analyze_php_reachability(
             .reachable_functions
             .iter()
             .any(|func_id| func_id.contains(package_name));
+
+        vulnerable_packages_reachable.insert(package_name.clone(), is_reachable);
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+
+    Ok(())
+}
+
+/// Analyze Maven reachability
+async fn analyze_maven_reachability(
+    result: &mut EcosystemScanResult,
+    project_root: &Path,
+) -> Result<()> {
+    use bazbom_java_reachability::analyzer::JavaReachabilityAnalyzer;
+
+    let mut analyzer = JavaReachabilityAnalyzer::new();
+    let report = analyzer.analyze(project_root)?;
+
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for vuln in &result.vulnerabilities {
+        let package_name = &vuln.package_name;
+
+        // Maven packages are in format "groupId:artifactId"
+        // Check if any methods from this package are reachable
+        // Convert group.id to group/id for class path matching
+        let group_path = if let Some((group_id, _artifact_id)) = package_name.split_once(':') {
+            group_id.replace('.', "/")
+        } else {
+            package_name.replace('.', "/")
+        };
+
+        let is_reachable = report
+            .reachable_functions
+            .iter()
+            .any(|func_id| func_id.contains(&group_path));
+
+        vulnerable_packages_reachable.insert(package_name.clone(), is_reachable);
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+
+    Ok(())
+}
+
+/// Analyze Gradle reachability
+async fn analyze_gradle_reachability(
+    result: &mut EcosystemScanResult,
+    project_root: &Path,
+) -> Result<()> {
+    use bazbom_java_reachability::analyzer::JavaReachabilityAnalyzer;
+
+    let mut analyzer = JavaReachabilityAnalyzer::new();
+    let report = analyzer.analyze(project_root)?;
+
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for vuln in &result.vulnerabilities {
+        let package_name = &vuln.package_name;
+
+        // Gradle packages are also in format "groupId:artifactId"
+        // Check if any methods from this package are reachable
+        // Convert group.id to group/id for class path matching
+        let group_path = if let Some((group_id, _artifact_id)) = package_name.split_once(':') {
+            group_id.replace('.', "/")
+        } else {
+            package_name.replace('.', "/")
+        };
+
+        let is_reachable = report
+            .reachable_functions
+            .iter()
+            .any(|func_id| func_id.contains(&group_path));
 
         vulnerable_packages_reachable.insert(package_name.clone(), is_reachable);
     }

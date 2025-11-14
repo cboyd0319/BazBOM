@@ -37,6 +37,7 @@ bazbom-php-reachability = { path = "../bazbom-php-reachability" }
 bazbom-go-reachability = { path = "../bazbom-go-reachability" }
 bazbom-python-reachability = { path = "../bazbom-python-reachability" }
 bazbom-js-reachability = { path = "../bazbom-js-reachability" }
+bazbom-java-reachability = { path = "../bazbom-java-reachability" }
 
 # File system
 walkdir = "2.5"

@@ -1367,9 +1367,7 @@ async fn run_polyglot_reachability(
                 analyze_php_reachability(project_path, packages).await
             }
             bazbom_polyglot::EcosystemType::Maven | bazbom_polyglot::EcosystemType::Gradle => {
-                // Java reachability analyzer not yet implemented
-                // Return empty result for now
-                Ok(std::collections::HashSet::new())
+                analyze_java_reachability(project_path, packages).await
             }
         };
 
@@ -1520,6 +1518,30 @@ async fn analyze_php_reachability(
     use bazbom_php_reachability::analyze_php_project;
 
     let report = analyze_php_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Java/Maven/Gradle package reachability using call graph
+async fn analyze_java_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_java_reachability::analyze_java_project;
+
+    let report = analyze_java_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
 
     for (package, _cves) in packages {
