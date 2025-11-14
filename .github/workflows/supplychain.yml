@@ -3,8 +3,18 @@ name: Supply Chain Security
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - '.github/workflows/supplychain.yml'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'crates/**'
+      - '.github/workflows/supplychain.yml'
   schedule:
     # Run daily at 2 AM UTC
     - cron: '0 2 * * *'
@@ -44,8 +54,13 @@ jobs:
         with:
           shared-key: "rust-sbom"
 
-      - name: Install cargo-sbom
-        run: cargo install cargo-sbom
+      - name: Install cargo-sbom (with retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: cargo install cargo-sbom
 
       - name: Generate Rust SBOM
         run: |
@@ -121,8 +136,13 @@ jobs:
         with:
           shared-key: "license-check"
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny
+      - name: Install cargo-deny (with retry)
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 10
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: cargo install cargo-deny
 
       - name: Check licenses
         run: |

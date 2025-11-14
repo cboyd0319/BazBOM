@@ -3,8 +3,16 @@ name: CodeQL Security Scanning
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'examples/**/*.md'
   pull_request:
     branches: [ main ]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+      - 'examples/**/*.md'
   schedule:
     # Run CodeQL analysis weekly on Monday at 3 AM UTC
     - cron: '0 3 * * 1'
@@ -52,7 +60,7 @@ jobs:
             ${{ runner.os }}-codeql-${{ matrix.language }}-
       
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
           # Use lighter query suite for PRs, comprehensive for scheduled runs
@@ -72,14 +80,14 @@ jobs:
             ram: 6144
       
       - name: Autobuild
-        uses: github/codeql-action/autobuild@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/autobuild@v4
         env:
           # Optimize Rust build for CodeQL
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-C opt-level=0"
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/analyze@v4
         with:
           category: "/language:${{matrix.language}}"
           # Upload SARIF to GitHub Security tab
@@ -90,13 +98,13 @@ jobs:
           add-snippets: ${{ github.event_name != 'pull_request' }}
       
       - name: Upload CodeQL SARIF
-        uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # v3.27.9
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: sarif-results/${{ matrix.language }}.sarif
       
       - name: Upload SARIF as artifact
-        uses: actions/upload-artifact@84480863f228bb9747b473957fcc9e309aa96097 # v4.4.2
+        uses: actions/upload-artifact@v4
         if: always()
         with:
           name: codeql-sarif-${{ matrix.language }}
