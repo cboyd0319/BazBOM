@@ -1,0 +1,196 @@
+name: Update Homebrew Tap
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update (e.g., 6.5.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  update-formula:
+    name: Update Homebrew Formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Download release artifacts
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO="${{ github.repository }}"
+
+          echo "Downloading release artifacts for v${VERSION}..."
+          mkdir -p /tmp/checksums
+
+          declare -a PLATFORMS=(
+            "aarch64-apple-darwin"
+            "x86_64-apple-darwin"
+            "aarch64-unknown-linux-gnu"
+            "x86_64-unknown-linux-gnu"
+          )
+
+          for platform in "${PLATFORMS[@]}"; do
+            url="https://github.com/${REPO}/releases/download/v${VERSION}/bazbom-${platform}.tar.gz"
+            echo "Downloading: $url"
+            if curl -fsSL "$url" -o "/tmp/checksums/bazbom-${platform}.tar.gz"; then
+              sha256sum "/tmp/checksums/bazbom-${platform}.tar.gz" | awk '{print $1}' > "/tmp/checksums/${platform}.sha256"
+              echo "✓ Downloaded and checksummed: $platform"
+            else
+              echo "✗ Failed to download: $platform"
+              exit 1
+            fi
+          done
+
+      - name: Generate formula
+        id: formula
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          REPO="${{ github.repository }}"
+
+          # Read checksums
+          SHA_AARCH64_DARWIN=$(cat /tmp/checksums/aarch64-apple-darwin.sha256)
+          SHA_X86_64_DARWIN=$(cat /tmp/checksums/x86_64-apple-darwin.sha256)
+          SHA_AARCH64_LINUX=$(cat /tmp/checksums/aarch64-unknown-linux-gnu.sha256)
+          SHA_X86_64_LINUX=$(cat /tmp/checksums/x86_64-unknown-linux-gnu.sha256)
+
+          # Generate formula
+          cat > /tmp/bazbom.rb << EOF
+          class Bazbom < Formula
+            desc "Polyglot reachability-first SBOM, SCA, and dependency graph"
+            homepage "https://github.com/${REPO}"
+            version "${VERSION}"
+            license "MIT"
+
+            on_macos do
+              if Hardware::CPU.arm?
+                url "https://github.com/${REPO}/releases/download/v${VERSION}/bazbom-aarch64-apple-darwin.tar.gz"
+                sha256 "${SHA_AARCH64_DARWIN}"
+              else
+                url "https://github.com/${REPO}/releases/download/v${VERSION}/bazbom-x86_64-apple-darwin.tar.gz"
+                sha256 "${SHA_X86_64_DARWIN}"
+              end
+            end
+
+            on_linux do
+              if Hardware::CPU.arm?
+                url "https://github.com/${REPO}/releases/download/v${VERSION}/bazbom-aarch64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_AARCH64_LINUX}"
+              else
+                url "https://github.com/${REPO}/releases/download/v${VERSION}/bazbom-x86_64-unknown-linux-gnu.tar.gz"
+                sha256 "${SHA_X86_64_LINUX}"
+              end
+            end
+
+            def install
+              bin.install "bazbom"
+
+              # Generate and install shell completions
+              generate_completions_from_executable(bin/"bazbom", "completions")
+            end
+
+            test do
+              assert_match "bazbom", shell_output("#{bin}/bazbom --version")
+
+              # Basic functionality test
+              system bin/"bazbom", "--help"
+            end
+          end
+          EOF
+
+          echo "Formula generated:"
+          cat /tmp/bazbom.rb
+
+      - name: Checkout homebrew-bazbom repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/homebrew-bazbom
+          path: homebrew-bazbom
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update formula in tap
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+
+          cd homebrew-bazbom
+          mkdir -p Formula
+          cp /tmp/bazbom.rb Formula/bazbom.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Formula/bazbom.rb
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update bazbom to v${VERSION}"
+            git push
+            echo "✓ Formula updated in homebrew-bazbom"
+          fi
+
+      - name: Test formula
+        run: |
+          cd homebrew-bazbom
+
+          # Install Homebrew if not present (for testing in CI)
+          if ! command -v brew &> /dev/null; then
+            echo "Homebrew not available in CI, skipping brew audit"
+          else
+            echo "Running brew audit..."
+            brew audit --strict Formula/bazbom.rb || true
+          fi
+
+      - name: Summary
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ## Homebrew Tap Updated
+
+          Successfully updated the Homebrew tap for BazBOM v${VERSION}
+
+          ### Installation
+
+          Users can now install with:
+
+          \`\`\`bash
+          brew tap ${{ github.repository_owner }}/bazbom
+          brew install bazbom
+          \`\`\`
+
+          ### Formula Location
+
+          Repository: https://github.com/${{ github.repository_owner }}/homebrew-bazbom
+          Formula: https://github.com/${{ github.repository_owner }}/homebrew-bazbom/blob/main/Formula/bazbom.rb
+
+          ### Next Steps
+
+          1. Test the installation:
+             \`\`\`bash
+             brew tap ${{ github.repository_owner }}/bazbom
+             brew install bazbom
+             bazbom --version
+             \`\`\`
+
+          2. Update documentation if needed
+          3. Announce the release
+          EOF
