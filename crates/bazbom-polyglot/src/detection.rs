@@ -23,6 +23,10 @@ pub enum EcosystemType {
     Ruby,
     /// PHP Composer ecosystem
     Php,
+    /// Maven (Java) ecosystem
+    Maven,
+    /// Gradle (Java) ecosystem
+    Gradle,
 }
 
 impl EcosystemType {
@@ -34,6 +38,8 @@ impl EcosystemType {
             EcosystemType::Rust => "Rust",
             EcosystemType::Ruby => "Ruby",
             EcosystemType::Php => "PHP",
+            EcosystemType::Maven => "Maven",
+            EcosystemType::Gradle => "Gradle",
         }
     }
 
@@ -45,6 +51,8 @@ impl EcosystemType {
             EcosystemType::Rust => "🦀",
             EcosystemType::Ruby => "💎",
             EcosystemType::Php => "🐘",
+            EcosystemType::Maven => "☕",
+            EcosystemType::Gradle => "🐘",
         }
     }
 }
@@ -176,6 +184,27 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
                     let lockfile = find_lockfile(&dir_path, &["composer.lock"]);
                     ecosystems.push(Ecosystem::new(
                         EcosystemType::Php,
+                        dir_path.clone(),
+                        Some(file_path.to_path_buf()),
+                        lockfile,
+                    ));
+                }
+
+                // Maven
+                "pom.xml" => {
+                    ecosystems.push(Ecosystem::new(
+                        EcosystemType::Maven,
+                        dir_path.clone(),
+                        Some(file_path.to_path_buf()),
+                        None,  // Maven doesn't use a traditional lockfile
+                    ));
+                }
+
+                // Gradle
+                "build.gradle" | "build.gradle.kts" => {
+                    let lockfile = find_lockfile(&dir_path, &["gradle.lockfile"]);
+                    ecosystems.push(Ecosystem::new(
+                        EcosystemType::Gradle,
                         dir_path.clone(),
                         Some(file_path.to_path_buf()),
                         lockfile,

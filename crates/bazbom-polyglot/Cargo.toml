@@ -15,9 +15,10 @@ serde_json = "1.0"
 thiserror = "2.0"
 
 # Lockfile parsers
-cargo-lock = "9.0"  # Rust Cargo.lock parser
+cargo-lock = "11.0"  # Rust Cargo.lock parser
 serde_yaml = "0.9"  # YAML parsing
 toml = "0.9"  # Python poetry.lock TOML parser
+serde-xml-rs = "0.6"  # Maven pom.xml parser
 
 # HTTP client for OSV API
 reqwest = { version = "0.12", features = ["json"] }
@@ -36,6 +37,7 @@ bazbom-php-reachability = { path = "../bazbom-php-reachability" }
 bazbom-go-reachability = { path = "../bazbom-go-reachability" }
 bazbom-python-reachability = { path = "../bazbom-python-reachability" }
 bazbom-js-reachability = { path = "../bazbom-js-reachability" }
+bazbom-java-reachability = { path = "../bazbom-java-reachability" }
 
 # File system
 walkdir = "2.5"

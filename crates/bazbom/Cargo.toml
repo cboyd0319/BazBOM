@@ -24,7 +24,7 @@ toml = "0.9"
 blake3 = "1"
 chrono = "0.4"
 quick-xml = "0.38"
-zip = "2.2"
+zip = "6.0"
 tracing = "0.1"
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
@@ -47,6 +47,7 @@ bazbom-go-reachability = { path = "../bazbom-go-reachability" }
 bazbom-rust-reachability = { path = "../bazbom-rust-reachability" }
 bazbom-ruby-reachability = { path = "../bazbom-ruby-reachability" }
 bazbom-php-reachability = { path = "../bazbom-php-reachability" }
+bazbom-java-reachability = { path = "../bazbom-java-reachability" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"
@@ -59,7 +60,7 @@ tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
 webbrowser = "1.0"
 num_cpus = "1.17"
 rayon = "1.11"
-colored = "2"
+colored = "3.0"
 
 [dev-dependencies]
 assert_cmd = "2"

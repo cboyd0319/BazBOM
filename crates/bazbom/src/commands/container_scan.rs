@@ -645,43 +645,6 @@ fn get_ecosystem_version_semantics(package: &str) -> Option<&'static str> {
     }
 }
 
-fn analyze_upgrade_impact(current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
-    // Parse semver versions
-    let current_parts: Vec<&str> = current.split('.').collect();
-    let fixed_parts: Vec<&str> = fixed.split('.').collect();
-
-    if current_parts.is_empty() || fixed_parts.is_empty() {
-        return (None, None);
-    }
-
-    // Extract major versions
-    let current_major = current_parts[0].parse::<u32>().ok();
-    let fixed_major = fixed_parts[0].parse::<u32>().ok();
-
-    if let (Some(cur), Some(fix)) = (current_major, fixed_major) {
-        if fix > cur {
-            // Major version bump - likely breaking
-            let base_msg = format!("Major version upgrade {}→{} may require code changes", cur, fix);
-            return (Some(true), Some(base_msg));
-        } else if fix == cur && fixed_parts.len() > 1 && current_parts.len() > 1 {
-            // Minor version change
-            let current_minor = current_parts[1].parse::<u32>().ok();
-            let fixed_minor = fixed_parts[1].parse::<u32>().ok();
-            if let (Some(cur_min), Some(fix_min)) = (current_minor, fixed_minor) {
-                if fix_min > cur_min + 5 {
-                    return (
-                        Some(false),
-                        Some(format!("Minor version jump {}.{}→{}.{} - review changelog", cur, cur_min, fix, fix_min)),
-                    );
-                }
-            }
-            return (Some(false), Some("Patch update - low risk".to_string()));
-        }
-    }
-
-    (None, None)
-}
-
 /// Enhanced upgrade impact analysis with framework-specific knowledge
 fn analyze_upgrade_impact_with_package(package: &str, current: &str, fixed: &str) -> (Option<bool>, Option<String>) {
     let current_parts: Vec<&str> = current.split('.').collect();
@@ -1366,6 +1329,9 @@ async fn run_polyglot_reachability(
             bazbom_polyglot::EcosystemType::Php => {
                 analyze_php_reachability(project_path, packages).await
             }
+            bazbom_polyglot::EcosystemType::Maven | bazbom_polyglot::EcosystemType::Gradle => {
+                analyze_java_reachability(project_path, packages).await
+            }
         };
 
         // Merge results from each ecosystem
@@ -1515,6 +1481,30 @@ async fn analyze_php_reachability(
     use bazbom_php_reachability::analyze_php_project;
 
     let report = analyze_php_project(project_path)?;
+    let mut reachable = std::collections::HashSet::new();
+
+    for (package, _cves) in packages {
+        let is_reachable = report
+            .vulnerabilities
+            .iter()
+            .any(|v| &v.package == package && v.reachable);
+
+        if is_reachable {
+            reachable.insert(package.clone());
+        }
+    }
+
+    Ok(reachable)
+}
+
+/// Analyze Java/Maven/Gradle package reachability using call graph
+async fn analyze_java_reachability(
+    project_path: &Path,
+    packages: &HashMap<String, Vec<String>>,
+) -> Result<std::collections::HashSet<String>> {
+    use bazbom_java_reachability::analyze_java_project;
+
+    let report = analyze_java_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
 
     for (package, _cves) in packages {
@@ -1792,6 +1782,24 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
         println!();
     }
 
+    // Extract Java artifacts count from SBOM if available
+    let java_artifacts = if let Ok(sbom_content) = std::fs::read_to_string(opts.output_dir.join("sbom").join("spdx.json")) {
+        if let Ok(sbom) = serde_json::from_str::<serde_json::Value>(&sbom_content) {
+            sbom.get("components")
+                .and_then(|c| c.as_array())
+                .map(|arr| arr.iter().filter(|comp| {
+                    comp.get("type").and_then(|t| t.as_str()) == Some("library") &&
+                    comp.get("group").and_then(|g| g.as_str()).map(|g| g.contains('.') || g.contains('/'))
+                        .unwrap_or(false)
+                }).count())
+                .unwrap_or(0)
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+
     // Show container summary
     let summary = ContainerSummary {
         image_name: filtered_results.image_name.clone(),
@@ -1799,7 +1807,7 @@ fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) 
         base_image: filtered_results.base_image.clone(),
         total_layers: filtered_results.layers.len(),
         total_size_mb: filtered_results.layers.iter().map(|l| l.size_mb).sum(),
-        java_artifacts: 0, // TODO: Extract from SBOM
+        java_artifacts,
         vulnerabilities: filtered_results.total_vulnerabilities,
         critical_vulns: filtered_results.critical_count,
         high_vulns: filtered_results.high_count,

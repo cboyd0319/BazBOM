@@ -87,13 +87,18 @@ pub fn query_package_vulnerabilities(
     };
 
     let url = format!("{}/query", OSV_API_BASE);
-    let response = ureq::post(&url)
-        .timeout(std::time::Duration::from_secs(10))
+    let config = ureq::Agent::config_builder()
+        .timeout_global(Some(std::time::Duration::from_secs(10)))
+        .build();
+    let agent: ureq::Agent = config.into();
+    let mut response = agent
+        .post(&url)
         .send_json(&request)
         .context("OSV API request failed")?;
 
     let osv_response: OsvQueryResponse = response
-        .into_json()
+        .body_mut()
+        .read_json()
         .context("failed to parse OSV response")?;
 
     Ok(osv_response

@@ -509,19 +509,19 @@ fn extract_signatures(
 #[derive(Debug, Clone)]
 enum ConstantPoolEntry {
     Utf8(String),
-    Integer(i32),
-    Float(f32),
-    Long(i64),
-    Double(f64),
+    Integer(()), // Data parsed but never used
+    Float(()),   // Data parsed but never used
+    Long(()),    // Data parsed but never used
+    Double(()),  // Data parsed but never used
     Class(u16),
-    String(u16),
-    Fieldref(u16, u16),
-    Methodref(u16, u16),
-    InterfaceMethodref(u16, u16),
-    NameAndType(u16, u16),
-    MethodHandle(u8, u16),
-    MethodType(u16),
-    InvokeDynamic(u16, u16),
+    String(()),         // Data parsed but never used
+    Fieldref((), ()),   // Data parsed but never used
+    Methodref((), ()),  // Data parsed but never used
+    InterfaceMethodref((), ()), // Data parsed but never used
+    NameAndType((), ()), // Data parsed but never used
+    MethodHandle((), ()), // Data parsed but never used
+    MethodType(()),      // Data parsed but never used
+    InvokeDynamic((), ()), // Data parsed but never used
     Invalid, // Padding entry for Long/Double
 }
 
@@ -571,47 +571,28 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let value = i32::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                ]);
+                // Parse but don't store the value
                 pos += 4;
-                ConstantPoolEntry::Integer(value)
+                ConstantPoolEntry::Integer(())
             }
             4 => {
                 // CONSTANT_Float
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let value = f32::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                ]);
+                // Parse but don't store the value
                 pos += 4;
-                ConstantPoolEntry::Float(value)
+                ConstantPoolEntry::Float(())
             }
             5 => {
                 // CONSTANT_Long
                 if pos + 8 > class_bytes.len() {
                     return None;
                 }
-                let value = i64::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                    class_bytes[pos + 4],
-                    class_bytes[pos + 5],
-                    class_bytes[pos + 6],
-                    class_bytes[pos + 7],
-                ]);
+                // Parse but don't store the value
                 pos += 8;
                 // Long and Double take 2 constant pool entries
-                constant_pool.push(ConstantPoolEntry::Long(value));
+                constant_pool.push(ConstantPoolEntry::Long(()));
                 constant_pool.push(ConstantPoolEntry::Invalid);
                 i += 1;
                 continue;
@@ -621,18 +602,9 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 8 > class_bytes.len() {
                     return None;
                 }
-                let value = f64::from_be_bytes([
-                    class_bytes[pos],
-                    class_bytes[pos + 1],
-                    class_bytes[pos + 2],
-                    class_bytes[pos + 3],
-                    class_bytes[pos + 4],
-                    class_bytes[pos + 5],
-                    class_bytes[pos + 6],
-                    class_bytes[pos + 7],
-                ]);
+                // Parse but don't store the value
                 pos += 8;
-                constant_pool.push(ConstantPoolEntry::Double(value));
+                constant_pool.push(ConstantPoolEntry::Double(()));
                 constant_pool.push(ConstantPoolEntry::Invalid);
                 i += 1;
                 continue;
@@ -651,86 +623,72 @@ fn parse_constant_pool(class_bytes: &[u8]) -> Option<Vec<ConstantPoolEntry>> {
                 if pos + 2 > class_bytes.len() {
                     return None;
                 }
-                let string_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                // Parse but don't store the value
                 pos += 2;
-                ConstantPoolEntry::String(string_index)
+                ConstantPoolEntry::String(())
             }
             9 => {
                 // CONSTANT_Fieldref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::Fieldref(class_index, name_and_type_index)
+                ConstantPoolEntry::Fieldref((), ())
             }
             10 => {
                 // CONSTANT_Methodref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::Methodref(class_index, name_and_type_index)
+                ConstantPoolEntry::Methodref((), ())
             }
             11 => {
                 // CONSTANT_InterfaceMethodref
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let class_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::InterfaceMethodref(class_index, name_and_type_index)
+                ConstantPoolEntry::InterfaceMethodref((), ())
             }
             12 => {
                 // CONSTANT_NameAndType
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let name_index = u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let descriptor_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::NameAndType(name_index, descriptor_index)
+                ConstantPoolEntry::NameAndType((), ())
             }
             15 => {
                 // CONSTANT_MethodHandle
                 if pos + 3 > class_bytes.len() {
                     return None;
                 }
-                let reference_kind = class_bytes[pos];
-                let reference_index =
-                    u16::from_be_bytes([class_bytes[pos + 1], class_bytes[pos + 2]]);
+                // Parse but don't store the values
                 pos += 3;
-                ConstantPoolEntry::MethodHandle(reference_kind, reference_index)
+                ConstantPoolEntry::MethodHandle((), ())
             }
             16 => {
                 // CONSTANT_MethodType
                 if pos + 2 > class_bytes.len() {
                     return None;
                 }
-                let descriptor_index =
-                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
+                // Parse but don't store the value
                 pos += 2;
-                ConstantPoolEntry::MethodType(descriptor_index)
+                ConstantPoolEntry::MethodType(())
             }
             18 => {
                 // CONSTANT_InvokeDynamic
                 if pos + 4 > class_bytes.len() {
                     return None;
                 }
-                let bootstrap_method_attr_index =
-                    u16::from_be_bytes([class_bytes[pos], class_bytes[pos + 1]]);
-                let name_and_type_index =
-                    u16::from_be_bytes([class_bytes[pos + 2], class_bytes[pos + 3]]);
+                // Parse but don't store the values
                 pos += 4;
-                ConstantPoolEntry::InvokeDynamic(bootstrap_method_attr_index, name_and_type_index)
+                ConstantPoolEntry::InvokeDynamic((), ())
             }
             _ => {
                 // Unknown tag
@@ -1155,10 +1113,53 @@ mod tests {
 
     #[test]
     fn test_fingerprint_class() {
-        let dummy_bytes = b"dummy class bytes";
-        let fingerprint = fingerprint_class(dummy_bytes).unwrap();
+        // Create a minimal valid Java class file
+        // Magic: CAFEBABE, Minor: 0000, Major: 0034 (Java 8)
+        // CP Count: 0004 (4 entries including index 0)
+        let mut class_bytes = vec![
+            0xCA, 0xFE, 0xBA, 0xBE, // magic
+            0x00, 0x00, // minor version
+            0x00, 0x34, // major version (Java 8)
+            0x00, 0x04, // constant pool count (4)
+            // CP entry 1: CONSTANT_Utf8 "java/lang/Object"
+            0x01, 0x00, 0x10, // tag=1, length=16
+            0x6A, 0x61, 0x76, 0x61, 0x2F, 0x6C, 0x61, 0x6E, 0x67, 0x2F, 0x4F, 0x62, 0x6A, 0x65, 0x63, 0x74,
+            // CP entry 2: CONSTANT_Class (ref to entry 1)
+            0x07, 0x00, 0x01,
+            // CP entry 3: CONSTANT_Utf8 "TestClass"
+            0x01, 0x00, 0x09, // tag=1, length=9
+            0x54, 0x65, 0x73, 0x74, 0x43, 0x6C, 0x61, 0x73, 0x73,
+            // Access flags: public (0x0021)
+            0x00, 0x21,
+            // This class: 0 (invalid for testing, but minimal)
+            0x00, 0x00,
+            // Super class: entry 2
+            0x00, 0x02,
+            // Interfaces count: 0
+            0x00, 0x00,
+            // Fields count: 0
+            0x00, 0x00,
+            // Methods count: 0
+            0x00, 0x00,
+            // Attributes count: 0
+            0x00, 0x00,
+        ];
 
-        assert_eq!(fingerprint.bytecodeHash.len(), 64); // Blake3 hash length
+        let fingerprint = fingerprint_class(&class_bytes).unwrap();
+
+        // Verify the hash is Blake3 length (64 hex chars)
+        assert_eq!(fingerprint.bytecodeHash.len(), 64);
+        // Verify class name was extracted
+        assert!(!fingerprint.className.is_empty());
+    }
+
+    #[test]
+    fn test_fingerprint_class_invalid_bytes() {
+        // Test that invalid bytes return an error
+        let dummy_bytes = b"dummy class bytes";
+        let result = fingerprint_class(dummy_bytes);
+
+        assert!(result.is_err(), "Should fail on invalid class bytes");
     }
 
     #[test]

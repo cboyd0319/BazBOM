@@ -168,7 +168,8 @@ impl JsReachabilityAnalyzer {
             reachable_functions,
             unreachable_functions,
             entrypoints: entrypoint_ids,
-            vulnerabilities: Vec::new(), // TODO: Integrate with vulnerability database
+            // Vulnerabilities are populated by bazbom-polyglot's reachability_integration module
+            vulnerabilities: Vec::new(),
         })
     }
 

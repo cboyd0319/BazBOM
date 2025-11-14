@@ -65,9 +65,9 @@ fn write_file<P: AsRef<Path>>(path: P, content: &[u8]) -> Result<ManifestEntry> 
 
 fn fetch_or_placeholder(url: &str, placeholder: &[u8]) -> Vec<u8> {
     match ureq::get(url).call() {
-        Ok(resp) if resp.status() == 200 => {
+        Ok(mut resp) if resp.status() == 200 => {
             let mut buf = Vec::new();
-            if resp.into_reader().read_to_end(&mut buf).is_ok() {
+            if resp.body_mut().as_reader().read_to_end(&mut buf).is_ok() {
                 buf
             } else {
                 placeholder.to_vec()

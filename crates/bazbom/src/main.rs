@@ -5,15 +5,12 @@ mod advisory;
 mod bazel;
 mod ci_templates;
 mod commands;
-mod errors;
-mod output;
 mod policy_integration;
 mod reachability;
 mod reachability_cache;
 mod scan;
 mod shading;
 mod smart_defaults;
-mod suggestions;
 
 use bazbom::cli::{Cli, Commands};
 use commands::*;
@@ -359,7 +356,7 @@ async fn main() -> Result<()> {
                 None,              // autofix
                 None,              // containers
                 true,              // no_upload
-                None,              // target - TODO: auto-detect main module
+                auto_detect_main_module("."),  // target - auto-detected
                 false,             // incremental
                 "main".into(),     // base
                 false,             // diff

@@ -134,20 +134,38 @@ fn policy_check_command() {
 
 #[test]
 fn fix_suggest_command() {
+    // Create a minimal sca_findings.json with empty vulnerabilities
+    std::fs::write(
+        "sca_findings.json",
+        r#"{"vulnerabilities": []}"#
+    ).expect("Failed to create test findings file");
+
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
     cmd.arg("fix").arg("--suggest");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("suggest=true"));
+        .stdout(predicate::str::contains("No vulnerabilities found"));
+
+    // Cleanup
+    let _ = std::fs::remove_file("sca_findings.json");
 }
 
 #[test]
 fn fix_apply_command() {
+    // Create a minimal sca_findings.json with empty vulnerabilities
+    std::fs::write(
+        "sca_findings.json",
+        r#"{"vulnerabilities": []}"#
+    ).expect("Failed to create test findings file");
+
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
     cmd.arg("fix").arg("--apply");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("apply=true"));
+        .stdout(predicate::str::contains("No vulnerabilities found"));
+
+    // Cleanup
+    let _ = std::fs::remove_file("sca_findings.json");
 }
 
 #[test]

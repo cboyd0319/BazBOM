@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::Duration;
 
 /// Handle the `bazbom watch` command
 pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<()> {
