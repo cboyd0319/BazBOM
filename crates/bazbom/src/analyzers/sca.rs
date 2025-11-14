@@ -241,6 +241,7 @@ impl ScaAnalyzer {
                                                                 location: component
                                                                     .location
                                                                     .clone(),
+                                                                reachable: None, // Will be populated later
                                                             });
                                                         }
                                                         Ok(false) => {
@@ -275,6 +276,7 @@ impl ScaAnalyzer {
                                                                 location: component
                                                                     .location
                                                                     .clone(),
+                                                                reachable: None, // Will be populated later
                                                             });
                                                         }
                                                     }
@@ -369,6 +371,69 @@ impl ScaAnalyzer {
         Some(Priority::P3)
     }
 
+    fn enrich_with_reachability(&self, ctx: &Context, matches: &mut [VulnerabilityMatch]) -> Result<()> {
+        // Load reachability data from polyglot-sbom.json
+        let polyglot_sbom_path = ctx.sbom_dir.join("polyglot-sbom.json");
+
+        if !polyglot_sbom_path.exists() {
+            // No reachability data available, skip enrichment
+            return Ok(());
+        }
+
+        let content = std::fs::read_to_string(&polyglot_sbom_path)
+            .context("Failed to read polyglot-sbom.json")?;
+        let sbom: serde_json::Value = serde_json::from_str(&content)
+            .context("Failed to parse polyglot-sbom.json")?;
+
+        // Extract reachability data from ecosystems
+        let mut reachability_map: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+
+        if let Some(ecosystems) = sbom.get("ecosystems").and_then(|e| e.as_array()) {
+            for ecosystem in ecosystems {
+                if let Some(reachability) = ecosystem.get("reachability") {
+                    if let Some(vulnerable_packages) = reachability.get("vulnerable_packages_reachable").and_then(|v| v.as_object()) {
+                        for (package, is_reachable) in vulnerable_packages {
+                            if let Some(reachable_bool) = is_reachable.as_bool() {
+                                reachability_map.insert(package.clone(), reachable_bool);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if !reachability_map.is_empty() {
+            println!("[bazbom] loaded reachability data for {} packages", reachability_map.len());
+
+            // Enrich vulnerability matches with reachability data
+            for vuln_match in matches.iter_mut() {
+                // Try exact match first
+                if let Some(&is_reachable) = reachability_map.get(&vuln_match.component_name) {
+                    vuln_match.reachable = Some(is_reachable);
+                } else {
+                    // Try fuzzy matching (e.g., "@org/package" vs "org/package")
+                    let simplified_name = vuln_match.component_name
+                        .trim_start_matches('@')
+                        .replace(':', "/");
+
+                    if let Some(&is_reachable) = reachability_map.get(&simplified_name) {
+                        vuln_match.reachable = Some(is_reachable);
+                    }
+                }
+            }
+
+            let reachable_count = matches.iter().filter(|m| m.reachable == Some(true)).count();
+            let unreachable_count = matches.iter().filter(|m| m.reachable == Some(false)).count();
+
+            if reachable_count > 0 || unreachable_count > 0 {
+                println!("[bazbom] reachability analysis: {} reachable, {} unreachable",
+                    reachable_count, unreachable_count);
+            }
+        }
+
+        Ok(())
+    }
+
     fn create_sarif_results(&self, matches: Vec<VulnerabilityMatch>) -> Vec<SarifResult> {
         matches
             .into_iter()
@@ -401,6 +466,19 @@ impl ScaAnalyzer {
                     );
                 }
 
+                // Add reachability information
+                match m.reachable {
+                    Some(true) => {
+                        message_parts.push("[!] Code is REACHABLE - vulnerability is exploitable".to_string());
+                    }
+                    Some(false) => {
+                        message_parts.push("[✓] Code is UNREACHABLE - vulnerability not exploitable".to_string());
+                    }
+                    None => {
+                        // Reachability unknown, don't add a message
+                    }
+                }
+
                 let mut properties = serde_json::json!({
                     "vulnerability_id": m.vulnerability_id,
                     "component": m.component_name,
@@ -417,6 +495,10 @@ impl ScaAnalyzer {
 
                 if let Some(priority) = m.priority {
                     properties["priority"] = serde_json::json!(format!("{:?}", priority));
+                }
+
+                if let Some(reachable) = m.reachable {
+                    properties["reachable"] = serde_json::json!(reachable);
                 }
 
                 SarifResult {
@@ -465,6 +547,7 @@ struct VulnerabilityMatch {
     in_kev: bool,
     priority: Option<Priority>,
     location: String,
+    reachable: Option<bool>,
 }
 
 impl Analyzer for ScaAnalyzer {
@@ -498,11 +581,14 @@ impl Analyzer for ScaAnalyzer {
         println!("[bazbom] loaded {} components from SBOM", components.len());
 
         // Match vulnerabilities
-        let matches = self
+        let mut matches = self
             .match_vulnerabilities(&components, &advisory_dir)
             .context("failed to match vulnerabilities")?;
 
         println!("[bazbom] found {} vulnerability matches", matches.len());
+
+        // Enrich with reachability data
+        self.enrich_with_reachability(ctx, &mut matches)?;
 
         // Create SARIF report
         let mut report = SarifReport::new("BazBOM-SCA", env!("CARGO_PKG_VERSION"));

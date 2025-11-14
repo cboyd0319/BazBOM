@@ -25,7 +25,8 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
     // Parse build.gradle or build.gradle.kts if available
     if let Some(ref manifest_path) = ecosystem.manifest_file {
-        let dependencies = parse_gradle(manifest_path)?;
+        // Parse with multi-module support
+        let dependencies = parse_gradle_with_modules(manifest_path)?;
 
         for dep in dependencies {
             // Skip test dependencies by default (can be made configurable)
@@ -58,6 +59,113 @@ pub struct GradleDependency {
     pub name: String,
     pub version: String,
     pub configuration: String,
+}
+
+/// Parse a Gradle project with multi-module support
+pub fn parse_gradle_with_modules(gradle_path: &Path) -> Result<Vec<GradleDependency>> {
+    let mut all_dependencies = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    // Parse root build.gradle
+    let root_deps = parse_gradle(gradle_path)?;
+    for dep in root_deps {
+        let key = format!("{}:{}:{}", dep.group, dep.name, dep.version);
+        if seen.insert(key) {
+            all_dependencies.push(dep);
+        }
+    }
+
+    // Check for settings.gradle to find sub-projects
+    let project_root = gradle_path.parent().unwrap_or(Path::new("."));
+    let settings_gradle = project_root.join("settings.gradle");
+    let settings_gradle_kts = project_root.join("settings.gradle.kts");
+
+    let settings_path = if settings_gradle.exists() {
+        Some(settings_gradle)
+    } else if settings_gradle_kts.exists() {
+        Some(settings_gradle_kts)
+    } else {
+        None
+    };
+
+    if let Some(settings_path) = settings_path {
+        // Parse settings.gradle to find included modules
+        if let Ok(modules) = parse_settings_gradle(&settings_path) {
+            for module_name in modules {
+                // Module paths can be like ":subproject" or "subproject"
+                let module_dir_name = module_name.trim_start_matches(':').replace(':', "/");
+                let module_dir = project_root.join(&module_dir_name);
+
+                // Try build.gradle first, then build.gradle.kts
+                let build_gradle = module_dir.join("build.gradle");
+                let build_gradle_kts = module_dir.join("build.gradle.kts");
+
+                let module_build_path = if build_gradle.exists() {
+                    Some(build_gradle)
+                } else if build_gradle_kts.exists() {
+                    Some(build_gradle_kts)
+                } else {
+                    None
+                };
+
+                if let Some(module_build_path) = module_build_path {
+                    match parse_gradle(&module_build_path) {
+                        Ok(module_deps) => {
+                            for dep in module_deps {
+                                let key = format!("{}:{}:{}", dep.group, dep.name, dep.version);
+                                if seen.insert(key) {
+                                    all_dependencies.push(dep);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Warning: Failed to parse module {}: {}", module_name, e);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(all_dependencies)
+}
+
+/// Parse settings.gradle to extract included modules
+fn parse_settings_gradle(settings_path: &Path) -> Result<Vec<String>> {
+    let content = fs::read_to_string(settings_path)
+        .with_context(|| format!("Failed to read settings.gradle: {}", settings_path.display()))?;
+
+    let mut modules = Vec::new();
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        // Look for include(...) statements
+        if trimmed.starts_with("include") {
+            // Extract module names from include('module1', 'module2') or include 'module1', 'module2'
+            if let Some(start) = trimmed.find('(') {
+                if let Some(end) = trimmed.rfind(')') {
+                    let modules_str = &trimmed[start + 1..end];
+
+                    // Split by comma and extract module names
+                    for module in modules_str.split(',') {
+                        let module_name = module
+                            .trim()
+                            .trim_matches('\'')
+                            .trim_matches('"')
+                            .trim_start_matches(':')
+                            .to_string();
+
+                        if !module_name.is_empty() {
+                            modules.push(module_name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(modules)
 }
 
 /// Parse a Gradle build file (build.gradle or build.gradle.kts)

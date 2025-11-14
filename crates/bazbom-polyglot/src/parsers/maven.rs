@@ -24,7 +24,8 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
     // Parse pom.xml if available
     if let Some(ref manifest_path) = ecosystem.manifest_file {
-        let dependencies = parse_pom(manifest_path)?;
+        // Parse main pom and check for multi-module structure
+        let dependencies = parse_pom_with_modules(manifest_path)?;
 
         for dep in dependencies {
             // Skip test dependencies by default (can be made configurable)
@@ -79,6 +80,14 @@ struct Pom {
     dependency_management: Option<DependencyManagement>,
     #[serde(default)]
     parent: Option<Parent>,
+    #[serde(default)]
+    modules: Option<Modules>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Modules {
+    #[serde(rename = "module", default)]
+    module: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -117,6 +126,57 @@ struct Dependency {
     optional: Option<String>,
     #[serde(rename = "type", default)]
     dependency_type: Option<String>,
+}
+
+/// Parse a Maven pom.xml file with multi-module support
+pub fn parse_pom_with_modules(pom_path: &Path) -> Result<Vec<MavenDependency>> {
+    let mut all_dependencies = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    // Parse root pom
+    let content = fs::read_to_string(pom_path)
+        .with_context(|| format!("Failed to read pom.xml: {}", pom_path.display()))?;
+
+    // Check if this is a multi-module project
+    let pom: Pom = serde_xml_rs::from_str(&content)
+        .context("Failed to parse pom.xml")?;
+
+    // Parse root dependencies
+    let root_deps = parse_pom_content(&content)?;
+    for dep in root_deps {
+        let key = format!("{}:{}:{}", dep.group_id, dep.artifact_id, dep.version);
+        if seen.insert(key) {
+            all_dependencies.push(dep);
+        }
+    }
+
+    // If this POM has modules, parse each module recursively
+    if let Some(modules) = pom.modules {
+        let parent_dir = pom_path.parent().unwrap_or(Path::new("."));
+
+        for module_name in modules.module {
+            let module_pom_path = parent_dir.join(&module_name).join("pom.xml");
+
+            if module_pom_path.exists() {
+                // Recursively parse module (which might also be multi-module)
+                match parse_pom_with_modules(&module_pom_path) {
+                    Ok(module_deps) => {
+                        for dep in module_deps {
+                            let key = format!("{}:{}:{}", dep.group_id, dep.artifact_id, dep.version);
+                            if seen.insert(key) {
+                                all_dependencies.push(dep);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: Failed to parse module {}: {}", module_name, e);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(all_dependencies)
 }
 
 /// Parse a Maven pom.xml file
