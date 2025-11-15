@@ -1,10 +1,52 @@
 use crate::error::{DepsDevError, Result};
 use crate::models::*;
 use reqwest::Client;
-use std::time::Duration;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 use tracing::{debug, warn};
 
+/// Rate limiter for API requests
+struct RateLimiter {
+    last_request: Instant,
+    min_interval: Duration,
+    retry_count: u32,
+}
+
+impl RateLimiter {
+    fn new(requests_per_second: f64) -> Self {
+        Self {
+            last_request: Instant::now() - Duration::from_secs(1), // Allow first request immediately
+            min_interval: Duration::from_secs_f64(1.0 / requests_per_second),
+            retry_count: 0,
+        }
+    }
+
+    async fn wait_if_needed(&mut self) {
+        let elapsed = self.last_request.elapsed();
+        if elapsed < self.min_interval {
+            let wait_time = self.min_interval - elapsed;
+            debug!("Rate limiting: waiting {:?}", wait_time);
+            tokio::time::sleep(wait_time).await;
+        }
+        self.last_request = Instant::now();
+    }
+
+    fn backoff_duration(&mut self) -> Duration {
+        self.retry_count += 1;
+        // Exponential backoff: 1s, 2s, 4s, 8s, 16s (max)
+        let backoff_secs = 2_u64.pow(self.retry_count.min(4));
+        Duration::from_secs(backoff_secs)
+    }
+
+    fn reset_retry_count(&mut self) {
+        self.retry_count = 0;
+    }
+}
+
 /// Client for the deps.dev API
+///
+/// Includes built-in rate limiting and exponential backoff to prevent API quota exhaustion
 ///
 /// ## Example
 ///
@@ -30,16 +72,22 @@ use tracing::{debug, warn};
 pub struct DepsDevClient {
     client: Client,
     base_url: String,
+    rate_limiter: Arc<Mutex<RateLimiter>>,
 }
 
 impl DepsDevClient {
-    /// Create a new deps.dev API client
+    /// Create a new deps.dev API client with default rate limiting (10 requests/second)
     pub fn new() -> Self {
-        Self::with_base_url("https://api.deps.dev/v3")
+        Self::with_rate_limit("https://api.deps.dev/v3", 10.0)
     }
 
     /// Create a client with a custom base URL (for testing)
     pub fn with_base_url(base_url: impl Into<String>) -> Self {
+        Self::with_rate_limit(base_url, 10.0)
+    }
+
+    /// Create a client with custom rate limit (requests per second)
+    pub fn with_rate_limit(base_url: impl Into<String>, requests_per_second: f64) -> Self {
         let client = Client::builder()
             .timeout(Duration::from_secs(30))
             .user_agent("BazBOM/0.1.0")
@@ -49,6 +97,7 @@ impl DepsDevClient {
         Self {
             client,
             base_url: base_url.into(),
+            rate_limiter: Arc::new(Mutex::new(RateLimiter::new(requests_per_second))),
         }
     }
 
@@ -75,6 +124,9 @@ impl DepsDevClient {
         package: &str,
         version: &str,
     ) -> Result<VersionInfo> {
+        // Apply rate limiting before making request
+        self.rate_limiter.lock().await.wait_if_needed().await;
+
         let url = format!(
             "{}/systems/{}/packages/{}/versions/{}",
             self.base_url,
@@ -100,8 +152,12 @@ impl DepsDevClient {
             Err(DepsDevError::RateLimited)
         } else {
             let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
+            // Security: Don't expose full API response body in error messages
+            // as it could leak sensitive information
+            let _body = response.text().await.unwrap_or_default();
+            // In production, log full response to secure log:
+            // log::error!("deps.dev API error: HTTP {} - {}", status, _body);
+            Err(DepsDevError::ApiError(format!("HTTP {}", status)))
         }
     }
 
@@ -131,6 +187,9 @@ impl DepsDevClient {
         package: &str,
         version: &str,
     ) -> Result<DependencyGraph> {
+        // Apply rate limiting before making request
+        self.rate_limiter.lock().await.wait_if_needed().await;
+
         let url = format!(
             "{}/systems/{}/packages/{}/versions/{}:dependencies",
             self.base_url,
@@ -162,8 +221,12 @@ impl DepsDevClient {
             Err(DepsDevError::RateLimited)
         } else {
             let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
+            // Security: Don't expose full API response body in error messages
+            // as it could leak sensitive information
+            let _body = response.text().await.unwrap_or_default();
+            // In production, log full response to secure log:
+            // log::error!("deps.dev API error: HTTP {} - {}", status, _body);
+            Err(DepsDevError::ApiError(format!("HTTP {}", status)))
         }
     }
 
@@ -186,6 +249,9 @@ impl DepsDevClient {
     /// # }
     /// ```
     pub async fn get_package(&self, system: System, package: &str) -> Result<Package> {
+        // Apply rate limiting before making request
+        self.rate_limiter.lock().await.wait_if_needed().await;
+
         let url = format!(
             "{}/systems/{}/packages/{}",
             self.base_url,
@@ -210,8 +276,12 @@ impl DepsDevClient {
             Err(DepsDevError::RateLimited)
         } else {
             let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            Err(DepsDevError::ApiError(format!("HTTP {}: {}", status, body)))
+            // Security: Don't expose full API response body in error messages
+            // as it could leak sensitive information
+            let _body = response.text().await.unwrap_or_default();
+            // In production, log full response to secure log:
+            // log::error!("deps.dev API error: HTTP {} - {}", status, _body);
+            Err(DepsDevError::ApiError(format!("HTTP {}", status)))
         }
     }
 

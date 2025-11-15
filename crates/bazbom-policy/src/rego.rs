@@ -1,5 +1,7 @@
 #[cfg(feature = "rego")]
 use regorus::Engine;
+#[cfg(feature = "rego")]
+use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::Path;
@@ -18,16 +20,96 @@ pub struct RegoPolicy {
 
 #[cfg(feature = "rego")]
 impl RegoPolicy {
+    /// Load a Rego policy from a file without hash verification
+    ///
+    /// WARNING: For security-critical deployments, use `from_file_with_hash` instead
+    /// to ensure policy integrity.
     pub fn from_file(path: &Path) -> Result<Self, String> {
         let mut engine = Engine::new();
         let policy_content = std::fs::read_to_string(path)
             .map_err(|e| format!("Failed to read Rego policy file: {}", e))?;
+
+        eprintln!(
+            "[!] WARNING: Loading Rego policy without integrity verification: {:?}",
+            path
+        );
+        eprintln!("[!] For production use, consider using from_file_with_hash() to verify policy integrity");
 
         engine
             .add_policy(path.to_string_lossy().to_string(), policy_content)
             .map_err(|e| format!("Failed to parse Rego policy: {}", e))?;
 
         Ok(Self { engine })
+    }
+
+    /// Load a Rego policy from a file with SHA256 hash verification
+    ///
+    /// SECURITY: This method verifies the integrity of the policy file before loading it.
+    /// Use this in production environments to prevent policy tampering.
+    ///
+    /// # Arguments
+    /// * `path` - Path to the Rego policy file
+    /// * `expected_hash` - Expected SHA256 hash of the policy file (hex string)
+    ///
+    /// # Returns
+    /// * `Ok(RegoPolicy)` if the policy is valid and hash matches
+    /// * `Err` if the file cannot be read, hash doesn't match, or policy is invalid
+    ///
+    /// # Example
+    /// ```no_run
+    /// use bazbom_policy::RegoPolicy;
+    /// use std::path::Path;
+    ///
+    /// let policy = RegoPolicy::from_file_with_hash(
+    ///     Path::new("policy.rego"),
+    ///     "a1b2c3d4e5f6..." // SHA256 hash
+    /// ).unwrap();
+    /// ```
+    pub fn from_file_with_hash(path: &Path, expected_hash: &str) -> Result<Self, String> {
+        let policy_content = std::fs::read_to_string(path)
+            .map_err(|e| format!("Failed to read Rego policy file: {}", e))?;
+
+        // Compute SHA256 hash of the policy content
+        let mut hasher = Sha256::new();
+        hasher.update(policy_content.as_bytes());
+        let computed_hash = format!("{:x}", hasher.finalize());
+
+        // Verify hash matches
+        if computed_hash != expected_hash {
+            return Err(format!(
+                "Policy integrity check failed: hash mismatch\nExpected: {}\nComputed: {}\nPolicy file may have been tampered with!",
+                expected_hash, computed_hash
+            ));
+        }
+
+        eprintln!("[✓] Policy integrity verified: {:?}", path);
+
+        let mut engine = Engine::new();
+        engine
+            .add_policy(path.to_string_lossy().to_string(), policy_content)
+            .map_err(|e| format!("Failed to parse Rego policy: {}", e))?;
+
+        Ok(Self { engine })
+    }
+
+    /// Compute the SHA256 hash of a policy file
+    ///
+    /// This is a utility function to help generate the expected hash for use with
+    /// `from_file_with_hash()`.
+    ///
+    /// # Arguments
+    /// * `path` - Path to the Rego policy file
+    ///
+    /// # Returns
+    /// * `Ok(String)` - The SHA256 hash as a hex string
+    /// * `Err` - If the file cannot be read
+    pub fn compute_file_hash(path: &Path) -> Result<String, String> {
+        let policy_content = std::fs::read_to_string(path)
+            .map_err(|e| format!("Failed to read policy file: {}", e))?;
+
+        let mut hasher = Sha256::new();
+        hasher.update(policy_content.as_bytes());
+        Ok(format!("{:x}", hasher.finalize()))
     }
 
     pub fn from_string(policy_name: &str, policy_content: &str) -> Result<Self, String> {
