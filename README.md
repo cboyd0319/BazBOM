@@ -7,7 +7,7 @@
 **Find vulnerabilities that actually matter - cut alert noise by 70-90%**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
-[![Tests](https://img.shields.io/badge/tests-800%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
+[![Tests](https://img.shields.io/badge/tests-700%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
 
@@ -29,7 +29,7 @@ BazBOM is a **developer-friendly security scanner** that uses reachability analy
 - **🏗️ Bazel Native** - The only tool that natively understands Bazel's dependency model • Works with Maven/Gradle too • [Bazel guide →](docs/BAZEL.md)
 - **🗣️ Plain English** - "Hackers are using this right now" instead of "EPSS threshold exceeded" • Actionable fix suggestions
 - **⚡ Zero Config** - `bazbom check` auto-detects your stack and runs in <10 seconds • Quick commands for every workflow
-- **🔧 Universal Auto-Fix** - One command to upgrade dependencies across 9 package managers (Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel) • [Usage guide →](docs/USAGE.md)
+- **🔧 Universal Auto-Fix** - One command to upgrade dependencies across 9 package managers (Maven, Gradle, npm, pip, Go, Cargo, Bundler, Composer, Bazel) • [Usage guide →](docs/user-guide/usage.md)
 - **🐳 Container Scanning** - Layer attribution, EPSS/KEV enrichment, P0-P4 scoring, multi-language remediation • [Container guide →](docs/features/container-scanning.md)
 - **📊 Developer UX** - TUI explorer, beautiful terminal output, progress bars, smart suggestions • [See examples →](docs/examples/README.md)
 
@@ -91,7 +91,7 @@ bazbom --version
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
 - ✅ **Code Quality** - Zero clippy warnings, 100% passing tests, comprehensive bug fixes
 
-🦀 **25 crates** • **800+ tests** • **Zero clippy warnings** • **Source install in <5 min**
+🦀 **25 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 
@@ -148,7 +148,7 @@ bazbom status
 bazbom compare main feature-branch
 ```
 
-[📚 Complete usage guide →](docs/USAGE.md) | [Command reference →](docs/QUICKREF.md)
+[📚 Complete usage guide →](docs/user-guide/usage.md) | [Command reference →](docs/QUICKREF.md)
 
 ---
 
@@ -232,8 +232,8 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 - **🎯 Multi-CVE Grouping** - "Fixes 3 CVEs" instead of 3 separate actions ([docs](docs/features/upgrade-intelligence.md))
 - **💣 Exploit Intelligence** - Links to ExploitDB, GitHub POCs, Nuclei templates ([docs](docs/features/README.md))
 - **📏 Difficulty Scoring** - 0-100 remediation effort estimation with visual indicators ([docs](docs/features/upgrade-intelligence.md))
-- **🤖 Auto-Detect Main Module** - Smart monorepo detection for faster scans ([docs](docs/USAGE.md))
-- **🔧 Universal Auto-Fix** - 9 package managers supported (Maven, Gradle, npm, pip, Go, Cargo, etc.) ([docs](docs/USAGE.md))
+- **🤖 Auto-Detect Main Module** - Smart monorepo detection for faster scans ([docs](docs/user-guide/usage.md))
+- **🔧 Universal Auto-Fix** - 9 package managers supported (Maven, Gradle, npm, pip, Go, Cargo, etc.) ([docs](docs/user-guide/usage.md))
 - **📦 Profile Inheritance** - Reusable configs with multi-level extends ([example](docs/examples/CLI_EXAMPLES.md))
 - **🚨 EPSS/KEV Integration** - Real-time exploit prediction and CISA KEV data ([docs](docs/security/vulnerability-enrichment.md))
 - **📈 Status & Compare Commands** - Security dashboards and branch comparison ([docs](docs/QUICKREF.md))
@@ -356,7 +356,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 - [Shell Completions](docs/getting-started/shell-completions.md) - bash/zsh/fish
 
 ### **User Guides**
-- [Usage Guide](docs/USAGE.md) - Common workflows
+- [Usage Guide](docs/user-guide/usage.md) - Common workflows
 - [Command Reference](docs/QUICKREF.md) - Complete command list with examples
 - [Bazel Integration](docs/BAZEL.md) - Bazel-specific features
 - [CI/CD Integration](docs/CI.md) - GitHub Actions, GitLab, Jenkins
