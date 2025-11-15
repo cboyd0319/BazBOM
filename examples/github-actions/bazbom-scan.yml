@@ -50,10 +50,21 @@ jobs:
 
       - name: Install BazBOM
         run: |
-          # Replace with actual installation command once published
-          # For now, assumes bazbom binary is in PATH or built locally
-          cargo build --release --package bazbom
-          echo "${{ github.workspace }}/target/release" >> $GITHUB_PATH
+          # Option 1: One-line install script (recommended)
+          curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+
+          # Option 2: Download specific release
+          # VERSION="6.5.0"
+          # curl -LO "https://github.com/cboyd0319/BazBOM/releases/download/v${VERSION}/bazbom-x86_64-unknown-linux-gnu.tar.gz"
+          # tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
+          # sudo install -m 755 bazbom /usr/local/bin/bazbom
+
+          # Option 3: Build from source (for development)
+          # cargo build --release --package bazbom
+          # echo "${{ github.workspace }}/target/release" >> $GITHUB_PATH
+
+          # Verify installation
+          bazbom --version
 
       - name: Run BazBOM Scan (PR mode - fast)
         if: github.event_name == 'pull_request'

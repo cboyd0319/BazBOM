@@ -54,7 +54,7 @@ jobs:
           # tar -xzf bazbom-x86_64-unknown-linux-gnu.tar.gz
           # sudo install -m 755 bazbom /usr/local/bin/bazbom
 
-          # Option 3: Homebrew (coming soon)
+          # Option 3: Homebrew (not yet published)
           # brew tap cboyd0319/bazbom
           # brew install bazbom
 

@@ -7,7 +7,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 **Essential docs** (from tech writer persona):
 - **[QUICKREF.md](QUICKREF.md)** - One-page cheat sheet for all common BazBOM operations
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Components, data flow, boundaries, decisions (ADR-style summaries)
-- **[USAGE.md](USAGE.md)** - Common tasks: generate SBOM locally, in CI, per-target, per-image
+- **[USAGE.md](USAGE.md)** - Quick start guide with links to comprehensive usage documentation
 - **[BAZEL.md](BAZEL.md)** - Aspects, rules, targets, macros, minimal reproducible examples
 - **[CI.md](CI.md)** - Bazel + CI recipes (GitHub Actions baseline), caching, artifacts, SARIF/attestations
 - **[FORMAT_SPDX.md](FORMAT_SPDX.md)** - SPDX 2.3 mapping, fields, known gaps
@@ -25,7 +25,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## User Guide & How-tos
 
-- [Usage Guide](user-guide/usage.md) – core commands, SBOM outputs, policy workflows (also see top-level [USAGE.md](USAGE.md))
+- [Usage Guide](user-guide/usage.md) – comprehensive guide with core commands, SBOM outputs, policy workflows
 - [Report Generation](user-guide/report-generation.md) – executive, compliance, and SARIF reporting
 - [Advanced Bazel Usage](user-guide/advanced-bazel-features.md) – query tuning and large monorepos (also see [BAZEL.md](BAZEL.md))
 - [Policy Integration](user-guide/policy-integration.md) & [Rego Best Practices](user-guide/rego-best-practices.md)
@@ -38,7 +38,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
   - [Submission Checklist](integrations/ide/marketplace-submission.md)
   - [Plugin Testing Guide](integrations/ide/plugin-testing.md)
   - [Marketplace Publishing](integrations/ide/marketplace-publishing.md)
-- [LLM Integration](integrations/llm-integration.md) and [LLM Usage Patterns](integrations/llm-usage.md)
+- [LLM Integration Guide](integrations/llm-guide.md) - Privacy-first AI-powered fix generation
 - [Orchestrated Scan (Semgrep/CodeQL)](integrations/orchestrated-scan.md)
 - [Container Scanning](features/container-scanning.md)
 - [RipGrep Integration](integrations/ripgrep-integration.md)
