@@ -366,6 +366,7 @@ dependencies = [
  "console",
  "criterion",
  "dialoguer",
+ "flate2",
  "hex",
  "indicatif",
  "num_cpus",
@@ -376,6 +377,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "sha2",
+ "tar",
  "tempfile",
  "tokio",
  "toml",
@@ -627,6 +629,7 @@ dependencies = [
  "regorus",
  "serde",
  "serde_json",
+ "sha2",
  "tempfile",
 ]
 

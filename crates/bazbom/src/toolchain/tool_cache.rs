@@ -85,7 +85,48 @@ impl ToolCache {
                 // Extract all files to maintain directory structure
                 for i in 0..zip.len() {
                     let mut file = zip.by_index(i).context("read zip entry")?;
-                    let outpath = dir.join(file.name());
+                    let file_name = file.name();
+
+                    // Security: Validate path to prevent directory traversal (zip slip)
+                    // Reject absolute paths
+                    if std::path::Path::new(file_name).is_absolute() {
+                        bail!("Zip archive contains absolute path: {}", file_name);
+                    }
+
+                    // Reject paths with parent directory references
+                    if file_name.contains("..") {
+                        bail!("Zip archive contains suspicious path: {}", file_name);
+                    }
+
+                    let outpath = dir.join(file_name);
+
+                    // Validate that the resolved path is within the extraction directory
+                    let canonical_dir = dir.canonicalize()
+                        .context("Failed to canonicalize extraction directory")?;
+
+                    // For validation, check the parent if file doesn't exist yet
+                    let path_to_check = if outpath.exists() {
+                        outpath.canonicalize()
+                            .context("Failed to canonicalize output path")?
+                    } else if let Some(parent) = outpath.parent() {
+                        if parent.exists() {
+                            let file_name = outpath.file_name()
+                                .ok_or_else(|| anyhow::anyhow!("Invalid file path"))?;
+                            parent.canonicalize()
+                                .context("Failed to canonicalize parent path")?
+                                .join(file_name)
+                        } else {
+                            // Parent doesn't exist yet, just check prefix
+                            outpath.clone()
+                        }
+                    } else {
+                        outpath.clone()
+                    };
+
+                    // Ensure the output path is within the extraction directory
+                    if !path_to_check.starts_with(&canonical_dir) {
+                        bail!("Zip slip attack detected: path escapes extraction directory: {}", file_name);
+                    }
 
                     if file.is_dir() {
                         fs::create_dir_all(&outpath).context("create directory")?;
@@ -115,20 +156,33 @@ impl ToolCache {
                     }
                 }
             } else if desc.url.ends_with(".tar.gz") || desc.url.ends_with(".tgz") {
-                // Extract tar.gz archive
-                use std::process::Command;
-                let status = Command::new("tar")
-                    .args([
-                        "-xzf",
-                        archive_path.to_str().unwrap(),
-                        "-C",
-                        dir.to_str().unwrap(),
-                    ])
-                    .status()
-                    .context("run tar extraction")?;
+                // Extract tar.gz archive using Rust libraries to avoid command injection
+                use flate2::read::GzDecoder;
+                use tar::Archive;
 
-                if !status.success() {
-                    bail!("tar extraction failed");
+                let tar_gz = fs::File::open(&archive_path)
+                    .context("Failed to open tar.gz archive")?;
+                let tar = GzDecoder::new(tar_gz);
+                let mut archive = Archive::new(tar);
+
+                // Extract with path validation to prevent directory traversal
+                for entry in archive.entries().context("read tar entries")? {
+                    let mut entry = entry.context("read tar entry")?;
+                    let path = entry.path().context("get entry path")?;
+
+                    // Security: Validate path to prevent directory traversal
+                    // Check for parent directory references
+                    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+                        bail!("Tar archive contains parent directory reference: {:?}", path);
+                    }
+
+                    // Reject absolute paths
+                    if path.is_absolute() {
+                        bail!("Tar archive contains absolute path: {:?}", path);
+                    }
+
+                    // Extract to validated path
+                    entry.unpack_in(&dir).context("extract tar entry")?;
                 }
             } else {
                 bail!("unsupported archive format: {}", desc.url);

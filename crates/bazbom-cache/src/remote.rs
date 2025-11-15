@@ -350,8 +350,11 @@ impl TwoTierCacheManager {
         // Store in remote cache if available
         if let Some(ref remote) = self.remote {
             // Don't fail if remote storage fails - just log
-            if let Err(e) = remote.put(key, data) {
-                eprintln!("Warning: Failed to store in remote cache: {}", e);
+            if let Err(_e) = remote.put(key, data) {
+                // Security: Don't expose detailed error messages that could leak cache URLs or paths
+                eprintln!("Warning: Failed to store in remote cache");
+                // In production, log full error to secure log file:
+                // log::warn!("Remote cache storage failed: {}", e);
             }
         }
 

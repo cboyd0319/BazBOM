@@ -1,7 +1,11 @@
 // Test execution framework for automated remediation
 // Runs project tests after applying fixes to verify changes don't break the build
+//
+// SECURITY NOTE: All test runner functions use HARDCODED arguments to prevent command injection.
+// If future modifications allow user-controlled arguments, input validation MUST be added.
+// See validate_test_arg() function below for reference implementation.
 
-use anyhow::{Context, Result};
+use anyhow::{bail, Context, Result};
 use bazbom_core::BuildSystem;
 use bazbom_depsdev::System;
 use std::path::Path;
@@ -218,6 +222,45 @@ pub fn has_tests(build_system: BuildSystem, project_root: &Path) -> bool {
         }
         _ => false,
     }
+}
+
+/// Validate test arguments for security (if test args become user-configurable in the future)
+///
+/// SECURITY: This function should be used to validate ANY user-provided test arguments
+/// to prevent command injection. Currently unused but provided as reference implementation.
+///
+/// # Arguments
+/// * `arg` - The argument to validate
+///
+/// # Returns
+/// * `Ok(())` if the argument is safe
+/// * `Err` if the argument contains suspicious characters
+#[allow(dead_code)]
+fn validate_test_arg(arg: &str) -> Result<()> {
+    // Reject empty arguments
+    if arg.is_empty() {
+        bail!("Test argument cannot be empty");
+    }
+
+    // Reject arguments that are too long (potential buffer overflow)
+    if arg.len() > 256 {
+        bail!("Test argument too long: {}", arg.len());
+    }
+
+    // Whitelist safe characters: alphanumeric, dash, underscore, equals, dot, slash, colon
+    // Reject shell metacharacters: $, `, &, |, ;, <, >, (, ), {, }, [, ], *, ?, !, \, ', "
+    for ch in arg.chars() {
+        if !ch.is_alphanumeric() && !"-_=./:".contains(ch) {
+            bail!("Invalid character in test argument: '{}'", ch);
+        }
+    }
+
+    // Reject command substitution patterns
+    if arg.contains("$(") || arg.contains("`") {
+        bail!("Command substitution not allowed in test arguments");
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

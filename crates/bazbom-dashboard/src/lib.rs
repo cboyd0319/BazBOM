@@ -11,7 +11,10 @@
 
 use anyhow::Result;
 use axum::{
-    response::{IntoResponse, Json},
+    extract::{Request, State},
+    http::{header, HeaderValue, Method, StatusCode},
+    middleware::{self, Next},
+    response::{IntoResponse, Json, Response},
     routing::get,
     Router,
 };
@@ -19,6 +22,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 
 pub mod export;
 mod models;
@@ -34,6 +38,8 @@ pub struct AppState {
     pub cache_dir: PathBuf,
     /// Path to project root
     pub project_root: PathBuf,
+    /// Optional bearer token for API authentication
+    pub auth_token: Option<String>,
 }
 
 /// Dashboard configuration
@@ -41,6 +47,9 @@ pub struct DashboardConfig {
     pub port: u16,
     pub cache_dir: PathBuf,
     pub project_root: PathBuf,
+    /// Optional bearer token for API authentication
+    /// If None, authentication is disabled (localhost-only recommended)
+    pub auth_token: Option<String>,
 }
 
 impl Default for DashboardConfig {
@@ -49,8 +58,38 @@ impl Default for DashboardConfig {
             port: 3000,
             cache_dir: PathBuf::from(".bazbom/cache"),
             project_root: PathBuf::from("."),
+            auth_token: std::env::var("BAZBOM_DASHBOARD_TOKEN").ok(),
         }
     }
+}
+
+/// Authentication middleware
+/// Validates Bearer token if configured in AppState
+async fn auth_middleware(
+    State(state): State<Arc<AppState>>,
+    req: Request,
+    next: Next,
+) -> Result<Response, StatusCode> {
+    // If no auth token is configured, allow the request (localhost-only mode)
+    let Some(ref expected_token) = state.auth_token else {
+        return Ok(next.run(req).await);
+    };
+
+    // Check for Authorization header
+    let auth_header = req.headers()
+        .get(header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok());
+
+    if let Some(auth_value) = auth_header {
+        if auth_value.starts_with("Bearer ") {
+            let token = &auth_value[7..];
+            if token == expected_token {
+                return Ok(next.run(req).await);
+            }
+        }
+    }
+
+    Err(StatusCode::UNAUTHORIZED)
 }
 
 /// Start the dashboard server
@@ -58,23 +97,61 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
     let state = Arc::new(AppState {
         cache_dir: config.cache_dir,
         project_root: config.project_root,
+        auth_token: config.auth_token.clone(),
     });
 
-    // Build the application router
+    // Configure CORS - restrict to localhost only for security
+    let cors = CorsLayer::new()
+        .allow_origin(
+            format!("http://127.0.0.1:{}", config.port)
+                .parse::<HeaderValue>()
+                .unwrap(),
+        )
+        .allow_methods([Method::GET, Method::POST])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION]);
+
+    // Security warning if no auth token is set
+    if config.auth_token.is_none() {
+        println!("[!] WARNING: Dashboard running WITHOUT authentication");
+        println!("[!] Ensure the dashboard is NOT exposed to untrusted networks");
+        println!("[!] Set BAZBOM_DASHBOARD_TOKEN environment variable to enable authentication");
+        println!();
+    }
+
+    // Build the application router with security layers
     let app = Router::new()
-        // API routes
+        // API routes (protected by auth middleware)
         .route("/api/dashboard/summary", get(routes::get_dashboard_summary))
         .route("/api/dependencies/graph", get(routes::get_dependency_graph))
         .route("/api/vulnerabilities", get(routes::get_vulnerabilities))
         .route("/api/sbom", get(routes::get_sbom))
         .route("/api/team/dashboard", get(routes::get_team_dashboard))
-        // Health check
+        // Health check (unprotected)
         .route("/health", get(health_check))
         // Static files (future: React frontend)
         .nest_service("/", ServeDir::new("static"))
         // State and layers
-        .with_state(state)
-        .layer(CorsLayer::permissive());
+        .with_state(state.clone())
+        // Security middleware
+        .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
+        // Security headers
+        .layer(SetResponseHeaderLayer::overriding(
+            header::CONTENT_SECURITY_POLICY,
+            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_FRAME_OPTIONS,
+            HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::X_CONTENT_TYPE_OPTIONS,
+            HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            header::STRICT_TRANSPORT_SECURITY,
+            HeaderValue::from_static("max-age=31536000; includeSubDomains"),
+        ))
+        .layer(cors);
 
     // Start server
     let addr = format!("127.0.0.1:{}", config.port);
