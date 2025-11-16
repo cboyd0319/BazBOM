@@ -1,0 +1,34 @@
+# Cargo configuration for reproducible builds (SLSA Level 4)
+#
+# These settings ensure bit-for-bit reproducible builds by:
+# - Stripping debug info in a deterministic way
+# - Using deterministic link order
+# - Disabling incremental compilation (non-deterministic)
+
+[build]
+# Incremental compilation can introduce non-determinism
+incremental = false
+
+[profile.release]
+# Strip debug information for smaller, reproducible binaries
+strip = true
+
+# Optimize for size and reproducibility
+# Note: Some optimizations may introduce non-determinism
+opt-level = "z"
+
+# Link-time optimization for smaller binaries
+lto = true
+
+# Code generation units = 1 for maximum reproducibility
+# (parallel compilation can introduce non-determinism)
+codegen-units = 1
+
+[profile.dev]
+# Even in dev, avoid incremental for reproducibility testing
+incremental = false
+
+# Note: For truly reproducible builds, also set these environment variables:
+# - SOURCE_DATE_EPOCH: Unix timestamp for deterministic timestamps
+# - RUSTFLAGS: -C metadata=<hash> for deterministic metadata
+# These are set in the CI workflow
