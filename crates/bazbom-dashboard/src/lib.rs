@@ -26,12 +26,10 @@ use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
 
 pub mod export;
-pub mod middleware;
 mod models;
 mod routes;
 
 pub use export::{export_to_html, Vulnerability};
-pub use middleware::AppState;
 pub use models::*;
 
 /// Dashboard application state

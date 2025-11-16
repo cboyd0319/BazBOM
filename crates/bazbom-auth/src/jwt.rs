@@ -110,8 +110,10 @@ impl JwtAuthenticator {
             )));
         }
 
-        let mut config = JwtConfig::default();
-        config.secret = secret.to_string();
+        let config = JwtConfig {
+            secret: secret.to_string(),
+            ..Default::default()
+        };
 
         Ok(Self {
             encoding_key: EncodingKey::from_secret(secret.as_bytes()),

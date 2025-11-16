@@ -2,12 +2,12 @@
 
 use anyhow::{Context, Result};
 use bazbom_crypto::hashing::hash_file;
-use std::path::PathBuf;
+use std::path::Path;
 
 use crate::github::fetch_release_checksums;
 
 /// Verify binary checksum against GitHub release
-pub fn verify_checksum(binary_path: &PathBuf, version: &str, verbose: bool) -> Result<bool> {
+pub fn verify_checksum(binary_path: &Path, version: &str, verbose: bool) -> Result<bool> {
     // Compute actual checksum
     let actual_checksum = hash_file(binary_path).context("Failed to hash binary")?;
 

@@ -97,50 +97,88 @@ All code is automatically scanned on every commit:
 
 ## Security Features
 
+### Authentication & Authorization (v7.0+)
+
+**Enterprise-Ready Access Control**:
+- ✅ **JWT Authentication** - RFC 7519 compliant tokens with 24h expiration
+- ✅ **RBAC** - Role-Based Access Control with 5 roles (Admin, SecurityLead, Developer, User, CI)
+- ✅ **API Keys** - Long-lived keys for CI/CD with scoped permissions
+- ✅ **Rate Limiting** - 100 requests/minute per endpoint to prevent DoS
+- ✅ **Audit Logging** - Comprehensive security event logging with HMAC signatures
+- ✅ **OS Keychain** - Secure credential storage on macOS/Windows/Linux
+
+### Data Protection (v7.0+)
+
+**Multi-Layer Data Security**:
+- ✅ **Encryption at Rest** - ChaCha20-Poly1305 AEAD for sensitive data
+- ✅ **Encryption in Transit** - TLS 1.3 (1.2 minimum) for all communications
+- ✅ **Secure Memory** - Automatic cleanup with zeroize on key material
+- ✅ **Constant-Time Operations** - Timing attack prevention in crypto operations
+
 ### Input Validation
 
 All external input is validated and sanitized:
 
-- ✅ Path traversal prevention
-- ✅ Command injection prevention
+- ✅ Path traversal prevention (path canonicalization)
+- ✅ Command injection prevention (safe APIs only)
 - ✅ Memory safety (guaranteed by Rust)
 - ✅ Buffer overflow prevention (guaranteed by Rust)
 - ✅ SSRF prevention (URL scheme validation)
+- ✅ File size limits (10MB max for SBOMs - DoS prevention)
+- ✅ XSS prevention (strict CSP without unsafe-inline)
 
 ### Secure Defaults
 
 - Command execution through safe APIs only
 - Read-only file system permissions
-- Least privilege principle throughout
+- Least privilege principle throughout (RBAC)
 - Fail-secure error handling
 - No secrets in logs or error messages
 - Zero unsafe code without explicit justification
+- Authentication required by default for dashboard (v7.0+)
+- TLS enforced for production deployments
 
 ### Cryptography
 
-- SHA256+ for hashing (no MD5/SHA1)
-- TLS 1.2+ for all network communications
+**Enterprise-Grade Cryptography (v7.0+)**:
+- **ChaCha20-Poly1305** AEAD encryption for sensitive data (256-bit keys)
+- **JWT Authentication** (RFC 7519) with HMAC-SHA256
+- **bcrypt** password hashing for API keys (cost factor 12)
+- **SHA256** for integrity verification and checksums
+- **HMAC-SHA256** for audit log tamper-evidence
+- **TLS 1.3** for network communications (1.2 minimum)
 - Keyless signing with Sigstore/Cosign
 - Cryptographic attestations for all builds
+- OS keychain integration (macOS Keychain, Windows Credential Manager, Linux Secret Service)
 
 ## Compliance & Standards
 
 BazBOM adheres to:
 
-- ✅ **OWASP Top 10** - All vulnerabilities addressed
+- ✅ **OWASP Top 10 (2021)** - All 10 categories addressed (100% coverage)
 - ✅ **CWE Top 25** - Critical weaknesses mitigated
-- ✅ **SLSA** - Level 3 supply chain security
+- ✅ **SLSA** - Level 3 supply chain security (upgrading to Level 4)
 - ✅ **NIST SSDF** - Secure software development framework
 - ✅ **Memory Safety** - 100% Rust with zero unsafe code (except where required with justification)
+- 🚧 **SOC 2 Type II** - In preparation (target: Q2 2026) - See [SOC2_PREPARATION.md](docs/compliance/SOC2_PREPARATION.md)
+- 🚧 **GDPR** - Implementation in progress (target: Q2 2026) - See [GDPR_COMPLIANCE.md](docs/compliance/GDPR_COMPLIANCE.md)
+- 🚧 **ISO 27001** - Planned (target: Q3 2026)
 
 ## Security Documentation
 
 Comprehensive security documentation:
 
+- [Security Overview](docs/security/SECURITY_OVERVIEW.md) - **NEW v7.0** - Complete security architecture
 - [Secure Coding Guide](docs/security/SECURE_CODING_GUIDE.md) - Security best practices
 - [Risk Ledger](docs/security/RISK_LEDGER.md) - Current security posture and findings
 - [Threat Model](docs/security/threat-model.md) - Attack vectors and mitigations
 - [Workflow Security Policy](docs/security/WORKFLOW_SECURITY_POLICY.md) - CI/CD security
+- [JWT Authentication](docs/security/JWT_AUTHENTICATION.md) - Authentication architecture
+
+### Compliance Documentation
+
+- [SOC 2 Preparation](docs/compliance/SOC2_PREPARATION.md) - **NEW v7.0** - SOC 2 Type II certification path
+- [GDPR Compliance](docs/compliance/GDPR_COMPLIANCE.md) - **NEW v7.0** - GDPR implementation guide
 
 ## Security Metrics
 

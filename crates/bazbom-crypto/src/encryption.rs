@@ -28,7 +28,7 @@ impl EncryptedData {
     /// Decode encrypted data from base64 string
     pub fn from_base64(encoded: &str) -> CryptoResult<Self> {
         let decoded = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, encoded)
-            .map_err(|e| CryptoError::InvalidCiphertext)?;
+            .map_err(|_| CryptoError::InvalidCiphertext)?;
 
         serde_json::from_slice(&decoded)
             .map_err(|e| CryptoError::Internal(anyhow::anyhow!("Failed to deserialize: {}", e)))
