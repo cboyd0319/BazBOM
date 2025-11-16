@@ -9,9 +9,12 @@ description = "Web dashboard for BazBOM SBOM and vulnerability visualization"
 [dependencies]
 # Web framework
 axum = "0.8"
+axum-server = { version = "0.7", features = ["tls-rustls"] }
 tokio = { version = "1", features = ["full"] }
-tower = "0.5"
+tower = { version = "0.5", features = ["limit"] }
 tower-http = { version = "0.6", features = ["fs", "cors", "set-header"] }
+tokio-rustls = "0.26"
+rustls-pemfile = "2.2"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -20,6 +23,10 @@ serde_json = "1.0"
 # Error handling
 anyhow = "1.0"
 thiserror = "2.0"
+
+# Security
+subtle = "2.6"
+keyring = "3.6"
 
 # Templates (optional, for server-side rendering)
 tera = "1.20"

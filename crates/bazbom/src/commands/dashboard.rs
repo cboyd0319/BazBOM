@@ -15,6 +15,8 @@ pub fn handle_dashboard(port: u16, open: bool, export: Option<String>) -> Result
         cache_dir: PathBuf::from(".bazbom/cache"),
         project_root: PathBuf::from("."),
         auth_token: std::env::var("BAZBOM_DASHBOARD_TOKEN").ok(),
+        tls_cert_path: std::env::var("BAZBOM_TLS_CERT").ok().map(PathBuf::from),
+        tls_key_path: std::env::var("BAZBOM_TLS_KEY").ok().map(PathBuf::from),
     };
 
     // Open browser if requested

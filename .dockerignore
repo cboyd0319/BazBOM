@@ -1,0 +1,37 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+target/
+bazel-*
+
+# Documentation
+*.md
+docs/
+examples/
+
+# CI/CD
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+tests/fixtures/
+
+# Cache
+.bazbom/
+
+# Docker
+Dockerfile*
+.dockerignore
+docker-compose.yml
+
+# Misc
+.env
+*.log
