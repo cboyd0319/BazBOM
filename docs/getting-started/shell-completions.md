@@ -309,7 +309,7 @@ bazbom scan --format <TAB>   # Should show: spdx, cyclonedx
 
 ## Package Manager Status
 
-BazBOM does not yet ship via Homebrew or any other package manager, so completions are not auto-installed. Use the manual snippets above and regenerate them after you rebuild the CLI.
+BazBOM is available via Homebrew (`brew tap cboyd0319/bazbom && brew install bazbom`). For manual builds from source, use the manual snippets above and regenerate them after you rebuild the CLI.
 
 ---
 

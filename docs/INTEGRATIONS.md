@@ -385,9 +385,9 @@ on_scan = true
 | GitHub Security | Native alerts | Production | [CI.md](CI.md) |
 | Semgrep | SAST | Production | [orchestrated-scan.md](integrations/orchestrated-scan.md) |
 | CodeQL | Deep SAST | Production | [orchestrated-scan.md](integrations/orchestrated-scan.md) |
-| IntelliJ IDEA | IDE | Beta | [ide-integration.md](integrations/ide/ide-integration.md) |
-| VS Code | IDE | Beta | [ide-integration.md](integrations/ide/ide-integration.md) |
-| LLM | AI analysis | Experimental | [llm-integration.md](integrations/llm-integration.md) |
+| IntelliJ IDEA | IDE | Production | [ide-integration.md](integrations/ide/ide-integration.md) |
+| VS Code | IDE | Production | [ide-integration.md](integrations/ide/ide-integration.md) |
+| LLM (Ollama/Claude/GPT) | AI-powered fix generation | Production | [llm-guide.md](integrations/llm-guide.md) |
 
 ## Next Steps
 
