@@ -101,18 +101,22 @@ impl ToolCache {
                     let outpath = dir.join(file_name);
 
                     // Validate that the resolved path is within the extraction directory
-                    let canonical_dir = dir.canonicalize()
+                    let canonical_dir = dir
+                        .canonicalize()
                         .context("Failed to canonicalize extraction directory")?;
 
                     // For validation, check the parent if file doesn't exist yet
                     let path_to_check = if outpath.exists() {
-                        outpath.canonicalize()
+                        outpath
+                            .canonicalize()
                             .context("Failed to canonicalize output path")?
                     } else if let Some(parent) = outpath.parent() {
                         if parent.exists() {
-                            let file_name = outpath.file_name()
+                            let file_name = outpath
+                                .file_name()
                                 .ok_or_else(|| anyhow::anyhow!("Invalid file path"))?;
-                            parent.canonicalize()
+                            parent
+                                .canonicalize()
                                 .context("Failed to canonicalize parent path")?
                                 .join(file_name)
                         } else {
@@ -125,7 +129,10 @@ impl ToolCache {
 
                     // Ensure the output path is within the extraction directory
                     if !path_to_check.starts_with(&canonical_dir) {
-                        bail!("Zip slip attack detected: path escapes extraction directory: {}", file_name);
+                        bail!(
+                            "Zip slip attack detected: path escapes extraction directory: {}",
+                            file_name
+                        );
                     }
 
                     if file.is_dir() {
@@ -160,8 +167,8 @@ impl ToolCache {
                 use flate2::read::GzDecoder;
                 use tar::Archive;
 
-                let tar_gz = fs::File::open(&archive_path)
-                    .context("Failed to open tar.gz archive")?;
+                let tar_gz =
+                    fs::File::open(&archive_path).context("Failed to open tar.gz archive")?;
                 let tar = GzDecoder::new(tar_gz);
                 let mut archive = Archive::new(tar);
 
@@ -172,8 +179,14 @@ impl ToolCache {
 
                     // Security: Validate path to prevent directory traversal
                     // Check for parent directory references
-                    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
-                        bail!("Tar archive contains parent directory reference: {:?}", path);
+                    if path
+                        .components()
+                        .any(|c| matches!(c, std::path::Component::ParentDir))
+                    {
+                        bail!(
+                            "Tar archive contains parent directory reference: {:?}",
+                            path
+                        );
                     }
 
                     // Reject absolute paths

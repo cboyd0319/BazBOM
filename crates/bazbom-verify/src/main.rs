@@ -177,7 +177,10 @@ fn main() -> Result<()> {
     if !args.skip_provenance {
         print!("{}  SLSA provenance... ", "5.".bold());
         println!("{}", "SKIP".yellow());
-        println!("   {} Provenance verification not yet implemented", "ℹ".blue());
+        println!(
+            "   {} Provenance verification not yet implemented",
+            "ℹ".blue()
+        );
         // TODO: Implement SLSA provenance verification
         result.provenance_valid = Some(false);
     }
@@ -197,7 +200,9 @@ fn main() -> Result<()> {
         println!(
             "{} {}",
             "⚠".yellow().bold(),
-            "Installation verification PASSED (with warnings)".yellow().bold()
+            "Installation verification PASSED (with warnings)"
+                .yellow()
+                .bold()
         );
         std::process::exit(0);
     } else {

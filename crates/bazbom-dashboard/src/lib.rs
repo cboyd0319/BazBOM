@@ -97,7 +97,8 @@ async fn auth_middleware(
     };
 
     // Check for Authorization header
-    let auth_header = req.headers()
+    let auth_header = req
+        .headers()
         .get(header::AUTHORIZATION)
         .and_then(|h| h.to_str().ok());
 
@@ -187,7 +188,10 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
             .await
             .context("Failed to load TLS certificates")?;
 
-        println!("[*] BazBOM Dashboard running at https://{} (TLS enabled)", addr);
+        println!(
+            "[*] BazBOM Dashboard running at https://{} (TLS enabled)",
+            addr
+        );
         println!("[*] Security Score: Loading...");
         println!("[!] Vulnerabilities: Analyzing...");
         println!();
@@ -201,7 +205,9 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
         let listener = tokio::net::TcpListener::bind(&addr).await?;
 
         println!("[*] BazBOM Dashboard running at http://{}", addr);
-        println!("[!] WARNING: TLS not enabled. For production, set BAZBOM_TLS_CERT and BAZBOM_TLS_KEY");
+        println!(
+            "[!] WARNING: TLS not enabled. For production, set BAZBOM_TLS_CERT and BAZBOM_TLS_KEY"
+        );
         println!("[*] Security Score: Loading...");
         println!("[!] Vulnerabilities: Analyzing...");
         println!();

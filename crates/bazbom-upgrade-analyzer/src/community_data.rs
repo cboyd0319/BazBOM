@@ -166,10 +166,7 @@ impl CommunityDatabase {
     ) -> Result<()> {
         let version_key = format!("{}->{}", from_version, to_version);
 
-        let package_data = self
-            .data
-            .entry(package.to_string())
-            .or_default();
+        let package_data = self.data.entry(package.to_string()).or_default();
 
         let success_data = package_data
             .entry(version_key)

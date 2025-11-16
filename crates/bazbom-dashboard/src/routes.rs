@@ -15,8 +15,8 @@ fn read_file_with_limit(path: &PathBuf) -> anyhow::Result<String> {
     use std::fs;
 
     // Check file size first
-    let metadata = fs::metadata(path)
-        .with_context(|| format!("Failed to read file metadata: {:?}", path))?;
+    let metadata =
+        fs::metadata(path).with_context(|| format!("Failed to read file metadata: {:?}", path))?;
 
     if metadata.len() > MAX_FILE_SIZE {
         anyhow::bail!(
@@ -27,8 +27,7 @@ fn read_file_with_limit(path: &PathBuf) -> anyhow::Result<String> {
     }
 
     // Read file content
-    fs::read_to_string(path)
-        .with_context(|| format!("Failed to read file: {:?}", path))
+    fs::read_to_string(path).with_context(|| format!("Failed to read file: {:?}", path))
 }
 
 /// Get dashboard summary

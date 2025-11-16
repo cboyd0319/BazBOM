@@ -19,51 +19,20 @@ BazBOM v7.0 is designed from the ground up for enterprise security. Every compon
 
 ### Multi-Layer Defense
 
-```
-┌─────────────────────────────────────────────────┐
-│  Layer 1: Network Security                     │
-│  - TLS 1.3 encryption                          │
-│  - Rate limiting (100 req/min)                 │
-│  - DDoS protection                             │
-└─────────────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────────────┐
-│  Layer 2: Authentication & Authorization       │
-│  - JWT tokens with 24h expiration              │
-│  - RBAC with 5 role types                      │
-│  - API keys with scoped permissions            │
-└─────────────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────────────┐
-│  Layer 3: Application Security                 │
-│  - Input validation & sanitization             │
-│  - Path canonicalization                       │
-│  - SQL injection prevention (N/A - no SQL)     │
-│  - XSS prevention (strict CSP)                 │
-└─────────────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────────────┐
-│  Layer 4: Data Security                        │
-│  - ChaCha20-Poly1305 encryption at rest        │
-│  - SHA-256 integrity verification              │
-│  - Secure memory cleanup (zeroize)             │
-└─────────────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────────────┐
-│  Layer 5: Runtime Security                     │
-│  - Sandboxing (seccomp on Linux)               │
-│  - Non-root execution                          │
-│  - Read-only file systems                      │
-│  - Minimal privileges                          │
-└─────────────────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────────────────┐
-│  Layer 6: Audit & Monitoring                   │
-│  - Comprehensive audit logs                    │
-│  - Tamper-evident signatures (HMAC-SHA256)     │
-│  - Real-time alerting                          │
-│  - SIEM integration ready                      │
-└─────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    L1["Layer 1: Network Security<br/>- TLS 1.3 encryption<br/>- Rate limiting (100 req/min)<br/>- DDoS protection"]
+    L2["Layer 2: Authentication & Authorization<br/>- JWT tokens with 24h expiration<br/>- RBAC with 5 role types<br/>- API keys with scoped permissions"]
+    L3["Layer 3: Application Security<br/>- Input validation & sanitization<br/>- Path canonicalization<br/>- SQL injection prevention (N/A - no SQL)<br/>- XSS prevention (strict CSP)"]
+    L4["Layer 4: Data Security<br/>- ChaCha20-Poly1305 encryption at rest<br/>- SHA-256 integrity verification<br/>- Secure memory cleanup (zeroize)"]
+    L5["Layer 5: Runtime Security<br/>- Sandboxing (seccomp on Linux)<br/>- Non-root execution<br/>- Read-only file systems<br/>- Minimal privileges"]
+    L6["Layer 6: Audit & Monitoring<br/>- Comprehensive audit logs<br/>- Tamper-evident signatures (HMAC-SHA256)<br/>- Real-time alerting<br/>- SIEM integration ready"]
+
+    L1 --> L2
+    L2 --> L3
+    L3 --> L4
+    L4 --> L5
+    L5 --> L6
 ```
 
 ## Security Components
@@ -112,48 +81,24 @@ bazbom-verify /usr/local/bin/bazbom --verbose
 
 ## Authentication Flow
 
-```
-┌──────────┐
-│  Client  │
-└────┬─────┘
-     │
-     │ 1. Request with JWT token
-     ↓
-┌──────────────────────┐
-│  Rate Limiter        │ ← 100 requests/min
-└──────┬───────────────┘
-       │
-       │ 2. Check rate limit
-       ↓
-┌──────────────────────┐
-│  JWT Authenticator   │
-└──────┬───────────────┘
-       │
-       │ 3. Validate token
-       │    - Check signature
-       │    - Verify expiration
-       │    - Extract claims
-       ↓
-┌──────────────────────┐
-│  RBAC Authorizer     │
-└──────┬───────────────┘
-       │
-       │ 4. Check permissions
-       │    - Verify role
-       │    - Check scopes
-       ↓
-┌──────────────────────┐
-│  Audit Logger        │
-└──────┬───────────────┘
-       │
-       │ 5. Log access
-       │    - User ID
-       │    - Action
-       │    - Result
-       ↓
-┌──────────────────────┐
-│  Application Logic   │
-└──────────────────────┘
+```mermaid
+sequenceDiagram
+    participant Client
+    participant RateLimiter as Rate Limiter<br/>(100 req/min)
+    participant JWTAuth as JWT Authenticator
+    participant RBAC as RBAC Authorizer
+    participant AuditLog as Audit Logger
+    participant App as Application Logic
+
+    Client->>RateLimiter: 1. Request with JWT token
+    RateLimiter->>JWTAuth: 2. Check rate limit
+    Note over JWTAuth: 3. Validate token<br/>- Check signature<br/>- Verify expiration<br/>- Extract claims
+    JWTAuth->>RBAC: Token validated
+    Note over RBAC: 4. Check permissions<br/>- Verify role<br/>- Check scopes
+    RBAC->>AuditLog: Authorized
+    Note over AuditLog: 5. Log access<br/>- User ID<br/>- Action<br/>- Result
+    AuditLog->>App: Proceed
+    App-->>Client: Response
 ```
 
 ## Data Protection
@@ -183,23 +128,20 @@ bazbom-verify /usr/local/bin/bazbom --verbose
 
 ### Key Management
 
-```
-┌─────────────────────────────────────────┐
-│  Secrets Management Hierarchy           │
-├─────────────────────────────────────────┤
-│  Tier 1: OS Keychain (Preferred)       │
-│  - macOS Keychain                       │
-│  - Windows Credential Manager           │
-│  - Linux Secret Service                 │
-├─────────────────────────────────────────┤
-│  Tier 2: Kubernetes Secrets             │
-│  - Encrypted at rest in etcd            │
-│  - RBAC controlled access               │
-├─────────────────────────────────────────┤
-│  Tier 3: Environment Variables          │
-│  - Last resort fallback                 │
-│  - Not recommended for production       │
-└─────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    SMH["Secrets Management Hierarchy"]
+    T1["Tier 1: OS Keychain (Preferred)<br/>- macOS Keychain<br/>- Windows Credential Manager<br/>- Linux Secret Service"]
+    T2["Tier 2: Kubernetes Secrets<br/>- Encrypted at rest in etcd<br/>- RBAC controlled access"]
+    T3["Tier 3: Environment Variables<br/>- Last resort fallback<br/>- Not recommended for production"]
+
+    SMH --> T1
+    SMH --> T2
+    SMH --> T3
+
+    style T1 fill:#90EE90
+    style T2 fill:#FFE4B5
+    style T3 fill:#FFB6C1
 ```
 
 ## Supply Chain Security
@@ -219,34 +161,27 @@ bazbom-verify /usr/local/bin/bazbom --verbose
 
 ### Verification Chain
 
-```
-1. Developer pushes code
-         ↓
-2. GitHub Actions runs CI/CD
-   - Runs all tests (700+)
-   - Scans for vulnerabilities
-   - Builds binary
-         ↓
-3. Build produces artifacts
-   - Binary (bazbom)
-   - SBOM (CycloneDX)
-   - Provenance (SLSA)
-         ↓
-4. Sign artifacts
-   - Cosign signature (keyless)
-   - SHA-256 checksum
-   - GitHub attestation
-         ↓
-5. Publish to GitHub Releases
-   - Binary + tar.gz
-   - Checksums (*.sha256)
-   - Signatures (*.sig)
-   - Provenance (*.intoto.jsonl)
-         ↓
-6. User downloads and verifies
-   - bazbom-verify tool
-   - Manual checksum check
-   - Cosign verification
+```mermaid
+flowchart TD
+    S1["1. Developer pushes code"]
+    S2["2. GitHub Actions runs CI/CD<br/>- Runs all tests (700+)<br/>- Scans for vulnerabilities<br/>- Builds binary"]
+    S3["3. Build produces artifacts<br/>- Binary (bazbom)<br/>- SBOM (CycloneDX)<br/>- Provenance (SLSA)"]
+    S4["4. Sign artifacts<br/>- Cosign signature (keyless)<br/>- SHA-256 checksum<br/>- GitHub attestation"]
+    S5["5. Publish to GitHub Releases<br/>- Binary + tar.gz<br/>- Checksums (*.sha256)<br/>- Signatures (*.sig)<br/>- Provenance (*.intoto.jsonl)"]
+    S6["6. User downloads and verifies<br/>- bazbom-verify tool<br/>- Manual checksum check<br/>- Cosign verification"]
+
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 --> S6
+
+    style S1 fill:#E1F5FF
+    style S2 fill:#FFE1E1
+    style S3 fill:#E1FFE1
+    style S4 fill:#FFE4B5
+    style S5 fill:#E6E6FA
+    style S6 fill:#90EE90
 ```
 
 ## Incident Response

@@ -60,10 +60,7 @@ impl Role {
                 Permission::WriteVulnerabilities,
                 Permission::ExportData,
             ],
-            Role::User => vec![
-                Permission::ReadSBOM,
-                Permission::ReadVulnerabilities,
-            ],
+            Role::User => vec![Permission::ReadSBOM, Permission::ReadVulnerabilities],
             Role::CI => vec![
                 Permission::ReadSBOM,
                 Permission::WriteSBOM,
@@ -205,8 +202,14 @@ mod tests {
         let roles = vec![Role::Developer];
 
         assert!(Authorizer::check_permission(&roles, &Permission::ReadSBOM));
-        assert!(Authorizer::check_permission(&roles, &Permission::WriteVulnerabilities));
-        assert!(!Authorizer::check_permission(&roles, &Permission::ManageUsers));
+        assert!(Authorizer::check_permission(
+            &roles,
+            &Permission::WriteVulnerabilities
+        ));
+        assert!(!Authorizer::check_permission(
+            &roles,
+            &Permission::ManageUsers
+        ));
     }
 
     #[test]

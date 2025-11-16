@@ -141,9 +141,8 @@ impl JwtAuthenticator {
     pub fn generate_token(&self, user_id: &str, roles: Vec<Role>) -> AuthResult<String> {
         let claims = Claims::new(user_id, roles, self.config.lifetime);
 
-        encode(&Header::default(), &claims, &self.encoding_key).map_err(|e| {
-            AuthError::Internal(anyhow::anyhow!("Failed to encode JWT: {}", e))
-        })
+        encode(&Header::default(), &claims, &self.encoding_key)
+            .map_err(|e| AuthError::Internal(anyhow::anyhow!("Failed to encode JWT: {}", e)))
     }
 
     /// Validate JWT token and extract claims
@@ -159,11 +158,12 @@ impl JwtAuthenticator {
         }
 
         // Decode and validate token
-        let token_data = decode::<Claims>(token, &self.decoding_key, &validation)
-            .map_err(|e| match e.kind() {
+        let token_data = decode::<Claims>(token, &self.decoding_key, &validation).map_err(|e| {
+            match e.kind() {
                 jsonwebtoken::errors::ErrorKind::ExpiredSignature => AuthError::TokenExpired,
                 _ => AuthError::InvalidToken(e.to_string()),
-            })?;
+            }
+        })?;
 
         let claims = token_data.claims;
 
@@ -173,7 +173,9 @@ impl JwtAuthenticator {
         }
 
         if !claims.is_valid_yet() {
-            return Err(AuthError::InvalidToken("Token not valid yet (nbf)".to_string()));
+            return Err(AuthError::InvalidToken(
+                "Token not valid yet (nbf)".to_string(),
+            ));
         }
 
         Ok(claims)

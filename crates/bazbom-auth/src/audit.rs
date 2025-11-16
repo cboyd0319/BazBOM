@@ -293,8 +293,8 @@ impl AuditLogger {
 
     /// Clean up old log files based on retention policy
     pub fn cleanup_old_logs(&self) -> anyhow::Result<usize> {
-        let cutoff_date =
-            OffsetDateTime::now_utc().date() - time::Duration::days(self.config.retention_days as i64);
+        let cutoff_date = OffsetDateTime::now_utc().date()
+            - time::Duration::days(self.config.retention_days as i64);
 
         let mut deleted = 0;
 

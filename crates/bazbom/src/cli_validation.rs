@@ -76,7 +76,10 @@ pub fn validate_profile_name(profile: &str) -> Result<()> {
 
     // Limit length
     if profile.len() > 64 {
-        bail!("Profile name too long: {} characters (max 64)", profile.len());
+        bail!(
+            "Profile name too long: {} characters (max 64)",
+            profile.len()
+        );
     }
 
     // Allow only alphanumeric, dash, and underscore
@@ -84,7 +87,10 @@ pub fn validate_profile_name(profile: &str) -> Result<()> {
         .chars()
         .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
     {
-        bail!("Profile name must be alphanumeric (with dash/underscore): {}", profile);
+        bail!(
+            "Profile name must be alphanumeric (with dash/underscore): {}",
+            profile
+        );
     }
 
     Ok(())
@@ -108,7 +114,10 @@ pub fn validate_bazel_query(query: &str) -> Result<()> {
 
     // Limit length
     if query.len() > 1024 {
-        bail!("Bazel query too long: {} characters (max 1024)", query.len());
+        bail!(
+            "Bazel query too long: {} characters (max 1024)",
+            query.len()
+        );
     }
 
     // Check for shell metacharacters that could indicate command injection
@@ -141,7 +150,10 @@ pub fn validate_bazel_target(target: &str) -> Result<()> {
 
     // Limit length
     if target.len() > 512 {
-        bail!("Bazel target too long: {} characters (max 512)", target.len());
+        bail!(
+            "Bazel target too long: {} characters (max 512)",
+            target.len()
+        );
     }
 
     // Bazel targets should start with // or @
