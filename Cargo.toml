@@ -29,6 +29,9 @@ members = [
   "crates/bazbom-crypto",
   "crates/bazbom-verify",
   "crates/bazbom-tool-verify",
+  # v6.8 - Jira + GitHub Integration
+  "crates/bazbom-jira",
+  "crates/bazbom-github",
 ]
 resolver = "2"
 
