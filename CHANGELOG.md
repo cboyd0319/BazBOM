@@ -149,7 +149,7 @@ This release achieves COMPLETE feature parity across all 7 supported languages w
 ### Changed
 
 - **All Crates Updated to v6.5.0** for consistency
-  - Unified versioning across all 26 crates
+  - Unified versioning across all 29 crates
   - Reachability analyzers now consistent: JS (6.0→6.5), Go (6.4→6.5), Python (6.4→6.5), Rust (6.5.0), Ruby (6.5.0), PHP (6.5.0)
 
 ### Security
@@ -161,7 +161,7 @@ This release achieves COMPLETE feature parity across all 7 supported languages w
   - Verification: `cargo audit` reports 0 vulnerabilities ✅
   - See [Comprehensive Security Audit](docs/COMPREHENSIVE_SECURITY_AUDIT_2025_11_12.md) for full details
 
-- **Zero Unsafe Code** - 100% memory-safe Rust across all 26 crates
+- **Zero Unsafe Code** - 100% memory-safe Rust across all 29 crates
 - **Zero Security Vulnerabilities** - Clean security audit
 
 ### Changed

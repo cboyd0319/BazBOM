@@ -8,7 +8,7 @@
 
 ## EXECUTIVE SUMMARY
 
-BazBOM is a **production-ready, enterprise-grade SBOM and SCA (Software Composition Analysis) tool** written in Rust, consisting of **26 crates** with:
+BazBOM is a **production-ready, enterprise-grade SBOM and SCA (Software Composition Analysis) tool** written in Rust, consisting of **29 crates** with:
 - **700+ tests** (all passing)
 - **Zero clippy warnings**
 - **Zero unsafe code**

@@ -40,7 +40,7 @@ BazBOM is a comprehensive Software Bill of Materials (SBOM) and Software Composi
 
 ### 1.1 Project Structure
 
-BazBOM is organized as a Rust workspace with **25 crates**, **255 source files**, and distinct security domains:
+BazBOM is organized as a Rust workspace with **29 crates**, **255 source files**, and distinct security domains:
 
 ```
 BazBOM/
