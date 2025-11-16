@@ -3,8 +3,14 @@ name: Docs Location Enforcement
 on:
   push:
     branches: [ main ]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
 
 jobs:
   docs-location:
