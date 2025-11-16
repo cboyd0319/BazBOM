@@ -37,8 +37,9 @@ impl SecretManager {
 
     /// Store secret in OS keychain
     pub fn store_secret(&self, key: &str, value: &str) -> AuthResult<()> {
-        let entry = Entry::new(self.service_name, key)
-            .map_err(|e| AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e)))?;
+        let entry = Entry::new(self.service_name, key).map_err(|e| {
+            AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e))
+        })?;
 
         entry
             .set_password(value)
@@ -49,8 +50,9 @@ impl SecretManager {
 
     /// Retrieve secret from OS keychain
     pub fn get_secret(&self, key: &str) -> AuthResult<String> {
-        let entry = Entry::new(self.service_name, key)
-            .map_err(|e| AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e)))?;
+        let entry = Entry::new(self.service_name, key).map_err(|e| {
+            AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e))
+        })?;
 
         entry
             .get_password()
@@ -59,8 +61,9 @@ impl SecretManager {
 
     /// Delete secret from OS keychain
     pub fn delete_secret(&self, key: &str) -> AuthResult<()> {
-        let entry = Entry::new(self.service_name, key)
-            .map_err(|e| AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e)))?;
+        let entry = Entry::new(self.service_name, key).map_err(|e| {
+            AuthError::Internal(anyhow::anyhow!("Failed to create keyring entry: {}", e))
+        })?;
 
         // keyring 3.x uses delete_credential instead of delete_password
         entry
@@ -240,6 +243,8 @@ mod tests {
         assert_eq!(manager.get_secret("key2").unwrap(), "value2");
 
         // Clean up
-        manager.delete_secrets(&["key1".to_string(), "key2".to_string()]).unwrap();
+        manager
+            .delete_secrets(&["key1".to_string(), "key2".to_string()])
+            .unwrap();
     }
 }

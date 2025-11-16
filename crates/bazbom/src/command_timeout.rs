@@ -41,11 +41,7 @@ pub const MAX_TIMEOUT: Duration = Duration::from_secs(1800);
 pub fn execute_with_timeout(command: &mut Command, timeout: Duration) -> Result<Output> {
     // Validate timeout is within acceptable range
     if timeout > MAX_TIMEOUT {
-        bail!(
-            "Timeout too long: {:?} (max {:?})",
-            timeout,
-            MAX_TIMEOUT
-        );
+        bail!("Timeout too long: {:?} (max {:?})", timeout, MAX_TIMEOUT);
     }
 
     // Use wait_timeout crate for cross-platform timeout support
@@ -56,9 +52,7 @@ pub fn execute_with_timeout(command: &mut Command, timeout: Duration) -> Result<
     let start = Instant::now();
 
     // Spawn the process
-    let mut child = command
-        .spawn()
-        .context("Failed to spawn subprocess")?;
+    let mut child = command.spawn().context("Failed to spawn subprocess")?;
 
     // Wait for the process with timeout
     loop {
@@ -227,9 +221,7 @@ mod tests {
     #[test]
     fn test_command_with_timeout_builder() {
         let mut cmd = CommandWithTimeout::new("echo");
-        cmd.arg("test")
-            .timeout(Duration::from_secs(5))
-            .retries(0);
+        cmd.arg("test").timeout(Duration::from_secs(5)).retries(0);
 
         // The builder pattern works correctly
         assert_eq!(cmd.timeout, Duration::from_secs(5));

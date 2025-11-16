@@ -68,10 +68,7 @@ impl ToolVerifier {
 
     /// Create a new verifier with custom configuration
     pub fn with_config(config: VerifyConfig) -> Self {
-        let registry = config
-            .custom_registry
-            .clone()
-            .unwrap_or_default();
+        let registry = config.custom_registry.clone().unwrap_or_default();
 
         Self { registry, config }
     }
@@ -79,9 +76,8 @@ impl ToolVerifier {
     /// Verify a tool by name (searches PATH)
     pub fn verify_tool(&self, tool_name: &str) -> ToolVerifyResult<VerifyStatus> {
         // Find tool in PATH
-        let tool_path = which::which(tool_name).map_err(|_| {
-            ToolVerifyError::ToolNotFound(tool_name.to_string())
-        })?;
+        let tool_path = which::which(tool_name)
+            .map_err(|_| ToolVerifyError::ToolNotFound(tool_name.to_string()))?;
 
         self.verify_tool_at_path(tool_name, &tool_path)
     }
@@ -110,17 +106,21 @@ impl ToolVerifier {
 
         // Check if version is compromised
         if self.config.check_compromised && tool.is_version_compromised(&version) {
-            log::error!("Tool {} version {} is known to be compromised!", tool_name, version);
+            log::error!(
+                "Tool {} version {} is known to be compromised!",
+                tool_name,
+                version
+            );
             return Ok(VerifyStatus::Compromised);
         }
 
         // Get expected checksum from registry
-        let tool_version = tool.get_version(&version).ok_or_else(|| {
-            ToolVerifyError::UnsupportedVersion {
-                tool: tool_name.to_string(),
-                version: version.clone(),
-            }
-        })?;
+        let tool_version =
+            tool.get_version(&version)
+                .ok_or_else(|| ToolVerifyError::UnsupportedVersion {
+                    tool: tool_name.to_string(),
+                    version: version.clone(),
+                })?;
 
         // Compute actual checksum
         let actual_checksum = hash_file(tool_path)?;
@@ -145,10 +145,7 @@ impl ToolVerifier {
                     actual: actual_checksum,
                 });
             } else {
-                log::warn!(
-                    "Checksum mismatch for {} but not enforcing",
-                    tool_name
-                );
+                log::warn!("Checksum mismatch for {} but not enforcing", tool_name);
                 return Ok(VerifyStatus::Failed(format!(
                     "Checksum mismatch: expected {}, got {}",
                     tool_version.sha256, actual_checksum
@@ -156,7 +153,11 @@ impl ToolVerifier {
             }
         }
 
-        log::info!("Tool {} version {} verified successfully", tool_name, version);
+        log::info!(
+            "Tool {} version {} verified successfully",
+            tool_name,
+            version
+        );
         Ok(VerifyStatus::Verified)
     }
 

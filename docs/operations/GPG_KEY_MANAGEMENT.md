@@ -23,23 +23,18 @@ GPG signing provides:
 
 BazBOM uses a hierarchical key structure:
 
-```
-┌────────────────────────────────────────┐
-│  Master Signing Key (Offline)         │
-│  - 4096-bit RSA                        │
-│  - Stored on air-gapped hardware      │
-│  - Used only to sign subkeys           │
-│  - Expires: 5 years                    │
-└────────────────┬───────────────────────┘
-                 │ signs
-       ┌─────────┴──────────┐
-       ↓                    ↓
-┌──────────────────┐  ┌──────────────────┐
-│  Release Subkey  │  │  Backup Subkey   │
-│  - 4096-bit RSA  │  │  - 4096-bit RSA  │
-│  - CI/CD usage   │  │  - Emergency use  │
-│  - Expires: 1yr  │  │  - Expires: 1yr  │
-└──────────────────┘  └──────────────────┘
+```mermaid
+flowchart TD
+    Master["Master Signing Key (Offline)<br/>- 4096-bit RSA<br/>- Stored on air-gapped hardware<br/>- Used only to sign subkeys<br/>- Expires: 5 years"]
+    Release["Release Subkey<br/>- 4096-bit RSA<br/>- CI/CD usage<br/>- Expires: 1yr"]
+    Backup["Backup Subkey<br/>- 4096-bit RSA<br/>- Emergency use<br/>- Expires: 1yr"]
+
+    Master -->|signs| Release
+    Master -->|signs| Backup
+
+    style Master fill:#FFE4B5
+    style Release fill:#90EE90
+    style Backup fill:#E6E6FA
 ```
 
 ### Key Rotation Schedule

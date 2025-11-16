@@ -146,9 +146,9 @@ fn detect_ecosystem(package_name: &str) -> PackageEcosystem {
             ]
             .iter()
             .any(|&p| package_name.starts_with(p)))
-        {
-            return PackageEcosystem::Python;
-        }
+    {
+        return PackageEcosystem::Python;
+    }
 
     // JavaScript/Node: Scoped packages (@org/pkg) or common npm patterns
     if package_name.starts_with('@') && package_name.contains('/') {
@@ -197,13 +197,14 @@ fn detect_ecosystem(package_name: &str) -> PackageEcosystem {
     }
 
     // PHP: Composer packages (vendor/package format)
-    if package_name.matches('/').count() == 1 && !package_name.starts_with('@')
+    if package_name.matches('/').count() == 1
+        && !package_name.starts_with('@')
         && ["symfony/", "laravel/", "guzzlehttp/", "phpunit/"]
             .iter()
             .any(|&p| package_name.starts_with(p))
-        {
-            return PackageEcosystem::Php;
-        }
+    {
+        return PackageEcosystem::Php;
+    }
 
     PackageEcosystem::Other
 }
@@ -712,12 +713,14 @@ fn get_framework_migration_guide(
 
     // Go modules
     if (package.starts_with("github.com/") || package.starts_with("golang.org/"))
-        && fixed_major >= 2 && fixed_major > current_major {
-            return Some(format!(
-                "Go module major version {}→{}. Update import paths to include /v{}",
-                current_major, fixed_major, fixed_major
-            ));
-        }
+        && fixed_major >= 2
+        && fixed_major > current_major
+    {
+        return Some(format!(
+            "Go module major version {}→{}. Update import paths to include /v{}",
+            current_major, fixed_major, fixed_major
+        ));
+    }
 
     None
 }

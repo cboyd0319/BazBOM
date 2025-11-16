@@ -165,20 +165,18 @@ sha256sum target/release/bazbom
 
 #### Key Architecture
 
-```
-Master Signing Key (Offline)
-├── 4096-bit RSA
-├── 5-year expiration
-└── Signs subkeys
+```mermaid
+flowchart TD
+    Master["Master Signing Key (Offline)<br/>4096-bit RSA<br/>5-year expiration<br/>Signs subkeys"]
+    Release["Release Subkey (CI/CD)<br/>4096-bit RSA<br/>1-year expiration<br/>Signs releases"]
+    Backup["Backup Subkey (Emergency)<br/>4096-bit RSA<br/>1-year expiration"]
 
-    ├─ Release Subkey (CI/CD)
-    │  ├── 4096-bit RSA
-    │  ├── 1-year expiration
-    │  └── Signs releases
-    │
-    └─ Backup Subkey (Emergency)
-       ├── 4096-bit RSA
-       └── 1-year expiration
+    Master --> Release
+    Master --> Backup
+
+    style Master fill:#FFE4B5
+    style Release fill:#90EE90
+    style Backup fill:#E6E6FA
 ```
 
 #### Signing Workflow

@@ -1,9 +1,9 @@
 #[cfg(feature = "rego")]
 use regorus::Engine;
-#[cfg(feature = "rego")]
-use sha2::{Digest, Sha256};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+#[cfg(feature = "rego")]
+use sha2::{Digest, Sha256};
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -52,7 +52,10 @@ impl ApiKey {
     /// Check if key has specific permission
     pub fn has_permission(&self, permission: &Permission) -> bool {
         self.scopes.contains(permission)
-            || self.roles.iter().any(|role| role.has_permission(permission))
+            || self
+                .roles
+                .iter()
+                .any(|role| role.has_permission(permission))
     }
 
     /// Update last used timestamp
@@ -126,9 +129,9 @@ impl ApiKeyManager {
         // Find matching key using constant-time comparison
         for key in self.keys.values_mut() {
             // Verify hash
-            if bcrypt::verify(raw_key, &key.key_hash)
-                .map_err(|e| AuthError::Internal(anyhow::anyhow!("Hash verification failed: {}", e)))?
-            {
+            if bcrypt::verify(raw_key, &key.key_hash).map_err(|e| {
+                AuthError::Internal(anyhow::anyhow!("Hash verification failed: {}", e))
+            })? {
                 // Check expiration
                 if key.is_expired() {
                     return Err(AuthError::ApiKeyExpired);

@@ -15,7 +15,10 @@ pub fn verify_hash(data: &[u8], expected_hash: &str) -> bool {
 
     // Constant-time comparison
     use subtle::ConstantTimeEq;
-    actual_hash.as_bytes().ct_eq(expected_hash.as_bytes()).into()
+    actual_hash
+        .as_bytes()
+        .ct_eq(expected_hash.as_bytes())
+        .into()
 }
 
 /// Compute SHA-256 hash of a file
