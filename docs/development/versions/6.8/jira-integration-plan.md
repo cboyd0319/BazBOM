@@ -177,47 +177,154 @@ flowchart TB
 - Container scan findings by layer
 - License compliance issues
 
-**Ticket Structure:**
+**Ticket Structure (With ALL BazBOM Intelligence):**
 ```
-Title: [SECURITY] CVE-2024-1234 in log4j-core 2.17.0 (CRITICAL)
+Title: [SECURITY] CVE-2024-1234 in log4j-core 2.17.0 (CRITICAL) [Fixes 3 CVEs]
 
-Description:
-Vulnerability: CVE-2024-1234
-Package: log4j-core
-Version: 2.17.0
-Severity: CRITICAL (CVSS 9.8)
-Priority: P0 (CISA KEV - actively exploited)
-Reachability: REACHABLE via com.example.LogHandler.log()
+h2. 🎯 Summary
+*Why Fix This:* 🚨 Hackers are using this right now! This allows remote code execution and is being actively exploited in the wild. CISA has listed it in their KEV catalog.
 
-Impact:
-Remote Code Execution - Hackers are using this right now
+*CVE:* CVE-2024-1234
+*Package:* log4j-core
+*Current Version:* 2.17.0
+*Fix Version:* 2.20.0
+*Severity:* CRITICAL (CVSS 9.8)
+*Priority:* P0 (CISA KEV - actively exploited)
+*Reachability:* ⚠ REACHABLE via 3 code paths
 
-Remediation:
-Upgrade to log4j-core 2.20.0
-Estimated Effort: 45 minutes
-Breaking Changes: None detected
+h2. 🎯 Multi-CVE Impact
+This upgrade fixes *3 CVEs* (22.6 total CVSS points):
+• CVE-2024-1234 - CRITICAL (9.8) - ⚠ Reachable
+• CVE-2024-5678 - HIGH (7.5) - ⚠ Reachable
+• CVE-2024-9012 - MEDIUM (5.3) - ✓ Unreachable
 
-Fix Command:
-```bash
+h2. 🚨 Vulnerability Details
+*Impact:* Remote Code Execution - Attackers can execute arbitrary code on the server
+
+*EPSS Score:* 0.89 (89% exploitation probability)
+*KEV Status:* ⚠ ACTIVE in CISA catalog
+*Exploit Intelligence:*
+• ExploitDB PoC available
+• GitHub PoCs: 3 repositories
+• Nuclei template available
+• 12,500 exploitation attempts detected globally (last 24h)
+
+h2. 📊 ML Risk Score
+*Overall Risk:* 92/100 (CRITICAL - Immediate Action Required)
+
+| Factor | Score | Weight |
+| CVSS | 9.8 | 30% |
+| EPSS | 0.89 | 25% |
+| KEV | 1.0 | 20% |
+| Reachability | 1.0 | 15% |
+
+h2. 🔍 Reachability Analysis
+*Status:* ⚠ REACHABLE (95% confidence)
+
+*Call Paths (3):*
+{code}
+LogController.handleRequest() → [VULNERABLE]
+AuditService.log() → [VULNERABLE]
+JobProcessor.onFailure() → [VULNERABLE]
+{code}
+
+*Files Affected:*
+• LogController.java:42
+• AuditService.java:78
+• JobProcessor.java:156
+
+h2. 📏 Difficulty Scoring
+*Remediation Difficulty:* 15/100 (Very Easy)
+*Estimated Time:* 45 minutes
+
+*Why Easy:*
+• Simple version bump (minor version)
+• No breaking changes
+• No config changes needed
+• Existing tests cover the upgrade
+
+h2. 🔧 Remediation
+*Fix:* Upgrade to log4j-core 2.20.0
+
+*Breaking Changes:* ✓ NONE
+• All APIs preserved (100% compatibility)
+• No deprecated methods in use
+• No config changes required
+
+*Fix Command:*
+{code:bash}
 bazbom fix log4j-core --apply
+# Or create PR automatically:
+bazbom github create-pr --jira SEC-567
+{code}
+
+h2. 🎓 Framework Guidance
+*Framework:* Apache Log4j 2.x
+*Migration:* None required (patch release)
+
+*Compatible With:*
+• Spring Boot 2.7+, 3.x
+• Quarkus 2.16+
+• Java 8, 11, 17, 21
+
+h2. 🧪 Testing Strategy
+*Recommended Tests:*
+• LogControllerTest.testHandleRequest()
+• AuditServiceTest.testErrorLogging()
+• JobProcessorTest.testFailureLogging()
+• NEW: Security tests (JNDI injection)
+
+h2. 📦 Container Impact
+*Affected Images:* 3
+• myapp:latest (Layer 8, Debian 12) - Rebuild required
+• myapp:prod (Layer 8, Debian 12) - Rebuild required
+• myapp-worker (Layer 6, Alpine) - Rebuild required
+
+h2. 🛡 Policy Compliance
+*Before:* ❌ 3 violations
+*After:* ✓ ALL PASS
+
+*Frameworks:*
+• PCI-DSS 6.2: Was 45 days overdue → ✓ Compliant
+• HIPAA: At risk → ✓ Compliant
+• FedRAMP: KEV 23 days overdue → ✓ Compliant
+
+h2. 🔗 Links
+• [BazBOM Scan|https://bazbom.example.com/scan/abc123]
+• [CVE Details|https://nvd.nist.gov/vuln/detail/CVE-2024-1234]
+• [ExploitDB PoC|https://exploit-db.com/exploits/12345]
+• [Call Graph SVG|^callgraph.svg]
+• [Call Graph GraphML|^callgraph.graphml]
+• [GitHub PR|https://github.com/org/repo/pull/789] (auto-created)
+
+*Attachments:*
+• callgraph-cve-2024-1234.svg (Call graph visualization)
+• callgraph-cve-2024-1234.graphml (Cytoscape format)
+• sbom-before.spdx.json
+• sbom-after.spdx.json
 ```
 
-Call Graph:
-[Attached: callgraph-log4j-cve-2024-1234.svg]
-
-BazBOM Scan: https://bazbom.example.com/scan/abc123
-```
-
-**Custom Fields:**
-- CVE ID (text)
-- CVSS Score (number)
-- EPSS Score (number)
-- KEV Status (checkbox)
-- Reachability (select: Reachable/Unreachable/Unknown)
-- Package PURL (text)
-- Fix Version (text)
-- Remediation Effort (select: <1h, 1-4h, 1d, 1w, >1w)
-- BazBOM Scan Link (URL)
+**Custom Fields (Complete Set):**
+- **CVE ID** (text): CVE-2024-1234
+- **CVEs Fixed** (number): 3
+- **CVSS Score** (number): 9.8
+- **EPSS Score** (number): 0.89
+- **KEV Status** (checkbox): ✓ Yes
+- **ML Risk Score** (number): 92
+- **Reachability** (select): Reachable / Unreachable / Unknown
+- **Reachability Confidence** (number): 95
+- **Package PURL** (text): pkg:maven/org.apache.logging.log4j/log4j-core@2.17.0
+- **Current Version** (text): 2.17.0
+- **Fix Version** (text): 2.20.0
+- **Remediation Difficulty** (number): 15
+- **Remediation Effort** (select): <1h / 1-4h / 1d / 1w / >1w
+- **Breaking Changes** (checkbox): ☐ Yes / ✓ No
+- **Container Images Affected** (number): 3
+- **Framework** (text): Apache Log4j 2.x
+- **Policy Violations** (number): 3
+- **BazBOM Scan Link** (URL): https://bazbom.example.com/scan/abc123
+- **GitHub PR** (URL): https://github.com/org/repo/pull/789
+- **Exploit Available** (checkbox): ✓ Yes
 
 ### 2. Bidirectional Synchronization
 
