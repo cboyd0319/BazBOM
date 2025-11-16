@@ -1,8 +1,9 @@
 # BazBOM v6.8 - Jira Bidirectional Integration
 
 **Version:** 6.8
-**Target Release:** Q2 2025
+**Target Release:** Q2 2026
 **Status:** Planning Phase
+**Last Updated:** 2025-11-16
 
 ## Overview
 
@@ -151,24 +152,26 @@ bazbom scan --jira-create
 ## Timeline & Milestones
 
 ```
-Week 3  │ M1: Alpha (Core + Sync)
+2026-01 │ Development Start (Phase 1)
+        │
+2026-02 │ M1: Alpha (Core + Sync)
         │ • Manual ticket creation
         │ • Webhook support
         │ • VEX generation
         │
-Week 9  │
+2026-03 │
         │
-Week 15 │ M2: Beta (CI/CD + Dashboard)
+2026-04 │ M2: Beta (CI/CD + Dashboard)
         │ • Auto-create on scan
         │ • CI/CD integration
         │ • Dashboard UI
         │
-Week 18 │ M3: Release Candidate
+2026-05 │ M3: Release Candidate
         │ • SLA tracking
         │ • Sprint integration
         │ • Performance optimized
         │
-Week 20 │ M4: General Availability
+2026-06 │ M4: General Availability (v6.8)
         │ • Full documentation
         │ • Production ready
         │ • Public release
@@ -344,11 +347,11 @@ v6.8 is in the planning phase. We welcome feedback on:
 | Date | Status | Milestone |
 |------|--------|-----------|
 | 2025-11-16 | Planning | Initial plan created |
-| TBD | Development | Phase 1 kickoff |
-| TBD | Alpha | M1: Core + Sync |
-| TBD | Beta | M2: CI/CD + Dashboard |
-| TBD | RC | M3: Advanced features |
-| TBD | GA | M4: Public release |
+| 2026-01 | Development | Phase 1 kickoff |
+| 2026-03 | Alpha | M1: Core + Sync |
+| 2026-04 | Beta | M2: CI/CD + Dashboard |
+| 2026-05 | RC | M3: Advanced features |
+| 2026-06 | GA | M4: Public release |
 
 ## Contact
 
@@ -365,7 +368,7 @@ v6.8 is in the planning phase. We welcome feedback on:
 2. ⏳ Gather stakeholder feedback
 3. ⏳ Finalize Phase 1 scope
 4. ⏳ Allocate development resources
-5. ⏳ Begin implementation (Q1 2025)
+5. ⏳ Begin implementation (Q1 2026)
 
 ---
 

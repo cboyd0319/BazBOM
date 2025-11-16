@@ -1,6 +1,7 @@
 # BazBOM v6.8 - Jira Integration Technical Specifications
 
 **Version:** 6.8
+**Target Release:** Q2 2026
 **Last Updated:** 2025-11-16
 **Status:** Planning
 

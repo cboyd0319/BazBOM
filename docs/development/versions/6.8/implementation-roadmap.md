@@ -1,7 +1,9 @@
 # BazBOM v6.8 - Jira Integration Implementation Roadmap
 
 **Version:** 6.8
-**Timeline:** 20 weeks (Q1-Q2 2025)
+**Timeline:** 20 weeks (Q1-Q2 2026)
+**Target Release:** Q2 2026
+**Last Updated:** 2025-11-16
 **Status:** Planning
 
 ## Overview
@@ -13,7 +15,7 @@ This roadmap outlines the implementation plan for comprehensive Jira bidirection
 ## Timeline
 
 ```
-Q1 2025                                    Q2 2025
+Q1 2026                                    Q2 2026
 ┌────────────┬────────────┬────────────┬────────────┬────────────┐
 │  Weeks 1-3 │  Weeks 4-6 │  Weeks 7-9 │ Weeks 10-12│ Weeks 13-15│
 │  Phase 1   │  Phase 2   │  Phase 3   │  Phase 4   │  Phase 5   │
@@ -600,10 +602,10 @@ See [technical-specifications.md](technical-specifications.md)
 ---
 
 **Next Steps:**
-1. Review and approve roadmap
+1. Review and approve roadmap (Nov-Dec 2025)
 2. Allocate resources (developers, QA, tech writer)
 3. Set up Jira Cloud sandbox for testing
-4. Kick off Phase 1 (Weeks 1-3)
+4. Kick off Phase 1 (January 2026)
 
 ---
 

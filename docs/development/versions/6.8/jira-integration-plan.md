@@ -1,9 +1,10 @@
 # BazBOM v6.8 - Jira Bidirectional Integration Plan
 
 **Version:** 6.8
-**Target Release:** Q2 2025
+**Target Release:** Q2 2026
 **Status:** Planning
 **Owner:** cboyd0319
+**Last Updated:** 2025-11-16
 
 ## Executive Summary
 

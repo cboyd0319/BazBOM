@@ -1,6 +1,7 @@
 # BazBOM v6.8 - Jira Integration Analysis
 
 **Version:** 6.8
+**Target Release:** Q2 2026
 **Last Updated:** 2025-11-16
 **Status:** Analysis Complete
 
@@ -666,10 +667,10 @@ The v6.8 Jira integration represents a comprehensive transformation of BazBOM fr
 ---
 
 **Next Steps:**
-1. Review this analysis with stakeholders
-2. Prioritize integration points by value
+1. Review this analysis with stakeholders (Nov-Dec 2025)
+2. Prioritize integration points by value (Dec 2025)
 3. Finalize Phase 1 scope (Weeks 1-3)
-4. Begin implementation (Q1 2025)
+4. Begin implementation (Q1 2026)
 
 ---
 
