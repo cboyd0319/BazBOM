@@ -11,7 +11,7 @@ repositories {
 }
 
 intellij {
-    version.set("2023.3")
+    version.set("2025.2")
     type.set("IC")  // IntelliJ IDEA Community
     plugins.set(listOf("maven", "gradle", "Kotlin", "java"))
 }
@@ -23,8 +23,8 @@ dependencies {
 
 tasks {
     patchPluginXml {
-        sinceBuild.set("233")
-        untilBuild.set("241.*")
+        sinceBuild.set("252")
+        untilBuild.set("253.*")
         
         changeNotes.set("""
             <h3>1.0.0</h3>
@@ -48,5 +48,5 @@ tasks {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
