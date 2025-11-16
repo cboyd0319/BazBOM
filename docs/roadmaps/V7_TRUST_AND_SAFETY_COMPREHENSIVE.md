@@ -53,7 +53,7 @@ BazBOM v7 represents a fundamental commitment to **trust and safety for enterpri
 **Achievements:**
 - ✅ Zero critical/high vulnerabilities in dependencies
 - ✅ 100% memory-safe Rust implementation (minimal unsafe code)
-- ✅ SLSA Level 3 provenance with Sigstore signing
+- ✅ SLSA v1.1 Level 3 provenance with Sigstore signing
 - ✅ 90%+ test coverage with 700+ tests
 - ✅ Zero clippy warnings, comprehensive CI/CD security
 - ✅ Distroless Docker images with non-root user
@@ -156,7 +156,7 @@ Based on comprehensive security analysis and enterprise requirements:
 
 **Strategy:**
 1. **Build Provenance**:
-   - SLSA Level 4 (hermetic, reproducible builds)
+   - SLSA v1.1 Level 4 (hermetic, reproducible builds)
    - Binary transparency logs
    - Signed build artifacts with Sigstore
    - Reproducible builds (bit-for-bit)
@@ -174,7 +174,7 @@ Based on comprehensive security analysis and enterprise requirements:
    - Package repository signing (Homebrew, etc.)
 
 **Deliverables:**
-- [ ] SLSA Level 4 builds
+- [ ] SLSA v1.1 Level 4 builds
 - [ ] Reproducible build documentation
 - [ ] GPG signing implementation
 - [ ] Binary transparency integration
@@ -687,12 +687,12 @@ rules:
 
 ## 5. Supply Chain Excellence
 
-### 5.1 SLSA Level 4 (Highest Level)
+### 5.1 SLSA v1.1 Level 4 (Highest Level)
 
-**Current**: SLSA Level 3 ✅
-**Target**: SLSA Level 4
+**Current**: SLSA v1.1 Level 3 ✅
+**Target**: SLSA v1.1 Level 4
 
-**Requirements for SLSA Level 4:**
+**Requirements for SLSA v1.1 Level 4:**
 1. ✅ **Build**: Hermetic, reproducible builds
 2. ✅ **Provenance**: Signed, non-falsifiable provenance
 3. ✅ **Dependencies**: Pinned, verified dependencies
@@ -754,7 +754,7 @@ abc123...  # IDENTICAL
 - [ ] Reproducible build documentation
 - [ ] Build reproducibility tests
 - [ ] Two-party review enforcement
-- [ ] SLSA Level 4 attestation
+- [ ] SLSA v1.1 Level 4 attestation
 
 ### 5.2 Binary Transparency
 
@@ -1702,7 +1702,7 @@ impl AuditLog {
 | ... | ... | ... | ... | ... |
 
 ## Supply Chain Security
-- SLSA Level 4 maintained
+- SLSA v1.1 Level 4 maintained
 - 100% of releases signed with Sigstore
 - Zero supply chain incidents
 - All dependencies verified
@@ -2002,7 +2002,7 @@ We will not pursue legal action against security researchers who:
 
 1. **New Contributor Onboarding**
    - Secure coding guidelines (Rust security)
-   - Common vulnerabilities (OWASP Top 10)
+   - Common vulnerabilities (OWASP Top 10 2025)
    - Code review for security
    - Incident response basics
 
@@ -2224,14 +2224,14 @@ docs/
 **Sprint 5-6: Supply Chain Security**
 - [ ] Fix M-06: External tool integrity verification (Syft, Semgrep)
 - [ ] Tool verification registry
-- [ ] SLSA Level 4 implementation
+- [ ] SLSA v1.1 Level 4 implementation
 - [ ] Reproducible builds
 - [ ] Binary transparency logs (Rekor)
 
 **Milestone 1 Deliverables:**
 - ✅ All medium-severity security findings fixed
 - ✅ Secure installation process
-- ✅ SLSA Level 4
+- ✅ SLSA v1.1 Level 4
 - ✅ Tool integrity verification
 
 ### Phase 2: Authentication & Authorization (Months 4-6)
@@ -2616,7 +2616,7 @@ BazBOM v7 represents a comprehensive commitment to **trust and safety for enterp
 
 **Key Differentiators:**
 1. ✅ **Zero Vulnerability Commitment**: Maintain zero known vulnerabilities
-2. ✅ **SLSA Level 4**: Highest supply chain security standard
+2. ✅ **SLSA v1.1 Level 4**: Highest supply chain security standard
 3. ✅ **SOC 2 + ISO 27001**: Enterprise compliance certifications
 4. ✅ **Privacy-First**: Zero telemetry, GDPR compliant
 5. ✅ **Complete Transparency**: Public audits, scorecard, transparency reports

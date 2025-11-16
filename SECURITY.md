@@ -155,9 +155,10 @@ All external input is validated and sanitized:
 
 BazBOM adheres to:
 
-- ✅ **OWASP Top 10 (2021)** - All 10 categories addressed (100% coverage)
-- ✅ **CWE Top 25** - Critical weaknesses mitigated
-- ✅ **SLSA** - Level 3 supply chain security (upgrading to Level 4)
+- ✅ **OWASP Top 10 2025** - All categories addressed including new A03 (Software Supply Chain Failures) and A10 (Mishandling of Exceptional Conditions)
+- ✅ **CWE Top 25 2024** - Critical weaknesses mitigated (released Nov 2024)
+- ✅ **SLSA v1.1** - Level 3 supply chain security (upgrading to Level 4)
+- ✅ **NIST Cybersecurity Framework 2.0** - 6-function framework (Identify, Protect, Detect, Respond, Recover, Govern)
 - ✅ **NIST SSDF** - Secure software development framework
 - ✅ **Memory Safety** - 100% Rust with zero unsafe code (except where required with justification)
 - 🚧 **SOC 2 Type II** - In preparation (target: Q2 2026) - See [SOC2_PREPARATION.md](docs/compliance/SOC2_PREPARATION.md)
@@ -213,9 +214,11 @@ We appreciate security researchers who responsibly disclose vulnerabilities. Con
 
 ## Additional Resources
 
+- [OWASP Top 10 2025](https://owasp.org/Top10/) - Latest web application security risks
 - [OWASP Secure Coding Practices](https://owasp.org/www-project-secure-coding-practices-quick-reference-guide/)
-- [CWE/SANS Top 25](https://cwe.mitre.org/top25/)
-- [SLSA Framework](https://slsa.dev/)
-- [Sigstore](https://www.sigstore.dev/)
+- [CWE Top 25 2024](https://cwe.mitre.org/top25/) - Most dangerous software weaknesses (Nov 2024)
+- [SLSA Framework v1.1](https://slsa.dev/) - Supply chain security levels
+- [NIST Cybersecurity Framework 2.0](https://www.nist.gov/cyberframework) - Released Feb 2024
+- [Sigstore](https://www.sigstore.dev/) - Keyless signing and transparency
 - [Rust Security Guidelines](https://anssi-fr.github.io/rust-guide/)
 - [RustSec Advisory Database](https://rustsec.org/)

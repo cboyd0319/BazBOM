@@ -64,7 +64,7 @@ BazBOM v7.0 represents a comprehensive transformation toward becoming the #1 tru
 |------|--------|-------|
 | M-06: External Tool Verification | 📋 Planned | Architecture designed |
 | Tool Verification Registry | 📋 Planned | Schema defined |
-| SLSA Level 4 Upgrade | 📋 Planned | Currently at Level 3 |
+| SLSA v1.1 Level 4 Upgrade | 📋 Planned | Currently at SLSA v1.1 Level 3 |
 | Rekor Transparency Logs | 📋 Planned | Integration planned |
 
 ### ✅ Phase 2: Authentication & Authorization (Months 4-6) - COMPLETE
@@ -255,17 +255,17 @@ Files Added:       23
 
 ### Verified Protections
 
-✅ **OWASP Top 10 (2021)**:
+✅ **OWASP Top 10 2025** (RC1):
 1. Broken Access Control → RBAC + JWT
 2. Cryptographic Failures → ChaCha20 + TLS 1.3
-3. Injection → Rust type safety, no SQL
-4. Insecure Design → Defense in depth
-5. Security Misconfiguration → Secure defaults
-6. Vulnerable Components → Daily scanning
-7. Authentication Failures → JWT + bcrypt
-8. Data Integrity Failures → HMAC signatures
-9. Logging Failures → Comprehensive audit logs
-10. SSRF → Input validation + canonicalization
+3. Software Supply Chain Failures → SLSA v1.1 Level 3 + provenance (NEW in 2025)
+4. Injection → Rust type safety, no SQL
+5. Insecure Design → Defense in depth
+6. Security Misconfiguration → Secure defaults
+7. Vulnerable Components → Daily scanning
+8. Authentication Failures → JWT + bcrypt
+9. Data Integrity Failures → HMAC signatures
+10. Mishandling of Exceptional Conditions → Rust Result<T,E> pattern (NEW in 2025)
 
 ## Documentation Created
 
@@ -365,7 +365,7 @@ bazbom dashboard --jwt-auth
 
 ### Short Term (Next Month)
 1. 📋 Implement external tool verification
-2. 📋 Upgrade to SLSA Level 4
+2. 📋 Upgrade to SLSA v1.1 Level 4
 3. 📋 Integrate Rekor transparency logs
 4. 📋 GPG key generation and distribution
 5. 📋 Cosign signature implementation
@@ -434,7 +434,7 @@ bazbom dashboard --jwt-auth
 - 📋 SOC 2 certification (Target: Q2 2026)
 - 📋 ISO 27001 certification (Target: Q3 2026)
 - 📋 GDPR compliance (Target: Q2 2026)
-- 📋 SLSA Level 4 (Target: Q1 2026)
+- 📋 SLSA v1.1 Level 4 (Target: Q1 2026)
 
 ## Risks & Mitigation
 

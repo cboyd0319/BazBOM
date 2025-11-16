@@ -393,7 +393,7 @@ Existing v6.x installations can upgrade to v7.0 with zero code changes. New secu
 ### Short Term (Next Month)
 
 1. **External Tool Verification** (M-06)
-2. **SLSA Level 4 Upgrade**
+2. **SLSA v1.1 Level 4 Upgrade**
 3. **GPG Key Generation** and distribution
 4. **Cosign Signature Implementation**
 5. **Rekor Transparency Log** integration

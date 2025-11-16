@@ -9,7 +9,7 @@
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
 [![Tests](https://img.shields.io/badge/tests-700%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![SLSA 3](https://img.shields.io/badge/SLSA-Level%203-green)](docs/operations/provenance.md)
+[![SLSA v1.1 Level 3](https://img.shields.io/badge/SLSA-v1.1%20Level%203-green)](docs/operations/provenance.md)
 
 [Install](#installation) • [Quick Start](#quick-start) • [Documentation](docs/README.md)
 
@@ -263,7 +263,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 - ✅ **Vulnerability Scanning** (OSV, NVD, CISA KEV, GHSA)
 - ✅ **Reachability Analysis** (7 languages, 70-90% noise reduction)
 - ✅ **Build-Time Accuracy** (Maven/Gradle/Bazel native)
-- ✅ **SLSA Level 3 Provenance** (Signed releases)
+- ✅ **SLSA v1.1 Level 3 Provenance** (Signed releases)
 - ✅ **VEX Support** (False positive suppression)
 - ✅ **Policy Enforcement** (Rego/YAML/CUE-based)
 - ✅ **Offline/Air-Gapped Mode** (Works fully disconnected)
@@ -394,7 +394,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 | **CI Templates** | ✅ 5 platforms | ❌ Manual | ⚠️ Limited | ❌ Manual | ❌ Manual |
 | **Monorepo Scale** | ✅ 5K+ targets | ⚠️ Slow | ⚠️ Slow | ⚠️ Slow | ⚠️ Limited |
 | **Offline Mode** | ✅ | ✅ | ✅ | ✅ | ⚠️ Limited |
-| **SLSA Level 3** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **SLSA v1.1 Level 3** | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 **Why BazBOM wins:**
 - **Only tool** with native Bazel support (essential for modern monorepos)
@@ -434,7 +434,7 @@ See [Development Guide](docs/development/README.md) for details.
 - ✅ **Zero vulnerabilities** (cargo audit clean)
 - ✅ **100% memory-safe Rust** (no unsafe code without justification)
 - ✅ **Zero clippy warnings** (comprehensive code quality)
-- ✅ **SLSA Level 3 provenance** (signed releases)
+- ✅ **SLSA v1.1 Level 3 provenance** (signed releases)
 - ✅ **Sigstore keyless signing** (verify before you trust)
 - ✅ **Zero telemetry** (no phoning home, ever)
 - ✅ **Offline-first** (works fully air-gapped)

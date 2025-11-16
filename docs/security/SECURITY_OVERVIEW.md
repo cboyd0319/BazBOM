@@ -10,7 +10,7 @@ BazBOM v7.0 is designed from the ground up for enterprise security. Every compon
 
 - **✅ Zero Known Vulnerabilities**: Maintained through daily scanning and rapid patching
 - **✅ Memory Safety**: 100% Rust implementation prevents buffer overflows and memory corruption
-- **✅ Supply Chain Security**: SLSA Level 3 provenance with plans for Level 4
+- **✅ Supply Chain Security**: SLSA v1.1 Level 3 provenance with plans for Level 4
 - **✅ Strong Cryptography**: ChaCha20-Poly1305 encryption, JWT authentication, bcrypt hashing
 - **✅ Comprehensive Auditing**: Tamper-evident logs for all security events
 - **✅ Defense in Depth**: Multiple security layers at every level
@@ -318,7 +318,10 @@ Dependency Update Lag           < 7 days     < 3 days
 ```
 Framework              Status          Target Date
 ───────────────────────────────────────────────────
-SLSA Level 3           ✅ Complete     Current
+OWASP Top 10 2025      ✅ Complete     Current
+CWE Top 25 2024        ✅ Complete     Current
+SLSA v1.1 Level 3      ✅ Complete     Current
+NIST CSF 2.0           ✅ Complete     Current
 SOC 2 Type II          🚧 In Progress  Q2 2026
 ISO 27001              🚧 In Progress  Q3 2026
 GDPR                   🚧 In Progress  Q2 2026
