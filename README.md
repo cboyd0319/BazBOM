@@ -53,11 +53,10 @@ Visit [BazBOM Releases](https://github.com/cboyd0319/BazBOM/releases/latest) and
 - Linux (x86_64/ARM64)
 - Windows (x86_64)
 
-**Homebrew (not yet published):**
+**Homebrew:**
 ```bash
-# Not yet available - use install script or build from source
-# brew tap cboyd0319/bazbom
-# brew install bazbom
+brew tap cboyd0319/bazbom
+brew install bazbom
 ```
 
 **Cargo (Rust developers):**
@@ -91,7 +90,7 @@ bazbom --version
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
 - ✅ **Code Quality** - Zero clippy warnings, 100% passing tests, comprehensive bug fixes
 
-🦀 **25 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
+🦀 **26 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 

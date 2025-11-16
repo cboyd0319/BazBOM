@@ -11,14 +11,12 @@ BazBOM now supports **multi-language monorepo scanning** beyond JVM! Automatical
 
 | Ecosystem | Icon | Manifest | Lockfile | Status |
 |-----------|------|----------|----------|--------|
-| **Node.js/npm** | 📦 | package.json | package-lock.json, yarn.lock*, pnpm-lock.yaml* | ✅ Complete |
+| **Node.js/npm** | 📦 | package.json | package-lock.json, yarn.lock, pnpm-lock.yaml | ✅ Complete |
 | **Python** | 🐍 | requirements.txt, pyproject.toml, Pipfile | poetry.lock, Pipfile.lock | ✅ Complete |
 | **Go** | 🐹 | go.mod | go.sum | ✅ Complete |
 | **Rust** | 🦀 | Cargo.toml | Cargo.lock | ✅ Complete |
 | **Ruby** | 💎 | Gemfile | Gemfile.lock | ✅ Complete |
 | **PHP** | 🐘 | composer.json | composer.lock | ✅ Complete |
-
-*\*yarn.lock and pnpm-lock.yaml support coming in future release (fallback to package.json)*
 
 ## Quick Start
 
@@ -166,19 +164,14 @@ cargo test -p bazbom-polyglot --lib detection
 
 ## Limitations
 
-1. **yarn.lock and pnpm-lock.yaml**: Stubs present, full implementation planned for 6.1.0 (fallback to package.json works)
-2. **Transitive dependencies**: Currently flattened in SBOM (no nested tree structure)
-3. **Private registries**: Only public registries supported (npm, PyPI, crates.io, RubyGems, Packagist, Go modules)
+1. **Transitive dependencies**: Currently flattened in SBOM (no nested tree structure)
+2. **Private registries**: Only public registries supported (npm, PyPI, crates.io, RubyGems, Packagist, Go modules)
 
 ## Future Enhancements
 
-### Planned for 6.1.0
-- ✨ yarn.lock full parser implementation
-- ✨ pnpm-lock.yaml full parser implementation
+### Planned for 7.0.0
 - ✨ Dependency tree visualization (nested structure)
 - ✨ Private registry support (custom endpoints)
-
-### Planned for 7.0.0
 - ✨ Intelligence features (quick wins, priority classification)
 - ✨ Breaking change detection per ecosystem
 - ✨ Copy-paste remediation suggestions
