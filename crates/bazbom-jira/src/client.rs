@@ -1,6 +1,6 @@
 use crate::error::{JiraError, Result};
 use crate::models::*;
-use governor::{clock::DefaultClock, state::InMemoryState, Quota, RateLimiter};
+use governor::{clock::DefaultClock, state::{InMemoryState, NotKeyed}, Quota, RateLimiter};
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -17,7 +17,7 @@ pub struct JiraClient {
     client: ClientWithMiddleware,
 
     /// Rate limiter
-    rate_limiter: Arc<RateLimiter<governor::NotKeyed, InMemoryState, DefaultClock>>,
+    rate_limiter: Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock>>,
 
     /// Authentication token
     auth_token: String,
@@ -68,12 +68,14 @@ impl JiraClient {
 
         debug!("Creating Jira issue");
 
+        let body = serde_json::to_vec(&request)?;
+
         let response = self
             .client
             .post(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
-            .json(&request)
+            .body(body)
             .send()
             .await?;
 
@@ -149,12 +151,14 @@ impl JiraClient {
 
         debug!("Updating Jira issue: {}", issue_key);
 
+        let body = serde_json::to_vec(&request)?;
+
         let response = self
             .client
             .put(&url)
             .header("Authorization", self.auth_header())
             .header("Content-Type", "application/json")
-            .json(&request)
+            .body(body)
             .send()
             .await?;
 

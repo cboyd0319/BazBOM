@@ -27,8 +27,17 @@ pub enum GitHubError {
     #[error("Network error: {0}")]
     Network(#[from] reqwest::Error),
 
+    #[error("Middleware error: {0}")]
+    Middleware(#[from] reqwest_middleware::Error),
+
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
+
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("YAML error: {0}")]
+    Yaml(#[from] serde_yaml::Error),
 
     #[error("Configuration error: {0}")]
     Config(String),

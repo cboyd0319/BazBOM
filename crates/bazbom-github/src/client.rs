@@ -1,6 +1,6 @@
 use crate::error::{GitHubError, Result};
 use crate::models::*;
-use governor::{clock::DefaultClock, state::InMemoryState, Quota, RateLimiter};
+use governor::{clock::DefaultClock, state::{InMemoryState, NotKeyed}, Quota, RateLimiter};
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -14,7 +14,7 @@ pub struct GitHubClient {
     client: ClientWithMiddleware,
 
     /// Rate limiter
-    rate_limiter: Arc<RateLimiter<governor::NotKeyed, InMemoryState, DefaultClock>>,
+    rate_limiter: Arc<RateLimiter<NotKeyed, InMemoryState, DefaultClock>>,
 
     /// Authentication token (PAT)
     token: String,
@@ -57,6 +57,8 @@ impl GitHubClient {
 
         debug!("Creating GitHub PR: {} -> {}", request.head, request.base);
 
+        let body = serde_json::to_vec(&request)?;
+
         let response = self
             .client
             .post(&url)
@@ -64,7 +66,7 @@ impl GitHubClient {
             .header("Accept", "application/vnd.github+json")
             .header("X-GitHub-Api-Version", "2022-11-28")
             .header("User-Agent", "BazBOM/6.8.0")
-            .json(&request)
+            .body(body)
             .send()
             .await?;
 
@@ -164,6 +166,8 @@ impl GitHubClient {
 
         debug!("Updating GitHub PR #{}", pr_number);
 
+        let body = serde_json::to_vec(&request)?;
+
         let response = self
             .client
             .patch(&url)
@@ -171,7 +175,7 @@ impl GitHubClient {
             .header("Accept", "application/vnd.github+json")
             .header("X-GitHub-Api-Version", "2022-11-28")
             .header("User-Agent", "BazBOM/6.8.0")
-            .json(&request)
+            .body(body)
             .send()
             .await?;
 
