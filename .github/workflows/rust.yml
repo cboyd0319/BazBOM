@@ -29,10 +29,18 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          fetch-depth: 1
-      
-      - uses: dtolnay/rust-toolchain@stable
-      
+          fetch-depth: 0  # Full history for SOURCE_DATE_EPOCH
+
+      # Toolchain version automatically read from rust-toolchain.toml (SLSA L4: pinned toolchain)
+      - uses: dtolnay/rust-toolchain@master
+
+      # Set reproducible build environment (SLSA L4: deterministic builds)
+      - name: Set reproducible build environment
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C metadata=bazbom-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
           shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
@@ -60,12 +68,20 @@ jobs:
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
-          fetch-depth: 1
-      
-      - uses: dtolnay/rust-toolchain@stable
+          fetch-depth: 0  # Full history for SOURCE_DATE_EPOCH
+
+      # Toolchain version automatically read from rust-toolchain.toml (SLSA L4: pinned toolchain)
+      - uses: dtolnay/rust-toolchain@master
         with:
           components: llvm-tools-preview
-      
+
+      # Set reproducible build environment (SLSA L4: deterministic builds)
+      - name: Set reproducible build environment
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C metadata=bazbom-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+
       - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
         with:
           shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
@@ -164,3 +180,82 @@ jobs:
             exit 1
           fi
           echo "Coverage check passed: ${COVERAGE}% >= 90%"
+
+  # SLSA v1.1 Level 4: Reproducible builds verification
+  reproducibility:
+    name: Verify Reproducible Builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0  # Full history for SOURCE_DATE_EPOCH
+
+      # Toolchain version from rust-toolchain.toml
+      - uses: dtolnay/rust-toolchain@master
+
+      # Set reproducible build environment
+      - name: Set reproducible build environment
+        run: |
+          echo "SOURCE_DATE_EPOCH=$(git log -1 --format=%ct)" >> $GITHUB_ENV
+          echo "RUSTFLAGS=-C metadata=bazbom-$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "CARGO_INCREMENTAL=0" >> $GITHUB_ENV
+
+      - uses: Swatinem/rust-cache@f13886b937689c021905a6b90929199931d60db1 # v2.8.1
+        with:
+          shared-key: "rust-global-${{ hashFiles('**/Cargo.lock') }}"
+          save-if: false  # Restore-only
+
+      # Build 1
+      - name: First build
+        run: |
+          cargo clean
+          cargo build --release --locked -p bazbom
+          sha256sum target/release/bazbom | tee checksum1.txt
+
+      # Build 2
+      - name: Second build
+        run: |
+          cargo clean
+          cargo build --release --locked -p bazbom
+          sha256sum target/release/bazbom | tee checksum2.txt
+
+      # Compare
+      - name: Verify builds are identical
+        run: |
+          CHECKSUM1=$(cat checksum1.txt | awk '{print $1}')
+          CHECKSUM2=$(cat checksum2.txt | awk '{print $1}')
+
+          echo "Build 1 checksum: $CHECKSUM1"
+          echo "Build 2 checksum: $CHECKSUM2"
+
+          if [ "$CHECKSUM1" = "$CHECKSUM2" ]; then
+            echo "✅ Builds are reproducible! Identical checksums."
+          else
+            echo "❌ Builds are NOT reproducible. Checksums differ:"
+            echo "  Build 1: $CHECKSUM1"
+            echo "  Build 2: $CHECKSUM2"
+            exit 1
+          fi
+
+      - name: Report reproducibility status
+        if: always()
+        run: |
+          echo "## 🔁 Reproducibility Report" >> $GITHUB_STEP_SUMMARY
+          CHECKSUM1=$(cat checksum1.txt | awk '{print $1}')
+          CHECKSUM2=$(cat checksum2.txt | awk '{print $1}')
+          if [ "$CHECKSUM1" = "$CHECKSUM2" ]; then
+            echo "✅ **Status**: Reproducible" >> $GITHUB_STEP_SUMMARY
+            echo "**Checksum**: \`$CHECKSUM1\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Status**: Non-reproducible" >> $GITHUB_STEP_SUMMARY
+            echo "**Build 1**: \`$CHECKSUM1\`" >> $GITHUB_STEP_SUMMARY
+            echo "**Build 2**: \`$CHECKSUM2\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment**:" >> $GITHUB_STEP_SUMMARY
+          echo "- Rust version: $(rustc --version)" >> $GITHUB_STEP_SUMMARY
+          echo "- SOURCE_DATE_EPOCH: $SOURCE_DATE_EPOCH" >> $GITHUB_STEP_SUMMARY
+          echo "- RUSTFLAGS: $RUSTFLAGS" >> $GITHUB_STEP_SUMMARY

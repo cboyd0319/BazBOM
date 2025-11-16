@@ -1,0 +1,16 @@
+# Rust toolchain specification for reproducible builds
+# This file pins the exact Rust version for SLSA Level 4 compliance
+#
+# Update this file when upgrading Rust versions. Verify reproducibility
+# after updates by building twice and comparing checksums.
+
+[toolchain]
+channel = "1.91.1"
+components = ["rustfmt", "clippy", "llvm-tools-preview"]
+profile = "minimal"
+targets = ["x86_64-unknown-linux-gnu", "aarch64-unknown-linux-gnu", "x86_64-apple-darwin", "aarch64-apple-darwin"]
+
+# For reproducible builds:
+# - Channel must be pinned to exact version (not "stable")
+# - Components should be explicit
+# - Profile minimal to avoid unnecessary components

@@ -10,6 +10,7 @@ use tracing::{debug, warn};
 struct RateLimiter {
     last_request: Instant,
     min_interval: Duration,
+    #[allow(dead_code)]
     retry_count: u32,
 }
 
@@ -32,6 +33,7 @@ impl RateLimiter {
         self.last_request = Instant::now();
     }
 
+    #[allow(dead_code)]
     fn backoff_duration(&mut self) -> Duration {
         self.retry_count += 1;
         // Exponential backoff: 1s, 2s, 4s, 8s, 16s (max)
@@ -39,6 +41,7 @@ impl RateLimiter {
         Duration::from_secs(backoff_secs)
     }
 
+    #[allow(dead_code)]
     fn reset_retry_count(&mut self) {
         self.retry_count = 0;
     }
