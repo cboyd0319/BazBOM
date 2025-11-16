@@ -26,6 +26,8 @@ members = [
   "crates/bazbom-php-reachability",
   "crates/bazbom-java-reachability",
   "crates/bazbom-auth",
+  "crates/bazbom-crypto",
+  "crates/bazbom-verify",
 ]
 resolver = "2"
 
