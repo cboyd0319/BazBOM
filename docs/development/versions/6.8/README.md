@@ -425,3 +425,39 @@ v6.8 is in the planning phase. We welcome feedback on:
 ---
 
 Last Updated: 2025-11-16
+
+## Development Environment Updates (v6.8)
+
+The v6.8 release includes updates to all development dependencies and tooling:
+
+### Updated Dependency Versions
+
+**Rust Dependencies:**
+- axum: 0.8.7 (web framework for dashboard)
+- bcrypt: 0.17.1 (password hashing)
+- colored: 3.0.0 (terminal colors)
+- jsonschema: 0.35 (JSON schema validation)
+- rand: 0.9.2 (random number generation)
+- serde-xml-rs: 0.8 (XML serialization)
+- which: 8.0.0 (executable finding)
+
+**Build Tools:**
+- Gradle: 9.2.0 (latest stable, up from 8.5)
+- Java: 21 LTS (latest LTS, up from 17)
+- Kotlin: 2.2.21 (latest stable)
+
+**IDE Integration:**
+- IntelliJ Platform: 2025.2 (up from 2023.3)
+- VS Code Engine: 1.85.0+
+
+### Breaking Changes Avoided
+
+To maintain stability, the following packages were kept at their current major versions due to breaking changes in newer releases:
+
+- **jsonwebtoken:** Staying on 9.x (version 10+ requires explicit crypto backend selection)
+- **printpdf/lopdf:** Staying on current versions (version 0.8+ has significant API changes)
+
+These packages will be evaluated for upgrade in future releases when migration paths are clearer.
+
+---
+

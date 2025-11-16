@@ -247,7 +247,7 @@ Target OS: macOS → Linux → Windows.
 
 **IntelliJ IDEA Plugin (`crates/bazbom-intellij-plugin/`):**
 - Built with Gradle and Kotlin
-- Uses IntelliJ Platform SDK 2023.3+
+- Uses IntelliJ Platform SDK 2025.2+
 - Target: IntelliJ IDEA Community & Ultimate
 - Key features: dependency tree view, real-time annotations, quick fixes
 - Build: `./gradlew build`, Run: `./gradlew runIde`
