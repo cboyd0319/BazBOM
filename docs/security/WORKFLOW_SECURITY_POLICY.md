@@ -1,12 +1,12 @@
 # GitHub Actions Workflow Security Policy
 
-**Last Updated:** 2025-10-20  
-**Policy Version:** 1.0.0  
-**Authority:** PYSEC_OMEGA Security Standards
+**Last Updated:** 2025-11-16
+**Policy Version:** 1.0.1
+**Authority:** BazBOM Security Team
 
 ## Purpose
 
-This document defines mandatory security requirements for all GitHub Actions workflows in the BazBOM repository. These policies align with industry best practices and PYSEC_OMEGA security engineering standards.
+This document defines mandatory security requirements for all GitHub Actions workflows in the BazBOM repository. These policies align with industry best practices and security engineering standards.
 
 ## Mandatory Requirements
 
@@ -385,12 +385,13 @@ concurrency:
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
-| 1.0.0 | 2025-10-20 | Initial policy creation | PYSEC_OMEGA |
+| 1.0.1 | 2025-11-16 | Updated policy and references | Security Team |
+| 1.0.0 | 2025-10-20 | Initial policy creation | Security Team |
 
 ## Approval
 
 This policy is approved for use and enforcement across all BazBOM workflows.
 
-**Policy Owner:** Security Team  
-**Review Frequency:** Quarterly  
-**Next Review:** 2026-01-20
+**Policy Owner:** Security Team
+**Review Frequency:** Quarterly
+**Next Review:** 2026-02-16

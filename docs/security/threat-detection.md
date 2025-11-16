@@ -1,6 +1,7 @@
 # Threat Detection & Supply Chain Security
 
-**Status:** Production Ready (Available in BazBOM v1.0.0+)
+**Status:** Production Ready (Available in BazBOM v6.5.0+)
+**Last Updated:** 2025-11-16
 
 ---
 
@@ -494,10 +495,10 @@ fi
 
 ## Related Documentation
 
-- [ML Features](../reference/ml-features.md) - Machine learning capabilities
 - [Threat Model](threat-model.md) - Security threat model
 - [Vulnerability Enrichment](vulnerability-enrichment.md) - Advisory database details
 - [Supply Chain Security](supply-chain.md) - Supply chain security overview
+- [Security Analysis](SECURITY_ANALYSIS.md) - Comprehensive security assessment
 
 ---
 
@@ -510,10 +511,10 @@ Help improve threat detection:
 3. **Contribute to Curated Database** - Submit known malicious packages
 4. **Improve Detection Algorithms** - Submit PRs with better heuristics
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for more information.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for more information.
 
 ---
 
-**Last Updated:** 2024-11-04  
-**Version:** 0.5.1  
+**Last Updated:** 2025-11-16
+**Version:** 6.5.0
 **Status:** Production Ready
