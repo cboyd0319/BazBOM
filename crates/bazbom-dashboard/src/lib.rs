@@ -102,8 +102,7 @@ async fn auth_middleware(
         .and_then(|h| h.to_str().ok());
 
     if let Some(auth_value) = auth_header {
-        if auth_value.starts_with("Bearer ") {
-            let token = &auth_value[7..];
+        if let Some(token) = auth_value.strip_prefix("Bearer ") {
             // Use constant-time comparison to prevent timing attacks
             if token.as_bytes().ct_eq(expected_token.as_bytes()).into() {
                 return Ok(next.run(req).await);
@@ -257,9 +256,11 @@ mod tests {
         let state = AppState {
             cache_dir: PathBuf::from(".bazbom/cache"),
             project_root: PathBuf::from("."),
+            auth_token: Some("test-token".to_string()),
         };
 
         assert_eq!(state.cache_dir, PathBuf::from(".bazbom/cache"));
         assert_eq!(state.project_root, PathBuf::from("."));
+        assert_eq!(state.auth_token, Some("test-token".to_string()));
     }
 }
