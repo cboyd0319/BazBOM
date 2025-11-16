@@ -25,14 +25,15 @@ Target OS: macOS → Linux → Windows.
 
 ## Architecture Snapshot
 
-- **Rust workspace**: 29 production crates including:
+- **Rust workspace**: 30 production crates (v6.5) + 3 planned for v6.8:
   - Core: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`
   - Polyglot: `bazbom-polyglot` (multi-language support)
   - Reachability: `bazbom-java-reachability` (JVM bytecode), `bazbom-js-reachability`, `bazbom-python-reachability`, `bazbom-go-reachability`, `bazbom-rust-reachability`, `bazbom-ruby-reachability`, `bazbom-php-reachability`
   - Intelligence: `bazbom-upgrade-analyzer`, `bazbom-depsdev`, `bazbom-ml`
   - UI: `bazbom-dashboard`, `bazbom-tui`, `bazbom-lsp`
-  - Infrastructure: `bazbom-containers`, `bazbom-operator`, `bazbom-cache`, `bazbom-threats`, `bazbom-reports`
+  - Infrastructure: `bazbom-containers`, `bazbom-operator`, `bazbom-cache`, `bazbom-threats`, `bazbom-reports`, `bazbom-tool-verify`, `bazbom-verify`
   - Enterprise (v7.0-beta): `bazbom-auth`, `bazbom-crypto`
+  - **Planned for v6.8 (Q2 2026)**: `bazbom-jira` (~2,500 LOC), `bazbom-github` (~3,000 LOC), Intelligence Hub component (~1,500 LOC)
 - **Reachability Analysis**: Language-specific AST/bytecode analysis for 7 languages (70-90% noise reduction)
   - JVM: OPAL-based bytecode analysis
   - JavaScript/TypeScript: SWC-based AST parsing
@@ -52,6 +53,37 @@ Target OS: macOS → Linux → Windows.
   - **PHP**: Composer (composer.lock) with Laravel/Symfony support
 - Intelligence: OSV/NVD/GHSA + KEV + EPSS; canonical severity + P0–P4 priority.
 - Outputs: SPDX 2.3 (primary), CycloneDX 1.5 (optional), SARIF 2.1.0, CSAF VEX, CSV.
+
+## Version Planning & Roadmap
+
+**Current Version:** v6.5 (stable)
+**Next Major Release:** v6.8 - Full DevSecOps Automation Platform (Q2 2026)
+
+**v6.8 Planning Documentation** (Nov 2025 - COMPLETE):
+- `docs/development/versions/6.8/README.md` - Overview and index
+- `docs/development/versions/6.8/jira-integration-plan.md` - Complete Jira + GitHub PR automation plan (9 feature categories)
+- `docs/development/versions/6.8/technical-specifications.md` - Architecture and API specs
+- `docs/development/versions/6.8/implementation-roadmap.md` - 20-week timeline (Q1-Q2 2026)
+- `docs/development/versions/6.8/integration-analysis.md` - 48 integration points across 8 categories
+- `docs/development/versions/6.8/pr-template-complete.md` - Complete PR template with ALL 14+ intelligence modules
+
+**v6.8 Key Features (Planned):**
+- Automatic Jira ticket creation with full intelligence from ALL BazBOM modules
+- Automatic GitHub PR creation with AI-powered fixes and complete context
+- Bidirectional sync: Jira ↔ BazBOM ↔ GitHub (three-way synchronization)
+- Multi-PR orchestration for batch remediation across repositories
+- Auto-merge capabilities (optional, with safety controls and test gates)
+- Intelligence Hub aggregating ALL 14+ BazBOM intelligence modules
+- 90% reduction in manual remediation work
+- 80% faster time-to-fix for automated-eligible vulnerabilities
+- Complete automation loop: Scan → Ticket → PR → Review → Merge → Close
+
+**When working on v6.8:**
+- Reference planning docs in `docs/development/versions/6.8/`
+- Follow the 20-week implementation roadmap (7 phases)
+- Ensure ALL 14+ intelligence modules are integrated into PRs and tickets
+- Maintain tri-directional sync (Jira ↔ BazBOM ↔ GitHub)
+- Follow security considerations outlined in planning docs
 
 ## Documentation Policy (must follow)
 
@@ -286,11 +318,30 @@ Target OS: macOS → Linux → Windows.
 - Use proper error handling (Result types, descriptive errors)
 - Prefer logging over println! in production code paths
 
+## Version-Specific Documentation
+
+**v6.8 Planning (Q2 2026 Release):**
+- Overview: `docs/development/versions/6.8/README.md`
+- Integration Plan: `docs/development/versions/6.8/jira-integration-plan.md`
+- Technical Specs: `docs/development/versions/6.8/technical-specifications.md`
+- Implementation Roadmap: `docs/development/versions/6.8/implementation-roadmap.md`
+- Integration Analysis: `docs/development/versions/6.8/integration-analysis.md`
+- PR Template: `docs/development/versions/6.8/pr-template-complete.md`
+
+**Key v6.8 Planning Stats:**
+- 6 planning documents, 5,078 lines, 151KB total
+- 9 feature categories (including GitHub PR automation)
+- 48 integration points across Jira, GitHub, and BazBOM
+- 14+ intelligence modules integrated into every automated PR
+- 20-week implementation timeline (January 2026 - June 2026)
+- 4 milestones: M1 Alpha (Feb 2026), M2 Beta (Apr 2026), M3 RC (May 2026), M4 GA (Jun 2026)
+
 ## Additional Sources
 
 - Tech writer persona: `docs/tech_writer_persona.md`
 - IDE integration: `docs/integrations/ide/ide-integration.md`
 - Architecture documentation: `docs/ARCHITECTURE.md`
 - Development guide: `docs/development/README.md`
+- v6.8 planning: `docs/development/versions/6.8/README.md`
 
 Questions? Open a docs issue and tag `@cboyd0319`.
