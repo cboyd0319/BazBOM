@@ -23,8 +23,8 @@ steps:
     if: runner.os == 'macOS'
     run: |
       brew update
-      brew install openjdk@17 maven gradle bazelisk node vale
-      echo 'export PATH="/usr/local/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+      brew install openjdk@21 maven gradle bazelisk node vale
+      echo 'export PATH="/usr/local/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
       java -version
       mvn --version
       gradle --version
@@ -60,7 +60,7 @@ steps:
     if: runner.os == 'Linux'
     run: |
       sudo apt-get update
-      sudo apt-get install -y openjdk-17-jdk maven curl unzip wget
+      sudo apt-get install -y openjdk-21-jdk maven curl unzip wget
       java -version
       mvn --version
 
@@ -76,7 +76,7 @@ steps:
   - name: Linux — Install Gradle
     if: runner.os == 'Linux'
     run: |
-      GRADLE_VERSION=8.5
+      GRADLE_VERSION=9.2.0
       wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip -P /tmp
       sudo unzip -d /opt/gradle /tmp/gradle-${GRADLE_VERSION}-bin.zip || true
       sudo ln -sf /opt/gradle/gradle-${GRADLE_VERSION}/bin/gradle /usr/local/bin/gradle || true
@@ -135,7 +135,7 @@ steps:
         if [ -f "gradlew" ]; then
           ./gradlew --version || echo "Gradle wrapper check failed"
         else
-          gradle wrapper --gradle-version=8.5 || echo "Gradle wrapper init failed or gradle not available"
+          gradle wrapper --gradle-version=9.2.0 || echo "Gradle wrapper init failed or gradle not available"
         fi
         cd ../..
       else

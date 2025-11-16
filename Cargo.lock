@@ -297,9 +297,9 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a18ed336352031311f4e0b4dd2ff392d4fbb370777c9d18d7fc9d7359f73871"
+checksum = "5b098575ebe77cb6d14fc7f32749631a6e44edbef6b796f89b020e99ba20d425"
 dependencies = [
  "axum-core",
  "bytes",
@@ -417,7 +417,7 @@ dependencies = [
  "blake3",
  "chrono",
  "clap",
- "colored 3.0.0",
+ "colored",
  "console",
  "criterion",
  "dialoguer",
@@ -468,7 +468,7 @@ dependencies = [
  "hmac",
  "jsonwebtoken",
  "keyring",
- "rand 0.8.5",
+ "rand 0.9.2",
  "serde",
  "serde_json",
  "sha2",
@@ -535,7 +535,7 @@ dependencies = [
  "base64",
  "chacha20poly1305",
  "hex",
- "rand 0.8.5",
+ "rand 0.9.2",
  "serde",
  "serde_json",
  "sha2",
@@ -591,7 +591,7 @@ name = "bazbom-formats"
 version = "6.5.0"
 dependencies = [
  "chrono",
- "jsonschema 0.34.0",
+ "jsonschema 0.35.0",
  "serde",
  "serde_json",
 ]
@@ -858,7 +858,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.17",
- "which 7.0.3",
+ "which",
 ]
 
 [[package]]
@@ -905,7 +905,7 @@ dependencies = [
  "anyhow",
  "bazbom-crypto",
  "clap",
- "colored 2.2.0",
+ "colored",
  "hex",
  "libc",
  "reqwest",
@@ -918,13 +918,13 @@ dependencies = [
 
 [[package]]
 name = "bcrypt"
-version = "0.15.1"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e65938ed058ef47d92cf8b346cc76ef48984572ade631927e9937b5ffc7662c7"
+checksum = "abaf6da45c74385272ddf00e1ac074c7d8a6c1a1dda376902bd6a427522a8b2c"
 dependencies = [
  "base64",
  "blowfish",
- "getrandom 0.2.16",
+ "getrandom 0.3.4",
  "subtle",
  "zeroize",
 ]
@@ -1313,16 +1313,6 @@ name = "colorchoice"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b05b61dc5112cbb17e4b6cd61790d9845d13888356391624cbe7e41efeac1e75"
-
-[[package]]
-name = "colored"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "117725a109d387c937a1533ce01b450cbde6b88abceea8473c4d7a85853cda3c"
-dependencies = [
- "lazy_static",
- "windows-sys 0.59.0",
-]
 
 [[package]]
 name = "colored"
@@ -2406,7 +2396,7 @@ dependencies = [
  "thiserror 2.0.17",
  "tungstenite",
  "url",
- "which 8.0.0",
+ "which",
  "winreg",
 ]
 
@@ -2974,9 +2964,9 @@ dependencies = [
 
 [[package]]
 name = "jsonschema"
-version = "0.34.0"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd0ed8b751461fbfdedb74cc37d44732fa6e59573c317ab5c81f5fd25f6b7d2e"
+checksum = "0303b14f91cbac17c64aaf2ef60ab71fe5f34c3867cedcbca72c9dd15f5040fe"
 dependencies = [
  "ahash",
  "base64",
@@ -2990,7 +2980,7 @@ dependencies = [
  "num-cmp",
  "num-traits",
  "percent-encoding",
- "referencing 0.34.0",
+ "referencing 0.35.0",
  "regex",
  "regex-syntax",
  "reqwest",
@@ -4363,9 +4353,9 @@ dependencies = [
 
 [[package]]
 name = "referencing"
-version = "0.34.0"
+version = "0.35.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "afe861b03e7fa6a3948e0bc5c4cec36ec2ffdda92317f21959a955ae11f3bd89"
+checksum = "22d0d0665043906aacf1d83bea9d61e5134f8f437815b84320e7facf8ff4e9c2"
 dependencies = [
  "ahash",
  "fluent-uri 0.4.1",
@@ -4740,14 +4730,14 @@ dependencies = [
 
 [[package]]
 name = "serde-xml-rs"
-version = "0.6.0"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fb3aa78ecda1ebc9ec9847d5d3aba7d618823446a049ba2491940506da6e2782"
+checksum = "cc2215ce3e6a77550b80a1c37251b7d294febaf42e36e21b7b411e0bf54d540d"
 dependencies = [
  "log",
  "serde",
- "thiserror 1.0.69",
- "xml-rs",
+ "thiserror 2.0.17",
+ "xml",
 ]
 
 [[package]]
@@ -6082,18 +6072,6 @@ checksum = "a28ac98ddc8b9274cb41bb4d9d4d5c425b6020c50c46f25559911905610b4a88"
 
 [[package]]
 name = "which"
-version = "7.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24d643ce3fd3e5b54854602a080f34fb10ab75e0b813ee32d00ca2b44fa74762"
-dependencies = [
- "either",
- "env_home",
- "rustix 1.1.2",
- "winsafe",
-]
-
-[[package]]
-name = "which"
 version = "8.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3fabb953106c3c8eea8306e4393700d7657561cb43122571b172bbfb7c7ba1d"
@@ -6509,10 +6487,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "xml-rs"
-version = "0.8.28"
+name = "xml"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ae8337f8a065cfc972643663ea4279e04e7256de865aa66fe25cec5fb912d3f"
+checksum = "838dd679b10a4180431ce7c2caa6e5585a7c8f63154c19ae99345126572e80cc"
 
 [[package]]
 name = "yoke"
