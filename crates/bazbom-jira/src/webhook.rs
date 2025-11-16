@@ -24,11 +24,13 @@ impl WebhookServer {
 
     /// Start the webhook server
     pub async fn start(self) -> Result<()> {
+        let port = self.port;
+
         let app = Router::new()
             .route("/webhooks/jira", post(handle_webhook))
             .with_state(Arc::new(self));
 
-        let addr = format!("0.0.0.0:{}", self.port)
+        let addr = format!("0.0.0.0:{}", port)
             .parse()
             .map_err(|e| JiraError::Config(format!("Invalid address: {}", e)))?;
 

@@ -21,7 +21,19 @@
 //! async fn main() -> anyhow::Result<()> {
 //!     // Initialize Jira client
 //!     let config = JiraConfig::from_file(".bazbom/jira.yml")?;
-//!     let client = JiraClient::new(&config.url, &config.auth_token);
+//!
+//!     // Get credentials from environment variables specified in config
+//!     let username_env = config.auth.username_env.as_ref()
+//!         .expect("username_env not configured");
+//!     let token_env = config.auth.token_env.as_ref()
+//!         .expect("token_env not configured");
+//!
+//!     let username = std::env::var(username_env)
+//!         .expect("Jira username not found in environment");
+//!     let token = std::env::var(token_env)
+//!         .expect("Jira token not found in environment");
+//!
+//!     let client = JiraClient::new(&config.url, &format!("{}:{}", username, token));
 //!
 //!     // Create a ticket
 //!     // let issue = client.create_issue(/* ... */).await?;
