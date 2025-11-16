@@ -8,24 +8,30 @@
 
 ## Executive Summary
 
-Version 6.8 introduces comprehensive bidirectional Jira integration to BazBOM, enabling seamless vulnerability tracking, team collaboration, and automated workflow management within enterprise Atlassian ecosystems. This integration bridges the gap between security scanning and issue management, allowing security findings to flow directly into development workflows.
+Version 6.8 represents BazBOM's transformation into a **fully automated DevSecOps platform**, introducing comprehensive bidirectional Jira integration AND intelligent automated pull request creation. This release completes the entire vulnerability remediation loop: **Scan → Ticket → PR → Review → Merge → Close**.
 
 **Key Capabilities:**
-- Automatic Jira ticket creation for vulnerabilities
-- Bidirectional sync of vulnerability status and remediation progress
-- CI/CD workflow integration with Jira transitions
-- Team assignment and ownership tracking via Jira components
-- SLA and sprint planning integration
-- Real-time dashboard integration with Jira Query Language (JQL)
-- Policy-based ticket routing and prioritization
-- Remediation tracking with automatic ticket closure
+- **Automatic Jira ticket creation** for vulnerabilities with full intelligence
+- **Automatic GitHub PR creation** with AI-powered fixes and complete context
+- **Bidirectional sync** of vulnerability status and remediation progress (Jira ↔ BazBOM ↔ GitHub)
+- **Multi-PR orchestration** for batch remediation across repositories
+- **Intelligent PR content** with ALL BazBOM modules: reachability, ML risk, breaking changes, EPSS/KEV, container insights, threat intel
+- **Auto-merge capabilities** (optional, with safety controls and test gates)
+- **CI/CD workflow integration** with Jira transitions and PR lifecycle management
+- **Team assignment** and ownership tracking via Jira components and GitHub CODEOWNERS
+- **SLA and sprint planning** integration
+- **Real-time dashboard** integration with Jira Query Language (JQL) and GitHub status
+- **Policy-based routing** and prioritization
+- **Complete automation** from detection to remediation
 
 **Business Value:**
-- 70% reduction in manual ticket creation for security findings
-- End-to-end traceability from CVE discovery to remediation
-- Automated SLA tracking for vulnerability remediation
-- Enhanced team collaboration across Security, DevOps, and Development
-- Compliance reporting via Jira custom fields and dashboards
+- **90% reduction** in manual remediation work (ticket creation + PR creation + testing)
+- **80% faster** time-to-fix for automated-eligible vulnerabilities
+- **End-to-end traceability** from CVE discovery → Jira ticket → GitHub PR → deployment
+- **Automated SLA tracking** for vulnerability remediation
+- **Zero-touch remediation** for low-risk dependency upgrades (with approval gates)
+- **Enhanced team collaboration** across Security, DevOps, and Development
+- **Compliance automation** via Jira custom fields and audit trails
 
 ---
 
@@ -55,63 +61,107 @@ flowchart TB
         B[Policy Engine]
         C[Advisory Engine]
         D[Jira Client]
-        E[Dashboard]
-        F[LSP/IDE Plugin]
+        E[GitHub PR Client]
+        F[Intelligence Hub]
+        G[Dashboard]
+        H[LSP/IDE Plugin]
+    end
+
+    subgraph Intelligence["BazBOM Intelligence Modules"]
+        I1[Reachability Analysis]
+        I2[ML Risk Scoring]
+        I3[Upgrade Analyzer]
+        I4[Breaking Change Detection]
+        I5[Container Scanning]
+        I6[Threat Intelligence]
+        I7[EPSS/KEV Data]
+        I8[Policy Engine]
     end
 
     subgraph Jira
-        G[Jira API]
-        H[Jira Issues]
-        I[Jira Webhooks]
-        J[Jira Dashboards]
+        J[Jira API]
+        K[Jira Issues]
+        L[Jira Webhooks]
     end
 
-    subgraph CI/CD
-        K[GitHub Actions]
-        L[GitLab CI]
-        M[Jenkins]
+    subgraph GitHub
+        M[GitHub API]
+        N[Pull Requests]
+        O[GitHub Actions]
+        P[GitHub Webhooks]
     end
 
     A --> B
     B --> C
     C --> D
-    D <-->|REST API| G
-    G --> H
-    I -->|Webhook Events| D
-    D --> H
+    C --> E
 
-    K --> A
-    L --> A
-    M --> A
+    D <-->|REST API| J
+    J --> K
+    L -->|Webhook Events| D
 
-    E <--> D
-    F <--> D
+    E <-->|REST API| M
+    M --> N
+    P -->|Webhook Events| E
 
-    H <--> J
+    F --> I1 & I2 & I3 & I4 & I5 & I6 & I7 & I8
+    F --> E
+    F --> D
+
+    O --> A
+
+    G <--> D
+    G <--> E
+    H <--> D
+
+    K -.Link.-> N
 
     style D fill:#e1f5ff
-    style G fill:#ffe1e1
-    style I fill:#ffe1e1
+    style E fill:#e1ffe1
+    style F fill:#ffe1e1
+    style J fill:#ffd9b3
+    style M fill:#d9f2d9
 ```
 
-**Title:** BazBOM v6.8 Jira Bidirectional Integration Architecture
+**Title:** BazBOM v6.8 Full Automation Architecture (Jira + GitHub PR Integration)
 
 ### Component Breakdown
 
-**New Crate: `bazbom-jira`**
+**New Crate: `bazbom-jira`** (~2,500 LOC)
 - Jira REST API client (v3 Cloud + v2 Server/Data Center)
 - Issue creation, update, and query operations
 - Webhook receiver and processor
 - Custom field mapping and templates
 - Bulk operations support
 - Rate limiting and retry logic
+- Bidirectional sync engine
+
+**New Crate: `bazbom-github`** (~3,000 LOC)
+- GitHub REST API client (v3)
+- Automated PR creation with intelligent content
+- PR template engine with full intelligence integration
+- Multi-PR orchestration and batch operations
+- Auto-merge with safety controls and test gates
+- GitHub webhook receiver for PR events
+- CODEOWNERS integration for auto-assignment
+- PR status tracking and Jira synchronization
+- Rate limiting and retry logic
+
+**New Component: Intelligence Hub** (~1,500 LOC)
+- Aggregates data from ALL BazBOM intelligence modules
+- Unified interface for enriching tickets and PRs
+- Formats intelligence for human-readable output
+- Generates remediation guidance and testing strategies
 
 **Enhanced Crates:**
-- **`bazbom-core`**: Jira configuration models
-- **`bazbom-policy`**: Jira ticket routing rules
-- **`bazbom`**: CLI commands for Jira operations
-- **`bazbom-dashboard`**: Jira integration UI
-- **`bazbom-lsp`**: IDE Jira status display
+- **`bazbom-core`**: Jira + GitHub configuration models, PR metadata
+- **`bazbom-policy`**: Jira ticket routing + PR auto-merge policies
+- **`bazbom`**: CLI commands for Jira + GitHub operations
+- **`bazbom-dashboard`**: Jira + GitHub integration UI, live PR status
+- **`bazbom-lsp`**: IDE Jira + GitHub status display
+- **`bazbom-upgrade-analyzer`**: PR-specific breaking change analysis
+- **`bazbom-ml`**: PR risk scoring for auto-merge decisions
+- **`bazbom-formats`**: GitHub-flavored Markdown exports for PRs
 
 ---
 
@@ -370,6 +420,318 @@ bazbom jira add-to-sprint --min-priority P2 --sprint "Sprint 42"
 # Create epic for package upgrade
 bazbom jira create-epic "Upgrade all Spring dependencies" \
   --package "org.springframework.*"
+```
+
+### 9. Automated Pull Request Creation & Management
+
+**Automatic PR Creation with Full Intelligence:**
+
+When a vulnerability is detected, BazBOM can automatically create a GitHub PR with:
+
+1. **AI-Powered Fix** - Automated dependency upgrade using `bazbom fix`
+2. **Complete Intelligence Report** - Data from ALL BazBOM modules
+3. **Risk Assessment** - ML-based scoring for auto-merge decision
+4. **Testing Strategy** - Recommended tests based on reachability analysis
+5. **Jira Integration** - Bidirectional linking with Jira tickets
+
+**PR Content Structure:**
+
+```markdown
+## 🔒 Security Fix: CVE-2024-1234 in log4j-core 2.17.0
+
+**Automated by BazBOM v6.8** | [Jira: SEC-567](https://jira.example.com/browse/SEC-567)
+
+---
+
+### 🎯 Summary
+
+This PR upgrades `log4j-core` from **2.17.0** to **2.20.0** to fix **CVE-2024-1234** (CRITICAL).
+
+**Risk Level:** 🔴 CRITICAL - Actively exploited (CISA KEV)
+**Confidence:** ✅ HIGH - Automated fix verified by BazBOM
+**Auto-Merge:** ❌ DISABLED - Requires review (CRITICAL severity)
+
+---
+
+### 🚨 Vulnerability Details
+
+- **CVE:** CVE-2024-1234
+- **Severity:** CRITICAL (CVSS 9.8)
+- **EPSS Score:** 0.89 (89% exploitation probability)
+- **KEV Status:** ⚠️ **ACTIVE** - Listed in CISA Known Exploited Vulnerabilities
+- **Exploit Available:** YES - Public PoC on ExploitDB
+- **Threat Intelligence:** Active scanning detected (last 24h)
+
+**Impact:**
+Remote Code Execution - Attackers can execute arbitrary code on the server
+
+---
+
+### 🔍 Reachability Analysis (7 Languages)
+
+**Status:** ⚠️ **REACHABLE**
+
+**Call Graph Path:**
+```
+com.example.api.LogController.handleRequest()
+  → org.apache.logging.log4j.Logger.error()
+    → org.apache.logging.log4j.core.Logger.logMessage()
+      → [VULNERABLE CODE] org.apache.logging.log4j.core.pattern.MessagePatternConverter.format()
+```
+
+**Files Affected:**
+- `src/main/java/com/example/api/LogController.java:42`
+- `src/main/java/com/example/service/AuditService.java:78`
+
+**Confidence:** 95% (OPAL bytecode analysis)
+
+[View Full Call Graph](https://bazbom.example.com/scan/abc123/callgraph)
+
+---
+
+### 📊 ML Risk Scoring
+
+**Overall Risk Score:** 92/100 (CRITICAL - Immediate Action Required)
+
+| Factor | Score | Weight | Contribution |
+|--------|-------|--------|--------------|
+| CVSS Base Score | 9.8 | 30% | 29.4 |
+| Exploitation Probability (EPSS) | 0.89 | 25% | 22.25 |
+| KEV Status | 1.0 | 20% | 20.0 |
+| Reachability | 1.0 | 15% | 15.0 |
+| Exploit Availability | 1.0 | 10% | 10.0 |
+
+**Recommendation:** 🔴 **PATCH IMMEDIATELY**
+
+---
+
+### 🔧 Remediation Details
+
+**Fix:** Upgrade log4j-core to **2.20.0**
+
+**Changes Made:**
+- `pom.xml`: Updated `log4j-core` version 2.17.0 → 2.20.0
+- `build.gradle`: Updated `log4j-core` version 2.17.0 → 2.20.0
+
+**Estimated Effort:** 45 minutes (simple version bump)
+
+**Breaking Changes:** ✅ NONE DETECTED
+
+BazBOM's upgrade analyzer detected **no breaking changes** between 2.17.0 and 2.20.0:
+- ✅ All public APIs preserved
+- ✅ No deprecated methods used in codebase
+- ✅ Configuration format unchanged
+- ✅ No migration guide required
+
+---
+
+### 🧪 Testing Strategy
+
+**Recommended Tests:**
+
+Based on reachability analysis, these tests should cover the vulnerable code paths:
+
+1. **Unit Tests:**
+   - `LogControllerTest.testHandleRequest()` - Exercises vulnerable path
+   - `AuditServiceTest.testErrorLogging()` - Exercises vulnerable path
+
+2. **Integration Tests:**
+   - `ApiIntegrationTest.testErrorHandling()` - End-to-end validation
+
+3. **Security Tests:**
+   - Verify log injection attacks are blocked
+   - Test JNDI lookup sanitization
+
+**CI Status:** All checks must pass before merge (required)
+
+---
+
+### 📦 Container Impact
+
+**Affected Images:** 3
+
+| Image | Layer | Base OS | Remediation |
+|-------|-------|---------|-------------|
+| `myapp:latest` | Layer 8 | Debian 12 | Rebuild with new parent |
+| `myapp:prod` | Layer 8 | Debian 12 | Rebuild with new parent |
+| `myapp-worker:latest` | Layer 6 | Alpine 3.18 | No change needed |
+
+**Container Remediation Guide:**
+```bash
+# Rebuild affected images after merge
+docker build -t myapp:latest .
+docker build -t myapp:prod -f Dockerfile.prod .
+```
+
+---
+
+### 🛡️ Policy Compliance
+
+**Policy Violations Before Fix:** 3
+- ❌ `no-critical-vulnerabilities` - CVSS ≥ 9.0
+- ❌ `no-kev-vulnerabilities` - CISA KEV present
+- ❌ `no-reachable-high` - Reachable HIGH/CRITICAL
+
+**Policy Status After Fix:** ✅ ALL POLICIES PASS
+
+---
+
+### 🎓 Migration Guide
+
+**No migration required** - This is a drop-in replacement.
+
+**Post-Upgrade Verification:**
+1. Run full test suite: `mvn test`
+2. Verify logging still works: Check application logs
+3. Run security scan: `bazbom scan --reachability`
+
+**Rollback Plan:**
+If issues arise, revert this PR and downgrade:
+```bash
+git revert <commit-sha>
+mvn clean install
+```
+
+---
+
+### 📈 Compliance & Reporting
+
+**Regulatory Impact:**
+- PCI-DSS 6.2: ✅ Critical vulnerability patched within SLA
+- HIPAA: ✅ Security patch applied
+- SOC 2: ✅ Vulnerability management process followed
+
+**Audit Trail:**
+- BazBOM Scan ID: `scan-abc123-20251116`
+- Jira Ticket: [SEC-567](https://jira.example.com/browse/SEC-567)
+- CVE Details: [NVD](https://nvd.nist.gov/vuln/detail/CVE-2024-1234)
+
+---
+
+### ⚙️ Auto-Merge Configuration
+
+**Auto-Merge:** ❌ DISABLED for this PR
+
+**Reason:** CRITICAL severity requires manual review
+
+**Criteria for Auto-Merge (not met):**
+- ❌ Severity < HIGH (this is CRITICAL)
+- ✅ All tests passing
+- ✅ No breaking changes
+- ✅ Trusted dependency (Apache Foundation)
+- ✅ Upgrade confidence > 90%
+
+**Would auto-merge if:** Severity was MEDIUM/LOW AND all other criteria met
+
+---
+
+### 🔗 Related Links
+
+- **BazBOM Scan:** https://bazbom.example.com/scan/abc123
+- **Jira Ticket:** https://jira.example.com/browse/SEC-567
+- **CVE Details:** https://nvd.nist.gov/vuln/detail/CVE-2024-1234
+- **ExploitDB PoC:** https://www.exploit-db.com/exploits/12345
+- **Vendor Advisory:** https://logging.apache.org/log4j/2.x/security.html
+- **Call Graph Visualization:** https://bazbom.example.com/scan/abc123/callgraph.svg
+
+---
+
+### ✅ Checklist
+
+- [x] Vulnerability severity assessed (CRITICAL)
+- [x] Reachability analysis completed (REACHABLE)
+- [x] Breaking changes analyzed (NONE)
+- [x] Tests identified (3 test suites)
+- [x] Container impact assessed (2 images)
+- [x] Policy compliance verified (ALL PASS after fix)
+- [x] Jira ticket created (SEC-567)
+- [ ] Manual security review (REQUIRED)
+- [ ] Tests passing (CI in progress)
+- [ ] Deployment plan reviewed
+
+---
+
+**Generated by BazBOM v6.8** | [Documentation](https://docs.bazbom.dev) | [Report Issue](https://github.com/cboyd0319/BazBOM/issues)
+```
+
+**PR Creation Modes:**
+
+1. **`--pr-create`** - Create PR immediately with fix
+2. **`--pr-create-on-ticket`** - Create PR when Jira ticket created
+3. **`--pr-batch`** - Batch multiple CVEs into one PR (same package)
+
+**Multi-PR Orchestration:**
+
+```bash
+# Create PRs for all P1+ vulnerabilities across repos
+bazbom github orchestrate \
+  --repos "org/api,org/web,org/worker" \
+  --min-priority P1 \
+  --strategy one-pr-per-repo
+
+# Batch mode: One PR per package across all repos
+bazbom github orchestrate \
+  --repos "org/*" \
+  --strategy batch-by-package \
+  --max-prs-per-repo 5
+```
+
+**Auto-Merge Policies:**
+
+```yaml
+github:
+  auto_merge:
+    enabled: true
+
+    # Safety controls
+    require_passing_tests: true
+    require_approvals: 1  # For LOW/MEDIUM
+    require_codeowners_approval: true
+
+    # Criteria
+    criteria:
+      max_severity: MEDIUM  # Don't auto-merge HIGH/CRITICAL
+      min_confidence: 90    # Upgrade analyzer confidence
+      no_breaking_changes: true
+      trusted_dependencies_only: true
+      max_version_jump: minor  # major.MINOR.patch
+
+    # Time delays (safety window)
+    merge_delay: 2h  # Wait 2h after tests pass
+    business_hours_only: true
+
+    # Rollback
+    auto_rollback_on_failure: true
+    rollback_window: 24h
+```
+
+**GitHub Webhook Integration:**
+
+```
+PR opened → Update Jira status "In Progress"
+Tests pass → Update Jira comment "✅ Tests passing"
+PR approved → Update Jira comment "✅ Approved by @user"
+PR merged → Transition Jira to "Done"
+Tests fail → Update Jira comment "❌ Tests failing, auto-merge blocked"
+```
+
+**CLI Commands:**
+
+```bash
+# Create PR for specific CVE
+bazbom github create-pr CVE-2024-1234
+
+# Create PR with Jira link
+bazbom github create-pr --jira SEC-567
+
+# Batch create PRs for all open Jira tickets
+bazbom github create-prs --jira-query "status='To Do' AND priority=High"
+
+# List pending auto-merge PRs
+bazbom github list-auto-merge
+
+# Force merge (override policy)
+bazbom github force-merge --pr 789 --reason "Emergency patch"
 ```
 
 ---
