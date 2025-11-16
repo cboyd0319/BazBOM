@@ -243,7 +243,7 @@ Determines which code is actually exploitable
 
 ---
 
-## CRATES: 26 Production Crates
+## CRATES: 29 Production Crates
 
 **Core**: bazbom, bazbom-core, bazbom-formats, bazbom-graph, bazbom-polyglot  
 **Analysis**: bazbom-advisories, bazbom-policy, bazbom-threats, bazbom-ml, bazbom-upgrade-analyzer, bazbom-tool-verify, bazbom-depsdev  

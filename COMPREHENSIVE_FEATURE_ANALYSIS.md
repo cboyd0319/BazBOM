@@ -685,7 +685,7 @@ BazBOM is a **production-ready, enterprise-grade SBOM and SCA (Software Composit
 
 ## PART 4: ARCHITECTURE & INFRASTRUCTURE
 
-### Crate Organization (26 Production Crates)
+### Crate Organization (29 Production Crates)
 
 **Core (5 Crates)**:
 - `bazbom` - CLI and main entry point
