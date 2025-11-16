@@ -28,6 +28,7 @@ members = [
   "crates/bazbom-auth",
   "crates/bazbom-crypto",
   "crates/bazbom-verify",
+  "crates/bazbom-tool-verify",
 ]
 resolver = "2"
 

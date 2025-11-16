@@ -1,0 +1,40 @@
+[package]
+name = "bazbom-tool-verify"
+version = "7.0.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
+description = "External tool integrity verification for BazBOM"
+
+[dependencies]
+# Cryptography
+bazbom-crypto = { path = "../bazbom-crypto" }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# HTTP client for downloading tool metadata
+reqwest = { version = "0.12", features = ["blocking", "json"] }
+
+# Process execution
+which = "7.0"
+
+# Logging
+log = "0.4"
+
+# File system operations
+fs-err = "3.0"
+
+# Date/time
+chrono = "0.4"
+
+# Regex for version extraction
+regex = "1.11"
+
+[dev-dependencies]
+tempfile = "3.13"
