@@ -21,7 +21,11 @@
 //! async fn main() -> anyhow::Result<()> {
 //!     // Initialize GitHub client
 //!     let config = GitHubConfig::from_file(".bazbom/github.yml")?;
-//!     let client = GitHubClient::new(&config.token);
+//!
+//!     // Get token from environment variable specified in config
+//!     let token = std::env::var(&config.token_env)
+//!         .expect("GitHub token not found in environment");
+//!     let client = GitHubClient::new(&token);
 //!
 //!     // Create a PR
 //!     // let pr = client.create_pull_request(/* ... */).await?;
