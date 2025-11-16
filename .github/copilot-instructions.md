@@ -25,7 +25,7 @@ Target OS: macOS → Linux → Windows.
 
 ## Architecture Snapshot
 
-- **Rust workspace**: 30 production crates (v6.5) + 3 planned for v6.8:
+- **Rust workspace**: 32 production crates (30 v6.5 + 2 v6.8 in development):
   - Core: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`
   - Polyglot: `bazbom-polyglot` (multi-language support)
   - Reachability: `bazbom-java-reachability` (JVM bytecode), `bazbom-js-reachability`, `bazbom-python-reachability`, `bazbom-go-reachability`, `bazbom-rust-reachability`, `bazbom-ruby-reachability`, `bazbom-php-reachability`
@@ -33,7 +33,7 @@ Target OS: macOS → Linux → Windows.
   - UI: `bazbom-dashboard`, `bazbom-tui`, `bazbom-lsp`
   - Infrastructure: `bazbom-containers`, `bazbom-operator`, `bazbom-cache`, `bazbom-threats`, `bazbom-reports`, `bazbom-tool-verify`, `bazbom-verify`
   - Enterprise (v7.0-beta): `bazbom-auth`, `bazbom-crypto`
-  - **Planned for v6.8 (Q2 2026)**: `bazbom-jira` (~2,500 LOC), `bazbom-github` (~3,000 LOC), Intelligence Hub component (~1,500 LOC)
+  - **v6.8 Integration (In Development - Phase 1)**: `bazbom-jira` (~2,500 LOC target), `bazbom-github` (~3,000 LOC target), Intelligence Hub component (~1,500 LOC planned)
 - **Reachability Analysis**: Language-specific AST/bytecode analysis for 7 languages (70-90% noise reduction)
   - JVM: OPAL-based bytecode analysis
   - JavaScript/TypeScript: SWC-based AST parsing
@@ -58,6 +58,7 @@ Target OS: macOS → Linux → Windows.
 
 **Current Version:** v6.5 (stable)
 **Next Major Release:** v6.8 - Full DevSecOps Automation Platform (Q2 2026)
+**Development Status:** Phase 1 - Foundation (Started Nov 16, 2025)
 
 **v6.8 Planning Documentation** (Nov 2025 - COMPLETE):
 - `docs/development/versions/6.8/README.md` - Overview and index
@@ -67,7 +68,7 @@ Target OS: macOS → Linux → Windows.
 - `docs/development/versions/6.8/integration-analysis.md` - 48 integration points across 8 categories
 - `docs/development/versions/6.8/pr-template-complete.md` - Complete PR template with ALL 14+ intelligence modules
 
-**v6.8 Key Features (Planned):**
+**v6.8 Key Features (In Development):**
 - Automatic Jira ticket creation with full intelligence from ALL BazBOM modules
 - Automatic GitHub PR creation with AI-powered fixes and complete context
 - Bidirectional sync: Jira ↔ BazBOM ↔ GitHub (three-way synchronization)
@@ -78,12 +79,20 @@ Target OS: macOS → Linux → Windows.
 - 80% faster time-to-fix for automated-eligible vulnerabilities
 - Complete automation loop: Scan → Ticket → PR → Review → Merge → Close
 
+**v6.8 Development Status (Nov 16, 2025):**
+- Phase 1 Foundation: IN PROGRESS
+- Created `bazbom-jira` crate (foundation complete)
+- Created `bazbom-github` crate (foundation complete)
+- Workspace configuration updated
+- Next: Complete REST API implementations and testing
+
 **When working on v6.8:**
 - Reference planning docs in `docs/development/versions/6.8/`
-- Follow the 20-week implementation roadmap (7 phases)
+- Follow the 20-week implementation roadmap (7 phases) - Currently in Phase 1
 - Ensure ALL 14+ intelligence modules are integrated into PRs and tickets
 - Maintain tri-directional sync (Jira ↔ BazBOM ↔ GitHub)
 - Follow security considerations outlined in planning docs
+- Track progress in `docs/development/versions/6.8/README.md`
 
 ## Documentation Policy (must follow)
 
