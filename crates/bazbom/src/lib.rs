@@ -44,6 +44,7 @@ pub mod sbt;
 pub mod scan;
 pub mod scan_cache;
 pub mod scan_orchestrator;
+pub mod security;
 pub mod shading;
 pub mod summary;
 pub mod team;

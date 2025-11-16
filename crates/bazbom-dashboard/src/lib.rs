@@ -9,7 +9,7 @@
 //! - SBOM explorer
 //! - Executive reports (PDF)
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use axum::{
     extract::{Request, State},
     http::{header, HeaderValue, Method, StatusCode},
@@ -20,6 +20,7 @@ use axum::{
 };
 use std::path::PathBuf;
 use std::sync::Arc;
+use subtle::ConstantTimeEq;
 use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::set_header::SetResponseHeaderLayer;
@@ -50,6 +51,10 @@ pub struct DashboardConfig {
     /// Optional bearer token for API authentication
     /// If None, authentication is disabled (localhost-only recommended)
     pub auth_token: Option<String>,
+    /// Optional TLS certificate path (PEM format)
+    pub tls_cert_path: Option<PathBuf>,
+    /// Optional TLS private key path (PEM format)
+    pub tls_key_path: Option<PathBuf>,
 }
 
 impl Default for DashboardConfig {
@@ -58,9 +63,25 @@ impl Default for DashboardConfig {
             port: 3000,
             cache_dir: PathBuf::from(".bazbom/cache"),
             project_root: PathBuf::from("."),
-            auth_token: std::env::var("BAZBOM_DASHBOARD_TOKEN").ok(),
+            auth_token: get_dashboard_token(),
+            tls_cert_path: std::env::var("BAZBOM_TLS_CERT").ok().map(PathBuf::from),
+            tls_key_path: std::env::var("BAZBOM_TLS_KEY").ok().map(PathBuf::from),
         }
     }
+}
+
+/// Get dashboard authentication token from keyring or environment variable
+/// Falls back to environment variable for backwards compatibility
+fn get_dashboard_token() -> Option<String> {
+    // First try OS keyring (secure credential storage)
+    if let Ok(entry) = keyring::Entry::new("bazbom", "dashboard-token") {
+        if let Ok(token) = entry.get_password() {
+            return Some(token);
+        }
+    }
+
+    // Fall back to environment variable for backwards compatibility
+    std::env::var("BAZBOM_DASHBOARD_TOKEN").ok()
 }
 
 /// Authentication middleware
@@ -81,9 +102,9 @@ async fn auth_middleware(
         .and_then(|h| h.to_str().ok());
 
     if let Some(auth_value) = auth_header {
-        if auth_value.starts_with("Bearer ") {
-            let token = &auth_value[7..];
-            if token == expected_token {
+        if let Some(token) = auth_value.strip_prefix("Bearer ") {
+            // Use constant-time comparison to prevent timing attacks
+            if token.as_bytes().ct_eq(expected_token.as_bytes()).into() {
                 return Ok(next.run(req).await);
             }
         }
@@ -119,6 +140,8 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
     }
 
     // Build the application router with security layers
+    // Note: Rate limiting would go here but RateLimitLayer doesn't implement Clone
+    // TODO: Implement rate limiting using a different approach (e.g., middleware with shared state)
     let app = Router::new()
         // API routes (protected by auth middleware)
         .route("/api/dashboard/summary", get(routes::get_dashboard_summary))
@@ -132,12 +155,12 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
         .nest_service("/", ServeDir::new("static"))
         // State and layers
         .with_state(state.clone())
-        // Security middleware
+        // Security middleware (authentication)
         .layer(middleware::from_fn_with_state(state.clone(), auth_middleware))
-        // Security headers
+        // Security headers (strict CSP without unsafe-inline)
         .layer(SetResponseHeaderLayer::overriding(
             header::CONTENT_SECURITY_POLICY,
-            HeaderValue::from_static("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"),
+            HeaderValue::from_static("default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"),
         ))
         .layer(SetResponseHeaderLayer::overriding(
             header::X_FRAME_OPTIONS,
@@ -151,19 +174,41 @@ pub async fn start_dashboard(config: DashboardConfig) -> Result<()> {
             header::STRICT_TRANSPORT_SECURITY,
             HeaderValue::from_static("max-age=31536000; includeSubDomains"),
         ))
+        // CORS
         .layer(cors);
 
-    // Start server
+    // Start server with optional TLS
     let addr = format!("127.0.0.1:{}", config.port);
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
 
-    println!("[*] BazBOM Dashboard running at http://{}", addr);
-    println!("[*] Security Score: Loading...");
-    println!("[!] Vulnerabilities: Analyzing...");
-    println!();
-    println!("Press Ctrl+C to stop");
+    // Check if TLS is configured
+    if let (Some(cert_path), Some(key_path)) = (&config.tls_cert_path, &config.tls_key_path) {
+        // TLS enabled
+        let tls_config = axum_server::tls_rustls::RustlsConfig::from_pem_file(cert_path, key_path)
+            .await
+            .context("Failed to load TLS certificates")?;
 
-    axum::serve(listener, app).await?;
+        println!("[*] BazBOM Dashboard running at https://{} (TLS enabled)", addr);
+        println!("[*] Security Score: Loading...");
+        println!("[!] Vulnerabilities: Analyzing...");
+        println!();
+        println!("Press Ctrl+C to stop");
+
+        axum_server::bind_rustls(addr.parse()?, tls_config)
+            .serve(app.into_make_service())
+            .await?;
+    } else {
+        // Plain HTTP (localhost only)
+        let listener = tokio::net::TcpListener::bind(&addr).await?;
+
+        println!("[*] BazBOM Dashboard running at http://{}", addr);
+        println!("[!] WARNING: TLS not enabled. For production, set BAZBOM_TLS_CERT and BAZBOM_TLS_KEY");
+        println!("[*] Security Score: Loading...");
+        println!("[!] Vulnerabilities: Analyzing...");
+        println!();
+        println!("Press Ctrl+C to stop");
+
+        axum::serve(listener, app).await?;
+    }
 
     Ok(())
 }
@@ -211,9 +256,11 @@ mod tests {
         let state = AppState {
             cache_dir: PathBuf::from(".bazbom/cache"),
             project_root: PathBuf::from("."),
+            auth_token: Some("test-token".to_string()),
         };
 
         assert_eq!(state.cache_dir, PathBuf::from(".bazbom/cache"));
         assert_eq!(state.project_root, PathBuf::from("."));
+        assert_eq!(state.auth_token, Some("test-token".to_string()));
     }
 }

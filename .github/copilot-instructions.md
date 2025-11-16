@@ -97,10 +97,69 @@ Target OS: macOS → Linux → Windows.
 
 ## Security & Supply Chain Requirements
 
+**Supply Chain Security:**
 - SLSA Level 3 provenance; Sigstore keyless signing; checksums.
 - Zero telemetry; explicit `bazbom db sync` for advisory updates.
 - Policy‑as‑code (YAML; optional Rego/CUE). VEX auto‑generation on unreachable when policy allows.
 - CWE mapping, SARIF 2.1.0 validation, SPDX 2.3 and CycloneDX 1.5 validation.
+
+**Security Module Architecture:**
+- Security utilities in `crates/bazbom/src/security/`
+  - `log_sanitizer.rs`: Prevents log injection attacks (sanitize newlines, ANSI codes, control characters)
+  - `audit_log.rs`: Comprehensive security event logging in JSON Lines format
+- Tool verification in `crates/bazbom/src/toolchain/verify.rs`
+  - SHA-256 checksum verification for external tools
+  - `ToolChecksums` struct for integrity validation
+
+**Dashboard Security Standards:**
+- **Authentication**: Bearer token with constant-time comparison using `subtle::ConstantTimeEq`
+- **Credential Storage**: OS keyring integration via `keyring` crate (falls back to environment variables)
+- **Transport Security**: Optional TLS/HTTPS support using `axum-server` with rustls
+  - Configure via `BAZBOM_TLS_CERT` and `BAZBOM_TLS_KEY` environment variables
+- **Security Headers**:
+  - Strict CSP without `unsafe-inline`: `default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'`
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Strict-Transport-Security: max-age=31536000; includeSubDomains`
+- **Input Validation**:
+  - File size limits (10 MB max) to prevent DoS attacks
+  - Path canonicalization to prevent path traversal
+- **CORS**: Restricted to localhost only
+
+**Container Security Standards:**
+- Multi-stage Docker builds with distroless base images (`gcr.io/distroless/cc-debian12`)
+- Non-root user (UID 65532) for minimal privilege
+- Minimal attack surface (no shell, package manager, or unnecessary binaries)
+- Alternative `Dockerfile.debian` available for debugging (includes shell)
+- Comprehensive `.dockerignore` for build optimization
+
+**Kubernetes Security Standards:**
+- Namespace-scoped RBAC (Role instead of ClusterRole) in `crates/bazbom-operator/k8s/rbac-namespaced.yaml`
+- NetworkPolicy for ingress/egress restrictions
+- ResourceQuota and LimitRange for resource isolation
+- Pod Security Standards: restricted profile
+- No privileged containers, no host namespaces, no privilege escalation
+
+**Fuzzing Requirements:**
+- Fuzzing tests in `fuzz/` directory using cargo-fuzz
+- Targets: SBOM parser, dependency graph, policy engine
+- Run in CI for 60 seconds minimum: `cargo fuzz run sbom_parser -- -max_total_time=60`
+- Coverage reports: `cargo fuzz coverage sbom_parser`
+
+**Security Documentation:**
+- All security docs in `docs/security/`
+  - `SECURITY_ANALYSIS.md`: Comprehensive security audit report
+  - `GPG_SIGNING.md`: GPG signing guide for releases
+  - `JWT_AUTHENTICATION.md`: JWT implementation plan for future enhancement
+- Installation script verification: `install-secure.sh` with SHA-256 and GPG verification
+
+**Security Best Practices:**
+- NEVER use timing-unsafe string comparisons for secrets (use `subtle::ConstantTimeEq`)
+- ALWAYS sanitize user input before logging (use `security::log_sanitizer`)
+- ALWAYS validate file paths with canonicalization before filesystem access
+- ALWAYS verify external tool checksums before execution
+- ALWAYS use TLS/HTTPS for production dashboard deployments
+- Log all security-relevant events to audit log (authentication, authorization, vulnerabilities)
 
 ## Homebrew Tap and Distribution
 

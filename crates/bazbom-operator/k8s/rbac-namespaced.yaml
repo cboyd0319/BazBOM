@@ -1,0 +1,178 @@
+# Namespace-scoped RBAC for BazBOM Operator
+# This provides enhanced security by limiting permissions to a single namespace
+#
+# Usage:
+#   1. Create a dedicated namespace: kubectl create namespace bazbom-scans
+#   2. Apply this RBAC: kubectl apply -f rbac-namespaced.yaml -n bazbom-scans
+#   3. Deploy operator in the same namespace
+#
+# For multi-namespace support, duplicate these resources in each namespace
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: bazbom-operator
+  namespace: bazbom-scans
+  labels:
+    app: bazbom-operator
+---
+# Role (namespace-scoped) instead of ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: bazbom-operator
+  namespace: bazbom-scans
+  labels:
+    app: bazbom-operator
+rules:
+  # BazBOMScan custom resource permissions
+  - apiGroups: ["bazbom.io"]
+    resources: ["bazbomscans"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["bazbom.io"]
+    resources: ["bazbomscans/status"]
+    verbs: ["get", "update", "patch"]
+
+  # ConfigMap permissions (for storing SBOM results)
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "create", "update", "patch", "list"]
+
+  # Secret permissions (limited to specific secrets only)
+  # Use resourceNames to restrict access
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["bazbom-github-token", "bazbom-registry-credentials"]
+    verbs: ["get"]
+
+  # Deployment read access (for scanning running applications)
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+
+  # Events (for status reporting)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+# RoleBinding (namespace-scoped) instead of ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bazbom-operator
+  namespace: bazbom-scans
+  labels:
+    app: bazbom-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: bazbom-operator
+subjects:
+  - kind: ServiceAccount
+    name: bazbom-operator
+    namespace: bazbom-scans
+
+---
+# Pod Security Standard labels for namespace
+# Enforces restricted security context
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bazbom-scans
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+
+---
+# Network Policy to restrict operator communications
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: bazbom-operator-netpol
+  namespace: bazbom-scans
+spec:
+  podSelector:
+    matchLabels:
+      app: bazbom-operator
+  policyTypes:
+    - Ingress
+    - Egress
+  # No ingress allowed (operator doesn't receive external traffic)
+  ingress: []
+  # Egress: Allow only Kubernetes API and external registries
+  egress:
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+
+    # Allow Kubernetes API server
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
+
+    # Allow external HTTPS (for vulnerability databases, container registries)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Resource Quotas to prevent resource exhaustion
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: bazbom-operator-quota
+  namespace: bazbom-scans
+spec:
+  hard:
+    requests.cpu: "4"
+    requests.memory: 8Gi
+    limits.cpu: "8"
+    limits.memory: 16Gi
+    persistentvolumeclaims: "5"
+    configmaps: "100"
+    secrets: "10"
+
+---
+# Limit Range for pods
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: bazbom-operator-limits
+  namespace: bazbom-scans
+spec:
+  limits:
+    - max:
+        cpu: "2"
+        memory: 4Gi
+      min:
+        cpu: "100m"
+        memory: 128Mi
+      default:
+        cpu: "500m"
+        memory: 512Mi
+      defaultRequest:
+        cpu: "200m"
+        memory: 256Mi
+      type: Container

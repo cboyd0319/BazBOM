@@ -7,6 +7,30 @@ use std::sync::Arc;
 
 use crate::{models::*, AppState};
 
+/// Maximum file size for JSON/YAML parsing (10 MB)
+const MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
+
+/// Safely read a file with size limit to prevent DoS attacks
+fn read_file_with_limit(path: &PathBuf) -> anyhow::Result<String> {
+    use std::fs;
+
+    // Check file size first
+    let metadata = fs::metadata(path)
+        .with_context(|| format!("Failed to read file metadata: {:?}", path))?;
+
+    if metadata.len() > MAX_FILE_SIZE {
+        anyhow::bail!(
+            "File too large: {} bytes (max: {} bytes). This prevents DoS attacks via large inputs.",
+            metadata.len(),
+            MAX_FILE_SIZE
+        );
+    }
+
+    // Read file content
+    fs::read_to_string(path)
+        .with_context(|| format!("Failed to read file: {:?}", path))
+}
+
 /// Get dashboard summary
 pub async fn get_dashboard_summary(
     State(state): State<Arc<AppState>>,
@@ -32,17 +56,42 @@ pub async fn get_dashboard_summary(
     }
 }
 
-/// Find findings file in cache or project root
+/// Validate that a path doesn't escape the base directory (prevents path traversal)
+fn validate_path(path: &PathBuf, base: &PathBuf) -> anyhow::Result<PathBuf> {
+    use std::fs;
+
+    // Canonicalize both paths to resolve symlinks and relative components
+    let canonical_path = fs::canonicalize(path)
+        .with_context(|| format!("Failed to canonicalize path: {:?}", path))?;
+
+    let canonical_base = fs::canonicalize(base)
+        .with_context(|| format!("Failed to canonicalize base: {:?}", base))?;
+
+    // Ensure the path is within the base directory
+    if !canonical_path.starts_with(&canonical_base) {
+        anyhow::bail!(
+            "Path traversal detected! Path {:?} is outside base directory {:?}",
+            canonical_path,
+            canonical_base
+        );
+    }
+
+    Ok(canonical_path)
+}
+
+/// Find findings file in cache or project root with path validation
 fn find_findings_file(state: &AppState) -> anyhow::Result<PathBuf> {
     let findings_path = state.cache_dir.join("sca_findings.json");
     if findings_path.exists() {
-        return Ok(findings_path);
+        // Validate path before returning
+        return validate_path(&findings_path, &state.cache_dir);
     }
 
     // Try alternate location
     let alt_path = state.project_root.join("sca_findings.json");
     if alt_path.exists() {
-        return Ok(alt_path);
+        // Validate path before returning
+        return validate_path(&alt_path, &state.project_root);
     }
 
     anyhow::bail!("No findings file found. Please run 'bazbom scan' first.")
@@ -51,11 +100,10 @@ fn find_findings_file(state: &AppState) -> anyhow::Result<PathBuf> {
 /// Load dashboard summary from findings file
 async fn load_dashboard_summary(state: &AppState) -> anyhow::Result<DashboardSummary> {
     use serde_json::Value;
-    use std::fs;
 
     let path_to_use = find_findings_file(state)?;
-    let content = fs::read_to_string(&path_to_use)
-        .with_context(|| format!("Failed to read findings file: {:?}", path_to_use))?;
+    // Use safe file reading with size limit
+    let content = read_file_with_limit(&path_to_use)?;
     let findings: Value = serde_json::from_str(&content)?;
 
     // Count vulnerabilities by severity
