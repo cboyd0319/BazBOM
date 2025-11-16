@@ -31,10 +31,10 @@ governor = "0.7"
 tower = "0.5"
 
 # Security
-hmac = "0.13"
+hmac = "0.12"
 sha2 = "0.10"
 hex = "0.4"
-subtle = "2.6"
+subtle = "2"
 
 # Webhook server
 axum = "0.8"
