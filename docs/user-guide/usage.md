@@ -1483,9 +1483,9 @@ BAZBOM_REACHABILITY_JAR=/custom/path/analyzer.jar bazbom scan . --reachability
 
 ### Python CLI Wrapper (Transition Phase)
 
-### Source Install (Current Status)
+### Source Install
 
-BazBOM is not yet packaged for any platform. Build it from this repository:
+BazBOM is available via Homebrew or can be built from source:
 
 ```bash
 git clone https://github.com/cboyd0319/BazBOM.git ~/src/BazBOM

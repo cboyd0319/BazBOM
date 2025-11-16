@@ -2,9 +2,10 @@
 # This file helps GitHub Copilot Agents install project dependencies
 # before attempting builds/tests/lints, improving PR quality and speed.
 #
-# SCOPE: BazBOM is exclusively for JVM languages and build systems
-# - Languages: Java, Kotlin, Scala, Groovy, Clojure
-# - Build Systems: Ant, Maven, Gradle, Bazel, Buildr
+# SCOPE: BazBOM is a polyglot SBOM/SCA tool supporting 13+ languages
+# - JVM Languages: Java, Kotlin, Scala, Groovy, Clojure, Android
+# - Polyglot Languages: JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP
+# - Build Systems: Maven, Gradle, Bazel, sbt, Ant, Buildr, npm, pip, Go modules, Cargo, Bundler, Composer
 
 steps:
   - name: macOS — Install Rust toolchain

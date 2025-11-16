@@ -418,7 +418,7 @@ jobs:
 
 **Q: Does this work with all package managers?**
 
-A: Currently Maven (JVM) only. npm, PyPI, etc. coming soon.
+A: Yes! BazBOM's universal auto-fix supports 9 package managers: Maven, Gradle, Bazel, npm, pip, Go modules, Cargo, Bundler, and Composer. See the main README for the complete list.
 
 **Q: How accurate is the effort estimation?**
 

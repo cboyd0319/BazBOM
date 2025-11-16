@@ -15,7 +15,7 @@ sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 bazbom --version
 ```
 
-> Package manager installs (Homebrew, winget, etc.) are not yet published. Track [docs/getting-started/homebrew-installation.md](getting-started/homebrew-installation.md) for the latest status.
+> Homebrew is available via `brew tap cboyd0319/bazbom && brew install bazbom`. Windows installer (winget) coming soon. See [homebrew-installation.md](getting-started/homebrew-installation.md) for details.
 
 ---
 

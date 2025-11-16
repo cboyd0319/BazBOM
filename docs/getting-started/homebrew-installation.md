@@ -30,9 +30,9 @@ This script:
 
 ### 🍺 Homebrew (macOS & Linux)
 
-> **Status:** Homebrew tap is ready but not yet published. Coming soon!
+> **Status:** ✅ Available now!
 
-Once published, installation will be:
+**Install:**
 
 ```bash
 brew tap cboyd0319/bazbom

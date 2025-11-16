@@ -127,9 +127,11 @@ All releases are published to GitHub Releases:
 https://github.com/cboyd0319/BazBOM/releases
 ```
 
-### Package Managers (Future Work)
+### Package Managers
 
-BazBOM is not yet available through any package manager. Everyone installs by cloning this repository and compiling the CLI. When the Homebrew/winget/Chocolatey work lands, add the verification steps back here.
+**Homebrew:** ✅ Available (`brew tap cboyd0319/bazbom && brew install bazbom`)
+
+**Future:** winget and Chocolatey support planned. When those land, add the verification steps back here.
 
 ### Distribution Channels
 

@@ -42,14 +42,29 @@ Located in `crates/`:
 | `bazbom-advisories` | OSV/NVD/GHSA merge, KEV/EPSS enrichment | Production |
 | `bazbom-policy` | YAML policy engine, Rego/OPA bridge | Production |
 | `bazbom-formats` | SPDX, CycloneDX, SARIF, VEX exporters | Production |
-| `bazbom-lsp` | Language Server Protocol for IDE integration | Beta |
-| `bazbom-dashboard` | Web UI (D3.js visualizations) | Beta |
-| `bazbom-tui` | Terminal UI for dependency exploration | Beta |
+| `bazbom-lsp` | Language Server Protocol for IDE integration | Production |
+| `bazbom-dashboard` | Web UI (Axum 0.8 + Tokio) | Production |
+| `bazbom-tui` | Terminal UI (Ratatui 0.29) for dependency exploration | Production |
 | `bazbom-threats` | Supply chain threat detection | Production |
-| `bazbom-containers` | OCI image scanning | Beta |
+| `bazbom-containers` | OCI image scanning with layer attribution | Production |
 | `bazbom-cache` | Advisory database caching | Production |
-| `bazbom-reports` | HTML/PDF report generation | Beta |
+| `bazbom-reports` | HTML/PDF report generation | Production |
 | `bazbom-polyglot` | Multi-language ecosystem support (npm, Python, Go, Rust, Ruby, PHP) | Production |
+| `bazbom-js-reachability` | JavaScript/TypeScript call graph analysis | Production |
+| `bazbom-python-reachability` | Python call graph analysis | Production |
+| `bazbom-go-reachability` | Go call graph analysis | Production |
+| `bazbom-rust-reachability` | Rust call graph analysis (syn-based) | Production |
+| `bazbom-ruby-reachability` | Ruby call graph analysis | Production |
+| `bazbom-php-reachability` | PHP call graph analysis | Production |
+| `bazbom-java-reachability` | JVM bytecode call graph analysis (OPAL-based) | Production |
+| `bazbom-upgrade-analyzer` | Breaking change detection & migration intelligence | Production |
+| `bazbom-depsdev` | deps.dev API client | Production |
+| `bazbom-ml` | ML-based risk scoring & anomaly detection | Production |
+| `bazbom-operator` | Kubernetes operator for automated scanning | Production |
+| `bazbom-verify` | Binary verification utilities | Production |
+| `bazbom-tool-verify` | Installation verification tool | Production |
+| `bazbom-auth` | JWT authentication & RBAC (v7.0) | Beta |
+| `bazbom-crypto` | Cryptographic primitives (v7.0) | Beta |
 
 ### Build System Integration
 

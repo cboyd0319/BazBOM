@@ -4,10 +4,11 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with BazB
 
 ## Mission & Non‑Negotiables
 
-- **JVM-ONLY TOOL**: BazBOM is exclusively for JVM ecosystems. NEVER add support for Go, Python, Node.js, Rust, or any non-JVM language.
-- **Supported Languages**: Java, Kotlin, Scala, Groovy, Clojure (JVM targets only)
-- **Supported Build Systems**: Ant, Maven, Gradle, Bazel (with JVM rules: java_*, kotlin_*, scala_*), Buildr
-- World‑class JVM SBOM, SCA, and dependency graph across Maven, Gradle, and Bazel.
+- **POLYGLOT SBOM/SCA TOOL**: BazBOM supports 13+ languages across JVM and polyglot ecosystems with world-class reachability analysis
+- **Supported JVM Languages**: Java, Kotlin, Scala, Groovy, Clojure, Android
+- **Supported Polyglot Languages**: JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP
+- **Supported Build Systems**: Maven, Gradle, Bazel, sbt, Ant, Buildr, npm (yarn/pnpm), pip (poetry/pipenv), Go modules, Cargo, Bundler, Composer
+- World‑class SBOM, SCA, and dependency graph analysis with 70-90% noise reduction via reachability analysis for 7 languages.
 - Private-by-default: 100% privacy, zero telemetry. Offline-first operation is required.
 - Memory‑safe distribution: Rust‑first single binary; OPAL (JVM) helper for reachability. Avoid unsafe; no embedded Python in shipped binaries.
 - Policy‑as‑code at the core: YAML (plus optional Rego/CUE), VEX auto‑application, CI gating.
@@ -15,7 +16,7 @@ Purpose: Provide clear, enforceable guidance so changes remain aligned with BazB
 - Deterministic, reproducible outputs with signed artifacts and SLSA provenance.
 
 CRITICAL Repo Rules (must follow)
-- **JVM ONLY**: Never implement parsers or support for non-JVM ecosystems (Go, Python, Node.js, Rust, C++, etc.)
+- **POLYGLOT SUPPORT**: BazBOM supports 13+ languages including JVM (Java, Kotlin, Scala, Groovy, Clojure, Android) and polyglot ecosystems (JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP). All language support must maintain high quality standards.
 - Zero emojis in code, ever. Do not add emojis to source files, generated code, or code comments. Code examples in docs that users might copy/paste must also be emoji‑free.
 - Avoid doc sprawl. Do not create a new doc for every small task. Prefer updating canonical docs under `docs/`. Create new documents only when a clear gap exists, and then link them from `docs/README.md`.
 
@@ -24,13 +25,31 @@ Target OS: macOS → Linux → Windows.
 
 ## Architecture Snapshot
 
-- Rust workspace: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`.
-- Reachability: ASM‑based `bazbom-reachability.jar` invoked with `java -jar`; no network; JSON I/O; call graph generation.
+- **Rust workspace**: 29 production crates including:
+  - Core: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`
+  - Polyglot: `bazbom-polyglot` (multi-language support)
+  - Reachability: `bazbom-java-reachability` (JVM bytecode), `bazbom-js-reachability`, `bazbom-python-reachability`, `bazbom-go-reachability`, `bazbom-rust-reachability`, `bazbom-ruby-reachability`, `bazbom-php-reachability`
+  - Intelligence: `bazbom-upgrade-analyzer`, `bazbom-depsdev`, `bazbom-ml`
+  - UI: `bazbom-dashboard`, `bazbom-tui`, `bazbom-lsp`
+  - Infrastructure: `bazbom-containers`, `bazbom-operator`, `bazbom-cache`, `bazbom-threats`, `bazbom-reports`
+  - Enterprise (v7.0-beta): `bazbom-auth`, `bazbom-crypto`
+- **Reachability Analysis**: Language-specific AST/bytecode analysis for 7 languages (70-90% noise reduction)
+  - JVM: OPAL-based bytecode analysis
+  - JavaScript/TypeScript: SWC-based AST parsing
+  - Python: RustPython parser with framework detection
+  - Go: tree-sitter with goroutine tracking
+  - Rust: syn parser with trait tracking (>98% accuracy)
+  - Ruby: tree-sitter with Rails/metaprogramming support
+  - PHP: tree-sitter with Laravel/Symfony support
 - Shading detection: Maven Shade and Gradle Shadow plugin parsing; class fingerprinting with Blake3 hashing.
-- Build integrations:
-  - Maven: `bazbom-maven-plugin` emits authoritative JSON (scopes, dependencies, PURLs).
-  - Gradle: `io.bazbom.gradle-plugin` with per‑configuration graphs; Shadow support.
-  - Bazel: aspects for `java_*` (priority), then Kotlin, then broader JVM rules; bzlmod + rules_jvm_external.
+- **Build integrations**:
+  - **JVM**: Maven plugin, Gradle plugin, Bazel aspects (java_*/kotlin_*/scala_*), sbt, Ant+Ivy, Buildr
+  - **JavaScript**: npm (package-lock.json, yarn.lock, pnpm-lock.yaml), Yarn workspaces, pnpm workspaces
+  - **Python**: pip (requirements.txt), poetry (poetry.lock), pipenv (Pipfile.lock), PDM
+  - **Go**: go.mod/go.sum with replace/indirect support
+  - **Rust**: Cargo.toml/Cargo.lock with workspace support
+  - **Ruby**: Bundler (Gemfile.lock) with Rails support
+  - **PHP**: Composer (composer.lock) with Laravel/Symfony support
 - Intelligence: OSV/NVD/GHSA + KEV + EPSS; canonical severity + P0–P4 priority.
 - Outputs: SPDX 2.3 (primary), CycloneDX 1.5 (optional), SARIF 2.1.0, CSAF VEX, CSV.
 
@@ -87,13 +106,15 @@ Target OS: macOS → Linux → Windows.
 
 ## Build Systems & Examples Checklist
 
-- Cover JVM build systems in examples and tests:
-  - Ant (build.xml)
-  - Maven (pom.xml)
-  - Gradle (build.gradle / build.gradle.kts; Android variants)
-  - Bazel (WORKSPACE / MODULE.bazel; rules_jvm_external; aspects)
-  - Buildr (buildfile, Rakefile)
-- Include: offline mode, VEX flow, GitHub Action, shaded/fat JAR examples.
+- **JVM Build Systems**:
+  - Ant (build.xml), Maven (pom.xml), Gradle (build.gradle/.kts; Android variants)
+  - Bazel (WORKSPACE/MODULE.bazel; rules_jvm_external; aspects), sbt (build.sbt), Buildr (buildfile, Rakefile)
+- **Polyglot Package Managers**:
+  - npm (package.json, package-lock.json, yarn.lock, pnpm-lock.yaml)
+  - Python (requirements.txt, poetry.lock, Pipfile.lock, pyproject.toml)
+  - Go (go.mod, go.sum), Rust (Cargo.toml, Cargo.lock)
+  - Ruby (Gemfile, Gemfile.lock), PHP (composer.json, composer.lock)
+- Include: offline mode, VEX flow, GitHub Action, shaded/fat JAR examples, polyglot monorepo examples.
 
 ## Security & Supply Chain Requirements
 

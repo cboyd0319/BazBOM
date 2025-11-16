@@ -25,7 +25,7 @@ sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 cargo install --git https://github.com/cboyd0319/BazBOM bazbom
 ```
 
-> See [Installation Guide](homebrew-installation.md) for all methods including Homebrew (coming soon).
+> See [Installation Guide](homebrew-installation.md) for all methods including Homebrew, cargo, and binary downloads.
 
 ## 2. First Scan (30 seconds)
 
