@@ -90,7 +90,7 @@ bazbom --version
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
 - ✅ **Code Quality** - Zero clippy warnings, 100% passing tests, comprehensive bug fixes
 
-🦀 **26 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
+🦀 **29 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 

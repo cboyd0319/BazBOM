@@ -56,10 +56,12 @@ Located in `crates/`:
 | `bazbom-rust-reachability` | Rust call graph analysis (syn-based) | Production |
 | `bazbom-ruby-reachability` | Ruby call graph analysis | Production |
 | `bazbom-php-reachability` | PHP call graph analysis | Production |
+| `bazbom-java-reachability` | JVM bytecode call graph analysis (OPAL-based) | Production |
 | `bazbom-upgrade-analyzer` | Breaking change detection & migration intelligence | Production |
 | `bazbom-depsdev` | deps.dev API client | Production |
 | `bazbom-ml` | ML-based risk scoring & anomaly detection | Production |
 | `bazbom-operator` | Kubernetes operator for automated scanning | Production |
+| `bazbom-verify` | Binary verification utilities | Production |
 | `bazbom-tool-verify` | Installation verification tool | Production |
 | `bazbom-auth` | JWT authentication & RBAC (v7.0) | Beta |
 | `bazbom-crypto` | Cryptographic primitives (v7.0) | Beta |
