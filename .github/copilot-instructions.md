@@ -79,24 +79,36 @@ Target OS: macOS → Linux → Windows.
 - 80% faster time-to-fix for automated-eligible vulnerabilities
 - Complete automation loop: Scan → Ticket → PR → Review → Merge → Close
 
-**v6.8 Development Status (Nov 16, 2025 - Updated):**
-- Phase 1 Foundation: WEEK 1 IN PROGRESS (Week 1 of 3)
-- ✅ Created `bazbom-jira` crate (v6.8.0) - Compilation successful
-  - REST API client skeleton with CRUD operations (create, get, update)
+**v6.8 Development Status (Nov 16, 2025 - Template Engines Complete):**
+- Phase 1 Foundation: WEEK 1 NEARLY COMPLETE (Week 1 of 3)
+- ✅ Created `bazbom-jira` crate (v6.8.0) - Full template engine operational
+  - REST API client with CRUD operations (create, get, update)
   - Rate limiting (5 req/sec), retry logic, error handling
   - Webhook server foundation (Axum-based)
   - Authentication support (API token, PAT, OAuth 2.0)
-- ✅ Created `bazbom-github` crate (v6.8.0) - Compilation successful
+  - **Template engine with Markdown→ADF conversion** (400+ LOC, 20 passing tests)
+    - Variable substitution for dynamic content
+    - Full Jira ADF (Atlassian Document Format) support
+    - Headings, paragraphs, lists, code blocks, inline formatting (bold/italic/code)
+    - Supports both Jira Wiki and Markdown syntax
+  - Default template with ALL BazBOM intelligence sections
+- ✅ Created `bazbom-github` crate (v6.8.0) - Full template engine operational
   - GitHub API client with PR operations (create, get, update)
   - Rate limiting (60 req/min), retry logic, error handling
   - Webhook server foundation
+  - **PR template engine with intelligence integration** (300+ LOC, 12 passing tests)
+    - Variable substitution for comprehensive PR descriptions
+    - Severity-based risk badges and messaging
+    - Reachability status, ML risk scoring, auto-merge eligibility
+    - Jira ticket and BazBOM scan link integration
+  - Default PR template at `templates/pr_template.md`
 - ✅ Workspace configuration updated (both crates added to Cargo.toml)
-- ✅ ~2,055 lines of foundation code across both crates
-- ⏳ TODO: Complete template engine for ticket/PR generation
-- ⏳ TODO: Complete sync engine for bidirectional updates
-- ⏳ TODO: Complete orchestrator for multi-PR workflows
-- ⏳ TODO: Add comprehensive test coverage (target >90%)
-- Next: Week 1 completion - CLI commands, templates, and tests
+- ✅ ~3,200 lines of foundation code across both crates (up from 2,055)
+- ✅ Template engines complete with 32 passing tests
+- ⏳ TODO: Complete sync engine for bidirectional updates (Week 2-3)
+- ⏳ TODO: Complete orchestrator for multi-PR workflows (Week 2-3)
+- ⏳ TODO: Add integration tests for API clients (Week 2)
+- Next: Sync engine, CLI integration commands, full E2E testing
 
 **When working on v6.8:**
 - Reference planning docs in `docs/development/versions/6.8/`
