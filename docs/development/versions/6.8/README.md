@@ -26,15 +26,21 @@ This release bridges the gap between security scanning and actual code remediati
 
 ### GitHub PR Automation (NEW!)
 - **Automatic PR Creation:** AI-powered dependency upgrades with comprehensive intelligence reports
-- **Full Intelligence Integration:** Every PR includes data from ALL 8 BazBOM intelligence modules:
+- **Full Intelligence Integration:** Every PR includes data from ALL 14+ BazBOM intelligence modules:
   - Reachability analysis (7 languages) with call graph visualization
   - ML risk scoring for auto-merge decisions
-  - Breaking change detection via upgrade analyzer
+  - Upgrade analyzer / Breaking change detection
+  - Difficulty scoring (0-100 scale)
+  - Multi-CVE grouping
   - EPSS/KEV exploitation intelligence
-  - Container impact assessment
-  - Threat intelligence (active exploits, PoCs)
+  - Container impact assessment with layer attribution
+  - Threat intelligence (ExploitDB, GitHub POCs, Nuclei templates)
   - Policy compliance verification
-  - Testing strategy recommendations
+  - Framework migration guides
+  - Ecosystem-specific guidance
+  - LLM fix generation with alternatives
+  - Plain English "Why" explanations
+  - Enhanced testing strategy recommendations
 - **Auto-Merge (Optional):** Safe automated merging for low-risk upgrades with configurable policies
 - **Multi-PR Orchestration:** Batch remediation across multiple repositories
 - **Three-Way Sync:** Jira ↔ BazBOM ↔ GitHub all stay in sync
@@ -61,7 +67,7 @@ This release bridges the gap between security scanning and actual code remediati
 
 1. **[Jira Integration Plan](jira-integration-plan.md)** ⭐ START HERE
    - Executive summary
-   - Feature categories (8 major areas)
+   - Feature categories (9 major areas including GitHub PR automation)
    - Use cases and workflows
    - Configuration examples
    - Security considerations
@@ -208,7 +214,7 @@ bazbom scan --jira-create
 | Vulnerability Discovery | ✅ | ✅ |
 | Issue Tracking (Jira) | Manual | ✅ Automatic |
 | **PR Creation (GitHub)** | ❌ | ✅ **Automatic** |
-| **PR Intelligence** | ❌ | ✅ **ALL 8 Modules** |
+| **PR Intelligence** | ❌ | ✅ **ALL 14+ Modules** |
 | **Auto-Merge** | ❌ | ✅ **Optional (Safe)** |
 | **Multi-Repo Orchestration** | ❌ | ✅ **Yes** |
 | Team Assignment | Manual | ✅ Smart Routing |
@@ -295,7 +301,7 @@ jira:
 - CODEOWNERS integration
 
 ### New Component: Intelligence Hub (~1,500 LOC)
-- Aggregates data from ALL 8 BazBOM intelligence modules
+- Aggregates data from ALL 14+ BazBOM intelligence modules
 - Unified interface for enriching tickets and PRs
 - Formats intelligence for human-readable GitHub Markdown
 - Generates remediation guidance and testing strategies

@@ -9,7 +9,7 @@
 
 This document provides a comprehensive analysis of all Jira integration points within BazBOM v6.8. It examines how Jira integration touches every major component of the BazBOM ecosystem, from CLI scanning to dashboard visualization to IDE plugins.
 
-The analysis reveals **48 distinct integration points** across **8 major categories**, demonstrating the depth and breadth of the Jira integration strategy.
+The analysis reveals **48 distinct integration points** across **8 major categories** (with a 9th category for GitHub PR automation added in v6.8), demonstrating the depth and breadth of the complete automation strategy.
 
 ---
 

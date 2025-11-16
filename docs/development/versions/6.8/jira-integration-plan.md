@@ -148,9 +148,9 @@ flowchart TB
 - Rate limiting and retry logic
 
 **New Component: Intelligence Hub** (~1,500 LOC)
-- Aggregates data from ALL BazBOM intelligence modules
+- Aggregates data from ALL 14+ BazBOM intelligence modules
 - Unified interface for enriching tickets and PRs
-- Formats intelligence for human-readable output
+- Formats intelligence for human-readable output (GitHub Markdown, Jira Wiki)
 - Generates remediation guidance and testing strategies
 
 **Enhanced Crates:**
@@ -516,7 +516,7 @@ jira:
 **Sprint Integration:**
 - Auto-add to current sprint (configurable)
 - Story point estimation based on remediation effort
-- Epic linking for themed remediation (e.g., "Q2 2025 Log4j Cleanup")
+- Epic linking for themed remediation (e.g., "Q2 2026 Log4j Cleanup")
 - Burndown chart integration
 
 **Backlog Management:**
@@ -1301,7 +1301,7 @@ THEN: Set due date to now + 24 hours
 2. Identifies 15 Spring vulnerabilities across services
 3. Runs: `bazbom jira create-epic "Q2 Spring Boot Upgrade" --package "org.springframework.*"`
 4. Creates epic SEC-1000 with 15 linked issues
-5. Adds to "Q2 2025" sprint
+5. Adds to "Q2 2026" sprint
 6. Team grooms backlog, estimates story points
 7. Tracks progress in Jira burndown chart
 8. BazBOM dashboard shows real-time remediation progress
@@ -1586,4 +1586,4 @@ See [troubleshooting.md](troubleshooting.md)
 1. Review this plan with stakeholders
 2. Gather feedback on priority features
 3. Finalize Phase 1 scope
-4. Begin implementation (target: Q1 2025)
+4. Begin implementation (target: Q1 2026)
