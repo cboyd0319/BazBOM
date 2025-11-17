@@ -100,10 +100,10 @@ governor = "0.7"
 
 ---
 
-## Phase 2: CLI Commands & API Integration (Weeks 4-6) - 🚧 **NEXT UP**
+## Phase 2: CLI Commands & API Integration (Weeks 4-6) - 🚧 **IN PROGRESS**
 
-**Status:** Not Started
-**Target Start:** Week of 2025-11-18
+**Status:** Week 4 In Progress (60% complete)
+**Started:** 2025-11-16
 **Focus:** Complete REST API clients and CLI commands for both Jira and GitHub
 
 ### Goals
@@ -116,23 +116,35 @@ governor = "0.7"
 
 ### Deliverables
 
-**Week 4: CLI Commands & Configuration** 🎯 **Priority**
-- [ ] **Jira CLI Commands** (`crates/bazbom/src/commands/jira.rs`)
-  - `bazbom jira init` - Interactive setup wizard
-  - `bazbom jira create` - Manual ticket creation (uses existing client + templates)
-  - `bazbom jira get <key>` - Fetch ticket details
-  - `bazbom jira update <key>` - Update ticket fields
-  - `bazbom jira sync` - Manual synchronization trigger
-- [ ] **GitHub CLI Commands** (`crates/bazbom/src/commands/github.rs`)
-  - `bazbom github init` - Interactive setup wizard
-  - `bazbom github pr create` - Manual PR creation (uses existing client + templates)
-  - `bazbom github pr get <number>` - Fetch PR details
-  - `bazbom github pr list` - List repository PRs
-- [ ] **Configuration File Handling**
-  - `.bazbom/jira.yml` loader and validator
-  - `.bazbom/github.yml` loader and validator
-  - Environment variable expansion for secrets
-  - Configuration schema validation
+**Week 4: CLI Commands & Configuration** 🎯 **IN PROGRESS (60%)**
+- [x] **Model Fixes & Type Additions**
+  - ProjectRef, IssueTypeRef, IssueFields for Jira
+  - PullRequest fields (merged, user), Branch.ref_name for GitHub
+  - BazBomPrMetadata confidence field
+  - CreatePullRequestRequest maintainer_can_modify field
+- [x] **Config Structure Updates**
+  - JiraConfig with nested AuthConfig, AutoCreateConfig
+  - GitHubConfig with flat structure (owner, repo, base_branch, auto_merge fields)
+- [x] **Jira CLI Commands** (`crates/bazbom/src/commands/jira.rs`)
+  - `bazbom jira init` - Interactive setup wizard ✅
+  - `bazbom jira create` - Manual ticket creation (uses existing client + templates) ✅
+  - `bazbom jira get <key>` - Fetch ticket details ✅
+  - `bazbom jira update <key>` - Update ticket fields ✅
+  - `bazbom jira sync` - Manual synchronization trigger ✅
+- [x] **GitHub CLI Commands** (`crates/bazbom/src/commands/github.rs`)
+  - `bazbom github init` - Interactive setup wizard ✅
+  - `bazbom github pr create` - Manual PR creation (uses existing client + templates) ✅
+  - `bazbom github pr get <number>` - Fetch PR details ✅
+  - `bazbom github pr list` - List repository PRs ✅
+- [x] **Configuration File Handling**
+  - `.bazbom/jira.yml` loader and validator ✅
+  - `.bazbom/github.yml` loader and validator ✅
+  - Environment variable expansion for secrets ✅
+  - Configuration schema validation ✅
+- [ ] **CLI Integration** (Next: 40% remaining)
+  - Wire up commands in cli.rs Commands enum
+  - Add command handlers in main.rs
+  - Integration tests
 
 **Week 5: Integration with Main Scan** 🎯 **Priority**
 - [ ] **Scan Command Integration**
