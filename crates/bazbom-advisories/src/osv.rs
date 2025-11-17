@@ -9,6 +9,7 @@ const OSV_API_BASE: &str = "https://api.osv.dev/v1";
 
 #[derive(Debug, Serialize, Deserialize)]
 struct OsvQueryRequest {
+    version: String,
     package: OsvPackage,
 }
 
@@ -69,9 +70,10 @@ struct OsvReference {
     url: String,
 }
 
-/// Query OSV database for vulnerabilities affecting a specific package
+/// Query OSV database for vulnerabilities affecting a specific package version
 pub fn query_package_vulnerabilities(
     package_name: &str,
+    version: &str,
     ecosystem: &str,
     offline: bool,
 ) -> Result<Vec<Vulnerability>> {
@@ -80,6 +82,7 @@ pub fn query_package_vulnerabilities(
     }
 
     let request = OsvQueryRequest {
+        version: version.to_string(),
         package: OsvPackage {
             name: package_name.to_string(),
             ecosystem: ecosystem.to_string(),
@@ -110,7 +113,7 @@ pub fn query_package_vulnerabilities(
 
 /// Download vulnerabilities for multiple packages in batch
 pub fn query_batch_vulnerabilities(
-    packages: &[(String, String)], // (name, ecosystem) pairs
+    packages: &[(String, String, String)], // (name, version, ecosystem) tuples
     offline: bool,
     cache_dir: &Path,
 ) -> Result<HashMap<String, Vec<Vulnerability>>> {
@@ -123,7 +126,7 @@ pub fn query_batch_vulnerabilities(
 
     println!("[bazbom] querying OSV for {} packages", packages.len());
 
-    for (i, (name, ecosystem)) in packages.iter().enumerate() {
+    for (i, (name, version, ecosystem)) in packages.iter().enumerate() {
         if i > 0 && i % 10 == 0 {
             println!("[bazbom]   progress: {}/{}", i, packages.len());
             // Simple rate limiting: small delay every 10 requests
@@ -132,11 +135,11 @@ pub fn query_batch_vulnerabilities(
             std::thread::sleep(std::time::Duration::from_millis(500));
         }
 
-        match query_package_vulnerabilities(name, ecosystem, offline) {
+        match query_package_vulnerabilities(name, version, ecosystem, offline) {
             Ok(vulns) => {
-                let key = format!("{}:{}", ecosystem, name);
+                let key = format!("{}:{}@{}", ecosystem, name, version);
                 if !vulns.is_empty() {
-                    println!("[bazbom]     {} vulnerabilities for {}", vulns.len(), name);
+                    println!("[bazbom]     {} vulnerabilities for {}@{}", vulns.len(), name, version);
                     results.insert(key.clone(), vulns.clone());
 
                     // Cache the results
@@ -146,7 +149,7 @@ pub fn query_batch_vulnerabilities(
                 }
             }
             Err(e) => {
-                eprintln!("[bazbom]   warning: failed to query {}: {}", name, e);
+                eprintln!("[bazbom]   warning: failed to query {}@{}: {}", name, version, e);
             }
         }
     }
