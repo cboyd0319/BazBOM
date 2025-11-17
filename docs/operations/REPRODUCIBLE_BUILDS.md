@@ -1,7 +1,7 @@
 # Reproducible Builds for BazBOM
 
 **Status**: 🚧 In Implementation (Target: SLSA v1.1 Level 4)
-**Last Updated**: 2025-11-16
+**Last Updated**: 2025-11-16 (Rust v1.91.1 update)
 **Owner**: Security Team
 
 ## Overview
@@ -20,7 +20,7 @@ BazBOM implements reproducible builds to achieve SLSA v1.1 Level 4 compliance. R
 ### 1. Pinned Dependencies
 
 - **Cargo.lock**: Committed to repository (✅ Done)
-- **rust-toolchain.toml**: Exact Rust version specified (✅ Done - v1.82.0)
+- **rust-toolchain.toml**: Exact Rust version specified (✅ Done - v1.91.1)
 - **Build tools**: All tools pinned to specific versions in CI
 
 ### 2. Deterministic Build Environment
@@ -46,7 +46,7 @@ All settings configured in `.cargo/config.toml`:
 **rust-toolchain.toml**:
 ```toml
 [toolchain]
-channel = "1.82.0"
+channel = "1.91.1"
 components = ["rustfmt", "clippy", "llvm-tools-preview"]
 profile = "minimal"
 ```
@@ -144,7 +144,7 @@ curl -X POST https://reproducible-builds.org/api/verify \
 
 **Platform-specific builds**: Build on each platform separately
 **Arch-specific builds**: Build for each architecture separately
-**Exact toolchain match**: Use same Rust version as CI (1.82.0)
+**Exact toolchain match**: Use same Rust version as CI (1.91.1)
 
 ## Reproducibility Status by Target
 
@@ -173,7 +173,7 @@ curl -X POST https://reproducible-builds.org/api/verify \
 **Problem**: Local build doesn't match CI
 
 **Solutions**:
-1. Use exact same Rust version (1.82.0)
+1. Use exact same Rust version (1.91.1)
 2. Set `SOURCE_DATE_EPOCH` to commit timestamp
 3. Build on same OS (Ubuntu 22.04 for linux-x86_64)
 4. Check for local modifications (`git status`)

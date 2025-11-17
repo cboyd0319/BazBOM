@@ -6,6 +6,9 @@
 //! - `bazbom github pr get` - Fetch PR details
 //! - `bazbom github pr list` - List repository PRs
 
+// TODO: Wire these commands up to main CLI (Phase 2 Week 4 - 60% complete)
+#![allow(dead_code)]
+
 use anyhow::{Context, Result};
 use bazbom_github::client::GitHubClient;
 use bazbom_github::config::GitHubConfig;
@@ -280,7 +283,7 @@ async fn handle_github_pr_list(
     let token = std::env::var("GITHUB_TOKEN")
         .context("GITHUB_TOKEN environment variable not set")?;
 
-    let client = GitHubClient::new(&token);
+    let _client = GitHubClient::new(&token);
 
     let state_filter = state.as_deref().unwrap_or("open");
 

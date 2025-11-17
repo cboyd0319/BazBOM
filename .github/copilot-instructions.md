@@ -25,6 +25,7 @@ Target OS: macOS → Linux → Windows.
 
 ## Architecture Snapshot
 
+- **Rust Toolchain**: v1.91.1 (pinned in rust-toolchain.toml for reproducible builds)
 - **Rust workspace**: 32 production crates (30 v6.5 + 2 v6.8 in development):
   - Core: `bazbom` (CLI), `bazbom-core`, `bazbom-formats`, `bazbom-advisories`, `bazbom-policy`, `bazbom-graph`
   - Polyglot: `bazbom-polyglot` (multi-language support)

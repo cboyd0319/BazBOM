@@ -140,8 +140,8 @@ impl PrOrchestrator {
 
     /// Process a single repository based on strategy
     async fn process_repository(&self, request: &PrCreationRequest) -> OrchestrationResult {
-        let repository = format!("{}/{}", request.owner, request.repo);
-        let vulnerabilities_count = request.metadata.len();
+        let _repository = format!("{}/{}", request.owner, request.repo);
+        let _vulnerabilities_count = request.metadata.len();
 
         match self.strategy {
             OrchestrationStrategy::OnePrPerRepo => {
@@ -202,7 +202,7 @@ impl PrOrchestrator {
         for metadata in &request.metadata {
             by_package
                 .entry(metadata.package.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(metadata);
         }
 
@@ -246,7 +246,7 @@ impl PrOrchestrator {
         for metadata in &request.metadata {
             by_severity
                 .entry(metadata.severity.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push(metadata);
         }
 
@@ -308,6 +308,7 @@ mod tests {
             severity: severity.to_string(),
             ml_risk_score: 80,
             reachable: true,
+            confidence: 85,
             auto_merge_eligible: false,
             jira_ticket: None,
             bazbom_scan_url: None,
