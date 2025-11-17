@@ -1,12 +1,13 @@
 use crate::error::{GitHubError, Result};
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing::{error, info};
 
 /// Webhook server for receiving GitHub events
 pub struct WebhookServer {
     port: u16,
+    #[allow(dead_code)]
     secret: String,
     handler: Arc<dyn WebhookHandler + Send + Sync>,
 }

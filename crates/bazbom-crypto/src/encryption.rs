@@ -112,7 +112,7 @@ impl DataEncryptor {
     fn generate_nonce() -> Nonce {
         use rand::RngCore;
         let mut nonce_bytes = [0u8; 12];
-        rand::thread_rng().fill_bytes(&mut nonce_bytes);
+        rand::rng().fill_bytes(&mut nonce_bytes);
         *Nonce::from_slice(&nonce_bytes)
     }
 }

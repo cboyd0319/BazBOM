@@ -1,13 +1,14 @@
 use crate::error::{JiraError, Result};
 use crate::models::*;
 use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::sync::Arc;
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 /// Webhook server for receiving Jira events
 pub struct WebhookServer {
     port: u16,
+    #[allow(dead_code)]
     secret: String,
     handler: Arc<dyn WebhookHandler + Send + Sync>,
 }

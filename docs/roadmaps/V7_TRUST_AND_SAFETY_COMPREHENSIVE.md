@@ -710,7 +710,7 @@ rules:
     docker run --rm \
       -v $PWD:/workspace \
       -w /workspace \
-      rust:1.82.0@sha256:abc123... \
+      rust:1.91.1@sha256:abc123... \
       cargo build --release --locked
 
     # Verify reproducibility

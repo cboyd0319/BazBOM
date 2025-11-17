@@ -304,7 +304,7 @@ impl TemplateEngine {
                         // Find closing *
                         let mut italic_text = String::new();
                         let mut found_close = false;
-                        while let Some(ch) = chars.next() {
+                        for ch in chars.by_ref() {
                             if ch == '*' {
                                 found_close = true;
                                 break;
@@ -343,7 +343,7 @@ impl TemplateEngine {
                     // Find closing `
                     let mut code_text = String::new();
                     let mut found_close = false;
-                    while let Some(ch) = chars.next() {
+                    for ch in chars.by_ref() {
                         if ch == '`' {
                             found_close = true;
                             break;
