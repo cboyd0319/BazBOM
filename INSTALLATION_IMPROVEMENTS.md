@@ -152,19 +152,32 @@ curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/scripts/check-
 
 ## Files Changed
 
-### Modified Files (3)
-- `README.md` - Added prominent links to new guides
+### Modified Files (6)
+- `README.md` - Added prominent "New Users? Start Here" section with links to new guides
 - `install.sh` - Enhanced with Java check, Gatekeeper handling, post-install tests
-- `docs/getting-started/homebrew-installation.md` - Added cross-references
+- `docs/getting-started/homebrew-installation.md` - Added cross-references to new guides
+- `docs/getting-started/README.md` - Reorganized with "New Users Start Here" section
+- `docs/README.md` - Added "New Users Start Here" subsection in Getting Started
+- `docs/QUICKREF.md` - Updated installation section with one-line installer and new guide links
 
-### New Files (4)
+### New Files (5)
 - `docs/getting-started/MACOS_QUICK_START.md` - macOS-specific guide (286 lines)
 - `docs/getting-started/EXECUTIVE_QUICK_START.md` - Business-focused guide (350 lines)
 - `scripts/check-system.sh` - System validator (385 lines, executable)
 - `scripts/README.md` - Scripts documentation (155 lines)
+- `INSTALLATION_IMPROVEMENTS.md` - This summary document (200+ lines)
 
-**Total New Documentation:** 1,176 lines
-**Total Changes:** 7 files
+**Total New Documentation:** 1,376+ lines
+**Total Changes:** 11 files
+
+### Documentation Organization Updates
+
+All documentation indexes updated to properly reference new guides:
+- ✅ Main `README.md` - "New Users? Start Here" section added
+- ✅ `docs/README.md` - Getting Started section reorganized with "New Users Start Here" subsection
+- ✅ `docs/getting-started/README.md` - Restructured with clear role-based navigation
+- ✅ `docs/QUICKREF.md` - Installation section updated with one-line installer
+- ✅ All cross-references verified and tested
 
 ## Testing Performed
 
