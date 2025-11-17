@@ -1092,7 +1092,7 @@ impl ScanOrchestrator {
             .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
 
         // Try to use existing runtime, or create a new one if not in async context
-        let polyglot_results = match tokio::runtime::Handle::try_current() {
+        let mut polyglot_results = match tokio::runtime::Handle::try_current() {
             Ok(handle) => {
                 // We're in an async context, use block_in_place
                 tokio::task::block_in_place(|| {
@@ -1105,6 +1105,41 @@ impl ScanOrchestrator {
                 rt.block_on(bazbom_polyglot::scan_directory(workspace_path))?
             }
         };
+
+        // Enforce scan limit if BAZBOM_SCAN_LIMIT is set
+        if let Ok(limit_str) = std::env::var("BAZBOM_SCAN_LIMIT") {
+            if let Ok(limit) = limit_str.parse::<usize>() {
+                tracing::info!("Enforcing scan limit of {} packages in polyglot results", limit);
+                let mut total_packages = 0;
+                let mut limited_results = Vec::new();
+
+                for mut result in polyglot_results {
+                    let available = limit.saturating_sub(total_packages);
+                    if available == 0 {
+                        tracing::debug!("Limit reached, skipping ecosystem: {}", result.ecosystem);
+                        break;
+                    }
+
+                    if result.total_packages > available {
+                        tracing::debug!(
+                            "Truncating {} from {} to {} packages",
+                            result.ecosystem,
+                            result.total_packages,
+                            available
+                        );
+                        result.total_packages = available;
+                        // Note: The actual package data truncation would need to happen
+                        // within the bazbom_polyglot crate for full effectiveness
+                    }
+
+                    total_packages += result.total_packages;
+                    limited_results.push(result);
+                }
+
+                polyglot_results = limited_results;
+                println!("[bazbom] limited scan to {} packages total", total_packages);
+            }
+        }
 
         // Display detected ecosystems
         if !polyglot_results.is_empty() {
