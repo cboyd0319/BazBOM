@@ -960,6 +960,7 @@ dependencies = [
  "octocrab 0.47.1",
  "regex",
  "reqwest",
+ "rustls",
  "semver",
  "serde",
  "serde_json",

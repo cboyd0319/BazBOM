@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Chad Boyd <cboyd0319@gmail.com>"]
 description = "Recursive transitive upgrade analysis with breaking change detection"
 license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
 
 [dependencies]
 bazbom-depsdev = { path = "../bazbom-depsdev" }
@@ -26,3 +27,4 @@ dirs = "6.0"
 
 [dev-dependencies]
 tokio-test = "0.4"
+rustls = { version = "0.23", features = ["aws-lc-rs"] }

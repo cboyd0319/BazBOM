@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["BazBOM Contributors"]
 description = "Rust reachability analysis for BazBOM vulnerability scanning"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/cboyd0319/BazBOM"
 
 [dependencies]
 anyhow = "1"

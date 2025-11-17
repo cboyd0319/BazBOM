@@ -23,7 +23,9 @@
 //!     let config = GitHubConfig::from_file(".bazbom/github.yml")?;
 //!
 //!     // Get token from environment variable specified in config
-//!     let token = std::env::var(&config.token_env)
+//!     let token_env = config.token_env.as_deref()
+//!         .unwrap_or("GITHUB_TOKEN");
+//!     let token = std::env::var(token_env)
 //!         .expect("GitHub token not found in environment");
 //!     let client = GitHubClient::new(&token);
 //!

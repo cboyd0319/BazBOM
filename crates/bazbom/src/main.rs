@@ -189,39 +189,42 @@ async fn main() -> Result<()> {
             auto_remediate,
             remediate_min_severity,
             remediate_reachable_only,
-        } => handle_scan(
-            path,
-            profile,
-            reachability,
-            fast,
-            format,
-            out_dir,
-            json,
-            bazel_targets_query,
-            bazel_targets,
-            bazel_affected_by_files,
-            bazel_universe,
-            cyclonedx,
-            with_semgrep,
-            with_codeql,
-            autofix,
-            containers,
-            no_upload,
-            target,
-            incremental,
-            base,
-            diff,
-            baseline,
-            benchmark,
-            ml_risk,
-            jira_create,
-            jira_dry_run,
-            github_pr,
-            github_pr_dry_run,
-            auto_remediate,
-            remediate_min_severity,
-            remediate_reachable_only,
-        ).await,
+        } => {
+            handle_scan(
+                path,
+                profile,
+                reachability,
+                fast,
+                format,
+                out_dir,
+                json,
+                bazel_targets_query,
+                bazel_targets,
+                bazel_affected_by_files,
+                bazel_universe,
+                cyclonedx,
+                with_semgrep,
+                with_codeql,
+                autofix,
+                containers,
+                no_upload,
+                target,
+                incremental,
+                base,
+                diff,
+                baseline,
+                benchmark,
+                ml_risk,
+                jira_create,
+                jira_dry_run,
+                github_pr,
+                github_pr_dry_run,
+                auto_remediate,
+                remediate_min_severity,
+                remediate_reachable_only,
+            )
+            .await
+        }
 
         // ========== QUICK COMMAND HANDLERS ==========
         Commands::Check { path } => {
@@ -275,7 +278,8 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            ).await
+            )
+            .await
         }
 
         Commands::Ci { path, out_dir } => {
@@ -312,7 +316,8 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            ).await
+            )
+            .await
         }
 
         Commands::Pr {
@@ -353,7 +358,8 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            ).await
+            )
+            .await
         }
 
         Commands::Full { path, out_dir } => {
@@ -390,7 +396,8 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            ).await
+            )
+            .await
         }
 
         Commands::Quick { path } => {
@@ -427,7 +434,8 @@ async fn main() -> Result<()> {
                 false,                        // auto_remediate
                 None,                         // remediate_min_severity
                 false,                        // remediate_reachable_only
-            ).await
+            )
+            .await
         }
 
         Commands::ContainerScan {
@@ -533,13 +541,27 @@ async fn main() -> Result<()> {
 
             let cmd = match action {
                 JiraCmd::Init => JiraCommand::Init,
-                JiraCmd::Create { file, cve, package, severity } => {
-                    JiraCommand::Create { file, cve, package, severity }
-                }
+                JiraCmd::Create {
+                    file,
+                    cve,
+                    package,
+                    severity,
+                } => JiraCommand::Create {
+                    file,
+                    cve,
+                    package,
+                    severity,
+                },
                 JiraCmd::Get { key } => JiraCommand::Get { key },
-                JiraCmd::Update { key, status, assignee } => {
-                    JiraCommand::Update { key, status, assignee }
-                }
+                JiraCmd::Update {
+                    key,
+                    status,
+                    assignee,
+                } => JiraCommand::Update {
+                    key,
+                    status,
+                    assignee,
+                },
                 JiraCmd::Sync => JiraCommand::Sync,
             };
 
@@ -553,20 +575,32 @@ async fn main() -> Result<()> {
             let cmd = match action {
                 GitHubCmd::Init => GitHubCommand::Init,
                 GitHubCmd::Pr(pr_cmd) => match pr_cmd {
-                    GitHubPrCmd::Create { owner, repo, head, base, title, cve, package } => {
-                        GitHubCommand::PrCreate {
-                            owner,
-                            repo,
-                            base,
-                            head,
-                            title,
-                            cve,
-                            package,
-                        }
-                    }
-                    GitHubPrCmd::Get { owner, repo, number } => {
-                        GitHubCommand::PrGet { owner, repo, number }
-                    }
+                    GitHubPrCmd::Create {
+                        owner,
+                        repo,
+                        head,
+                        base,
+                        title,
+                        cve,
+                        package,
+                    } => GitHubCommand::PrCreate {
+                        owner,
+                        repo,
+                        base,
+                        head,
+                        title,
+                        cve,
+                        package,
+                    },
+                    GitHubPrCmd::Get {
+                        owner,
+                        repo,
+                        number,
+                    } => GitHubCommand::PrGet {
+                        owner,
+                        repo,
+                        number,
+                    },
                     GitHubPrCmd::List { owner, repo, state } => {
                         GitHubCommand::PrList { owner, repo, state }
                     }

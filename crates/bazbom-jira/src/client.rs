@@ -1,6 +1,10 @@
 use crate::error::{JiraError, Result};
 use crate::models::*;
-use governor::{clock::DefaultClock, state::{InMemoryState, NotKeyed}, Quota, RateLimiter};
+use governor::{
+    clock::DefaultClock,
+    state::{InMemoryState, NotKeyed},
+    Quota, RateLimiter,
+};
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -33,11 +37,7 @@ impl JiraClient {
     }
 
     /// Create new Jira client with username (for Basic auth)
-    pub fn with_username(
-        base_url: &str,
-        auth_token: &str,
-        username: Option<String>,
-    ) -> Self {
+    pub fn with_username(base_url: &str, auth_token: &str, username: Option<String>) -> Self {
         // Configure retry policy: 3 retries with exponential backoff
         let retry_policy = ExponentialBackoff::builder().build_with_max_retries(3);
 
@@ -100,7 +100,10 @@ impl JiraClient {
             }
             status => {
                 let error_body = response.text().await?;
-                warn!("Unexpected status {} creating Jira issue: {}", status, error_body);
+                warn!(
+                    "Unexpected status {} creating Jira issue: {}",
+                    status, error_body
+                );
                 Err(JiraError::UnexpectedStatus(status.as_u16(), error_body))
             }
         }
@@ -137,7 +140,10 @@ impl JiraClient {
             }
             status => {
                 let error_body = response.text().await?;
-                warn!("Unexpected status {} getting Jira issue: {}", status, error_body);
+                warn!(
+                    "Unexpected status {} getting Jira issue: {}",
+                    status, error_body
+                );
                 Err(JiraError::UnexpectedStatus(status.as_u16(), error_body))
             }
         }
@@ -178,7 +184,10 @@ impl JiraClient {
             }
             status => {
                 let error_body = response.text().await?;
-                warn!("Unexpected status {} updating Jira issue: {}", status, error_body);
+                warn!(
+                    "Unexpected status {} updating Jira issue: {}",
+                    status, error_body
+                );
                 Err(JiraError::UnexpectedStatus(status.as_u16(), error_body))
             }
         }

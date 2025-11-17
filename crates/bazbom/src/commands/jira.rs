@@ -22,13 +22,18 @@ use std::path::PathBuf;
 pub async fn handle_jira(cmd: JiraCommand) -> Result<()> {
     match cmd {
         JiraCommand::Init => handle_jira_init().await,
-        JiraCommand::Create { file, cve, package, severity } => {
-            handle_jira_create(file, cve, package, severity).await
-        }
+        JiraCommand::Create {
+            file,
+            cve,
+            package,
+            severity,
+        } => handle_jira_create(file, cve, package, severity).await,
         JiraCommand::Get { key } => handle_jira_get(key).await,
-        JiraCommand::Update { key, status, assignee } => {
-            handle_jira_update(key, status, assignee).await
-        }
+        JiraCommand::Update {
+            key,
+            status,
+            assignee,
+        } => handle_jira_update(key, status, assignee).await,
         JiraCommand::Sync => handle_jira_sync().await,
     }
 }
@@ -186,8 +191,8 @@ async fn handle_jira_create(
     let config = load_jira_config().await?;
 
     // Get authentication token
-    let token = std::env::var("JIRA_API_TOKEN")
-        .context("JIRA_API_TOKEN environment variable not set")?;
+    let token =
+        std::env::var("JIRA_API_TOKEN").context("JIRA_API_TOKEN environment variable not set")?;
 
     // Get username from environment if needed
     let username = if let Some(username_env) = &config.auth.username_env {
@@ -211,7 +216,10 @@ async fn handle_jira_create(
         variables.insert("cve_id".to_string(), cve.clone());
         variables.insert("package".to_string(), package);
         variables.insert("severity".to_string(), severity);
-        variables.insert("summary".to_string(), format!("Security: {} in dependency", cve));
+        variables.insert(
+            "summary".to_string(),
+            format!("Security: {} in dependency", cve),
+        );
     } else if let Some(file_path) = file {
         // Creation from findings file
         println!("Loading findings from: {}", file_path);
@@ -264,8 +272,8 @@ async fn handle_jira_create(
 /// Get Jira ticket details
 async fn handle_jira_get(key: String) -> Result<()> {
     let config = load_jira_config().await?;
-    let token = std::env::var("JIRA_API_TOKEN")
-        .context("JIRA_API_TOKEN environment variable not set")?;
+    let token =
+        std::env::var("JIRA_API_TOKEN").context("JIRA_API_TOKEN environment variable not set")?;
 
     // Get username from environment if needed
     let username = if let Some(username_env) = &config.auth.username_env {
@@ -311,8 +319,8 @@ async fn handle_jira_update(
     assignee: Option<String>,
 ) -> Result<()> {
     let config = load_jira_config().await?;
-    let token = std::env::var("JIRA_API_TOKEN")
-        .context("JIRA_API_TOKEN environment variable not set")?;
+    let token =
+        std::env::var("JIRA_API_TOKEN").context("JIRA_API_TOKEN environment variable not set")?;
 
     // Get username from environment if needed
     let username = if let Some(username_env) = &config.auth.username_env {
@@ -338,11 +346,18 @@ async fn handle_jira_update(
 
     if let Some(assignee) = assignee {
         println!("  Setting assignee to: {}", assignee);
-        fields.insert("assignee".to_string(), serde_json::json!({ "name": assignee }));
+        fields.insert(
+            "assignee".to_string(),
+            serde_json::json!({ "name": assignee }),
+        );
     }
 
     let request = UpdateIssueRequest {
-        fields: if fields.is_empty() { None } else { Some(fields) },
+        fields: if fields.is_empty() {
+            None
+        } else {
+            Some(fields)
+        },
         update: None,
     };
 
@@ -377,16 +392,13 @@ async fn load_jira_config() -> Result<JiraConfig> {
     let config_path = PathBuf::from(".bazbom/jira.yml");
 
     if !config_path.exists() {
-        anyhow::bail!(
-            "Jira configuration not found. Run 'bazbom jira init' first."
-        );
+        anyhow::bail!("Jira configuration not found. Run 'bazbom jira init' first.");
     }
 
-    let yaml = fs::read_to_string(&config_path)
-        .context("Failed to read Jira configuration")?;
+    let yaml = fs::read_to_string(&config_path).context("Failed to read Jira configuration")?;
 
-    let config: JiraConfig = serde_yaml::from_str(&yaml)
-        .context("Failed to parse Jira configuration")?;
+    let config: JiraConfig =
+        serde_yaml::from_str(&yaml).context("Failed to parse Jira configuration")?;
 
     Ok(config)
 }
