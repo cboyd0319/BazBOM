@@ -98,14 +98,57 @@ check_java() {
         return 0
     fi
 
+    local needs_java=false
+    local java_too_old=false
+
     if command -v java >/dev/null 2>&1; then
+        # Java is installed, check version
         local java_version=$(java -version 2>&1 | head -n1 | awk -F '"' '{print $2}')
-        success "Java detected: $java_version"
-        return 0
+
+        # Extract major version (handles both 1.8.x and 11+ formats)
+        local java_major=$(echo "$java_version" | awk -F. '{if ($1 == 1) print $2; else print $1}')
+
+        if [ "$java_major" -ge 11 ] 2>/dev/null; then
+            success "Java detected: $java_version (Java $java_major)"
+            return 0
+        else
+            warn "Java $java_version detected, but BazBOM requires Java 11+"
+            java_too_old=true
+        fi
+    else
+        warn "Java not found - Required for scanning JVM projects (Java, Kotlin, Scala, etc.)"
+        needs_java=true
     fi
 
-    warn "Java not found - Required for scanning JVM projects (Java, Kotlin, Scala, etc.)"
     echo ""
+
+    # Offer auto-install on macOS if Homebrew is available
+    if [ "$OS" = "darwin" ] && command -v brew >/dev/null 2>&1; then
+        if [ "$needs_java" = true ] || [ "$java_too_old" = true ]; then
+            read -p "Install Java 21 via Homebrew? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                info "Installing OpenJDK 21 via Homebrew..."
+                if brew install openjdk@21; then
+                    success "Java 21 installed successfully!"
+
+                    # Add to PATH if needed
+                    if [ -d "/opt/homebrew/opt/openjdk@21" ]; then
+                        note "Add to your PATH: export PATH=\"/opt/homebrew/opt/openjdk@21/bin:\$PATH\""
+                    elif [ -d "/usr/local/opt/openjdk@21" ]; then
+                        note "Add to your PATH: export PATH=\"/usr/local/opt/openjdk@21/bin:\$PATH\""
+                    fi
+                    return 0
+                else
+                    warn "Java installation failed. Please install manually."
+                fi
+            else
+                note "Skipping Java installation"
+            fi
+        fi
+    fi
+
+    # Show manual installation instructions
     note "Install Java 11+ to enable full reachability analysis on JVM projects:"
     if [ "$OS" = "darwin" ]; then
         echo "    brew install openjdk@21"
@@ -142,6 +185,222 @@ remove_macos_quarantine() {
             fi
         fi
     fi
+}
+
+# Setup shell completions
+setup_shell_completions() {
+    echo ""
+    info "Shell completions can provide tab-completion for BazBOM commands"
+
+    # Detect shell
+    local detected_shell=""
+    if [ -n "$ZSH_VERSION" ]; then
+        detected_shell="zsh"
+    elif [ -n "$BASH_VERSION" ]; then
+        detected_shell="bash"
+    elif [ -n "$FISH_VERSION" ]; then
+        detected_shell="fish"
+    else
+        # Try to detect from SHELL environment variable
+        case "$SHELL" in
+            */zsh)
+                detected_shell="zsh"
+                ;;
+            */bash)
+                detected_shell="bash"
+                ;;
+            */fish)
+                detected_shell="fish"
+                ;;
+        esac
+    fi
+
+    if [ -z "$detected_shell" ]; then
+        note "Could not auto-detect shell. Run 'bazbom --help' to see completion setup instructions"
+        return 0
+    fi
+
+    read -p "Install $detected_shell completions? (y/n) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        note "Skipping completions. You can set them up later - see docs/getting-started/shell-completions.md"
+        return 0
+    fi
+
+    case "$detected_shell" in
+        zsh)
+            setup_zsh_completions
+            ;;
+        bash)
+            setup_bash_completions
+            ;;
+        fish)
+            setup_fish_completions
+            ;;
+    esac
+}
+
+# Setup Zsh completions
+setup_zsh_completions() {
+    local completion_dir="$HOME/.zsh/completion"
+    local completion_file="$completion_dir/_bazbom"
+
+    mkdir -p "$completion_dir"
+
+    cat > "$completion_file" << 'EOF'
+#compdef bazbom
+
+_bazbom() {
+    local -a commands
+    commands=(
+        'scan:Scan a project and generate SBOM + findings'
+        'check:Fast vulnerability scan (< 10 seconds)'
+        'ci:CI/CD mode with SARIF output'
+        'pr:PR-optimized incremental scanning'
+        'full:Complete analysis with all analyzers'
+        'quick:5-second smoke test'
+        'policy:Apply policy checks and output SARIF/JSON verdicts'
+        'fix:Show remediation suggestions or apply fixes'
+        'container-scan:Scan container images'
+        'db:Advisory database operations (offline sync)'
+        'license:License compliance operations'
+        'install-hooks:Install git pre-commit hooks'
+        'init:Interactive setup wizard'
+        'explore:Interactive dependency graph explorer (TUI)'
+        'dashboard:Start web dashboard server'
+        'team:Team coordination and assignment management'
+        'report:Generate security and compliance reports'
+        'help:Print help message'
+    )
+
+    _arguments -C \
+        '1: :->command' \
+        '*:: :->args'
+
+    case $state in
+        command)
+            _describe 'command' commands
+            ;;
+        args)
+            case $words[1] in
+                scan)
+                    _arguments \
+                        '--reachability[Enable reachability analysis]' \
+                        '--fast[Fast mode: skip reachability analysis]' \
+                        '--output-format=[Output format]:format:(spdx cyclonedx)' \
+                        '--output=[Output file path]:file:_files'
+                    ;;
+                fix)
+                    _arguments \
+                        '--suggest[Suggest fixes without applying]' \
+                        '--apply[Apply fixes automatically]'
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+_bazbom "$@"
+EOF
+
+    # Add to .zshrc if not already present
+    local zshrc="$HOME/.zshrc"
+    if [ -f "$zshrc" ]; then
+        if ! grep -q "fpath=.*\.zsh/completion" "$zshrc"; then
+            echo "" >> "$zshrc"
+            echo "# BazBOM shell completions" >> "$zshrc"
+            echo "fpath=(~/.zsh/completion \$fpath)" >> "$zshrc"
+            echo "autoload -Uz compinit && compinit" >> "$zshrc"
+        fi
+    fi
+
+    success "Zsh completions installed to $completion_file"
+    note "Restart your shell or run: source ~/.zshrc"
+}
+
+# Setup Bash completions
+setup_bash_completions() {
+    local completion_dir="$HOME/.bash_completion.d"
+    local completion_file="$completion_dir/bazbom"
+
+    mkdir -p "$completion_dir"
+
+    cat > "$completion_file" << 'EOF'
+#!/bin/bash
+
+_bazbom_completions() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+
+    local commands="scan check ci pr full quick policy fix container-scan db license install-hooks init explore dashboard team report help"
+
+    if [[ ${COMP_CWORD} -eq 1 ]]; then
+        COMPREPLY=( $(compgen -W "${commands}" -- ${cur}) )
+        return 0
+    fi
+
+    case "${prev}" in
+        scan|check|ci|pr|full)
+            COMPREPLY=( $(compgen -W "--reachability --fast --output-format --output" -- ${cur}) )
+            ;;
+        fix)
+            COMPREPLY=( $(compgen -W "--suggest --apply" -- ${cur}) )
+            ;;
+        --output-format)
+            COMPREPLY=( $(compgen -W "spdx cyclonedx" -- ${cur}) )
+            ;;
+        *)
+            COMPREPLY=( $(compgen -f -- ${cur}) )
+            ;;
+    esac
+}
+
+complete -F _bazbom_completions bazbom
+EOF
+
+    # Add to .bashrc if not already present
+    local bashrc="$HOME/.bashrc"
+    if [ -f "$bashrc" ]; then
+        if ! grep -q "source.*\.bash_completion\.d/bazbom" "$bashrc"; then
+            echo "" >> "$bashrc"
+            echo "# BazBOM shell completions" >> "$bashrc"
+            echo "[ -f ~/.bash_completion.d/bazbom ] && source ~/.bash_completion.d/bazbom" >> "$bashrc"
+        fi
+    fi
+
+    success "Bash completions installed to $completion_file"
+    note "Restart your shell or run: source ~/.bashrc"
+}
+
+# Setup Fish completions
+setup_fish_completions() {
+    local completion_dir="$HOME/.config/fish/completions"
+    local completion_file="$completion_dir/bazbom.fish"
+
+    mkdir -p "$completion_dir"
+
+    cat > "$completion_file" << 'EOF'
+# bazbom completions for Fish shell
+
+# Commands
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'scan' -d 'Scan a project and generate SBOM + findings'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'check' -d 'Fast vulnerability scan'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'ci' -d 'CI/CD mode with SARIF output'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'fix' -d 'Show remediation suggestions or apply fixes'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'policy' -d 'Apply policy checks'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'license' -d 'License compliance operations'
+complete -c bazbom -f -n '__fish_use_subcommand' -a 'install-hooks' -d 'Install git pre-commit hooks'
+
+# Scan command options
+complete -c bazbom -n '__fish_seen_subcommand_from scan' -l reachability -d 'Enable reachability analysis'
+complete -c bazbom -n '__fish_seen_subcommand_from scan' -l fast -d 'Fast mode: skip reachability analysis'
+complete -c bazbom -n '__fish_seen_subcommand_from scan' -l output-format -a 'spdx cyclonedx' -d 'Output format'
+EOF
+
+    success "Fish completions installed to $completion_file"
+    note "Completions will be available in new Fish shells"
 }
 
 # Run post-install test
@@ -235,12 +494,58 @@ verify_installation() {
 
     if ! command -v bazbom >/dev/null 2>&1; then
         warn "bazbom command not found in PATH"
-        warn "You may need to add $INSTALL_DIR to your PATH:"
         echo ""
-        echo "    export PATH=\"$INSTALL_DIR:\$PATH\""
-        echo ""
-        warn "Add this line to your shell profile (~/.bashrc, ~/.zshrc, etc.)"
-        return 1
+
+        # Detect shell config file
+        local shell_config=""
+        if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = */zsh ]; then
+            shell_config="$HOME/.zshrc"
+        elif [ -n "$BASH_VERSION" ] || [ "$SHELL" = */bash ]; then
+            if [ "$(uname)" = "Darwin" ]; then
+                # macOS uses .bash_profile for login shells
+                shell_config="$HOME/.bash_profile"
+                [ ! -f "$shell_config" ] && shell_config="$HOME/.bashrc"
+            else
+                shell_config="$HOME/.bashrc"
+            fi
+        fi
+
+        # Offer to auto-add to PATH
+        if [ -n "$shell_config" ]; then
+            read -p "Add $INSTALL_DIR to PATH in $(basename $shell_config)? (y/n) " -n 1 -r
+            echo
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                if ! grep -q "$INSTALL_DIR" "$shell_config" 2>/dev/null; then
+                    echo "" >> "$shell_config"
+                    echo "# BazBOM" >> "$shell_config"
+                    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$shell_config"
+                    success "Added to $shell_config"
+                    note "Restart your shell or run: source $shell_config"
+
+                    # Update PATH for current session
+                    export PATH="$INSTALL_DIR:$PATH"
+                else
+                    note "$INSTALL_DIR already in $shell_config"
+                fi
+            else
+                note "Skipping PATH configuration"
+                warn "You may need to add $INSTALL_DIR to your PATH manually:"
+                echo ""
+                echo "    export PATH=\"$INSTALL_DIR:\$PATH\""
+                echo ""
+            fi
+        else
+            warn "You may need to add $INSTALL_DIR to your PATH:"
+            echo ""
+            echo "    export PATH=\"$INSTALL_DIR:\$PATH\""
+            echo ""
+            warn "Add this line to your shell profile (~/.bashrc, ~/.zshrc, etc.)"
+        fi
+
+        # Try again after PATH update
+        if ! command -v bazbom >/dev/null 2>&1; then
+            return 1
+        fi
     fi
 
     local installed_version=$(bazbom --version 2>&1 | head -n1 || echo "unknown")
@@ -249,6 +554,40 @@ verify_installation() {
     echo "    Installed version: $installed_version"
     echo "    Location: $(which bazbom)"
     echo ""
+}
+
+# Offer to run interactive setup
+offer_interactive_setup() {
+    echo ""
+    info "BazBOM includes an interactive setup wizard"
+    echo ""
+    read -p "Run setup wizard now? (y/n) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo ""
+        info "Starting interactive setup wizard..."
+        echo ""
+
+        # Detect if we're in a project directory
+        local setup_path="."
+        if [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -f "package.json" ] || [ -f "Cargo.toml" ] || [ -f "go.mod" ]; then
+            note "Detected project in current directory, initializing here"
+        else
+            read -p "Enter project path (or press Enter to skip): " setup_path
+            if [ -z "$setup_path" ]; then
+                note "Skipping setup wizard"
+                return 0
+            fi
+        fi
+
+        if command -v bazbom >/dev/null 2>&1; then
+            bazbom init "$setup_path" || warn "Setup wizard failed - you can run 'bazbom init .' later"
+        else
+            warn "bazbom not in PATH yet - restart your shell first, then run: bazbom init ."
+        fi
+    else
+        note "Skipping setup wizard - you can run 'bazbom init .' later"
+    fi
 }
 
 # Print usage information
@@ -296,6 +635,11 @@ main() {
 
     if verify_installation; then
         run_post_install_test
+
+        # Post-installation enhancements
+        setup_shell_completions
+        offer_interactive_setup
+
         print_usage
     else
         echo ""
