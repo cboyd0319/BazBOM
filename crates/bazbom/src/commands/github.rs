@@ -6,9 +6,6 @@
 //! - `bazbom github pr get` - Fetch PR details
 //! - `bazbom github pr list` - List repository PRs
 
-// TODO: Wire these commands up to main CLI (Phase 2 Week 4 - 60% complete)
-#![allow(dead_code)]
-
 use anyhow::{Context, Result};
 use bazbom_github::client::GitHubClient;
 use bazbom_github::config::GitHubConfig;
