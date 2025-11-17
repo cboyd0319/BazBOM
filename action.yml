@@ -142,7 +142,7 @@ runs:
     
     - name: Setup Bazel
       if: steps.detect.outputs.build-system == 'bazel'
-      uses: bazel-contrib/setup-bazel@0.8.5
+      uses: bazel-contrib/setup-bazel@0.15.0
       with:
         bazelisk-cache: true
         disk-cache: ${{ github.workflow }}
