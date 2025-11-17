@@ -59,9 +59,7 @@ bazbom-output/
 container-scan-results/
 container-sbom.spdx.json
 container-vulns.json
-*.tar
-!plugins/**/*.tar
-!examples/**/*.tar
+
 
 # Test outputs and coverage
 coverage.json
