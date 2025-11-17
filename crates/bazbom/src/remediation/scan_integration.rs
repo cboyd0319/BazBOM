@@ -188,7 +188,8 @@ fn filter_vulnerabilities<'a>(
             if let (Some(ref min_sev), Some(ref vuln_sev)) = (&config.min_severity, &vuln.severity) {
                 let severity_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
                 let min_idx = severity_order.iter().position(|s| s == min_sev).unwrap_or(3);
-                let vuln_sev_str = format!("{:?}", vuln_sev).to_uppercase();
+                // Use the level field from Severity struct
+                let vuln_sev_str = format!("{:?}", vuln_sev.level).to_uppercase();
                 let vuln_idx = severity_order
                     .iter()
                     .position(|s| vuln_sev_str.contains(s))
@@ -213,8 +214,13 @@ fn filter_vulnerabilities<'a>(
 async fn process_jira_tickets(
     vulnerabilities: &[&Vulnerability],
     dry_run: bool,
-    _db: &RemediationDatabase,
+    db: &RemediationDatabase,
 ) -> Result<(usize, usize)> {
+    use bazbom_jira::client::JiraClient;
+    use bazbom_jira::config::JiraConfig;
+    use bazbom_jira::models::{CreateIssueRequest, IssueFields, IssueTypeRef, ProjectRef};
+    use bazbom_jira::templates::TemplateEngine;
+    use std::collections::HashMap;
     use std::path::PathBuf;
 
     // Load Jira config
@@ -224,6 +230,9 @@ async fn process_jira_tickets(
             "Jira configuration not found. Run 'bazbom jira init' first."
         );
     }
+
+    let yaml = std::fs::read_to_string(&config_path)?;
+    let jira_config: JiraConfig = serde_yaml::from_str(&yaml)?;
 
     println!("Found {} vulnerabilities for Jira ticket creation", vulnerabilities.len());
 
@@ -237,8 +246,136 @@ async fn process_jira_tickets(
         return Ok((vulnerabilities.len(), 0));
     }
 
-    // TODO: Implement actual Jira ticket creation
-    println!("  ⚠️  Jira ticket creation not yet fully implemented");
+    // Get authentication token
+    let token = std::env::var("JIRA_API_TOKEN")
+        .context("JIRA_API_TOKEN environment variable not set. Please set it to use Jira integration.")?;
 
-    Ok((0, 0))
+    // Get username if needed
+    let username = if let Some(username_env) = &jira_config.auth.username_env {
+        std::env::var(username_env).ok()
+    } else {
+        None
+    };
+
+    // Create Jira client
+    let client = if let Some(username) = username {
+        JiraClient::with_username(&jira_config.url, &token, Some(username))
+    } else {
+        JiraClient::new(&jira_config.url, &token)
+    };
+
+    let template = TemplateEngine::new();
+    let mut created = 0;
+    let mut skipped = 0;
+
+    for vuln in vulnerabilities {
+        // Extract package info from affected packages
+        let (package, version) = if let Some(affected) = vuln.affected.first() {
+            let pkg = affected.package.as_str();
+            // Try to extract version from ranges - VersionEvent is an enum
+            let ver = affected.ranges.first()
+                .and_then(|r| r.events.first())
+                .map(|e| match e {
+                    bazbom_advisories::VersionEvent::Introduced { introduced } => introduced.as_str(),
+                    bazbom_advisories::VersionEvent::Fixed { fixed } => fixed.as_str(),
+                    bazbom_advisories::VersionEvent::LastAffected { last_affected } => last_affected.as_str(),
+                })
+                .unwrap_or("unknown");
+            (pkg, ver)
+        } else {
+            ("unknown", "unknown")
+        };
+
+        // Check for duplicates
+        if let Some(existing_key) = db.jira_issue_exists(&vuln.id, package, version)? {
+            println!(
+                "  ⏭  Skipping {} (ticket {} already exists)",
+                vuln.id.yellow(),
+                existing_key.cyan()
+            );
+            skipped += 1;
+            continue;
+        }
+
+        // Build template variables
+        let mut variables = HashMap::new();
+        variables.insert("cve_id".to_string(), vuln.id.clone());
+        variables.insert("package".to_string(), package.to_string());
+        variables.insert("version".to_string(), version.to_string());
+
+        // Handle severity - use the level field from Severity struct
+        let severity_str = vuln.severity.as_ref()
+            .map(|s| format!("{:?}", s.level).to_uppercase())
+            .unwrap_or_else(|| "MEDIUM".to_string());
+        variables.insert("severity".to_string(), severity_str.clone());
+
+        variables.insert(
+            "summary".to_string(),
+            format!("Security: {} in {}", vuln.id, package),
+        );
+
+        // Add description if available
+        if let Some(ref details) = vuln.details {
+            variables.insert("description".to_string(), details.clone());
+        } else if let Some(ref summary) = vuln.summary {
+            variables.insert("description".to_string(), summary.clone());
+        }
+
+        // Render title and description using template
+        let title = template.render_title(&variables)?;
+        let description = template.render_description(&variables)?;
+
+        // Create issue request
+        let request = CreateIssueRequest {
+            fields: IssueFields {
+                project: ProjectRef {
+                    key: jira_config.project.clone(),
+                },
+                summary: title.clone(),
+                description: Some(description),
+                issuetype: IssueTypeRef {
+                    name: jira_config.issue_type.clone(),
+                },
+                labels: Some(vec![
+                    "security".to_string(),
+                    "bazbom".to_string(),
+                    severity_str.to_lowercase(),
+                ]),
+                priority: None,
+                assignee: None,
+                custom_fields: HashMap::new(),
+            },
+        };
+
+        // Create the ticket
+        match client.create_issue(request).await {
+            Ok(response) => {
+                let jira_url = format!("{}/browse/{}", jira_config.url, response.key);
+                println!(
+                    "  ✅ Created {} → {}",
+                    vuln.id.yellow(),
+                    response.key.cyan()
+                );
+
+                // Record in database
+                if let Err(e) = db.record_jira_issue(
+                    &vuln.id,
+                    package,
+                    version,
+                    &response.key,
+                    &jira_url,
+                    "Open",
+                ) {
+                    eprintln!("  ⚠️  Failed to record in database: {}", e);
+                }
+
+                created += 1;
+            }
+            Err(e) => {
+                eprintln!("  ❌ Failed to create ticket for {}: {}", vuln.id, e);
+            }
+        }
+    }
+
+    Ok((created, skipped))
 }
