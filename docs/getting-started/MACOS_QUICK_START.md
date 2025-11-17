@@ -243,8 +243,8 @@ done
 
 After testing on a few repos:
 
-1. **Set up CI integration** - [CI Guide](../operations/ci-integration.md)
-2. **Configure policies** - [Policy Guide](../user-guide/policy.md)
+1. **Set up CI integration** - [CI Guide](../CI.md)
+2. **Configure policies** - [Policy Guide](../user-guide/policy-integration.md)
 3. **Explore reachability** - [Reachability Guide](../reachability/README.md)
 4. **Container scanning** - [Container Guide](../features/container-scanning.md)
 
