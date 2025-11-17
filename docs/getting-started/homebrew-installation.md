@@ -2,6 +2,11 @@
 
 Get BazBOM installed quickly with one of the methods below. Choose the easiest option for your workflow.
 
+**Looking for a simpler guide?**
+- **macOS users:** See [macOS Quick Start Guide](MACOS_QUICK_START.md) for copy-paste instructions
+- **Executives/Managers:** See [Executive Quick Start](EXECUTIVE_QUICK_START.md) for business overview
+- **System check:** Run [check-system.sh](../../scripts/check-system.sh) to verify your system is ready
+
 ## Quick Install (Recommended)
 
 ### 🚀 One-Line Install Script
