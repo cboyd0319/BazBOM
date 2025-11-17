@@ -112,6 +112,27 @@ PROFILES:
         /// Use ML-enhanced risk scoring for vulnerability prioritization
         #[arg(long, short = 'm')]
         ml_risk: bool,
+        /// Auto-create Jira tickets for vulnerabilities (v6.8)
+        #[arg(long)]
+        jira_create: bool,
+        /// Dry-run mode for Jira ticket creation (show what would be created)
+        #[arg(long)]
+        jira_dry_run: bool,
+        /// Auto-create GitHub PRs with fixes (v6.8)
+        #[arg(long)]
+        github_pr: bool,
+        /// Dry-run mode for GitHub PR creation (show what would be created)
+        #[arg(long)]
+        github_pr_dry_run: bool,
+        /// Full auto-remediation: create both Jira tickets and GitHub PRs (v6.8)
+        #[arg(long)]
+        auto_remediate: bool,
+        /// Minimum severity for auto-remediation (CRITICAL, HIGH, MEDIUM, LOW)
+        #[arg(long, value_name = "SEVERITY")]
+        remediate_min_severity: Option<String>,
+        /// Only auto-remediate reachable vulnerabilities
+        #[arg(long)]
+        remediate_reachable_only: bool,
     },
 
     // ========== QUICK COMMAND ALIASES ==========

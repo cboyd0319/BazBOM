@@ -32,6 +32,13 @@ pub fn handle_scan(
     baseline: Option<String>,
     benchmark: bool,
     ml_risk: bool,
+    _jira_create: bool,
+    _jira_dry_run: bool,
+    _github_pr: bool,
+    _github_pr_dry_run: bool,
+    _auto_remediate: bool,
+    _remediate_min_severity: Option<String>,
+    _remediate_reachable_only: bool,
 ) -> Result<()> {
     // Apply smart defaults if no flags were explicitly set
     let defaults = SmartDefaults::detect();

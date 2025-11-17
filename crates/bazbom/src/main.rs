@@ -147,6 +147,13 @@ async fn main() -> Result<()> {
         baseline: None,
         benchmark: false,
         ml_risk: false,
+        jira_create: false,
+        jira_dry_run: false,
+        github_pr: false,
+        github_pr_dry_run: false,
+        auto_remediate: false,
+        remediate_min_severity: None,
+        remediate_reachable_only: false,
     });
 
     match command {
@@ -175,6 +182,13 @@ async fn main() -> Result<()> {
             baseline,
             benchmark,
             ml_risk,
+            jira_create,
+            jira_dry_run,
+            github_pr,
+            github_pr_dry_run,
+            auto_remediate,
+            remediate_min_severity,
+            remediate_reachable_only,
         } => handle_scan(
             path,
             profile,
@@ -200,6 +214,13 @@ async fn main() -> Result<()> {
             baseline,
             benchmark,
             ml_risk,
+            jira_create,
+            jira_dry_run,
+            github_pr,
+            github_pr_dry_run,
+            auto_remediate,
+            remediate_min_severity,
+            remediate_reachable_only,
         ),
 
         // ========== QUICK COMMAND HANDLERS ==========
@@ -247,6 +268,13 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 false,          // benchmark
                 false,          // ml_risk
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
             )
         }
 
@@ -277,6 +305,13 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 false,          // benchmark
                 false,          // ml_risk
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
             )
         }
 
@@ -311,6 +346,13 @@ async fn main() -> Result<()> {
                 baseline,       // baseline
                 false,          // benchmark
                 false,          // ml_risk
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
             )
         }
 
@@ -341,6 +383,13 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 true,           // benchmark
                 true,           // ml_risk
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
             )
         }
 
@@ -371,6 +420,13 @@ async fn main() -> Result<()> {
                 None,                         // baseline
                 false,                        // benchmark
                 false,                        // ml_risk
+                false,                        // jira_create
+                false,                        // jira_dry_run
+                false,                        // github_pr
+                false,                        // github_pr_dry_run
+                false,                        // auto_remediate
+                None,                         // remediate_min_severity
+                false,                        // remediate_reachable_only
             )
         }
 
