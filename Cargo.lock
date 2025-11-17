@@ -440,6 +440,7 @@ dependencies = [
  "tokio",
  "toml",
  "tracing",
+ "tracing-subscriber",
  "ureq 3.1.4",
  "urlencoding",
  "walkdir",

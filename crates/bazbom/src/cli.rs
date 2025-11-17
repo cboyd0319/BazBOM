@@ -133,6 +133,9 @@ PROFILES:
         /// Only auto-remediate reachable vulnerabilities
         #[arg(long)]
         remediate_reachable_only: bool,
+        /// Limit the number of packages/targets to scan (useful for testing large monorepos)
+        #[arg(long, value_name = "N")]
+        limit: Option<usize>,
     },
 
     // ========== QUICK COMMAND ALIASES ==========
@@ -227,6 +230,9 @@ WHAT IT DOES:
   # Save to specific directory
   bazbom full -o ./security-scan
 
+  # Limit to 5 packages (useful for testing large monorepos)
+  bazbom full --limit 5
+
 WHAT IT DOES:
   • Reachability analysis (reduces noise by 70-90%)
   • Both SPDX and CycloneDX SBOMs
@@ -242,6 +248,9 @@ WHAT IT DOES:
         /// Output directory
         #[arg(long, short = 'o', default_value = ".")]
         out_dir: String,
+        /// Limit the number of packages/targets to scan (useful for testing large monorepos)
+        #[arg(long, value_name = "N")]
+        limit: Option<usize>,
     },
 
     /// Super-fast smoke test (< 5 seconds)

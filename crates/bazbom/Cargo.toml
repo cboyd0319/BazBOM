@@ -29,6 +29,7 @@ zip = "6.0"
 tar = "0.4"
 flate2 = "1.0"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
 bazbom-advisories = { path = "../bazbom-advisories" }
