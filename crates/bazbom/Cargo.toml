@@ -50,6 +50,8 @@ bazbom-rust-reachability = { path = "../bazbom-rust-reachability" }
 bazbom-ruby-reachability = { path = "../bazbom-ruby-reachability" }
 bazbom-php-reachability = { path = "../bazbom-php-reachability" }
 bazbom-java-reachability = { path = "../bazbom-java-reachability" }
+bazbom-jira = { path = "../bazbom-jira" }
+bazbom-github = { path = "../bazbom-github" }
 tempfile = "3"
 sha2 = "0.10"
 hex = "0.4"
