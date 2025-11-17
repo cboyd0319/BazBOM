@@ -221,7 +221,7 @@ async fn main() -> Result<()> {
             auto_remediate,
             remediate_min_severity,
             remediate_reachable_only,
-        ),
+        ).await,
 
         // ========== QUICK COMMAND HANDLERS ==========
         Commands::Check { path } => {
@@ -275,7 +275,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            )
+            ).await
         }
 
         Commands::Ci { path, out_dir } => {
@@ -312,7 +312,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            )
+            ).await
         }
 
         Commands::Pr {
@@ -353,7 +353,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            )
+            ).await
         }
 
         Commands::Full { path, out_dir } => {
@@ -390,7 +390,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
-            )
+            ).await
         }
 
         Commands::Quick { path } => {
@@ -427,7 +427,7 @@ async fn main() -> Result<()> {
                 false,                        // auto_remediate
                 None,                         // remediate_min_severity
                 false,                        // remediate_reachable_only
-            )
+            ).await
         }
 
         Commands::ContainerScan {

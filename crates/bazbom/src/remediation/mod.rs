@@ -14,6 +14,7 @@ pub mod apply;
 pub mod build_systems;
 pub mod database;
 pub mod github;
+pub mod scan_integration;
 pub mod suggestions;
 pub mod types;
 pub mod updaters;
@@ -23,6 +24,9 @@ pub mod version;
 pub use apply::{apply_fixes, apply_fixes_with_testing};
 pub use database::{GitHubPrRecord, JiraIssueRecord, RemediationDatabase, SyncLogRecord};
 pub use github::generate_pr;
+pub use scan_integration::{
+    process_auto_remediation, AutoRemediationConfig, AutoRemediationResult,
+};
 pub use suggestions::{enrich_with_depsdev, generate_suggestions};
 pub use types::{
     ApplyResult, ApplyResultWithTests, PrConfig, RemediationReport, RemediationSuggestion,
