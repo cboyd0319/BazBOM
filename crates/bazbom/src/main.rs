@@ -147,6 +147,13 @@ async fn main() -> Result<()> {
         baseline: None,
         benchmark: false,
         ml_risk: false,
+        jira_create: false,
+        jira_dry_run: false,
+        github_pr: false,
+        github_pr_dry_run: false,
+        auto_remediate: false,
+        remediate_min_severity: None,
+        remediate_reachable_only: false,
     });
 
     match command {
@@ -175,6 +182,13 @@ async fn main() -> Result<()> {
             baseline,
             benchmark,
             ml_risk,
+            jira_create,
+            jira_dry_run,
+            github_pr,
+            github_pr_dry_run,
+            auto_remediate,
+            remediate_min_severity,
+            remediate_reachable_only,
         } => handle_scan(
             path,
             profile,
@@ -200,7 +214,14 @@ async fn main() -> Result<()> {
             baseline,
             benchmark,
             ml_risk,
-        ),
+            jira_create,
+            jira_dry_run,
+            github_pr,
+            github_pr_dry_run,
+            auto_remediate,
+            remediate_min_severity,
+            remediate_reachable_only,
+        ).await,
 
         // ========== QUICK COMMAND HANDLERS ==========
         Commands::Check { path } => {
@@ -247,7 +268,14 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 false,          // benchmark
                 false,          // ml_risk
-            )
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
+            ).await
         }
 
         Commands::Ci { path, out_dir } => {
@@ -277,7 +305,14 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 false,          // benchmark
                 false,          // ml_risk
-            )
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
+            ).await
         }
 
         Commands::Pr {
@@ -311,7 +346,14 @@ async fn main() -> Result<()> {
                 baseline,       // baseline
                 false,          // benchmark
                 false,          // ml_risk
-            )
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
+            ).await
         }
 
         Commands::Full { path, out_dir } => {
@@ -341,7 +383,14 @@ async fn main() -> Result<()> {
                 None,           // baseline
                 true,           // benchmark
                 true,           // ml_risk
-            )
+                false,          // jira_create
+                false,          // jira_dry_run
+                false,          // github_pr
+                false,          // github_pr_dry_run
+                false,          // auto_remediate
+                None,           // remediate_min_severity
+                false,          // remediate_reachable_only
+            ).await
         }
 
         Commands::Quick { path } => {
@@ -371,7 +420,14 @@ async fn main() -> Result<()> {
                 None,                         // baseline
                 false,                        // benchmark
                 false,                        // ml_risk
-            )
+                false,                        // jira_create
+                false,                        // jira_dry_run
+                false,                        // github_pr
+                false,                        // github_pr_dry_run
+                false,                        // auto_remediate
+                None,                         // remediate_min_severity
+                false,                        // remediate_reachable_only
+            ).await
         }
 
         Commands::ContainerScan {
@@ -471,5 +527,54 @@ async fn main() -> Result<()> {
         } => handle_watch(path, interval, critical_only),
         Commands::Team { action } => handle_team(action),
         Commands::Report { action } => handle_report(action),
+        Commands::Jira { action } => {
+            use bazbom::cli::JiraCmd;
+            use commands::jira::JiraCommand;
+
+            let cmd = match action {
+                JiraCmd::Init => JiraCommand::Init,
+                JiraCmd::Create { file, cve, package, severity } => {
+                    JiraCommand::Create { file, cve, package, severity }
+                }
+                JiraCmd::Get { key } => JiraCommand::Get { key },
+                JiraCmd::Update { key, status, assignee } => {
+                    JiraCommand::Update { key, status, assignee }
+                }
+                JiraCmd::Sync => JiraCommand::Sync,
+            };
+
+            handle_jira(cmd).await?;
+            Ok(())
+        }
+        Commands::GitHub { action } => {
+            use bazbom::cli::{GitHubCmd, GitHubPrCmd};
+            use commands::github::GitHubCommand;
+
+            let cmd = match action {
+                GitHubCmd::Init => GitHubCommand::Init,
+                GitHubCmd::Pr(pr_cmd) => match pr_cmd {
+                    GitHubPrCmd::Create { owner, repo, head, base, title, cve, package } => {
+                        GitHubCommand::PrCreate {
+                            owner,
+                            repo,
+                            base,
+                            head,
+                            title,
+                            cve,
+                            package,
+                        }
+                    }
+                    GitHubPrCmd::Get { owner, repo, number } => {
+                        GitHubCommand::PrGet { owner, repo, number }
+                    }
+                    GitHubPrCmd::List { owner, repo, state } => {
+                        GitHubCommand::PrList { owner, repo, state }
+                    }
+                },
+            };
+
+            handle_github(cmd).await?;
+            Ok(())
+        }
     }
 }

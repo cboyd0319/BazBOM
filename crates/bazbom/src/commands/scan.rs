@@ -7,7 +7,7 @@ use std::path::PathBuf;
 /// This is a placeholder - the full implementation will be extracted from main.rs
 /// in a subsequent refactoring pass to keep this module under 500 lines.
 #[allow(clippy::too_many_arguments)]
-pub fn handle_scan(
+pub async fn handle_scan(
     path: String,
     profile: Option<String>,
     mut reachability: bool,
@@ -32,6 +32,13 @@ pub fn handle_scan(
     baseline: Option<String>,
     benchmark: bool,
     ml_risk: bool,
+    jira_create: bool,
+    jira_dry_run: bool,
+    github_pr: bool,
+    github_pr_dry_run: bool,
+    auto_remediate: bool,
+    remediate_min_severity: Option<String>,
+    remediate_reachable_only: bool,
 ) -> Result<()> {
     // Apply smart defaults if no flags were explicitly set
     let defaults = SmartDefaults::detect();
@@ -131,12 +138,12 @@ pub fn handle_scan(
     }
 
     // Original scan logic - delegate to helper function
-    bazbom::scan::handle_legacy_scan(
-        path,
+    let scan_result = bazbom::scan::handle_legacy_scan(
+        path.clone(),
         reachability,
         fast,
-        format,
-        out_dir,
+        format.clone(),
+        out_dir.clone(),
         bazel_targets_query,
         bazel_targets,
         bazel_affected_by_files,
@@ -145,7 +152,87 @@ pub fn handle_scan(
         base,
         benchmark,
         ml_risk,
-    )
+    );
+
+    // After scan completes, run auto-remediation if enabled
+    if scan_result.is_ok() && (jira_create || github_pr || auto_remediate) {
+        if let Err(e) = run_auto_remediation(
+            &out_dir,
+            jira_create,
+            jira_dry_run,
+            github_pr,
+            github_pr_dry_run,
+            auto_remediate,
+            remediate_min_severity,
+            remediate_reachable_only,
+        )
+        .await
+        {
+            eprintln!("Auto-remediation failed: {}", e);
+            // Don't fail the scan if auto-remediation fails
+        }
+    }
+
+    scan_result
+}
+
+/// Run auto-remediation after scan
+async fn run_auto_remediation(
+    out_dir: &str,
+    jira_create: bool,
+    jira_dry_run: bool,
+    github_pr: bool,
+    github_pr_dry_run: bool,
+    auto_remediate: bool,
+    remediate_min_severity: Option<String>,
+    remediate_reachable_only: bool,
+) -> Result<()> {
+    use bazbom::remediation::{process_auto_remediation, AutoRemediationConfig};
+
+    // Build config from flags
+    let config = AutoRemediationConfig::from_flags(
+        jira_create,
+        jira_dry_run,
+        github_pr,
+        github_pr_dry_run,
+        auto_remediate,
+        remediate_min_severity,
+        remediate_reachable_only,
+    );
+
+    // Load vulnerabilities from scan results
+    let findings_path = format!("{}/sca_findings.json", out_dir);
+    if !std::path::Path::new(&findings_path).exists() {
+        eprintln!("Warning: Scan results not found at {}", findings_path);
+        return Ok(());
+    }
+
+    let findings_content = std::fs::read_to_string(&findings_path)?;
+    let findings: serde_json::Value = serde_json::from_str(&findings_content)?;
+
+    // Parse vulnerabilities from JSON
+    let vulnerabilities: Vec<bazbom_advisories::Vulnerability> = findings
+        .get("vulnerabilities")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| serde_json::from_value(v.clone()).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+
+    if vulnerabilities.is_empty() {
+        println!("\n✅ No vulnerabilities found - auto-remediation not needed");
+        return Ok(());
+    }
+
+    // Run auto-remediation
+    let result = process_auto_remediation(&vulnerabilities, &config).await?;
+
+    // Print summary
+    result.print_summary();
+
+    Ok(())
 }
 
 /// Apply a named profile from bazbom.toml

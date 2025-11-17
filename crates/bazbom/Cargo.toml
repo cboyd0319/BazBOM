@@ -23,6 +23,7 @@ serde_yaml = "0.9"
 toml = "0.9"
 blake3 = "1"
 chrono = "0.4"
+rusqlite = { version = "0.33", features = ["bundled"] }
 quick-xml = "0.38"
 zip = "6.0"
 tar = "0.4"

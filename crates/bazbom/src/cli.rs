@@ -112,6 +112,27 @@ PROFILES:
         /// Use ML-enhanced risk scoring for vulnerability prioritization
         #[arg(long, short = 'm')]
         ml_risk: bool,
+        /// Auto-create Jira tickets for vulnerabilities (v6.8)
+        #[arg(long)]
+        jira_create: bool,
+        /// Dry-run mode for Jira ticket creation (show what would be created)
+        #[arg(long)]
+        jira_dry_run: bool,
+        /// Auto-create GitHub PRs with fixes (v6.8)
+        #[arg(long)]
+        github_pr: bool,
+        /// Dry-run mode for GitHub PR creation (show what would be created)
+        #[arg(long)]
+        github_pr_dry_run: bool,
+        /// Full auto-remediation: create both Jira tickets and GitHub PRs (v6.8)
+        #[arg(long)]
+        auto_remediate: bool,
+        /// Minimum severity for auto-remediation (CRITICAL, HIGH, MEDIUM, LOW)
+        #[arg(long, value_name = "SEVERITY")]
+        remediate_min_severity: Option<String>,
+        /// Only auto-remediate reachable vulnerabilities
+        #[arg(long)]
+        remediate_reachable_only: bool,
     },
 
     // ========== QUICK COMMAND ALIASES ==========
@@ -487,6 +508,57 @@ WHAT IT DOES:
         #[command(subcommand)]
         action: ReportCmd,
     },
+    /// Jira integration commands (v6.8)
+    #[command(after_help = "EXAMPLES:
+  # Set up Jira integration
+  bazbom jira init
+
+  # Create a ticket manually
+  bazbom jira create --cve CVE-2024-1234 --package log4j --severity CRITICAL
+
+  # Get ticket details
+  bazbom jira get SEC-123
+
+  # Update ticket status
+  bazbom jira update SEC-123 --status Done
+
+  # Synchronize tickets with BazBOM
+  bazbom jira sync
+
+FEATURES (v6.8):
+  • Auto-create tickets during scans
+  • Bidirectional sync (Jira ↔ BazBOM)
+  • Template-based ticket creation
+  • Component routing and assignment
+  • Full intelligence integration")]
+    Jira {
+        #[command(subcommand)]
+        action: JiraCmd,
+    },
+    /// GitHub integration commands (v6.8)
+    #[command(after_help = "EXAMPLES:
+  # Set up GitHub integration
+  bazbom github init
+
+  # Create a PR manually
+  bazbom github pr create myorg myrepo --head fix/cve-2024-1234 --cve CVE-2024-1234 --package log4j
+
+  # Get PR details
+  bazbom github pr get myorg myrepo 42
+
+  # List PRs
+  bazbom github pr list myorg myrepo --state open
+
+FEATURES (v6.8):
+  • Auto-create PRs during scans
+  • Multi-PR orchestration
+  • Template-based PR descriptions
+  • Auto-merge capabilities
+  • Full intelligence integration")]
+    GitHub {
+        #[command(subcommand)]
+        action: GitHubCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -706,4 +778,97 @@ pub enum ComplianceFrameworkArg {
     Gdpr,
     Iso27001,
     NistCsf,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum JiraCmd {
+    /// Initialize Jira integration (interactive setup)
+    Init,
+    /// Create a Jira ticket
+    Create {
+        /// Path to vulnerability findings file (JSON)
+        #[arg(long, value_name = "FILE")]
+        file: Option<String>,
+        /// CVE ID (for manual creation)
+        #[arg(long, value_name = "CVE")]
+        cve: Option<String>,
+        /// Package name (for manual creation)
+        #[arg(long, value_name = "PACKAGE")]
+        package: Option<String>,
+        /// Severity (for manual creation: CRITICAL, HIGH, MEDIUM, LOW)
+        #[arg(long, value_name = "SEVERITY")]
+        severity: Option<String>,
+    },
+    /// Get Jira ticket details
+    Get {
+        /// Jira issue key (e.g., SEC-123)
+        key: String,
+    },
+    /// Update a Jira ticket
+    Update {
+        /// Jira issue key
+        key: String,
+        /// New status
+        #[arg(long, value_name = "STATUS")]
+        status: Option<String>,
+        /// New assignee
+        #[arg(long, value_name = "USER")]
+        assignee: Option<String>,
+    },
+    /// Synchronize Jira tickets with BazBOM
+    Sync,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum GitHubCmd {
+    /// GitHub PR subcommands
+    #[command(subcommand)]
+    Pr(GitHubPrCmd),
+    /// Initialize GitHub integration (interactive setup)
+    Init,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum GitHubPrCmd {
+    /// Create a pull request
+    Create {
+        /// Repository owner
+        owner: String,
+        /// Repository name
+        repo: String,
+        /// Head branch with fixes
+        #[arg(long, value_name = "BRANCH")]
+        head: String,
+        /// Base branch (default: main)
+        #[arg(long, value_name = "BRANCH")]
+        base: Option<String>,
+        /// PR title (optional)
+        #[arg(long, value_name = "TITLE")]
+        title: Option<String>,
+        /// CVE ID (for metadata)
+        #[arg(long, value_name = "CVE")]
+        cve: Option<String>,
+        /// Package name (for metadata)
+        #[arg(long, value_name = "PACKAGE")]
+        package: Option<String>,
+    },
+    /// Get PR details
+    Get {
+        /// Repository owner
+        owner: String,
+        /// Repository name
+        repo: String,
+        /// PR number
+        number: u64,
+    },
+    /// List PRs
+    List {
+        /// Repository owner
+        owner: String,
+        /// Repository name
+        repo: String,
+        /// PR state (open, closed, all)
+        #[arg(long, value_name = "STATE")]
+        state: Option<String>,
+    },
 }

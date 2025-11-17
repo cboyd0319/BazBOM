@@ -30,11 +30,9 @@ pub use db::handle_db;
 pub use explain::handle_explain;
 pub use explore::handle_explore;
 pub use fix::handle_fix;
-#[allow(unused_imports)] // TODO: Wire up in Phase 2 Week 4
 pub use github::handle_github;
 pub use hooks::handle_install_hooks;
 pub use init::handle_init;
-#[allow(unused_imports)] // TODO: Wire up in Phase 2 Week 4
 pub use jira::handle_jira;
 pub use license::handle_license;
 pub use policy::handle_policy;
