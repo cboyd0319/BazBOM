@@ -12,6 +12,7 @@
 
 pub mod apply;
 pub mod build_systems;
+pub mod database;
 pub mod github;
 pub mod suggestions;
 pub mod types;
@@ -20,6 +21,7 @@ pub mod version;
 
 // Re-export commonly used types and functions
 pub use apply::{apply_fixes, apply_fixes_with_testing};
+pub use database::{GitHubPrRecord, JiraIssueRecord, RemediationDatabase, SyncLogRecord};
 pub use github::generate_pr;
 pub use suggestions::{enrich_with_depsdev, generate_suggestions};
 pub use types::{
