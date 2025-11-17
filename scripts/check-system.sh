@@ -269,7 +269,9 @@ check_path() {
         info "Add to ~/.zshrc or ~/.bashrc: export PATH=\"/usr/local/bin:\$PATH\""
     fi
 
-    if echo "$PATH" | grep -q "$HOME/.cargo/bin"; then
+    # Check for ~/.cargo/bin in PATH (expand $HOME properly)
+    local cargo_bin_expanded="${HOME}/.cargo/bin"
+    if echo "$PATH" | grep -q "$cargo_bin_expanded"; then
         success "~/.cargo/bin is in PATH (for Rust tools)"
     else
         info "~/.cargo/bin is not in PATH (only needed for Rust development)"
@@ -303,6 +305,7 @@ run_test_scan() {
 
     # Create a minimal test project
     local test_dir=$(mktemp -d)
+    local original_dir=$(pwd)
     cd "$test_dir"
 
     # Create a minimal pom.xml
@@ -327,7 +330,7 @@ EOF
     fi
 
     # Cleanup
-    cd - >/dev/null
+    cd "$original_dir"
     rm -rf "$test_dir"
 }
 
