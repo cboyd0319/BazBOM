@@ -25,6 +25,13 @@ pub struct PullRequest {
     #[serde(default)]
     pub draft: bool,
 
+    /// Merged status
+    #[serde(default)]
+    pub merged: bool,
+
+    /// PR author
+    pub user: User,
+
     /// HTML URL
     pub html_url: String,
 
@@ -39,8 +46,8 @@ pub struct PullRequest {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Branch {
     /// Branch name (ref)
-    #[serde(rename = "ref")]
-    pub branch_ref: String,
+    #[serde(rename = "ref", alias = "ref_name")]
+    pub ref_name: String,
 
     /// SHA
     pub sha: String,
@@ -94,6 +101,10 @@ pub struct CreatePullRequestRequest {
     /// Draft PR
     #[serde(default)]
     pub draft: bool,
+
+    /// Allow maintainers to modify PR
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub maintainer_can_modify: Option<bool>,
 }
 
 /// PR update request
@@ -136,13 +147,17 @@ pub struct BazBomPrMetadata {
     /// Reachability status
     pub reachable: bool,
 
+    /// Upgrade confidence score (0-100)
+    pub confidence: u8,
+
     /// Auto-merge eligible
     pub auto_merge_eligible: bool,
 
     /// Jira ticket key
     pub jira_ticket: Option<String>,
 
-    /// BazBOM scan URL
+    /// BazBOM scan URL (also accessible as scan_url)
+    #[serde(alias = "scan_url")]
     pub bazbom_scan_url: Option<String>,
 }
 

@@ -127,13 +127,23 @@ async fn handle_jira_init() -> Result<()> {
     // Create configuration
     let config = JiraConfig {
         url,
-        auth_type: auth_type.to_string(),
-        username,
+        auth: bazbom_jira::config::AuthConfig {
+            auth_type: auth_type.to_string(),
+            token_env: Some("JIRA_API_TOKEN".to_string()),
+            username_env: username.as_ref().map(|_| "JIRA_USERNAME".to_string()),
+        },
         project,
         issue_type,
-        auto_create: false,
-        min_priority: Some("P2".to_string()),
-        only_reachable: true,
+        auto_create: bazbom_jira::config::AutoCreateConfig {
+            enabled: false,
+            min_priority: Some("P2".to_string()),
+            only_reachable: true,
+        },
+        custom_fields: Default::default(),
+        routing: Vec::new(),
+        sla: Default::default(),
+        sync: Default::default(),
+        webhook: Default::default(),
     };
 
     // Create .bazbom directory if it doesn't exist
@@ -152,14 +162,14 @@ async fn handle_jira_init() -> Result<()> {
     println!("  1. Set environment variables:");
     println!("     export JIRA_API_TOKEN=<your-token>");
     if username.is_some() {
-        println!("     (API token for {})", username.as_ref().unwrap());
+        println!("     export JIRA_USERNAME={}", username.as_ref().unwrap());
     }
     println!();
     println!("  2. Test the connection:");
-    println!("     bazbom jira get {}-1", project);
+    println!("     bazbom jira get {}-1", config.project);
     println!();
     println!("  3. Enable auto-creation in {}", config_path.display());
-    println!("     auto_create: true");
+    println!("     Set auto_create.enabled: true");
     println!();
 
     Ok(())
@@ -179,9 +189,16 @@ async fn handle_jira_create(
     let token = std::env::var("JIRA_API_TOKEN")
         .context("JIRA_API_TOKEN environment variable not set")?;
 
+    // Get username from environment if needed
+    let username = if let Some(username_env) = &config.auth.username_env {
+        std::env::var(username_env).ok()
+    } else {
+        None
+    };
+
     // Create client
-    let client = if let Some(username) = &config.username {
-        JiraClient::with_username(&config.url, &token, Some(username.clone()))
+    let client = if let Some(username) = username {
+        JiraClient::with_username(&config.url, &token, Some(username))
     } else {
         JiraClient::new(&config.url, &token)
     };
@@ -250,8 +267,15 @@ async fn handle_jira_get(key: String) -> Result<()> {
     let token = std::env::var("JIRA_API_TOKEN")
         .context("JIRA_API_TOKEN environment variable not set")?;
 
-    let client = if let Some(username) = &config.username {
-        JiraClient::with_username(&config.url, &token, Some(username.clone()))
+    // Get username from environment if needed
+    let username = if let Some(username_env) = &config.auth.username_env {
+        std::env::var(username_env).ok()
+    } else {
+        None
+    };
+
+    let client = if let Some(username) = username {
+        JiraClient::with_username(&config.url, &token, Some(username))
     } else {
         JiraClient::new(&config.url, &token)
     };
@@ -263,15 +287,17 @@ async fn handle_jira_get(key: String) -> Result<()> {
     println!();
     println!("{}", format!("📋 {}", issue.key).bold());
     println!("  Summary: {}", issue.fields.summary);
-    println!("  Status: {}", issue.fields.status.name.cyan());
-    println!("  Type: {}", issue.fields.issuetype.name);
-    if let Some(assignee) = &issue.fields.assignee {
-        println!("  Assignee: {}", assignee.display_name);
+    if let Some(status) = &issue.fields.status {
+        println!("  Status: {}", status.name.cyan());
     }
-    if let Some(labels) = &issue.fields.labels {
-        if !labels.is_empty() {
-            println!("  Labels: {}", labels.join(", "));
+    println!("  Type: {}", issue.fields.issue_type.name);
+    if let Some(assignee) = &issue.fields.assignee {
+        if let Some(display_name) = &assignee.display_name {
+            println!("  Assignee: {}", display_name);
         }
+    }
+    if !issue.fields.labels.is_empty() {
+        println!("  Labels: {}", issue.fields.labels.join(", "));
     }
     println!();
 
@@ -288,8 +314,15 @@ async fn handle_jira_update(
     let token = std::env::var("JIRA_API_TOKEN")
         .context("JIRA_API_TOKEN environment variable not set")?;
 
-    let client = if let Some(username) = &config.username {
-        JiraClient::with_username(&config.url, &token, Some(username.clone()))
+    // Get username from environment if needed
+    let username = if let Some(username_env) = &config.auth.username_env {
+        std::env::var(username_env).ok()
+    } else {
+        None
+    };
+
+    let client = if let Some(username) = username {
+        JiraClient::with_username(&config.url, &token, Some(username))
     } else {
         JiraClient::new(&config.url, &token)
     };
@@ -308,7 +341,10 @@ async fn handle_jira_update(
         fields.insert("assignee".to_string(), serde_json::json!({ "name": assignee }));
     }
 
-    let request = UpdateIssueRequest { fields };
+    let request = UpdateIssueRequest {
+        fields: if fields.is_empty() { None } else { Some(fields) },
+        update: None,
+    };
 
     client.update_issue(&key, request).await?;
 

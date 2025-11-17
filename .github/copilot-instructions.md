@@ -79,8 +79,9 @@ Target OS: macOS → Linux → Windows.
 - 80% faster time-to-fix for automated-eligible vulnerabilities
 - Complete automation loop: Scan → Ticket → PR → Review → Merge → Close
 
-**v6.8 Development Status (Nov 16, 2025 - Phase 1 Foundation COMPLETE):**
+**v6.8 Development Status (Nov 16, 2025 - Phase 2 Week 4 IN PROGRESS):**
 - Phase 1 Foundation: **WEEKS 1-3 COMPLETE** ✅
+- Phase 2 Week 4: **CLI Commands 60% COMPLETE** 🟡
 - ✅ Created `bazbom-jira` crate (v6.8.0) - **Production-ready foundation**
   - REST API client with CRUD operations (create, get, update)
   - Rate limiting (5 req/sec), retry logic, error handling
@@ -122,8 +123,14 @@ Target OS: macOS → Linux → Windows.
   - bazbom-github: Core API client + PR templates (12 tests) + orchestrator (8 tests)
   - Additional integration and doc tests
 - ✅ Phase 1 foundation complete - ready for Phase 2 (CLI integration)
-- **Next: Phase 2 (Weeks 4-6) - CLI Commands & API Integration**
-  - Week 4: Jira and GitHub CLI commands (`bazbom jira`, `bazbom github`)
+- **Current: Phase 2 Week 4 (60% complete) - CLI Commands**
+  - ✅ Model fixes (ProjectRef, IssueTypeRef, IssueFields, PullRequest fields)
+  - ✅ Config structure updates (JiraConfig, GitHubConfig)
+  - ✅ Jira CLI commands (init, create, get, update, sync)
+  - ✅ GitHub CLI commands (init, pr create, pr get, pr list)
+  - ⏳ Wire up to main CLI (cli.rs, main.rs) - **NEXT**
+- **Next: Complete Week 4, then Week 5**
+  - Week 4 remaining: CLI integration (wire commands to main CLI)
   - Week 5: Integration with main scan command (`--jira-create`, `--github-pr`)
   - Week 6: Webhook servers and integration tests
 

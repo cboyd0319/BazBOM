@@ -11,12 +11,12 @@ pub struct JiraIssue {
     pub id: String,
 
     /// Fields
-    pub fields: JiraFields,
+    pub fields: JiraIssueFields,
 }
 
-/// Jira issue fields
+/// Jira issue fields (full response from Jira API)
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JiraFields {
+pub struct JiraIssueFields {
     /// Project
     pub project: JiraProject,
 
@@ -253,10 +253,58 @@ pub enum RemediationEffort {
     MoreThanOneWeek,
 }
 
+/// Simple project reference for creating issues
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProjectRef {
+    /// Project key (e.g., "SEC")
+    pub key: String,
+}
+
+/// Simple issue type reference for creating issues
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IssueTypeRef {
+    /// Type name (e.g., "Bug", "Task")
+    pub name: String,
+}
+
+/// Issue fields for creating issues (simplified)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IssueFields {
+    /// Project reference
+    pub project: ProjectRef,
+
+    /// Summary (title)
+    pub summary: String,
+
+    /// Description (optional for creation)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<JiraDescription>,
+
+    /// Issue type
+    #[serde(rename = "issuetype")]
+    pub issuetype: IssueTypeRef,
+
+    /// Labels (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub labels: Option<Vec<String>>,
+
+    /// Priority (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub priority: Option<JiraPriority>,
+
+    /// Assignee (optional)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub assignee: Option<JiraUser>,
+
+    /// Custom fields
+    #[serde(flatten)]
+    pub custom_fields: HashMap<String, serde_json::Value>,
+}
+
 /// Issue creation request
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateIssueRequest {
-    pub fields: JiraFields,
+    pub fields: IssueFields,
 }
 
 /// Issue creation response

@@ -132,6 +132,9 @@ async fn handle_github_init() -> Result<()> {
         auto_merge_min_confidence: 80,
         require_tests_pass: true,
         require_approvals: if auto_merge { 1 } else { 0 },
+        token_env: Some("GITHUB_TOKEN".to_string()),
+        auto_merge_config: None,
+        pr_template_path: None,
     };
 
     // Create .bazbom directory if it doesn't exist
@@ -152,7 +155,8 @@ async fn handle_github_init() -> Result<()> {
     println!("     (Create token at: https://github.com/settings/tokens)");
     println!();
     println!("  2. Test the connection:");
-    println!("     bazbom github pr list {} <repo>", config.owner);
+    let example_repo = config.repo.as_deref().unwrap_or("<repo>");
+    println!("     bazbom github pr list {} {}", config.owner, example_repo);
     println!();
     println!("  3. Create your first automated PR:");
     println!("     bazbom scan --github-pr");
@@ -197,7 +201,7 @@ async fn handle_github_pr_create(
             confidence: 70,
             auto_merge_eligible: false,
             jira_ticket: None,
-            scan_url: None,
+            bazbom_scan_url: None,
         }
     } else {
         anyhow::bail!("--cve and --package are required for PR creation");
@@ -223,7 +227,7 @@ async fn handle_github_pr_create(
         head: head.clone(),
         base: base_branch,
         draft: false,
-        maintainer_can_modify: true,
+        maintainer_can_modify: Some(true),
     };
 
     // Create PR
