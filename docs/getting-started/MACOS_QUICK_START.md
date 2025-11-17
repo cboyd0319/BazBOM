@@ -1,15 +1,18 @@
 # macOS Quick Start Guide
 
-**Get BazBOM running on your Mac in 3 minutes**
+**Get BazBOM running on your Mac in 5-10 minutes**
 
-This guide is designed for macOS users who want to quickly install and test BazBOM on internal company repositories.
+This guide is designed for macOS users who want to quickly build and test BazBOM on internal company repositories.
 
 ---
 
 ## Prerequisites
 
-- **macOS 10.15+** (Catalina or later) - Works great on macOS 26.1
+Before starting, ensure you have:
+
+- **macOS 10.15+** (Catalina or later)
 - **Terminal access** (Applications → Utilities → Terminal)
+- **Rust toolchain** (we'll install this below)
 - **Admin rights** (for installation to `/usr/local/bin`)
 
 **Optional but recommended:**
@@ -18,57 +21,52 @@ This guide is designed for macOS users who want to quickly install and test BazB
 
 ---
 
-## 🚀 Installation (2 minutes)
+## 🚀 Installation (5-10 minutes)
 
-### Option 1: One-Line Install (Recommended)
+### Step 1: Install Rust (if not already installed)
 
-Open Terminal and run:
+BazBOM is written in Rust, so you need the Rust toolchain. This takes about 2 minutes:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
-```
+# Install Rust using rustup (the official installer)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-**What this does:**
-- Downloads the latest BazBOM binary for your Mac (Intel or Apple Silicon)
-- Installs to `/usr/local/bin/bazbom` (may prompt for your password)
-- Verifies the installation works
-- Shows you next steps
+# Follow the prompts (just press Enter to accept defaults)
+# Then restart your terminal or run:
+source ~/.cargo/env
+
+# Verify Rust is installed:
+rustc --version
+cargo --version
+```
 
 **Expected output:**
 ```
-╔════════════════════════════════════════════════╗
-║          BazBOM Installer v1.0                 ║
-║  Polyglot reachability-first SBOM & SCA        ║
-╚════════════════════════════════════════════════╝
-
-ℹ Detected platform: darwin (arm64) - Target: aarch64-apple-darwin
-ℹ Fetching latest version...
-✓ Latest version: 6.5.0
-ℹ Downloading BazBOM v6.5.0 for aarch64-apple-darwin...
-✓ Downloaded successfully
-ℹ Installing to /usr/local/bin/bazbom...
-Password: [enter your password]
-✓ BazBOM installed successfully!
+rustc 1.75.0 (or newer)
+cargo 1.75.0 (or newer)
 ```
 
-### Option 2: Manual Install (If Script Fails)
+### Step 2: Build BazBOM from Source
 
-1. **Download the binary for your Mac:**
-   - [Apple Silicon (M1/M2/M3)](https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-aarch64-apple-darwin.tar.gz)
-   - [Intel Mac](https://github.com/cboyd0319/BazBOM/releases/latest/download/bazbom-x86_64-apple-darwin.tar.gz)
+Now build BazBOM. This takes about 3-5 minutes on the first build:
 
-2. **Extract and install:**
-   ```bash
-   cd ~/Downloads
-   tar -xzf bazbom-*.tar.gz
-   sudo mv bazbom /usr/local/bin/
-   sudo chmod +x /usr/local/bin/bazbom
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
 
-3. **Remove macOS quarantine (important!):**
-   ```bash
-   sudo xattr -d com.apple.quarantine /usr/local/bin/bazbom
-   ```
+# Build the release binary (optimized, smaller, faster)
+cargo build --release -p bazbom
+
+# Install to /usr/local/bin (may prompt for password)
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
+```
+
+**What to expect:**
+- First build takes 3-5 minutes (Rust compiles everything)
+- You'll see compilation progress for ~29 crates
+- Final binary will be optimized and ready to use
+- Subsequent builds are much faster (< 1 minute)
 
 ---
 
@@ -82,9 +80,6 @@ bazbom --version
 
 # View help
 bazbom --help
-
-# Quick system check
-bazbom doctor  # (if available)
 ```
 
 **Expected output:**
@@ -112,12 +107,11 @@ bazbom scan --reachability
 bazbom fix --suggest
 ```
 
-### Test on This Repository
+### Test on the BazBOM Repository Itself
 
 ```bash
-# Clone BazBOM repo as a test
-git clone https://github.com/cboyd0319/BazBOM.git
-cd BazBOM
+# Already in the BazBOM directory from installation
+cd ~/BazBOM  # or wherever you cloned it
 
 # Scan it (it's a Rust project)
 bazbom check
@@ -165,8 +159,9 @@ BazBOM outputs:
 | Issue | Solution |
 |-------|----------|
 | `bazbom: command not found` | Run: `export PATH="/usr/local/bin:$PATH"` then add to `~/.zshrc` |
-| "Cannot verify developer" warning | Run: `sudo xattr -d com.apple.quarantine /usr/local/bin/bazbom` |
+| `cargo: command not found` | Install Rust: `curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \| sh` |
 | No Java installed | Install Java 11+: `brew install openjdk@21` (or download from Oracle/Adoptium) |
+| Build fails with linker error | Install Xcode Command Line Tools: `xcode-select --install` |
 | Permission denied | Use `sudo` for installation, or install to `~/.local/bin` instead |
 | Slow scans on large repos | Use `--fast` flag or `bazbom check` for quick results |
 
@@ -253,8 +248,11 @@ After testing on a few repos:
 ## Quick Reference Commands
 
 ```bash
-# Installation
-curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+# Build from source (first time)
+git clone https://github.com/cboyd0319/BazBOM.git
+cd BazBOM
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 
 # Basic scan
 bazbom check
@@ -279,6 +277,20 @@ bazbom --version
 
 # View help
 bazbom --help
+```
+
+---
+
+## 🔄 Updating BazBOM
+
+To update to the latest version:
+
+```bash
+cd ~/BazBOM  # or wherever you cloned it
+git pull origin main
+cargo build --release -p bazbom
+sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
+bazbom --version
 ```
 
 ---
