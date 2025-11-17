@@ -103,17 +103,35 @@ check_java() {
 
     if command -v java >/dev/null 2>&1; then
         # Java is installed, check version
-        local java_version=$(java -version 2>&1 | head -n1 | awk -F '"' '{print $2}')
+        # Try to extract version from java -version output (handles multiple formats)
+        local java_output=$(java -version 2>&1 | head -n1)
+        local java_version=""
+
+        # Try extracting version from quoted format: java version "11.0.20"
+        if echo "$java_output" | grep -q '"'; then
+            java_version=$(echo "$java_output" | awk -F '"' '{print $2}')
+        # Try extracting from unquoted format: openjdk version 11.0.20
+        elif echo "$java_output" | grep -qE 'version [0-9]'; then
+            java_version=$(echo "$java_output" | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?(_[0-9]+)?' | head -n1)
+        fi
 
         # Extract major version (handles both 1.8.x and 11+ formats)
-        local java_major=$(echo "$java_version" | awk -F. '{if ($1 == 1) print $2; else print $1}')
+        local java_major=""
+        if [ -n "$java_version" ]; then
+            java_major=$(echo "$java_version" | awk -F. '{if ($1 == 1) print $2; else print $1}')
+        fi
 
-        if [ "$java_major" -ge 11 ] 2>/dev/null; then
+        # Validate that we got a numeric major version
+        if [ -n "$java_major" ] && [ "$java_major" -ge 11 ] 2>/dev/null; then
             success "Java detected: $java_version (Java $java_major)"
             return 0
-        else
+        elif [ -n "$java_version" ] && [ -n "$java_major" ]; then
             warn "Java $java_version detected, but BazBOM requires Java 11+"
             java_too_old=true
+        else
+            warn "Java found but could not determine version - BazBOM requires Java 11+"
+            warn "Java output: $java_output"
+            needs_java=true
         fi
     else
         warn "Java not found - Required for scanning JVM projects (Java, Kotlin, Scala, etc.)"
@@ -512,7 +530,7 @@ verify_installation() {
 
         # Offer to auto-add to PATH
         if [ -n "$shell_config" ]; then
-            read -p "Add $INSTALL_DIR to PATH in $(basename $shell_config)? (y/n) " -n 1 -r
+            read -p "Add $INSTALL_DIR to PATH in $(basename "$shell_config")? (y/n) " -n 1 -r
             echo
             if [[ $REPLY =~ ^[Yy]$ ]]; then
                 if ! grep -q "$INSTALL_DIR" "$shell_config" 2>/dev/null; then
