@@ -46,6 +46,14 @@ BazBOM is a **developer-friendly security scanner** that uses reachability analy
 curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
 ```
 
+**📚 New Users? Start Here:**
+- **macOS users:** [macOS Quick Start Guide →](docs/getting-started/MACOS_QUICK_START.md) - Copy-paste instructions for Mac
+- **Executives/Managers:** [Executive Quick Start →](docs/getting-started/EXECUTIVE_QUICK_START.md) - Business overview & deployment guide
+- **System Check:** Verify your system is ready:
+  ```bash
+  curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/scripts/check-system.sh | sh
+  ```
+
 **Or download pre-built binaries:**
 
 Visit [BazBOM Releases](https://github.com/cboyd0319/BazBOM/releases/latest) and download for your platform:

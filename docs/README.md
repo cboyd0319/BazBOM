@@ -16,12 +16,18 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 
 ## Getting Started
 
+### New Users Start Here
+- **[macOS Quick Start](getting-started/MACOS_QUICK_START.md)** – macOS-specific guide with copy-paste commands (3 minutes)
+- **[Executive Quick Start](getting-started/EXECUTIVE_QUICK_START.md)** – Business overview, ROI, team deployment (for executives/managers)
+- **[System Check Script](../scripts/check-system.sh)** – Verify your system is ready for BazBOM
+
+### All Users
 - **[QUICKREF.md](QUICKREF.md)** – One-page cheat sheet (installation, commands, workflows)
-- [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – zero to first scan with defaults
-- [Quick Start Guide](getting-started/quickstart.md) – five-minute walkthrough with CI tips
-- [Manual Source Installation](getting-started/homebrew-installation.md) – clone, build, and add BazBOM to PATH
+- [Quickstart in 90 Seconds](getting-started/quickstart-90-seconds.md) – Zero to first scan with defaults
+- [Quick Start Guide](getting-started/quickstart.md) – Five-minute walkthrough with CI tips
+- [Complete Installation Guide](getting-started/homebrew-installation.md) – All installation methods (Homebrew, Cargo, manual)
 - [Shell Completions](getting-started/shell-completions.md) – Bash, Zsh, Fish completion setup
-- [IDE Setup Checklist](getting-started/ide-setup.md) – configure IntelliJ / VS Code extensions
+- [IDE Setup Checklist](getting-started/ide-setup.md) – Configure IntelliJ/VS Code extensions
 
 ## User Guide & How-tos
 

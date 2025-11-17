@@ -6,8 +6,17 @@
 
 ## Installation
 
+**Quick Install (Recommended):**
 ```bash
-# Clone and build (current distribution)
+# One-line install (macOS/Linux)
+curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/install.sh | sh
+
+# Or check system first
+curl -sSL https://raw.githubusercontent.com/cboyd0319/BazBOM/main/scripts/check-system.sh | sh
+```
+
+**Build from Source:**
+```bash
 git clone https://github.com/cboyd0319/BazBOM.git
 cd BazBOM
 cargo build --release -p bazbom
@@ -15,7 +24,11 @@ sudo install -m 0755 target/release/bazbom /usr/local/bin/bazbom
 bazbom --version
 ```
 
-> Homebrew is available via `brew tap cboyd0319/bazbom && brew install bazbom`. Windows installer (winget) coming soon. See [homebrew-installation.md](getting-started/homebrew-installation.md) for details.
+**Other Methods:**
+- **macOS users:** See [macOS Quick Start](getting-started/MACOS_QUICK_START.md)
+- **Executives/Managers:** See [Executive Quick Start](getting-started/EXECUTIVE_QUICK_START.md)
+- **Homebrew:** `brew tap cboyd0319/bazbom && brew install bazbom` (coming soon)
+- **Complete guide:** [Installation Guide](getting-started/homebrew-installation.md)
 
 ---
 
