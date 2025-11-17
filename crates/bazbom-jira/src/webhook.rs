@@ -123,7 +123,10 @@ async fn handle_webhook(
         }
 
         WebhookEvent::CommentCreated(event) => {
-            info!("Received comment created event on issue: {}", event.issue.key);
+            info!(
+                "Received comment created event on issue: {}",
+                event.issue.key
+            );
             server
                 .handler
                 .handle_comment_created(event)

@@ -29,9 +29,11 @@ pub async fn handle_github(cmd: GitHubCommand) -> Result<()> {
             cve,
             package,
         } => handle_github_pr_create(owner, repo, base, head, title, cve, package).await,
-        GitHubCommand::PrGet { owner, repo, number } => {
-            handle_github_pr_get(owner, repo, number).await
-        }
+        GitHubCommand::PrGet {
+            owner,
+            repo,
+            number,
+        } => handle_github_pr_get(owner, repo, number).await,
         GitHubCommand::PrList { owner, repo, state } => {
             handle_github_pr_list(owner, repo, state).await
         }
@@ -156,7 +158,10 @@ async fn handle_github_init() -> Result<()> {
     println!();
     println!("  2. Test the connection:");
     let example_repo = config.repo.as_deref().unwrap_or("<repo>");
-    println!("     bazbom github pr list {} {}", config.owner, example_repo);
+    println!(
+        "     bazbom github pr list {} {}",
+        config.owner, example_repo
+    );
     println!();
     println!("  3. Create your first automated PR:");
     println!("     bazbom scan --github-pr");
@@ -176,8 +181,8 @@ async fn handle_github_pr_create(
     package: Option<String>,
 ) -> Result<()> {
     // Get authentication token
-    let token = std::env::var("GITHUB_TOKEN")
-        .context("GITHUB_TOKEN environment variable not set")?;
+    let token =
+        std::env::var("GITHUB_TOKEN").context("GITHUB_TOKEN environment variable not set")?;
 
     // Create client
     let client = GitHubClient::new(&token);
@@ -212,7 +217,10 @@ async fn handle_github_pr_create(
     let description = template.render(&metadata)?;
 
     let pr_title = title.unwrap_or_else(|| {
-        format!("fix: Update {} to address {}", metadata.package, metadata.cve_id)
+        format!(
+            "fix: Update {} to address {}",
+            metadata.package, metadata.cve_id
+        )
     });
 
     println!("Creating GitHub PR...");
@@ -245,8 +253,8 @@ async fn handle_github_pr_create(
 
 /// Get GitHub PR details
 async fn handle_github_pr_get(owner: String, repo: String, number: u64) -> Result<()> {
-    let token = std::env::var("GITHUB_TOKEN")
-        .context("GITHUB_TOKEN environment variable not set")?;
+    let token =
+        std::env::var("GITHUB_TOKEN").context("GITHUB_TOKEN environment variable not set")?;
 
     let client = GitHubClient::new(&token);
 
@@ -272,13 +280,9 @@ async fn handle_github_pr_get(owner: String, repo: String, number: u64) -> Resul
 }
 
 /// List GitHub PRs
-async fn handle_github_pr_list(
-    owner: String,
-    repo: String,
-    state: Option<String>,
-) -> Result<()> {
-    let token = std::env::var("GITHUB_TOKEN")
-        .context("GITHUB_TOKEN environment variable not set")?;
+async fn handle_github_pr_list(owner: String, repo: String, state: Option<String>) -> Result<()> {
+    let token =
+        std::env::var("GITHUB_TOKEN").context("GITHUB_TOKEN environment variable not set")?;
 
     let _client = GitHubClient::new(&token);
 
@@ -300,16 +304,13 @@ async fn load_github_config() -> Result<GitHubConfig> {
     let config_path = PathBuf::from(".bazbom/github.yml");
 
     if !config_path.exists() {
-        anyhow::bail!(
-            "GitHub configuration not found. Run 'bazbom github init' first."
-        );
+        anyhow::bail!("GitHub configuration not found. Run 'bazbom github init' first.");
     }
 
-    let yaml = fs::read_to_string(&config_path)
-        .context("Failed to read GitHub configuration")?;
+    let yaml = fs::read_to_string(&config_path).context("Failed to read GitHub configuration")?;
 
-    let config: GitHubConfig = serde_yaml::from_str(&yaml)
-        .context("Failed to parse GitHub configuration")?;
+    let config: GitHubConfig =
+        serde_yaml::from_str(&yaml).context("Failed to parse GitHub configuration")?;
 
     Ok(config)
 }

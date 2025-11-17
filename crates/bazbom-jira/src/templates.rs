@@ -115,7 +115,8 @@ impl TemplateEngine {
             .map_err(|e| JiraError::Template(format!("Regex error: {}", e)))?;
 
         if let Some(caps) = re_wiki.captures(line) {
-            let level = caps[1].parse::<i32>()
+            let level = caps[1]
+                .parse::<i32>()
                 .map_err(|e| JiraError::Template(format!("Invalid heading level: {}", e)))?;
             let text = &caps[2];
 
@@ -152,7 +153,11 @@ impl TemplateEngine {
         // Detect format and language
         if first_line.starts_with("```") {
             // Markdown style: ```lang
-            language = first_line.trim_start_matches("```").trim().to_string().into();
+            language = first_line
+                .trim_start_matches("```")
+                .trim()
+                .to_string()
+                .into();
 
             // Find closing ```
             while i < lines.len() {
@@ -211,7 +216,8 @@ impl TemplateEngine {
 
             // Check if this is a list item
             if line.starts_with("* ") || line.starts_with("• ") || line.starts_with("- ") {
-                let text = line.trim_start_matches("* ")
+                let text = line
+                    .trim_start_matches("* ")
                     .trim_start_matches("• ")
                     .trim_start_matches("- ");
 
@@ -481,7 +487,8 @@ h2. 🔗 Links
 
 **Attachments:**
 {attachments_list}
-"#.to_string(),
+"#
+            .to_string(),
         }
     }
 }
@@ -639,7 +646,9 @@ mod tests {
     #[test]
     fn test_parse_inline_text_mixed() {
         let engine = TemplateEngine::new();
-        let nodes = engine.parse_inline_text("Plain **bold** and *italic* and `code`").unwrap();
+        let nodes = engine
+            .parse_inline_text("Plain **bold** and *italic* and `code`")
+            .unwrap();
 
         // Should produce 6 nodes:
         // 1. "Plain " (no marks)
@@ -825,7 +834,10 @@ Final paragraph with `inline code`.
         assert!(!description.content.is_empty());
 
         // First content should be heading
-        assert!(matches!(description.content[0], JiraContent::Heading { .. }));
+        assert!(matches!(
+            description.content[0],
+            JiraContent::Heading { .. }
+        ));
     }
 
     #[test]
@@ -841,8 +853,14 @@ Final paragraph with `inline code`.
         variables.insert("cvss_score".to_string(), "9.8".to_string());
         variables.insert("priority".to_string(), "P0".to_string());
         variables.insert("reachability_status".to_string(), "⚠ REACHABLE".to_string());
-        variables.insert("why_fix".to_string(), "Active exploitation detected".to_string());
-        variables.insert("impact_description".to_string(), "Remote Code Execution".to_string());
+        variables.insert(
+            "why_fix".to_string(),
+            "Active exploitation detected".to_string(),
+        );
+        variables.insert(
+            "impact_description".to_string(),
+            "Remote Code Execution".to_string(),
+        );
         variables.insert("epss_score".to_string(), "0.89".to_string());
         variables.insert("kev_status".to_string(), "⚠ ACTIVE".to_string());
         variables.insert("exploit_intel".to_string(), "PoCs available".to_string());
@@ -856,23 +874,41 @@ Final paragraph with `inline code`.
         variables.insert("remediation_difficulty".to_string(), "15".to_string());
         variables.insert("remediation_level".to_string(), "Very Easy".to_string());
         variables.insert("remediation_time".to_string(), "45 minutes".to_string());
-        variables.insert("remediation_reasons".to_string(), "Simple upgrade".to_string());
-        variables.insert("fix_description".to_string(), "Upgrade to 2.20.0".to_string());
+        variables.insert(
+            "remediation_reasons".to_string(),
+            "Simple upgrade".to_string(),
+        );
+        variables.insert(
+            "fix_description".to_string(),
+            "Upgrade to 2.20.0".to_string(),
+        );
         variables.insert("breaking_changes_status".to_string(), "✓ NONE".to_string());
         variables.insert("breaking_changes_details".to_string(), "".to_string());
-        variables.insert("fix_command".to_string(), "bazbom fix log4j-core".to_string());
+        variables.insert(
+            "fix_command".to_string(),
+            "bazbom fix log4j-core".to_string(),
+        );
         variables.insert("framework_name".to_string(), "Apache Log4j 2.x".to_string());
         variables.insert("migration_required".to_string(), "None".to_string());
         variables.insert("compatibility_info".to_string(), "Java 8+".to_string());
-        variables.insert("test_recommendations".to_string(), "Run security tests".to_string());
+        variables.insert(
+            "test_recommendations".to_string(),
+            "Run security tests".to_string(),
+        );
         variables.insert("container_image_count".to_string(), "3".to_string());
         variables.insert("container_details".to_string(), "myapp:latest".to_string());
         variables.insert("policy_violations_before".to_string(), "❌ 3".to_string());
         variables.insert("policy_violations_after".to_string(), "✓ 0".to_string());
         variables.insert("compliance_frameworks".to_string(), "PCI-DSS".to_string());
-        variables.insert("bazbom_link".to_string(), "https://bazbom.local".to_string());
+        variables.insert(
+            "bazbom_link".to_string(),
+            "https://bazbom.local".to_string(),
+        );
         variables.insert("cve_link".to_string(), "https://nvd.nist.gov".to_string());
-        variables.insert("github_pr_link".to_string(), "https://github.com/pr/1".to_string());
+        variables.insert(
+            "github_pr_link".to_string(),
+            "https://github.com/pr/1".to_string(),
+        );
         variables.insert("additional_links".to_string(), "".to_string());
         variables.insert("attachments_list".to_string(), "callgraph.svg".to_string());
 

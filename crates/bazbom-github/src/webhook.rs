@@ -102,14 +102,10 @@ async fn handle_webhook(
 
         WebhookEvent::CheckRun(event) => {
             info!("Received check run event: {}", event.action);
-            server
-                .handler
-                .handle_check_run(event)
-                .await
-                .map_err(|e| {
-                    error!("Failed to handle check run event: {}", e);
-                    StatusCode::INTERNAL_SERVER_ERROR
-                })?;
+            server.handler.handle_check_run(event).await.map_err(|e| {
+                error!("Failed to handle check run event: {}", e);
+                StatusCode::INTERNAL_SERVER_ERROR
+            })?;
         }
     }
 

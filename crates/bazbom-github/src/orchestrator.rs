@@ -113,7 +113,11 @@ impl PrOrchestrator {
         }
 
         // Calculate summary statistics
-        let successful_prs = results.iter().filter(|r| r.success).map(|r| r.pr_urls.len()).sum();
+        let successful_prs = results
+            .iter()
+            .filter(|r| r.success)
+            .map(|r| r.pr_urls.len())
+            .sum();
         let failures = results.iter().filter(|r| !r.success).count();
         let total_vulnerabilities = results.iter().map(|r| r.vulnerabilities_count).sum();
 
@@ -144,15 +148,9 @@ impl PrOrchestrator {
         let _vulnerabilities_count = request.metadata.len();
 
         match self.strategy {
-            OrchestrationStrategy::OnePrPerRepo => {
-                self.one_pr_per_repo(request).await
-            }
-            OrchestrationStrategy::BatchByPackage => {
-                self.batch_by_package(request).await
-            }
-            OrchestrationStrategy::BatchBySeverity => {
-                self.batch_by_severity(request).await
-            }
+            OrchestrationStrategy::OnePrPerRepo => self.one_pr_per_repo(request).await,
+            OrchestrationStrategy::BatchByPackage => self.batch_by_package(request).await,
+            OrchestrationStrategy::BatchBySeverity => self.batch_by_severity(request).await,
         }
     }
 
@@ -430,7 +428,11 @@ mod tests {
                 repo: "repo1".to_string(),
                 head_branch: "fix/cves".to_string(),
                 base_branch: "main".to_string(),
-                metadata: vec![create_test_metadata("CVE-2024-1234", "log4j-core", "CRITICAL")],
+                metadata: vec![create_test_metadata(
+                    "CVE-2024-1234",
+                    "log4j-core",
+                    "CRITICAL",
+                )],
             },
             PrCreationRequest {
                 owner: "myorg".to_string(),
@@ -444,7 +446,11 @@ mod tests {
                 repo: "repo3".to_string(),
                 head_branch: "fix/cves".to_string(),
                 base_branch: "main".to_string(),
-                metadata: vec![create_test_metadata("CVE-2024-9012", "jackson-core", "MEDIUM")],
+                metadata: vec![create_test_metadata(
+                    "CVE-2024-9012",
+                    "jackson-core",
+                    "MEDIUM",
+                )],
             },
         ];
 
@@ -477,4 +483,3 @@ mod tests {
         assert_eq!(summary.results[0].pr_urls.len(), 0);
     }
 }
-

@@ -40,12 +40,18 @@ impl PrTemplateEngine {
         // Basic vulnerability info
         vars.insert("cve_id".to_string(), metadata.cve_id.clone());
         vars.insert("package".to_string(), metadata.package.clone());
-        vars.insert("current_version".to_string(), metadata.current_version.clone());
+        vars.insert(
+            "current_version".to_string(),
+            metadata.current_version.clone(),
+        );
         vars.insert("fix_version".to_string(), metadata.fix_version.clone());
         vars.insert("severity".to_string(), metadata.severity.clone());
 
         // Risk scoring
-        vars.insert("ml_risk_score".to_string(), metadata.ml_risk_score.to_string());
+        vars.insert(
+            "ml_risk_score".to_string(),
+            metadata.ml_risk_score.to_string(),
+        );
 
         // Reachability
         let reachability_status = if metadata.reachable {
@@ -53,7 +59,10 @@ impl PrTemplateEngine {
         } else {
             "✅ UNREACHABLE"
         };
-        vars.insert("reachability_status".to_string(), reachability_status.to_string());
+        vars.insert(
+            "reachability_status".to_string(),
+            reachability_status.to_string(),
+        );
 
         // Auto-merge
         let auto_merge_eligible = if metadata.auto_merge_eligible {
@@ -61,14 +70,20 @@ impl PrTemplateEngine {
         } else {
             "No"
         };
-        vars.insert("auto_merge_eligible".to_string(), auto_merge_eligible.to_string());
+        vars.insert(
+            "auto_merge_eligible".to_string(),
+            auto_merge_eligible.to_string(),
+        );
 
         let auto_merge_status = if metadata.auto_merge_eligible {
             "✅ ENABLED - Will merge after tests pass and approval"
         } else {
             "❌ DISABLED - Requires manual review"
         };
-        vars.insert("auto_merge_status".to_string(), auto_merge_status.to_string());
+        vars.insert(
+            "auto_merge_status".to_string(),
+            auto_merge_status.to_string(),
+        );
 
         // Risk badge
         let risk_badge = match metadata.severity.as_str() {
@@ -89,7 +104,11 @@ impl PrTemplateEngine {
         } else {
             "LOW"
         };
-        let confidence_badge = if confidence_score >= 90 { "✅" } else { "⚠️" };
+        let confidence_badge = if confidence_score >= 90 {
+            "✅"
+        } else {
+            "⚠️"
+        };
 
         vars.insert("confidence_score".to_string(), confidence_score.to_string());
         vars.insert("confidence_level".to_string(), confidence_level.to_string());
@@ -107,8 +126,14 @@ impl PrTemplateEngine {
 
         // Jira link (if available)
         if let Some(jira_ticket) = &metadata.jira_ticket {
-            vars.insert("jira_link".to_string(), format!(" | [Jira: {}]({})", jira_ticket, jira_ticket));
-            vars.insert("jira_ticket_link".to_string(), format!("- **Jira Ticket:** [{}]({})", jira_ticket, jira_ticket));
+            vars.insert(
+                "jira_link".to_string(),
+                format!(" | [Jira: {}]({})", jira_ticket, jira_ticket),
+            );
+            vars.insert(
+                "jira_ticket_link".to_string(),
+                format!("- **Jira Ticket:** [{}]({})", jira_ticket, jira_ticket),
+            );
         } else {
             vars.insert("jira_link".to_string(), String::new());
             vars.insert("jira_ticket_link".to_string(), String::new());
@@ -116,7 +141,10 @@ impl PrTemplateEngine {
 
         // BazBOM scan link (if available)
         if let Some(scan_url) = &metadata.bazbom_scan_url {
-            vars.insert("bazbom_scan_link".to_string(), format!("- **BazBOM Scan:** [View Details]({})", scan_url));
+            vars.insert(
+                "bazbom_scan_link".to_string(),
+                format!("- **BazBOM Scan:** [View Details]({})", scan_url),
+            );
         } else {
             vars.insert("bazbom_scan_link".to_string(), String::new());
         }
@@ -152,7 +180,8 @@ mod tests {
 
     #[test]
     fn test_render_basic() {
-        let template = "CVE: {cve_id}, Package: {package}, Version: {current_version} -> {fix_version}";
+        let template =
+            "CVE: {cve_id}, Package: {package}, Version: {current_version} -> {fix_version}";
         let engine = PrTemplateEngine::with_template(template.to_string());
 
         let metadata = BazBomPrMetadata {
@@ -170,7 +199,10 @@ mod tests {
         };
 
         let result = engine.render(&metadata).unwrap();
-        assert_eq!(result, "CVE: CVE-2024-1234, Package: log4j-core, Version: 2.17.0 -> 2.20.0");
+        assert_eq!(
+            result,
+            "CVE: CVE-2024-1234, Package: log4j-core, Version: 2.17.0 -> 2.20.0"
+        );
     }
 
     #[test]
@@ -386,15 +418,24 @@ mod tests {
         assert_eq!(engine.render(&base_metadata).unwrap(), "🔴");
 
         // Test HIGH
-        let high_metadata = BazBomPrMetadata { severity: "HIGH".to_string(), ..base_metadata.clone() };
+        let high_metadata = BazBomPrMetadata {
+            severity: "HIGH".to_string(),
+            ..base_metadata.clone()
+        };
         assert_eq!(engine.render(&high_metadata).unwrap(), "🟠");
 
         // Test MEDIUM
-        let medium_metadata = BazBomPrMetadata { severity: "MEDIUM".to_string(), ..base_metadata.clone() };
+        let medium_metadata = BazBomPrMetadata {
+            severity: "MEDIUM".to_string(),
+            ..base_metadata.clone()
+        };
         assert_eq!(engine.render(&medium_metadata).unwrap(), "🟡");
 
         // Test LOW
-        let low_metadata = BazBomPrMetadata { severity: "LOW".to_string(), ..base_metadata };
+        let low_metadata = BazBomPrMetadata {
+            severity: "LOW".to_string(),
+            ..base_metadata
+        };
         assert_eq!(engine.render(&low_metadata).unwrap(), "🟢");
     }
 
@@ -422,7 +463,10 @@ mod tests {
         assert!(result.contains("Hackers are using this right now"));
 
         // Test HIGH message
-        let high_metadata = BazBomPrMetadata { severity: "HIGH".to_string(), ..base_metadata };
+        let high_metadata = BazBomPrMetadata {
+            severity: "HIGH".to_string(),
+            ..base_metadata
+        };
         let result = engine.render(&high_metadata).unwrap();
         assert!(result.contains("significant security risk"));
     }

@@ -192,7 +192,9 @@ impl SyncEngine {
                         .await?;
                 }
             }
-            JiraEventType::IssueCreated | JiraEventType::IssueUpdated | JiraEventType::AssignmentChanged => {
+            JiraEventType::IssueCreated
+            | JiraEventType::IssueUpdated
+            | JiraEventType::AssignmentChanged => {
                 // These events can be handled for tracking but don't require immediate action
             }
         }
@@ -265,12 +267,7 @@ impl SyncEngine {
     ) -> Result<()> {
         if let Some(cve) = cve_id {
             // In a real implementation, this would store remediation notes
-            tracing::info!(
-                "Comment added to {}: {} (CVE: {})",
-                issue_key,
-                comment,
-                cve
-            );
+            tracing::info!("Comment added to {}: {} (CVE: {})", issue_key, comment, cve);
         }
 
         Ok(())
@@ -332,7 +329,11 @@ impl SyncEngine {
     }
 
     /// Handle severity change in BazBOM
-    async fn handle_severity_changed(&self, cve_id: &str, new_severity: Option<&str>) -> Result<()> {
+    async fn handle_severity_changed(
+        &self,
+        cve_id: &str,
+        new_severity: Option<&str>,
+    ) -> Result<()> {
         if let Some(jira_key) = self.get_jira_key(cve_id).await {
             tracing::info!(
                 "Severity changed for {} - should update Jira {} priority",
@@ -538,4 +539,3 @@ mod tests {
         assert!(result.is_ok());
     }
 }
-

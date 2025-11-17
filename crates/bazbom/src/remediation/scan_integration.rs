@@ -126,8 +126,7 @@ pub async fn process_auto_remediation(
     println!("\n{}", "🔧 Starting auto-remediation...".bold().cyan());
 
     // Initialize database
-    let db = RemediationDatabase::new()
-        .context("Failed to initialize remediation database")?;
+    let db = RemediationDatabase::new().context("Failed to initialize remediation database")?;
 
     // Filter vulnerabilities based on config
     let filtered_vulns = filter_vulnerabilities(vulnerabilities, config);
@@ -147,7 +146,10 @@ pub async fn process_auto_remediation(
     // Process Jira tickets
     if config.jira_enabled {
         if config.jira_dry_run {
-            println!("\n{}", "Jira Dry-Run Mode (no tickets will be created):".yellow());
+            println!(
+                "\n{}",
+                "Jira Dry-Run Mode (no tickets will be created):".yellow()
+            );
         }
 
         match process_jira_tickets(&filtered_vulns, config.jira_dry_run, &db).await {
@@ -166,7 +168,10 @@ pub async fn process_auto_remediation(
     // Process GitHub PRs
     if config.github_enabled {
         if config.github_dry_run {
-            println!("\n{}", "GitHub Dry-Run Mode (no PRs will be created):".yellow());
+            println!(
+                "\n{}",
+                "GitHub Dry-Run Mode (no PRs will be created):".yellow()
+            );
         }
 
         result.github_created = filtered_vulns.len();
@@ -185,9 +190,13 @@ fn filter_vulnerabilities<'a>(
         .iter()
         .filter(|vuln| {
             // Filter by severity (if config specifies a minimum)
-            if let (Some(ref min_sev), Some(ref vuln_sev)) = (&config.min_severity, &vuln.severity) {
+            if let (Some(ref min_sev), Some(ref vuln_sev)) = (&config.min_severity, &vuln.severity)
+            {
                 let severity_order = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-                let min_idx = severity_order.iter().position(|s| s == min_sev).unwrap_or(3);
+                let min_idx = severity_order
+                    .iter()
+                    .position(|s| s == min_sev)
+                    .unwrap_or(3);
                 // Use the level field from Severity struct
                 let vuln_sev_str = format!("{:?}", vuln_sev.level).to_uppercase();
                 let vuln_idx = severity_order
@@ -226,29 +235,37 @@ async fn process_jira_tickets(
     // Load Jira config
     let config_path = PathBuf::from(".bazbom/jira.yml");
     if !config_path.exists() {
-        anyhow::bail!(
-            "Jira configuration not found. Run 'bazbom jira init' first."
-        );
+        anyhow::bail!("Jira configuration not found. Run 'bazbom jira init' first.");
     }
 
     let yaml = std::fs::read_to_string(&config_path)?;
     let jira_config: JiraConfig = serde_yaml::from_str(&yaml)?;
 
-    println!("Found {} vulnerabilities for Jira ticket creation", vulnerabilities.len());
+    println!(
+        "Found {} vulnerabilities for Jira ticket creation",
+        vulnerabilities.len()
+    );
 
     if dry_run {
         for vuln in vulnerabilities {
-            let package = vuln.affected.first()
+            let package = vuln
+                .affected
+                .first()
                 .map(|a| a.package.as_str())
                 .unwrap_or("unknown");
-            println!("  Would create ticket for: {} in {}", vuln.id.yellow(), package);
+            println!(
+                "  Would create ticket for: {} in {}",
+                vuln.id.yellow(),
+                package
+            );
         }
         return Ok((vulnerabilities.len(), 0));
     }
 
     // Get authentication token
-    let token = std::env::var("JIRA_API_TOKEN")
-        .context("JIRA_API_TOKEN environment variable not set. Please set it to use Jira integration.")?;
+    let token = std::env::var("JIRA_API_TOKEN").context(
+        "JIRA_API_TOKEN environment variable not set. Please set it to use Jira integration.",
+    )?;
 
     // Get username if needed
     let username = if let Some(username_env) = &jira_config.auth.username_env {
@@ -273,12 +290,18 @@ async fn process_jira_tickets(
         let (package, version) = if let Some(affected) = vuln.affected.first() {
             let pkg = affected.package.as_str();
             // Try to extract version from ranges - VersionEvent is an enum
-            let ver = affected.ranges.first()
+            let ver = affected
+                .ranges
+                .first()
                 .and_then(|r| r.events.first())
                 .map(|e| match e {
-                    bazbom_advisories::VersionEvent::Introduced { introduced } => introduced.as_str(),
+                    bazbom_advisories::VersionEvent::Introduced { introduced } => {
+                        introduced.as_str()
+                    }
                     bazbom_advisories::VersionEvent::Fixed { fixed } => fixed.as_str(),
-                    bazbom_advisories::VersionEvent::LastAffected { last_affected } => last_affected.as_str(),
+                    bazbom_advisories::VersionEvent::LastAffected { last_affected } => {
+                        last_affected.as_str()
+                    }
                 })
                 .unwrap_or("unknown");
             (pkg, ver)
@@ -304,7 +327,9 @@ async fn process_jira_tickets(
         variables.insert("version".to_string(), version.to_string());
 
         // Handle severity - use the level field from Severity struct
-        let severity_str = vuln.severity.as_ref()
+        let severity_str = vuln
+            .severity
+            .as_ref()
             .map(|s| format!("{:?}", s.level).to_uppercase())
             .unwrap_or_else(|| "MEDIUM".to_string());
         variables.insert("severity".to_string(), severity_str.clone());

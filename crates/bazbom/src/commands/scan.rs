@@ -156,8 +156,9 @@ pub async fn handle_scan(
 
     // After scan completes, run auto-remediation if enabled
     if scan_result.is_ok() && (jira_create || github_pr || auto_remediate) {
-        if let Err(e) = run_auto_remediation(
-            &out_dir,
+        use bazbom::remediation::AutoRemediationConfig;
+
+        let config = AutoRemediationConfig::from_flags(
             jira_create,
             jira_dry_run,
             github_pr,
@@ -165,9 +166,9 @@ pub async fn handle_scan(
             auto_remediate,
             remediate_min_severity,
             remediate_reachable_only,
-        )
-        .await
-        {
+        );
+
+        if let Err(e) = run_auto_remediation(&out_dir, config).await {
             eprintln!("Auto-remediation failed: {}", e);
             // Don't fail the scan if auto-remediation fails
         }
@@ -179,26 +180,9 @@ pub async fn handle_scan(
 /// Run auto-remediation after scan
 async fn run_auto_remediation(
     out_dir: &str,
-    jira_create: bool,
-    jira_dry_run: bool,
-    github_pr: bool,
-    github_pr_dry_run: bool,
-    auto_remediate: bool,
-    remediate_min_severity: Option<String>,
-    remediate_reachable_only: bool,
+    config: bazbom::remediation::AutoRemediationConfig,
 ) -> Result<()> {
-    use bazbom::remediation::{process_auto_remediation, AutoRemediationConfig};
-
-    // Build config from flags
-    let config = AutoRemediationConfig::from_flags(
-        jira_create,
-        jira_dry_run,
-        github_pr,
-        github_pr_dry_run,
-        auto_remediate,
-        remediate_min_severity,
-        remediate_reachable_only,
-    );
+    use bazbom::remediation::process_auto_remediation;
 
     // Load vulnerabilities from scan results
     let findings_path = format!("{}/sca_findings.json", out_dir);

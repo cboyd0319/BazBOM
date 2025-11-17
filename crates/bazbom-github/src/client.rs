@@ -1,6 +1,10 @@
 use crate::error::{GitHubError, Result};
 use crate::models::*;
-use governor::{clock::DefaultClock, state::{InMemoryState, NotKeyed}, Quota, RateLimiter};
+use governor::{
+    clock::DefaultClock,
+    state::{InMemoryState, NotKeyed},
+    Quota, RateLimiter,
+};
 use reqwest::{Client, StatusCode};
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -91,7 +95,10 @@ impl GitHubClient {
             }
             StatusCode::NOT_FOUND => {
                 warn!("Repository not found: {}/{}", owner, repo);
-                Err(GitHubError::RepositoryNotFound(format!("{}/{}", owner, repo)))
+                Err(GitHubError::RepositoryNotFound(format!(
+                    "{}/{}",
+                    owner, repo
+                )))
             }
             status => {
                 let error_body = response.text().await?;

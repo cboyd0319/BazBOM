@@ -224,9 +224,20 @@ impl Default for GitHubAnalyzer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Once;
+
+    static INIT: Once = Once::new();
+
+    fn init_crypto() {
+        INIT.call_once(|| {
+            // Install the default crypto provider for rustls
+            let _ = rustls::crypto::aws_lc_rs::default_provider().install_default();
+        });
+    }
 
     #[tokio::test]
     async fn test_parse_repo_url() {
+        init_crypto();
         let analyzer = GitHubAnalyzer::default();
 
         assert_eq!(
@@ -242,6 +253,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_extract_breaking_changes() {
+        init_crypto();
         let analyzer = GitHubAnalyzer::default();
 
         let body = r#"

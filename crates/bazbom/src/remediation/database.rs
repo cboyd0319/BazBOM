@@ -22,8 +22,18 @@ impl RemediationDatabase {
             std::fs::create_dir_all(parent)?;
         }
 
-        let conn = Connection::open(&db_path)
-            .context("Failed to open remediation database")?;
+        let conn = Connection::open(&db_path).context("Failed to open remediation database")?;
+
+        let mut db = Self { conn };
+        db.initialize_schema()?;
+
+        Ok(db)
+    }
+
+    /// Create an in-memory database (for testing)
+    #[cfg(test)]
+    fn new_in_memory() -> Result<Self> {
+        let conn = Connection::open_in_memory().context("Failed to open in-memory database")?;
 
         let mut db = Self { conn };
         db.initialize_schema()?;
@@ -112,9 +122,14 @@ impl RemediationDatabase {
     }
 
     /// Check if a Jira issue already exists for this CVE/package/version
-    pub fn jira_issue_exists(&self, cve_id: &str, package: &str, version: &str) -> Result<Option<String>> {
+    pub fn jira_issue_exists(
+        &self,
+        cve_id: &str,
+        package: &str,
+        version: &str,
+    ) -> Result<Option<String>> {
         let mut stmt = self.conn.prepare(
-            "SELECT jira_key FROM jira_issues WHERE cve_id = ? AND package = ? AND version = ?"
+            "SELECT jira_key FROM jira_issues WHERE cve_id = ? AND package = ? AND version = ?",
         )?;
 
         let result = stmt.query_row(params![cve_id, package, version], |row| {
@@ -146,7 +161,12 @@ impl RemediationDatabase {
             params![cve_id, package, version, jira_key, jira_url, status, &now, &now],
         )?;
 
-        self.log_sync("jira", jira_key, "created", Some(&format!("Created for {} in {}", cve_id, package)))?;
+        self.log_sync(
+            "jira",
+            jira_key,
+            "created",
+            Some(&format!("Created for {} in {}", cve_id, package)),
+        )?;
 
         Ok(())
     }
@@ -162,7 +182,7 @@ impl RemediationDatabase {
     ) -> Result<Option<u64>> {
         let mut stmt = self.conn.prepare(
             "SELECT pr_number FROM github_prs
-             WHERE cve_id = ? AND package = ? AND version = ? AND owner = ? AND repo = ?"
+             WHERE cve_id = ? AND package = ? AND version = ? AND owner = ? AND repo = ?",
         )?;
 
         let result = stmt.query_row(params![cve_id, package, version, owner, repo], |row| {
@@ -203,7 +223,10 @@ impl RemediationDatabase {
             "github_pr",
             &pr_number.to_string(),
             "created",
-            Some(&format!("Created for {} in {} ({}/{})", cve_id, package, owner, repo)),
+            Some(&format!(
+                "Created for {} in {} ({}/{})",
+                cve_id, package, owner, repo
+            )),
         )?;
 
         Ok(())
@@ -224,7 +247,13 @@ impl RemediationDatabase {
     }
 
     /// Update GitHub PR state
-    pub fn update_pr_state(&self, owner: &str, repo: &str, pr_number: u64, new_state: &str) -> Result<()> {
+    pub fn update_pr_state(
+        &self,
+        owner: &str,
+        repo: &str,
+        pr_number: u64,
+        new_state: &str,
+    ) -> Result<()> {
         let now = chrono::Utc::now().to_rfc3339();
 
         self.conn.execute(
@@ -247,22 +276,23 @@ impl RemediationDatabase {
         let mut stmt = self.conn.prepare(
             "SELECT cve_id, package, version, jira_key, jira_url, status, created_at, updated_at
              FROM jira_issues
-             ORDER BY created_at DESC"
+             ORDER BY created_at DESC",
         )?;
 
-        let issues = stmt.query_map([], |row| {
-            Ok(JiraIssueRecord {
-                cve_id: row.get(0)?,
-                package: row.get(1)?,
-                version: row.get(2)?,
-                jira_key: row.get(3)?,
-                jira_url: row.get(4)?,
-                status: row.get(5)?,
-                created_at: row.get(6)?,
-                updated_at: row.get(7)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let issues = stmt
+            .query_map([], |row| {
+                Ok(JiraIssueRecord {
+                    cve_id: row.get(0)?,
+                    package: row.get(1)?,
+                    version: row.get(2)?,
+                    jira_key: row.get(3)?,
+                    jira_url: row.get(4)?,
+                    status: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(issues)
     }
@@ -275,28 +305,35 @@ impl RemediationDatabase {
              ORDER BY created_at DESC"
         )?;
 
-        let prs = stmt.query_map([], |row| {
-            Ok(GitHubPrRecord {
-                cve_id: row.get(0)?,
-                package: row.get(1)?,
-                version: row.get(2)?,
-                owner: row.get(3)?,
-                repo: row.get(4)?,
-                pr_number: row.get::<_, i64>(5)? as u64,
-                pr_url: row.get(6)?,
-                state: row.get(7)?,
-                jira_key: row.get(8)?,
-                created_at: row.get(9)?,
-                updated_at: row.get(10)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let prs = stmt
+            .query_map([], |row| {
+                Ok(GitHubPrRecord {
+                    cve_id: row.get(0)?,
+                    package: row.get(1)?,
+                    version: row.get(2)?,
+                    owner: row.get(3)?,
+                    repo: row.get(4)?,
+                    pr_number: row.get::<_, i64>(5)? as u64,
+                    pr_url: row.get(6)?,
+                    state: row.get(7)?,
+                    jira_key: row.get(8)?,
+                    created_at: row.get(9)?,
+                    updated_at: row.get(10)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(prs)
     }
 
     /// Log a sync event
-    fn log_sync(&self, entity_type: &str, entity_id: &str, action: &str, details: Option<&str>) -> Result<()> {
+    fn log_sync(
+        &self,
+        entity_type: &str,
+        entity_id: &str,
+        action: &str,
+        details: Option<&str>,
+    ) -> Result<()> {
         let now = chrono::Utc::now().to_rfc3339();
 
         self.conn.execute(
@@ -314,19 +351,20 @@ impl RemediationDatabase {
             "SELECT entity_type, entity_id, action, details, timestamp
              FROM sync_log
              ORDER BY timestamp DESC
-             LIMIT ?"
+             LIMIT ?",
         )?;
 
-        let events = stmt.query_map(params![limit], |row| {
-            Ok(SyncLogRecord {
-                entity_type: row.get(0)?,
-                entity_id: row.get(1)?,
-                action: row.get(2)?,
-                details: row.get(3)?,
-                timestamp: row.get(4)?,
-            })
-        })?
-        .collect::<Result<Vec<_>, _>>()?;
+        let events = stmt
+            .query_map(params![limit], |row| {
+                Ok(SyncLogRecord {
+                    entity_type: row.get(0)?,
+                    entity_id: row.get(1)?,
+                    action: row.get(2)?,
+                    details: row.get(3)?,
+                    timestamp: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
 
         Ok(events)
     }
@@ -377,15 +415,17 @@ mod tests {
 
     #[test]
     fn test_database_creation() {
-        let db = RemediationDatabase::new().unwrap();
+        let db = RemediationDatabase::new_in_memory().unwrap();
 
         // Verify tables exist by querying them
-        let jira_count: i64 = db.conn
+        let jira_count: i64 = db
+            .conn
             .query_row("SELECT COUNT(*) FROM jira_issues", [], |row| row.get(0))
             .unwrap();
         assert_eq!(jira_count, 0);
 
-        let pr_count: i64 = db.conn
+        let pr_count: i64 = db
+            .conn
             .query_row("SELECT COUNT(*) FROM github_prs", [], |row| row.get(0))
             .unwrap();
         assert_eq!(pr_count, 0);
@@ -393,10 +433,12 @@ mod tests {
 
     #[test]
     fn test_jira_duplicate_detection() {
-        let db = RemediationDatabase::new().unwrap();
+        let db = RemediationDatabase::new_in_memory().unwrap();
 
         // First check - should not exist
-        let exists = db.jira_issue_exists("CVE-2024-1234", "log4j-core", "2.14.0").unwrap();
+        let exists = db
+            .jira_issue_exists("CVE-2024-1234", "log4j-core", "2.14.0")
+            .unwrap();
         assert!(exists.is_none());
 
         // Record issue
@@ -407,25 +449,24 @@ mod tests {
             "SEC-123",
             "https://jira.example.com/browse/SEC-123",
             "Open",
-        ).unwrap();
+        )
+        .unwrap();
 
         // Second check - should exist
-        let exists = db.jira_issue_exists("CVE-2024-1234", "log4j-core", "2.14.0").unwrap();
+        let exists = db
+            .jira_issue_exists("CVE-2024-1234", "log4j-core", "2.14.0")
+            .unwrap();
         assert_eq!(exists, Some("SEC-123".to_string()));
     }
 
     #[test]
     fn test_github_pr_duplicate_detection() {
-        let db = RemediationDatabase::new().unwrap();
+        let db = RemediationDatabase::new_in_memory().unwrap();
 
         // First check - should not exist
-        let exists = db.github_pr_exists(
-            "CVE-2024-1234",
-            "log4j-core",
-            "2.14.0",
-            "myorg",
-            "myrepo",
-        ).unwrap();
+        let exists = db
+            .github_pr_exists("CVE-2024-1234", "log4j-core", "2.14.0", "myorg", "myrepo")
+            .unwrap();
         assert!(exists.is_none());
 
         // Record PR
@@ -439,16 +480,13 @@ mod tests {
             "https://github.com/myorg/myrepo/pull/42",
             "open",
             Some("SEC-123"),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Second check - should exist
-        let exists = db.github_pr_exists(
-            "CVE-2024-1234",
-            "log4j-core",
-            "2.14.0",
-            "myorg",
-            "myrepo",
-        ).unwrap();
+        let exists = db
+            .github_pr_exists("CVE-2024-1234", "log4j-core", "2.14.0", "myorg", "myrepo")
+            .unwrap();
         assert_eq!(exists, Some(42));
     }
 }
