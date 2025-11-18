@@ -174,7 +174,7 @@ async fn fetch_cargo_checksum(client: &Client, package: &Package) -> Result<Opti
 // Go Proxy
 // ============================================================================
 
-async fn fetch_go_checksum(client: &Client, package: &Package) -> Result<Option<String>> {
+async fn fetch_go_checksum(_client: &Client, _package: &Package) -> Result<Option<String>> {
     // Go proxy doesn't directly provide SHA-256, but we can fetch the .zip and hash it
     // For now, return None (this would require downloading the entire package)
     // Future enhancement: fetch .zip, calculate sha256
@@ -237,7 +237,7 @@ async fn fetch_composer_checksum(client: &Client, package: &Package) -> Result<O
 
     match client.get(&api_url).send().await {
         Ok(response) if response.status().is_success() => {
-            let pkg_response: PackagistResponse = response.json().await?;
+            let _pkg_response: PackagistResponse = response.json().await?;
 
             // Packagist only provides SHA-1, not SHA-256
             // We can't convert SHA-1 to SHA-256

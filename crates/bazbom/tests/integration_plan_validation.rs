@@ -53,6 +53,7 @@ artifact = true
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 
@@ -113,6 +114,7 @@ fn test_sarif_2_1_0_compliance() -> Result<()> {
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 
@@ -188,6 +190,7 @@ fn test_analyzer_interfaces() -> Result<()> {
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 
@@ -325,6 +328,7 @@ fn test_output_formats() -> Result<()> {
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 
@@ -400,6 +404,7 @@ fn test_merged_sarif_deduplication() -> Result<()> {
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 
@@ -481,6 +486,7 @@ fn test_enrichment_directory() -> Result<()> {
             fast: false,
             reachability: false,
             include_cicd: false,
+            fetch_checksums: false,
         },
     )?;
 

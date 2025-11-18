@@ -1283,6 +1283,25 @@ impl ScanOrchestrator {
                 println!("[bazbom] no maven_install.json found");
                 println!("[bazbom] hint: run 'bazel run @maven//:pin' to generate maven_install.json");
             }
+
+            // Detect CI/CD tooling for Bazel projects (if requested)
+            if self.include_cicd {
+                tracing::info!("Detecting CI/CD tooling in Bazel workspace");
+                println!("[bazbom] detecting CI/CD dependencies...");
+                match bazbom_polyglot::cicd::detect_github_actions(&self.context.workspace) {
+                    Ok(cicd_result) => {
+                        if !cicd_result.packages.is_empty() {
+                            tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
+                            println!("[bazbom] found {} CI/CD packages", cicd_result.packages.len());
+                            polyglot_results.push(cicd_result);
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to scan GitHub Actions: {}", e);
+                        eprintln!("[bazbom] warning: failed to scan GitHub Actions: {}", e);
+                    }
+                }
+            }
         }
 
         // Generate unified SBOM combining Bazel Maven + all polyglot ecosystems

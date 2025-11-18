@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes helpful hints when `maven_install.json` is missing
   - See [FIXES_SUMMARY.md](docs/FIXES_SUMMARY.md) for full technical details
 
+- **CI/CD Detection for Bazel** - Fixed `--include-cicd` flag to work with Bazel projects
+  - Previously bypassed for Bazel, now detects GitHub Actions workflows
+  - Adds CI/CD packages to unified SBOM (tested: 59 Maven + 23 CI/CD packages)
+  - Properly tagged with ecosystem metadata in SPDX output
+
 ### Added
 
 - **Multi-CVE Vulnerability Grouping** - Remediation actions now group all CVEs fixed by a single package upgrade

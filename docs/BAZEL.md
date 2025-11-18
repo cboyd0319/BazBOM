@@ -97,6 +97,13 @@ bazbom scan . --bazel-targets //...
 
 **Result:** SBOM for every `java_*` target in workspace with full dependency graph.
 
+**Include CI/CD tooling (GitHub Actions) in SBOM:**
+```bash
+bazbom scan . --include-cicd
+```
+
+**Result:** SBOM includes both Maven dependencies AND GitHub Actions workflows as packages for supply chain auditing.
+
 ## Scanning Patterns
 
 ### All Targets

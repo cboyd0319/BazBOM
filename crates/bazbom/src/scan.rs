@@ -127,6 +127,25 @@ pub fn handle_legacy_scan(
             println!("[bazbom] no maven_install.json found");
             println!("[bazbom] hint: run 'bazel run @maven//:pin' to generate maven_install.json");
         }
+
+        // Detect CI/CD tooling for Bazel projects (if requested)
+        if include_cicd {
+            tracing::info!("Detecting CI/CD tooling in Bazel workspace");
+            println!("[bazbom] detecting CI/CD dependencies...");
+            match bazbom_polyglot::cicd::detect_github_actions(root_path) {
+                Ok(cicd_result) => {
+                    if !cicd_result.packages.is_empty() {
+                        tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
+                        println!("[bazbom] found {} CI/CD packages", cicd_result.packages.len());
+                        polyglot_results.push(cicd_result);
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!("Failed to scan GitHub Actions: {}", e);
+                    eprintln!("[bazbom] warning: failed to scan GitHub Actions: {}", e);
+                }
+            }
+        }
     }
 
     // Generate unified SBOM from all detected ecosystems
