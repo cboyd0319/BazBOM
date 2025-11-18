@@ -85,3 +85,4 @@ crates/bazbom-intellij-plugin/.idea/
 crates/bazbom-intellij-plugin/gradle-local/
 bazbom-diagnostics/
 ._bazbom-diagnostics
+bazbom-diagnostics.tar.gz
