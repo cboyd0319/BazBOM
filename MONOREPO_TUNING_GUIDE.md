@@ -51,7 +51,7 @@ Your monorepo is a **MASSIVE, COMPLEX polyglot repository** that is **exactly** 
 **npm/yarn:**
 - 230 separate `package.json` files
 - Distributed across tools, integrations, internal apps
-- Examples: CADE, Fivetran Navigator, connector SDK
+- Examples: Internal tools, web applications, SDKs
 
 **Python:**
 - 80 `requirements.txt` / `pyproject.toml` files
@@ -110,7 +110,7 @@ bazbom full --incremental --benchmark
 Create `bazbom.toml` in your repo root:
 
 ```toml
-# BazBOM Configuration for Fivetran Engineering Monorepo
+# BazBOM Configuration for Large Engineering Monorepo
 
 [scan]
 # Enable caching for faster repeat scans
@@ -314,10 +314,10 @@ Your repo has **8,111 Bazel targets**. Use targeted scanning:
 
 ```bash
 # Scan specific package
-bazbom scan --target //webhook/...
+bazbom scan --target //service-a/...
 
 # Scan multiple packages
-bazbom scan --target //webhook/... --target //connector_sdk/...
+bazbom scan --target //service-a/... --target //service-b/...
 
 # Scan changed targets only (git-aware)
 bazbom full --diff --base main
@@ -667,11 +667,11 @@ bazbom full  # Uses config automatically
 For faster iteration on specific packages:
 
 ```bash
-# Scan webhook service only
-bazbom scan --target //webhook/...
+# Scan specific service only
+bazbom scan --target //service-a/...
 
-# Scan connector SDK
-bazbom scan --target //connector_sdk/...
+# Scan SDK package
+bazbom scan --target //sdk/...
 
 # Scan infrastructure code
 bazbom scan --target //infrastructure/...

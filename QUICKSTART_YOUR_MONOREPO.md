@@ -9,7 +9,7 @@ Based on your diagnostics, here's the fastest path to your first scan.
 ## Step 1: First Test Scan (2-3 minutes)
 
 ```bash
-cd /Users/chadboyd/Documents/github/engineering
+cd /path/to/your/monorepo
 
 # Start small - test with 10 packages
 RUST_LOG=debug /path/to/BazBOM/target/release/bazbom full --limit 10
@@ -113,11 +113,11 @@ bazbom full --benchmark
 If you only want to scan specific parts:
 
 ```bash
-# Scan webhook service only (your largest component)
-bazbom scan --target //webhook/...
+# Scan specific service only (your largest component)
+bazbom scan --target //service-a/...
 
-# Scan connector SDK
-bazbom scan --target //connector_sdk/...
+# Scan SDK package
+bazbom scan --target //sdk/...
 
 # Scan infrastructure
 bazbom scan --target //infrastructure/...
@@ -146,8 +146,8 @@ cat sbom/sbom.spdx.json | jq '.packages[].name' | head -20
 ### npm Projects (230 packages)
 
 Tools and internal apps:
-- CADE (connector development)
-- Fivetran Navigator
+- Internal development tools
+- Web applications
 - Connector SDK frontend
 - Internal dashboards
 - Algolia/Zendesk integrations
@@ -295,8 +295,8 @@ bazbom full --limit 10
 rm -rf .bazbom/cache/*
 
 # Scan in batches (different targets)
-bazbom scan --target //webhook/...
-bazbom scan --target //connector_sdk/...
+bazbom scan --target //service-a/...
+bazbom scan --target //sdk/...
 ```
 
 ---
@@ -401,7 +401,7 @@ tail -f .bazbom/logs/latest.log  # If logging to file
 Before your first scan:
 
 - [ ] BazBOM built: `/path/to/BazBOM/target/release/bazbom`
-- [ ] In monorepo root: `cd /Users/chadboyd/Documents/github/engineering`
+- [ ] In monorepo root: `cd /path/to/your/monorepo`
 - [ ] Bazel works: `bazel version` shows 8.3.1
 - [ ] `.bazbom/` in `.gitignore` (already done ✓)
 
@@ -427,7 +427,7 @@ For production:
 Your command to start:
 
 ```bash
-cd /Users/chadboyd/Documents/github/engineering
+cd /path/to/your/monorepo
 RUST_LOG=debug /path/to/BazBOM/target/release/bazbom full --limit 10 --benchmark
 ```
 

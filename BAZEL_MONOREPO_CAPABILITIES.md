@@ -168,7 +168,7 @@ fn parse_maven_install_json(
   ],
   "metadata": {
     "build_system": "bazel",
-    "workspace": "/Users/chadboyd/Documents/github/engineering",
+    "workspace": "/path/to/your/monorepo",
     "maven_install_version": "2"
   }
 }
@@ -272,15 +272,15 @@ fn parse_maven_install_json(
 
 ### Incremental Scanning (Like Endor's rdeps)
 
-**Scenario:** You modify `connector_sdk/core/src/Main.java`
+**Scenario:** You modify `service-a/core/src/Main.java`
 
 ```bash
 # Find affected targets
-bazel query 'rdeps(//..., connector_sdk/core/src/Main.java)'
+bazel query 'rdeps(//..., service-a/core/src/Main.java)'
 # Returns: 15 affected targets
 
 # Scan only affected
-bazbom scan --bazel-affected-by-files connector_sdk/core/src/Main.java
+bazbom scan --bazel-affected-by-files service-a/core/src/Main.java
 
 # Result: 5-10 minute scan instead of 1-3 hours
 ```
@@ -310,11 +310,11 @@ bazbom scan \
 ### 2. Package-Specific Scans
 
 ```bash
-# Scan webhook service only
-bazbom scan --bazel-targets-query='//webhook/...'
+# Scan specific service only
+bazbom scan --bazel-targets-query='//service-a/...'
 
-# Scan connector SDK only
-bazbom scan --bazel-targets-query='//connector_sdk/...'
+# Scan SDK package only
+bazbom scan --bazel-targets-query='//sdk/...'
 
 # Scan infrastructure
 bazbom scan --bazel-targets-query='//infrastructure/...'
@@ -565,11 +565,11 @@ bazbom scan \
 ### Package-Specific Development
 
 ```bash
-# Working on webhook service
-bazbom scan --bazel-targets-query='//webhook/...' --benchmark
+# Working on specific service
+bazbom scan --bazel-targets-query='//service-a/...' --benchmark
 
-# Working on connector SDK
-bazbom scan --bazel-targets-query='//connector_sdk/...' --benchmark
+# Working on SDK package
+bazbom scan --bazel-targets-query='//sdk/...' --benchmark
 
 # Working on infrastructure
 bazbom scan --bazel-targets-query='//infrastructure/...' --benchmark
@@ -657,7 +657,7 @@ Before deploying BazBOM on your monorepo, verify:
 
 1. **Test Bazel query support:**
    ```bash
-   cd /Users/chadboyd/Documents/github/engineering
+   cd /path/to/your/monorepo
    bazbom scan --bazel-targets-query='kind("java_binary", //...)' --fast
    ```
 
@@ -669,7 +669,7 @@ Before deploying BazBOM on your monorepo, verify:
 
 3. **Test incremental scanning:**
    ```bash
-   bazbom scan --bazel-affected-by-files connector_sdk/core/src/Main.java
+   bazbom scan --bazel-affected-by-files service-a/core/src/Main.java
    ```
 
 ### This Week
@@ -743,7 +743,7 @@ RUST_LOG=bazbom_java_reachability=debug bazbom full
 
 **Your first command:**
 ```bash
-cd /Users/chadboyd/Documents/github/engineering
+cd /path/to/your/monorepo
 RUST_LOG=info bazbom scan \
   --bazel-targets-query='kind("java_binary", //...)' \
   --benchmark \
