@@ -59,9 +59,7 @@ bazbom-output/
 container-scan-results/
 container-sbom.spdx.json
 container-vulns.json
-*.tar
-!plugins/**/*.tar
-!examples/**/*.tar
+
 
 # Test outputs and coverage
 coverage.json
@@ -85,3 +83,6 @@ crates/bazbom-intellij-plugin/.gradle/
 crates/bazbom-intellij-plugin/build/
 crates/bazbom-intellij-plugin/.idea/
 crates/bazbom-intellij-plugin/gradle-local/
+bazbom-diagnostics/
+._bazbom-diagnostics
+bazbom-diagnostics.tar.gz

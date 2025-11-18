@@ -121,6 +121,20 @@ fn auto_detect_main_module(base_path: &str) -> Option<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize tracing/logging with environment variable support
+    // Set RUST_LOG=debug for verbose output, or RUST_LOG=info for normal output
+    // Example: RUST_LOG=debug bazbom full
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+        )
+        .with_target(false)
+        .with_thread_ids(false)
+        .with_file(false)
+        .with_line_number(false)
+        .init();
+
     let cli = Cli::parse();
     let command = cli.command.unwrap_or(Commands::Scan {
         path: ".".into(),
@@ -154,6 +168,7 @@ async fn main() -> Result<()> {
         auto_remediate: false,
         remediate_min_severity: None,
         remediate_reachable_only: false,
+        limit: None,
     });
 
     match command {
@@ -189,6 +204,7 @@ async fn main() -> Result<()> {
             auto_remediate,
             remediate_min_severity,
             remediate_reachable_only,
+            limit,
         } => {
             handle_scan(
                 path,
@@ -222,6 +238,7 @@ async fn main() -> Result<()> {
                 auto_remediate,
                 remediate_min_severity,
                 remediate_reachable_only,
+                limit,
             )
             .await
         }
@@ -278,6 +295,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
+                None,           // limit
             )
             .await
         }
@@ -316,6 +334,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
+                None,           // limit
             )
             .await
         }
@@ -358,12 +377,16 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
+                None,           // limit
             )
             .await
         }
 
-        Commands::Full { path, out_dir } => {
+        Commands::Full { path, out_dir, limit } => {
             println!("💪 Running FULL scan with ALL features enabled...\n");
+            if let Some(n) = limit {
+                println!("   ℹ️  Limiting scan to {} packages/targets\n", n);
+            }
             handle_scan(
                 path,
                 None,           // profile
@@ -396,6 +419,7 @@ async fn main() -> Result<()> {
                 false,          // auto_remediate
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
+                limit,          // limit
             )
             .await
         }
@@ -434,6 +458,7 @@ async fn main() -> Result<()> {
                 false,                        // auto_remediate
                 None,                         // remediate_min_severity
                 false,                        // remediate_reachable_only
+                None,                         // limit
             )
             .await
         }

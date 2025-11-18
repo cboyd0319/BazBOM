@@ -12,6 +12,7 @@ use bazbom_formats::sarif::{
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
+use tracing::{debug, info, warn};
 
 pub struct ScaAnalyzer;
 
@@ -28,25 +29,39 @@ impl ScaAnalyzer {
 
     fn ensure_advisory_database(&self, ctx: &Context) -> Result<PathBuf> {
         let cache_dir = ctx.workspace.join(".bazbom").join("advisories");
+        debug!("Advisory database cache directory: {:?}", cache_dir);
 
         // Check if we have a recent database (less than 24 hours old)
         let manifest_path = cache_dir.join("manifest.json");
         let needs_sync = if manifest_path.exists() {
+            debug!("Manifest file exists at {:?}", manifest_path);
             let metadata = std::fs::metadata(&manifest_path)?;
             let modified = metadata.modified()?;
             let age = std::time::SystemTime::now()
                 .duration_since(modified)
                 .unwrap_or(std::time::Duration::from_secs(86400 * 2));
+            debug!("Manifest age: {} seconds ({} hours)", age.as_secs(), age.as_secs() / 3600);
             age.as_secs() > 86400 // More than 24 hours old
         } else {
+            debug!("Manifest file does not exist, needs initial sync");
             true
         };
 
         if needs_sync {
+            info!("Syncing advisory database (EPSS and KEV)...");
             println!("[bazbom] syncing advisory database...");
-            db_sync(&cache_dir, false).context("failed to sync advisory database")?;
-            println!("[bazbom] advisory database synced");
+            match db_sync(&cache_dir, false) {
+                Ok(_) => {
+                    info!("Advisory database sync completed successfully");
+                    println!("[bazbom] advisory database synced");
+                }
+                Err(e) => {
+                    warn!("Advisory database sync failed: {}", e);
+                    return Err(anyhow::anyhow!("failed to sync advisory database: {}", e));
+                }
+            }
         } else {
+            debug!("Using cached advisory database (less than 24 hours old)");
             println!("[bazbom] using cached advisory database");
         }
 
@@ -55,7 +70,8 @@ impl ScaAnalyzer {
 
     fn load_sbom_components(&self, ctx: &Context) -> Result<Vec<Component>> {
         // Try to load SPDX SBOM from sbom directory
-        let spdx_path = ctx.sbom_dir.join("spdx.json");
+        // NOTE: The file is named "sbom.spdx.json" not "spdx.json"
+        let spdx_path = ctx.sbom_dir.join("sbom.spdx.json");
         if !spdx_path.exists() {
             println!(
                 "[bazbom] no SBOM found at {:?}, running SCA with empty component list",
@@ -127,18 +143,25 @@ impl ScaAnalyzer {
         components: &[Component],
         advisory_dir: &PathBuf,
     ) -> Result<Vec<VulnerabilityMatch>> {
+        debug!("Starting vulnerability matching for {} components", components.len());
+
         // Load EPSS scores
+        debug!("Loading EPSS scores from {:?}", advisory_dir);
         let epss_scores = load_epss_scores(advisory_dir).unwrap_or_else(|e| {
+            warn!("Failed to load EPSS scores: {}", e);
             println!("[bazbom] warning: failed to load EPSS scores: {}", e);
             HashMap::new()
         });
 
         // Load KEV catalog
+        debug!("Loading KEV catalog from {:?}", advisory_dir);
         let kev_entries = load_kev_catalog(advisory_dir).unwrap_or_else(|e| {
+            warn!("Failed to load KEV catalog: {}", e);
             println!("[bazbom] warning: failed to load KEV catalog: {}", e);
             HashMap::new()
         });
 
+        info!("Loaded {} EPSS scores and {} KEV entries", epss_scores.len(), kev_entries.len());
         println!(
             "[bazbom] loaded {} EPSS scores and {} KEV entries",
             epss_scores.len(),
@@ -147,23 +170,35 @@ impl ScaAnalyzer {
 
         let mut matches = Vec::new();
 
-        // Load OSV database entries
+        // TODO: Replace local OSV database with OSV API calls
+        // The OSV database is too large to cache locally (~100GB+)
+        // Instead, use the OSV API batch endpoint: POST https://api.osv.dev/v1/querybatch
+        // See: https://google.github.io/osv.dev/post-v1-querybatch/
+
+        // Load OSV database entries (TEMPORARY - will be replaced with API calls)
         let osv_dir = advisory_dir.join("osv");
         if osv_dir.exists() {
+            debug!("Scanning local OSV database at {:?}", osv_dir);
             println!("[bazbom] scanning OSV database for vulnerabilities...");
             match self.scan_osv_database(&osv_dir, components, &epss_scores, &kev_entries) {
                 Ok(mut osv_matches) => {
+                    info!("Found {} OSV vulnerability matches", osv_matches.len());
                     println!("[bazbom] found {} OSV matches", osv_matches.len());
                     matches.append(&mut osv_matches);
                 }
                 Err(e) => {
+                    warn!("OSV scan failed: {}", e);
                     println!("[bazbom] warning: OSV scan failed: {}", e);
                 }
             }
         } else {
+            warn!("OSV database not found at {:?} - consider implementing OSV API integration", osv_dir);
             println!("[bazbom] OSV database not found at {:?}", osv_dir);
+            println!("[bazbom] NOTE: OSV database is too large to cache locally");
+            println!("[bazbom] TODO: Implement OSV API integration (https://api.osv.dev/v1/querybatch)");
         }
 
+        info!("Total vulnerability matches: {}", matches.len());
         println!("[bazbom] total vulnerability matches: {}", matches.len());
         Ok(matches)
     }

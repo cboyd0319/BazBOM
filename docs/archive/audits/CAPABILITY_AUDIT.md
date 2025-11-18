@@ -91,7 +91,7 @@ BazBOM is a production-ready, 100% Rust implementation of a build-time SBOM and 
 | Ant | build.xml | STABLE | Supported |
 | Buildr | buildfile, Rakefile | STABLE | Supported |
 
-**Implementation:** `/Users/chad/Documents/GitHub/BazBOM/crates/bazbom-core/src/lib.rs`
+**Implementation:** `crates/bazbom-core/src/lib.rs`
 
 ### B. Bazel-Specific Features
 
@@ -128,7 +128,7 @@ BazBOM is a production-ready, 100% Rust implementation of a build-time SBOM and 
 | Ruby | Gemfile.lock (stub) | Gemfile | ✅ OSV | INCOMPLETE |
 | PHP | composer.lock (stub) | composer.json | ✅ OSV | INCOMPLETE |
 
-**Implementation:** `/Users/chad/Documents/GitHub/BazBOM/crates/bazbom-polyglot/`
+**Implementation:** `crates/bazbom-polyglot/`
 **Test Coverage:** 11 unit tests passing
 **Real Vulnerabilities Found:** 118+ (tested against real packages)
 
@@ -152,7 +152,7 @@ BazBOM is a production-ready, 100% Rust implementation of a build-time SBOM and 
 | CycloneDX | sbom.cyclonedx.json | STABLE | v1.4 compatible |
 | Both | --cyclonedx flag | STABLE | Generates both simultaneously |
 
-**Implementation:** `/Users/chad/Documents/GitHub/BazBOM/crates/bazbom-formats/`
+**Implementation:** `crates/bazbom-formats/`
 
 ### B. Output Files Generated
 
@@ -201,7 +201,7 @@ output/
 | Syft | Container scanning | STABLE | --containers [strategy] |
 | Threat Intelligence | Threat detection | STABLE | Integrated |
 
-**Implementation:** `/Users/chad/Documents/GitHub/BazBOM/crates/bazbom/src/analyzers/`
+**Implementation:** `crates/bazbom/src/analyzers/`
 
 ---
 
@@ -211,7 +211,7 @@ output/
 
 - **Status:** STABLE
 - **Purpose:** Determine if vulnerable code is actually used
-- **Implementation:** `/Users/chad/Documents/GitHub/BazBOM/crates/bazbom/src/reachability.rs`
+- **Implementation:** `crates/bazbom/src/reachability.rs`
 - **Caching:** Incremental cache support
 - **Speed Impact:** Can add significant time (mitigated with --fast flag)
 

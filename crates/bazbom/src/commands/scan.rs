@@ -1,6 +1,7 @@
 use crate::smart_defaults::SmartDefaults;
 use anyhow::Result;
 use std::path::PathBuf;
+use tracing::{debug, info, warn};
 
 /// Handle the `bazbom scan` command
 ///
@@ -39,9 +40,22 @@ pub async fn handle_scan(
     auto_remediate: bool,
     remediate_min_severity: Option<String>,
     remediate_reachable_only: bool,
+    limit: Option<usize>,
 ) -> Result<()> {
+    debug!("Starting scan with path: {}", path);
+    debug!("Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
+        reachability, fast, format, incremental);
+
+    if let Some(limit_val) = limit {
+        info!("Scan limit enabled: will process maximum {} packages/targets", limit_val);
+        // Store limit in environment for downstream components
+        std::env::set_var("BAZBOM_SCAN_LIMIT", limit_val.to_string());
+    }
     // Apply smart defaults if no flags were explicitly set
+    debug!("Detecting smart defaults for environment");
     let defaults = SmartDefaults::detect();
+    debug!("Smart defaults detected - is_ci: {}, is_pr: {}, enable_reachability: {}",
+        defaults.is_ci, defaults.is_pr, defaults.enable_reachability);
 
     // Show what we detected (if any smart defaults were applied)
     let smart_defaults_enabled = std::env::var("BAZBOM_NO_SMART_DEFAULTS").is_err();
@@ -53,6 +67,7 @@ pub async fn handle_scan(
     // Auto-enable features based on environment (only if not explicitly set)
     if defaults.enable_json && !json && smart_defaults_enabled {
         println!("  → Enabling JSON output for CI");
+        debug!("Auto-enabled JSON output for CI environment");
         json = true;
     }
 
@@ -61,16 +76,19 @@ pub async fn handle_scan(
             "  → Enabling reachability analysis (repo < {}MB)",
             defaults.repo_size / 1_000_000
         );
+        debug!("Auto-enabled reachability analysis (repo size: {} bytes)", defaults.repo_size);
         reachability = true;
     }
 
     if defaults.enable_incremental && !incremental && smart_defaults_enabled {
         println!("  → Enabling incremental mode for PR");
+        debug!("Auto-enabled incremental mode for PR environment");
         incremental = true;
     }
 
     if defaults.enable_diff && !diff && baseline.is_some() && smart_defaults_enabled {
         println!("  → Enabling diff mode (baseline found)");
+        debug!("Auto-enabled diff mode with baseline: {:?}", baseline);
         diff = true;
     }
 
@@ -81,17 +99,23 @@ pub async fn handle_scan(
 
     // Load profile from bazbom.toml if specified
     if let Some(ref profile_name) = profile {
+        debug!("Attempting to load profile: {}", profile_name);
         if let Err(e) = apply_profile(profile_name, &path) {
+            warn!("Failed to load profile '{}': {}", profile_name, e);
             eprintln!("Warning: Failed to load profile '{}': {}", profile_name, e);
             eprintln!("Continuing with CLI arguments only...");
+        } else {
+            debug!("Successfully loaded profile: {}", profile_name);
         }
     }
 
     // Handle diff mode - compare with baseline
     if diff {
         if let Some(ref baseline_path) = baseline {
+            debug!("Running diff mode with baseline: {}", baseline_path);
             return compare_with_baseline(&path, baseline_path, &out_dir);
         } else {
+            warn!("Diff mode requested but no baseline provided");
             eprintln!("Error: --diff requires --baseline=<file>");
             eprintln!("Example: bazbom scan . --diff --baseline=baseline-findings.json");
             return Ok(());
@@ -100,6 +124,7 @@ pub async fn handle_scan(
 
     // Handle JSON output mode
     if json {
+        debug!("Enabling JSON output mode");
         // JSON mode: suppress normal output, return structured JSON at end
         std::env::set_var("BAZBOM_JSON_MODE", "1");
     }
@@ -113,10 +138,14 @@ pub async fn handle_scan(
 
     if use_orchestrator {
         // Use new orchestration path
+        info!("Using orchestrated scan mode");
+        debug!("Orchestrator options - cyclonedx: {}, with_semgrep: {}, with_codeql: {:?}, autofix: {:?}, containers: {:?}",
+            cyclonedx, with_semgrep, with_codeql, autofix, containers);
         println!("[bazbom] using orchestrated scan mode");
         let workspace = PathBuf::from(&path);
         let output_dir = PathBuf::from(&out_dir);
 
+        debug!("Creating scan orchestrator for workspace: {:?}, output: {:?}", workspace, output_dir);
         let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
             workspace,
             output_dir,
@@ -134,10 +163,13 @@ pub async fn handle_scan(
             },
         )?;
 
+        info!("Running scan orchestrator");
         return orchestrator.run();
     }
 
     // Original scan logic - delegate to helper function
+    debug!("Using legacy scan mode");
+    info!("Starting legacy scan for path: {}", path);
     let scan_result = bazbom::scan::handle_legacy_scan(
         path.clone(),
         reachability,
@@ -154,9 +186,20 @@ pub async fn handle_scan(
         ml_risk,
     );
 
+    if scan_result.is_ok() {
+        info!("Legacy scan completed successfully");
+    } else {
+        warn!("Legacy scan encountered errors");
+    }
+
     // After scan completes, run auto-remediation if enabled
     if scan_result.is_ok() && (jira_create || github_pr || auto_remediate) {
         use bazbom::remediation::AutoRemediationConfig;
+
+        info!("Auto-remediation enabled - jira: {}, github_pr: {}, auto: {}",
+            jira_create, github_pr, auto_remediate);
+        debug!("Auto-remediation config - min_severity: {:?}, reachable_only: {}",
+            remediate_min_severity, remediate_reachable_only);
 
         let config = AutoRemediationConfig::from_flags(
             jira_create,
@@ -169,8 +212,11 @@ pub async fn handle_scan(
         );
 
         if let Err(e) = run_auto_remediation(&out_dir, config).await {
+            warn!("Auto-remediation failed: {}", e);
             eprintln!("Auto-remediation failed: {}", e);
             // Don't fail the scan if auto-remediation fails
+        } else {
+            info!("Auto-remediation completed successfully");
         }
     }
 
