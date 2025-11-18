@@ -35,6 +35,7 @@
 //! # }
 //! ```
 
+pub mod cicd;
 pub mod detection;
 pub mod ecosystems;
 pub mod parsers;
@@ -48,6 +49,40 @@ pub use reachability_integration::analyze_reachability;
 pub use sbom::generate_polyglot_sbom;
 
 use anyhow::Result;
+
+/// Scan a directory for packages only (fast SBOM generation without vulnerabilities or reachability)
+pub async fn scan_directory_sbom_only(path: &str, include_cicd: bool) -> Result<Vec<EcosystemScanResult>> {
+    let ecosystems = detect_ecosystems(path)?;
+    let mut results = Vec::new();
+
+    for ecosystem in ecosystems {
+        match scan_ecosystem(&ecosystem).await {
+            Ok(result) => {
+                // Just collect packages - no vulnerability scanning, no reachability
+                results.push(result);
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to scan {}: {}", ecosystem.name, e);
+            }
+        }
+    }
+
+    // Optionally detect GitHub Actions and other CI/CD tooling
+    if include_cicd {
+        match cicd::detect_github_actions(std::path::Path::new(path)) {
+            Ok(cicd_result) => {
+                if !cicd_result.packages.is_empty() {
+                    results.push(cicd_result);
+                }
+            }
+            Err(e) => {
+                eprintln!("Warning: Failed to scan GitHub Actions: {}", e);
+            }
+        }
+    }
+
+    Ok(results)
+}
 
 /// Scan a directory for all supported ecosystems and generate a unified SBOM with vulnerabilities
 pub async fn scan_directory(path: &str) -> Result<Vec<EcosystemScanResult>> {

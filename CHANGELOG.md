@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- **Bazel Dependency Detection** - Critical bug fix for Bazel projects returning 0 packages
+  - Now correctly parses `maven_install.json` and extracts Maven dependencies
+  - Tested on repos with 59-2,067 packages (previously all returned 0)
+  - Works with both simple scans (`bazbom scan .`) and targeted scans (`--bazel-targets`)
+  - Added proper `tracing` infrastructure for debugging
+  - Includes helpful hints when `maven_install.json` is missing
+  - See [FIXES_SUMMARY.md](docs/FIXES_SUMMARY.md) for full technical details
+
 ### Added
 
 - **Multi-CVE Vulnerability Grouping** - Remediation actions now group all CVEs fixed by a single package upgrade

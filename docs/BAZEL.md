@@ -81,13 +81,21 @@ bazel run @maven//:pin
 
 **Output:** `maven_install.json` at workspace root
 
-### 3. Scan All JVM Targets
+### 3. Scan for Maven Dependencies
 
+**Simple scan (automatic dependency detection):**
+```bash
+bazbom scan .
+```
+
+**Result:** Automatically detects `maven_install.json` and generates SBOM for all Maven packages.
+
+**Advanced scan with Bazel targets:**
 ```bash
 bazbom scan . --bazel-targets //...
 ```
 
-**Result:** SBOM for every `java_*` target in workspace.
+**Result:** SBOM for every `java_*` target in workspace with full dependency graph.
 
 ## Scanning Patterns
 

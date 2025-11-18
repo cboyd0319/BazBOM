@@ -26,6 +26,9 @@ pub struct ScanOrchestratorOptions {
     pub threat_detection: Option<ThreatDetectionLevel>,
     pub incremental: bool,
     pub benchmark: bool,
+    pub fast: bool,
+    pub reachability: bool,
+    pub include_cicd: bool,
 }
 
 pub struct ScanOrchestrator {
@@ -41,6 +44,9 @@ pub struct ScanOrchestrator {
     threat_detection: Option<ThreatDetectionLevel>,
     incremental: bool,
     benchmark: bool,
+    fast: bool,
+    reachability: bool,
+    include_cicd: bool,
 }
 
 impl ScanOrchestrator {
@@ -72,6 +78,9 @@ impl ScanOrchestrator {
             threat_detection: options.threat_detection,
             incremental: options.incremental,
             benchmark: options.benchmark,
+            fast: options.fast,
+            reachability: options.reachability,
+            include_cicd: options.include_cicd,
         })
     }
 
@@ -1083,26 +1092,31 @@ impl ScanOrchestrator {
         let system = bazbom_core::detect_build_system(&self.context.workspace);
         println!("[bazbom] detected JVM build system: {:?}", system);
 
-        // Scan for polyglot ecosystems
-        println!("[bazbom] scanning for polyglot ecosystems...");
-        let workspace_path = self
-            .context
-            .workspace
-            .to_str()
-            .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
+        // Scan for polyglot ecosystems (skip if fast mode is enabled)
+        let mut polyglot_results = if self.fast {
+            println!("[bazbom] skipping polyglot scanning (fast mode enabled)");
+            Vec::new()
+        } else {
+            println!("[bazbom] scanning for polyglot ecosystems...");
+            let workspace_path = self
+                .context
+                .workspace
+                .to_str()
+                .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
 
-        // Try to use existing runtime, or create a new one if not in async context
-        let mut polyglot_results = match tokio::runtime::Handle::try_current() {
-            Ok(handle) => {
-                // We're in an async context, use block_in_place
-                tokio::task::block_in_place(|| {
-                    handle.block_on(bazbom_polyglot::scan_directory(workspace_path))
-                })?
-            }
-            Err(_) => {
-                // No runtime available, create a new one
-                let rt = tokio::runtime::Runtime::new()?;
-                rt.block_on(bazbom_polyglot::scan_directory(workspace_path))?
+            // Try to use existing runtime, or create a new one if not in async context
+            match tokio::runtime::Handle::try_current() {
+                Ok(handle) => {
+                    // We're in an async context, use block_in_place
+                    tokio::task::block_in_place(|| {
+                        handle.block_on(bazbom_polyglot::scan_directory_sbom_only(workspace_path, self.include_cicd))
+                    })?
+                }
+                Err(_) => {
+                    // No runtime available, create a new one
+                    let rt = tokio::runtime::Runtime::new()?;
+                    rt.block_on(bazbom_polyglot::scan_directory_sbom_only(workspace_path, self.include_cicd))?
+                }
             }
         };
 
@@ -1198,30 +1212,125 @@ impl ScanOrchestrator {
             println!("[bazbom] no polyglot ecosystems detected (JVM-only project)");
         }
 
-        // Generate unified SBOM combining JVM + polyglot
-        if !polyglot_results.is_empty() {
-            let polyglot_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
-            let polyglot_sbom_path = self.context.sbom_dir.join("polyglot-sbom.json");
-            std::fs::write(
-                &polyglot_sbom_path,
-                serde_json::to_string_pretty(&polyglot_sbom)?,
-            )?;
-            println!("[bazbom] wrote polyglot SBOM to {:?}", polyglot_sbom_path);
+        // Extract Bazel Maven dependencies if this is a Bazel project
+        if system == bazbom_core::BuildSystem::Bazel {
+            tracing::info!("Detected Bazel project, extracting Maven dependencies");
+            println!("[bazbom] detected Bazel project, extracting Maven dependencies...");
+
+            let maven_install_json = self.context.workspace.join("maven_install.json");
+            if maven_install_json.exists() {
+                tracing::debug!("Found maven_install.json at {:?}", maven_install_json);
+                let deps_json_path = self.context.sbom_dir.join("bazel-deps.json");
+
+                match crate::bazel::extract_bazel_dependencies(&self.context.workspace, &deps_json_path) {
+                    Ok(graph) => {
+                        tracing::info!(
+                            "Successfully extracted {} Maven packages from maven_install.json",
+                            graph.components.len()
+                        );
+                        println!("[bazbom] found {} Maven packages from maven_install.json", graph.components.len());
+
+                        // Convert Bazel Maven components to polyglot Package format
+                        let maven_packages: Vec<bazbom_polyglot::Package> = graph.components.iter().map(|component| {
+                            bazbom_polyglot::Package {
+                                name: component.name.clone(),
+                                version: component.version.clone(),
+                                ecosystem: "Maven".to_string(),
+                                namespace: Some(component.group.clone()),
+                                dependencies: vec![],  // Dependency relationships are in edges
+                                license: None,
+                                description: None,
+                                homepage: None,
+                                repository: if component.repository.is_empty() {
+                                    None
+                                } else {
+                                    Some(component.repository.clone())
+                                },
+                            }
+                        }).collect();
+
+                        // Merge Maven packages into polyglot results
+                        if !maven_packages.is_empty() {
+                            let maven_result = bazbom_polyglot::EcosystemScanResult {
+                                ecosystem: "Maven (Bazel)".to_string(),
+                                root_path: self.context.workspace.to_string_lossy().to_string(),
+                                packages: maven_packages,
+                                vulnerabilities: vec![],
+                                total_packages: graph.components.len(),
+                                total_vulnerabilities: 0,
+                                reachability: None,
+                            };
+                            polyglot_results.push(maven_result);
+                            tracing::info!("Merged {} Maven packages into polyglot results", graph.components.len());
+                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Failed to extract Bazel dependencies: {}", e);
+                        eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
+                    }
+                }
+            } else {
+                tracing::info!("No maven_install.json found in Bazel workspace");
+                println!("[bazbom] no maven_install.json found");
+                println!("[bazbom] hint: run 'bazel run @maven//:pin' to generate maven_install.json");
+            }
         }
 
-        // Generate JVM SPDX SBOM
-        let spdx_path = bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
-        println!("[bazbom] wrote JVM SPDX SBOM to {:?}", spdx_path);
+        // Generate unified SBOM combining Bazel Maven + all polyglot ecosystems
+        let spdx_path = if !polyglot_results.is_empty() {
+            let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
+            tracing::info!("Generating unified SBOM with {} packages across {} ecosystems",
+                total_packages, polyglot_results.len());
+            println!("[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
+                total_packages, polyglot_results.len());
 
-        // Optionally generate CycloneDX
+            let unified_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
+            let spdx_path = self.context.sbom_dir.join("spdx.json");
+            std::fs::create_dir_all(&self.context.sbom_dir)?;
+            std::fs::write(
+                &spdx_path,
+                serde_json::to_string_pretty(&unified_sbom)?,
+            )?;
+            tracing::debug!("Wrote unified SPDX SBOM to {:?}", spdx_path);
+            println!("[bazbom] wrote unified SPDX SBOM to {:?}", spdx_path);
+            spdx_path
+        } else {
+            tracing::warn!("No packages detected in any ecosystem");
+            println!("[bazbom] no packages detected, writing stub SBOM");
+            bazbom_core::write_stub_sbom(&self.context.sbom_dir, "spdx", system)?;
+            self.context.sbom_dir.join("spdx.json")
+        };
+
+        // Optionally generate CycloneDX from unified polyglot results
         if self.cyclonedx {
             let cyclonedx_path = self.context.sbom_dir.join("cyclonedx.json");
-            // For now, write a minimal CycloneDX document
-            let cdx_doc =
+            let mut cdx_doc =
                 bazbom_formats::cyclonedx::CycloneDxBom::new("bazbom", env!("CARGO_PKG_VERSION"));
+
+            // Convert all packages from polyglot results to CycloneDX components
+            let mut component_count = 0;
+            for ecosystem_result in &polyglot_results {
+                for package in &ecosystem_result.packages {
+                    let mut component = bazbom_formats::cyclonedx::Component::new(
+                        &package.name,
+                        "library"
+                    )
+                    .with_version(&package.version)
+                    .with_purl(&package.purl());
+
+                    if let Some(ref license) = package.license {
+                        component = component.with_license(license);
+                    }
+
+                    cdx_doc.add_component(component);
+                    component_count += 1;
+                }
+            }
+
             let json = serde_json::to_string_pretty(&cdx_doc)?;
             std::fs::write(&cyclonedx_path, json)?;
-            println!("[bazbom] wrote CycloneDX SBOM to {:?}", cyclonedx_path);
+            tracing::info!("Wrote CycloneDX SBOM with {} components to {:?}", component_count, cyclonedx_path);
+            println!("[bazbom] wrote CycloneDX SBOM ({} components) to {:?}", component_count, cyclonedx_path);
         }
 
         Ok(())
@@ -1253,6 +1362,9 @@ mod tests {
                 threat_detection: None,
                 incremental: false,
                 benchmark: false,
+                fast: false,
+                reachability: false,
+                include_cicd: false,
             },
         )?;
 
@@ -1283,6 +1395,9 @@ mod tests {
                 threat_detection: None,
                 incremental: false,
                 benchmark: false,
+                fast: false,
+                reachability: false,
+                include_cicd: false,
             },
         )?;
 

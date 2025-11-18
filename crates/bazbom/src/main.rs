@@ -169,6 +169,7 @@ async fn main() -> Result<()> {
         remediate_min_severity: None,
         remediate_reachable_only: false,
         limit: None,
+        include_cicd: false,
     });
 
     match command {
@@ -205,6 +206,7 @@ async fn main() -> Result<()> {
             remediate_min_severity,
             remediate_reachable_only,
             limit,
+            include_cicd,
         } => {
             handle_scan(
                 path,
@@ -239,6 +241,7 @@ async fn main() -> Result<()> {
                 remediate_min_severity,
                 remediate_reachable_only,
                 limit,
+                include_cicd,
             )
             .await
         }
@@ -296,6 +299,7 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 None,           // limit
+                false,          // include_cicd
             )
             .await
         }
@@ -335,6 +339,7 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 None,           // limit
+                false,          // include_cicd
             )
             .await
         }
@@ -378,6 +383,7 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 None,           // limit
+                false,          // include_cicd
             )
             .await
         }
@@ -420,6 +426,7 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 limit,          // limit
+                false,          // include_cicd
             )
             .await
         }
@@ -459,6 +466,7 @@ async fn main() -> Result<()> {
                 None,                         // remediate_min_severity
                 false,                        // remediate_reachable_only
                 None,                         // limit
+                false,                        // include_cicd
             )
             .await
         }

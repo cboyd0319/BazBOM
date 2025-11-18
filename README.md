@@ -124,7 +124,19 @@ bazbom scan -r
 
 Shows which vulnerabilities are **actually exploitable** vs dead code.
 
-### 3. CI/CD - One command setup
+### 3. Include CI/CD tooling in SBOM (optional)
+```bash
+# Include GitHub Actions and other CI/CD dependencies
+bazbom scan --include-cicd
+
+# Detects: actions/checkout@v5, tj-actions/changed-files@48d8f15b, etc.
+# Useful for supply chain security audits
+```
+
+**Default behavior:** BazBOM generates **clean SBOMs** (code dependencies only).
+**With `--include-cicd`:** Adds CI/CD tooling for comprehensive supply chain visibility.
+
+### 4. CI/CD - One command setup
 ```bash
 # GitHub Actions
 bazbom install github
@@ -138,7 +150,7 @@ bazbom install circleci
 # Creates complete workflow with SARIF upload + quality gates
 ```
 
-### 4. Continuous monitoring during development
+### 5. Continuous monitoring during development
 ```bash
 # Watch for dependency changes and auto-rescan
 bazbom watch
@@ -146,7 +158,7 @@ bazbom watch
 # Checks every 60 seconds, rescans on changes
 ```
 
-### 5. Check security status anytime
+### 6. Check security status anytime
 ```bash
 # Quick security overview with score
 bazbom status
@@ -266,9 +278,10 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 <tr><td width="50%" valign="top">
 
 ### **Core Capabilities**
-- ✅ **SBOM Generation** (SPDX 2.3, CycloneDX 1.5)
-- ✅ **Vulnerability Scanning** (OSV, NVD, CISA KEV, GHSA)
+- ✅ **SBOM Generation** (SPDX 2.3, CycloneDX 1.5, optional CI/CD deps)
+- ✅ **SCA - Vulnerability Scanning** (OSV, NVD, CISA KEV, GHSA)
 - ✅ **Reachability Analysis** (7 languages, 70-90% noise reduction)
+- ✅ **Dependency Graph Analysis** (Transitive resolution + lockfile parsing)
 - ✅ **Build-Time Accuracy** (Maven/Gradle/Bazel native)
 - ✅ **SLSA v1.1 Level 3 Provenance** (Signed releases)
 - ✅ **VEX Support** (False positive suppression)

@@ -73,6 +73,11 @@ bazbom scan -r                          # Short form (v6.5.0+)
 bazbom scan . --ml-risk                 # ML-enhanced risk scoring
 bazbom scan -m                          # Short form (v6.5.0+)
 
+# SBOM options (v6.5.0+)
+bazbom scan . --include-cicd            # Include GitHub Actions and CI/CD tooling in SBOM
+                                        # Default: code dependencies only (cleaner SBOMs)
+                                        # With flag: adds CI/CD tools for supply chain audits
+
 # Machine-readable output (v6.5.0+)
 bazbom scan . --json                    # JSON output for automation/CI/CD
 bazbom scan --json | jq '.vulnerabilities[] | select(.severity == "CRITICAL")'
@@ -372,6 +377,38 @@ sudo install -m 0755 /path/to/BazBOM/target/release/bazbom /usr/local/bin/bazbom
 - **Bazel monorepos**: Use `--bazel-targets-query` to scan specific targets
 - **Remote cache**: Enable Bazel remote cache for faster builds
 - **Parallel execution**: BazBOM automatically uses all CPU cores
+
+---
+
+## Terminology
+
+BazBOM distinguishes between four related concepts:
+
+- **SBOM (Software Bill of Materials)** - Inventory of what you have (packages + versions)
+  - Generated via `bazbom scan` → SPDX/CycloneDX output
+  - Default: Code dependencies only (cleaner)
+  - With `--include-cicd`: Also includes GitHub Actions and CI/CD tooling
+
+- **Dependency Graph/Tree** - How you got it (relationships between dependencies)
+  - Transitive dependency resolution from lockfiles
+  - Visualized via `bazbom explore` (TUI) or `bazbom dashboard` (web)
+
+- **SCA (Software Composition Analysis)** - What is known to be vulnerable
+  - Vulnerability scanning via OSV/NVD/GHSA databases
+  - Result: List of all CVEs present in dependencies
+
+- **Reachability Analysis** - What is actually dangerous to you
+  - Call graph analysis to determine exploitability
+  - Result: CVEs filtered to only reachable/exploitable code
+  - Reduces alerts by 70-90%
+
+**Example workflow:**
+```bash
+bazbom scan .              # → Generates SBOM + dependency graph
+                           # → Runs SCA (finds all CVEs)
+bazbom scan -r             # → Same + reachability analysis (finds exploitable CVEs)
+bazbom scan --include-cicd # → Includes CI/CD tooling in SBOM
+```
 
 ---
 

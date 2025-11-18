@@ -136,6 +136,9 @@ PROFILES:
         /// Limit the number of packages/targets to scan (useful for testing large monorepos)
         #[arg(long, value_name = "N")]
         limit: Option<usize>,
+        /// Include CI/CD dependencies (GitHub Actions, GitLab CI, etc.) in SBOM
+        #[arg(long)]
+        include_cicd: bool,
     },
 
     // ========== QUICK COMMAND ALIASES ==========

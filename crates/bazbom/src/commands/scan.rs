@@ -41,6 +41,7 @@ pub async fn handle_scan(
     remediate_min_severity: Option<String>,
     remediate_reachable_only: bool,
     limit: Option<usize>,
+    include_cicd: bool,
 ) -> Result<()> {
     debug!("Starting scan with path: {}", path);
     debug!("Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
@@ -71,12 +72,14 @@ pub async fn handle_scan(
         json = true;
     }
 
-    if defaults.enable_reachability && !reachability && !fast && smart_defaults_enabled {
+    // Enable reachability for small repos - it's fast enough even in fast mode
+    if defaults.enable_reachability && !reachability && smart_defaults_enabled {
         println!(
             "  → Enabling reachability analysis (repo < {}MB)",
             defaults.repo_size / 1_000_000
         );
-        debug!("Auto-enabled reachability analysis (repo size: {} bytes)", defaults.repo_size);
+        debug!("Auto-enabled reachability analysis (repo size: {} bytes, fast mode: {})",
+            defaults.repo_size, fast);
         reachability = true;
     }
 
@@ -160,6 +163,9 @@ pub async fn handle_scan(
                 threat_detection: None,
                 incremental: false,
                 benchmark,
+                fast,
+                reachability,
+                include_cicd,
             },
         )?;
 
@@ -184,6 +190,7 @@ pub async fn handle_scan(
         base,
         benchmark,
         ml_risk,
+        include_cicd,
     );
 
     if scan_result.is_ok() {

@@ -13,6 +13,38 @@ BazBOM is a memory-safe, Rust-first JVM supply chain security toolkit that gener
 - **Offline-First**: Advisory databases cached locally with deterministic updates
 - **Build-Native Accuracy**: Integration at build-time for authoritative dependency graphs
 
+## Terminology
+
+BazBOM distinguishes between four related but distinct concepts:
+
+- **SBOM (Software Bill of Materials)** - Inventory of what you have (packages + versions)
+  - Generated via `bazbom scan` → SPDX/CycloneDX output
+  - Default: Code dependencies only (cleaner)
+  - With `--include-cicd`: Also includes GitHub Actions and CI/CD tooling
+
+- **Dependency Graph/Tree** - How you got it (relationships between dependencies)
+  - Transitive dependency resolution from build systems
+  - Tracks direct vs transitive dependencies
+  - Normalized representation in `bazbom-graph` crate
+
+- **SCA (Software Composition Analysis)** - What is known to be vulnerable
+  - Vulnerability scanning via OSV/NVD/GHSA databases
+  - Result: List of all CVEs present in dependencies
+  - Enriched with KEV/EPSS threat intelligence
+
+- **Reachability Analysis** - What is actually dangerous to you
+  - Call graph analysis to determine exploitability
+  - Result: CVEs filtered to only reachable/exploitable code
+  - Reduces alerts by 70-90% through static analysis
+
+**Example workflow:**
+```bash
+bazbom scan .              # → Generates SBOM + dependency graph
+                           # → Runs SCA (finds all CVEs)
+bazbom scan -r             # → Same + reachability analysis (finds exploitable CVEs)
+bazbom scan --include-cicd # → Includes CI/CD tooling in SBOM
+```
+
 ## Implementation Snapshot (v1.0.0)
 
 | Layer | Component | Status | Notes |
