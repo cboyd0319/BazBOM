@@ -14,7 +14,7 @@
 - SCA analyzer was looking for: `./sbom/spdx.json`
 - Result: No components loaded → no vulnerabilities detected
 
-**Fix:** Changed `crates/bazbom/src/analyzers/sca.rs:59`
+**Fix:** Changed `crates/bazbom/src/analyzers/sca.rs:74`
 ```rust
 // Before:
 let spdx_path = ctx.sbom_dir.join("spdx.json");
