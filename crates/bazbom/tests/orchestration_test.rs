@@ -42,6 +42,9 @@ artifact = true
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -109,6 +112,9 @@ depsdev = true
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -153,6 +159,9 @@ recipe_allowlist = ["commons-io", "jackson"]
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -190,6 +199,9 @@ fn test_orchestrated_scan_minimal() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -223,6 +235,9 @@ fn test_merged_sarif_structure() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -269,6 +284,9 @@ fn test_output_directories_created() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -310,6 +328,9 @@ fn test_tool_cache_directory() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 

@@ -42,6 +42,192 @@ impl Package {
             format!("pkg:{}/{}@{}", ecosystem, self.name, self.version)
         }
     }
+
+    /// Get download URL for this package from its ecosystem registry
+    pub fn download_url(&self) -> Option<String> {
+        match self.ecosystem.as_str() {
+            "Maven" => {
+                // Maven: https://repo1.maven.org/maven2/{group-as-path}/{artifact}/{version}/{artifact}-{version}.jar
+                // Parse group from namespace or name (format: "group:artifact" or namespace="group", name="artifact")
+                let (group, artifact) = if let Some(ref ns) = self.namespace {
+                    (ns.as_str(), self.name.as_str())
+                } else if self.name.contains(':') {
+                    let parts: Vec<&str> = self.name.split(':').collect();
+                    if parts.len() == 2 {
+                        (parts[0], parts[1])
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return None;
+                };
+
+                let group_path = group.replace('.', "/");
+                Some(format!(
+                    "https://repo1.maven.org/maven2/{}/{}/{}/{}-{}.jar",
+                    group_path, artifact, self.version, artifact, self.version
+                ))
+            }
+            "Node.js/npm" | "npm" => {
+                // npm: https://registry.npmjs.org/{package}/-/{package}-{version}.tgz
+                let package_name = if let Some(ref ns) = self.namespace {
+                    format!("{}/{}", ns, self.name)
+                } else {
+                    self.name.clone()
+                };
+                Some(format!(
+                    "https://registry.npmjs.org/{}/-/{}-{}.tgz",
+                    package_name,
+                    self.name.trim_start_matches('@'),
+                    self.version
+                ))
+            }
+            "Python" | "pip" => {
+                // PyPI: https://pypi.org/project/{package}/{version}/
+                Some(format!(
+                    "https://pypi.org/project/{}/{}/",
+                    self.name, self.version
+                ))
+            }
+            "Rust" => {
+                // Cargo: https://crates.io/crates/{crate}/{version}
+                Some(format!(
+                    "https://crates.io/crates/{}/{}",
+                    self.name, self.version
+                ))
+            }
+            "Go" => {
+                // Go: https://proxy.golang.org/{module}/@v/{version}.zip
+                let module = if let Some(ref ns) = self.namespace {
+                    format!("{}/{}", ns, self.name)
+                } else {
+                    self.name.clone()
+                };
+                Some(format!(
+                    "https://proxy.golang.org/{}/@v/{}.zip",
+                    module, self.version
+                ))
+            }
+            "Ruby" => {
+                // RubyGems: https://rubygems.org/gems/{gem}/versions/{version}
+                Some(format!(
+                    "https://rubygems.org/gems/{}/versions/{}",
+                    self.name, self.version
+                ))
+            }
+            "PHP" => {
+                // Composer: https://packagist.org/packages/{vendor}/{package}#{version}
+                if let Some(ref ns) = self.namespace {
+                    Some(format!(
+                        "https://packagist.org/packages/{}/{}#{}",
+                        ns, self.name, self.version
+                    ))
+                } else if self.name.contains('/') {
+                    Some(format!(
+                        "https://packagist.org/packages/{}#{}",
+                        self.name, self.version
+                    ))
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
+
+    /// Get checksum URL or API endpoint for this package (for SHA256 verification)
+    pub fn checksum_url(&self) -> Option<String> {
+        match self.ecosystem.as_str() {
+            "Maven" => {
+                // Maven: https://repo1.maven.org/maven2/{group-as-path}/{artifact}/{version}/{artifact}-{version}.jar.sha256
+                let (group, artifact) = if let Some(ref ns) = self.namespace {
+                    (ns.as_str(), self.name.as_str())
+                } else if self.name.contains(':') {
+                    let parts: Vec<&str> = self.name.split(':').collect();
+                    if parts.len() == 2 {
+                        (parts[0], parts[1])
+                    } else {
+                        return None;
+                    }
+                } else {
+                    return None;
+                };
+
+                let group_path = group.replace('.', "/");
+                Some(format!(
+                    "https://repo1.maven.org/maven2/{}/{}/{}/{}-{}.jar.sha256",
+                    group_path, artifact, self.version, artifact, self.version
+                ))
+            }
+            "Node.js/npm" | "npm" => {
+                // npm: Registry API at https://registry.npmjs.org/{package}/{version}
+                let package_name = if let Some(ref ns) = self.namespace {
+                    format!("{}/{}", ns, self.name)
+                } else {
+                    self.name.clone()
+                };
+                Some(format!(
+                    "https://registry.npmjs.org/{}/{}",
+                    package_name, self.version
+                ))
+            }
+            "Python" | "pip" => {
+                // PyPI: JSON API at https://pypi.org/pypi/{package}/{version}/json
+                Some(format!(
+                    "https://pypi.org/pypi/{}/{}/json",
+                    self.name, self.version
+                ))
+            }
+            "Rust" => {
+                // Cargo: API at https://crates.io/api/v1/crates/{crate}/{version}
+                Some(format!(
+                    "https://crates.io/api/v1/crates/{}/{}",
+                    self.name, self.version
+                ))
+            }
+            "Go" => {
+                // Go: Proxy has .info and .mod files
+                let module = if let Some(ref ns) = self.namespace {
+                    format!("{}/{}", ns, self.name)
+                } else {
+                    self.name.clone()
+                };
+                Some(format!(
+                    "https://proxy.golang.org/{}/@v/{}.info",
+                    module, self.version
+                ))
+            }
+            "Ruby" => {
+                // RubyGems: API at https://rubygems.org/api/v1/versions/{gem}.json
+                Some(format!(
+                    "https://rubygems.org/api/v1/versions/{}.json",
+                    self.name
+                ))
+            }
+            "PHP" => {
+                // Composer/Packagist: API at https://repo.packagist.org/p2/{vendor}/{package}.json
+                if let Some(ref ns) = self.namespace {
+                    Some(format!(
+                        "https://repo.packagist.org/p2/{}/{}.json",
+                        ns, self.name
+                    ))
+                } else if self.name.contains('/') {
+                    let parts: Vec<&str> = self.name.split('/').collect();
+                    if parts.len() == 2 {
+                        Some(format!(
+                            "https://repo.packagist.org/p2/{}/{}.json",
+                            parts[0], parts[1]
+                        ))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }
+    }
 }
 
 /// Vulnerability information

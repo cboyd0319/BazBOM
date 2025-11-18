@@ -1,12 +1,12 @@
 # SPDX 2.3 Format
 
-How BazBOM maps JVM dependency data to SPDX 2.3 specification.
+How BazBOM maps dependency data to SPDX 2.3 specification across all supported ecosystems.
 
 ## Overview
 
-**Format:** SPDX 2.3 (JSON)  
-**Spec:** <https://spdx.github.io/spdx-spec/v2.3/>  
-**Primary output:** `sbom.spdx.json`  
+**Format:** SPDX 2.3 (JSON and tag-value)
+**Spec:** <https://spdx.github.io/spdx-spec/v2.3/>
+**Primary output:** `sbom.spdx.json` (JSON) or `sbom.spdx` (tag-value)
 **Status:** Production-ready, NTIA-compliant
 
 **Why SPDX 2.3?**
@@ -14,6 +14,84 @@ How BazBOM maps JVM dependency data to SPDX 2.3 specification.
 - Government mandate (NTIA minimum elements)
 - Broad tooling support (Dependency-Track, GUAC, etc.)
 - Machine-readable and human-reviewable
+- Supports 13 build systems and 7 language ecosystems
+
+## Format Options
+
+BazBOM supports two SPDX output formats:
+
+```bash
+# JSON format (default)
+bazbom scan --format spdx
+# Output: sbom.spdx.json
+
+# Tag-value format (traditional SPDX text format)
+bazbom scan --format spdx-tagvalue
+# Output: sbom.spdx
+```
+
+**JSON format** is recommended for machine processing and modern tooling.
+**Tag-value format** is useful for legacy systems and human readability.
+
+## Enhanced SBOM Features
+
+### SHA256 Checksum Fetching
+
+BazBOM can optionally fetch SHA256 checksums from package registries for added integrity verification:
+
+```bash
+# Fetch checksums from package registries (slower but adds integrity)
+bazbom scan --fetch-checksums
+
+# Without checksums (faster, default)
+bazbom scan
+```
+
+**Supported ecosystems:**
+- Maven (from Maven Central .sha256 files)
+- npm (from registry integrity field)
+- PyPI (from release JSON API)
+- Cargo (from crates.io API)
+- RubyGems (from API)
+
+**Note:** Checksum fetching adds HTTP requests per package (~5-30s for typical projects).
+
+### Download Location URLs
+
+BazBOM automatically populates `downloadLocation` for all packages with ecosystem-specific URLs:
+
+| Ecosystem | URL Format | Example |
+|-----------|-----------|---------|
+| Maven | `https://repo1.maven.org/maven2/{group}/{artifact}/{version}/{artifact}-{version}.jar` | `https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-core/2.17.0/log4j-core-2.17.0.jar` |
+| npm | `https://registry.npmjs.org/{package}/-/{name}-{version}.tgz` | `https://registry.npmjs.org/express/-/express-4.18.0.tgz` |
+| PyPI | `https://pypi.org/project/{name}/{version}/` | `https://pypi.org/project/requests/2.28.0/` |
+| Cargo | `https://crates.io/crates/{name}/{version}` | `https://crates.io/crates/serde/1.0.0` |
+| Go | `https://proxy.golang.org/{module}/@v/{version}.zip` | `https://proxy.golang.org/github.com/gin-gonic/gin/@v/v1.9.0.zip` |
+| RubyGems | `https://rubygems.org/gems/{name}/versions/{version}` | `https://rubygems.org/gems/rails/versions/7.0.0` |
+| PHP | `https://packagist.org/packages/{vendor}/{package}#{version}` | `https://packagist.org/packages/symfony/console#6.2.0` |
+
+### Polyglot Ecosystem Support
+
+BazBOM supports **7 language ecosystems** beyond JVM:
+
+```bash
+# Automatically detects and scans all ecosystems in a project
+bazbom scan .
+
+# Detects: package-lock.json, Cargo.lock, go.mod, Gemfile.lock, composer.lock, requirements.txt, maven_install.json
+```
+
+**Supported ecosystems:**
+1. **Maven** (JVM) - pom.xml, maven_install.json (Bazel)
+2. **Gradle** (JVM) - build.gradle, build.gradle.kts
+3. **npm/Yarn/pnpm** (JavaScript/TypeScript) - package-lock.json, yarn.lock, pnpm-lock.yaml
+4. **Python** - requirements.txt, Pipfile.lock, poetry.lock
+5. **Go** - go.mod, go.sum
+6. **Rust** - Cargo.toml, Cargo.lock
+7. **Ruby** - Gemfile, Gemfile.lock
+8. **PHP** - composer.json, composer.lock
+
+All ecosystems are merged into a single unified SPDX SBOM with ecosystem annotations in package comments.
 
 ## Field Mapping
 
@@ -207,6 +285,41 @@ How BazBOM maps JVM dependency data to SPDX 2.3 specification.
   ]
 }
 ```
+
+### Tag-Value Format Example
+
+SPDX tag-value format is a traditional text-based format:
+
+```spdx
+SPDXVersion: SPDX-2.3
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: Polyglot SBOM
+DocumentNamespace: https://bazbom.dev/sbom/12345678-1234-5678-1234-567812345678
+Created: 2025-11-18T23:10:50Z
+Creator: Tool: BazBOM
+LicenseListVersion: 3.21
+
+PackageName: log4j-core
+SPDXID: SPDXRef-Package-log4j-core-2.17.0
+PackageVersion: 2.17.0
+PackageDownloadLocation: https://repo1.maven.org/maven2/org/apache/logging/log4j/log4j-core/2.17.0/log4j-core-2.17.0.jar
+FilesAnalyzed: false
+PackageChecksum: SHA256: f4f3e0d3c9f9b5e7d6f1e2c3a4b5c6d7e8f9a0b1c2d3e4f5g6h7i8j9k0l1m2n3
+PackageLicenseConcluded: Apache-2.0
+PackageLicenseDeclared: Apache-2.0
+PackageCopyrightText: NOASSERTION
+ExternalRef: PACKAGE-MANAGER purl pkg:maven/org.apache.logging.log4j/log4j-core@2.17.0
+PackageComment: <text>Ecosystem: Maven</text>
+
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-Package-log4j-core-2.17.0
+```
+
+**Use cases for tag-value format:**
+- Legacy SPDX tools that only support tag-value
+- Human readability (easier to grep/diff)
+- Compliance archives requiring text format
+- Systems without JSON parsers
 
 ## Known Gaps
 

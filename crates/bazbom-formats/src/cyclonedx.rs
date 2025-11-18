@@ -35,6 +35,24 @@ pub struct Component {
     pub version: Option<String>,
     pub purl: Option<String>,
     pub licenses: Option<Vec<License>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub external_references: Option<Vec<ExternalReference>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hashes: Option<Vec<Hash>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExternalReference {
+    #[serde(rename = "type")]
+    pub reference_type: String,
+    pub url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Hash {
+    pub alg: String,
+    pub content: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -89,6 +107,8 @@ impl Component {
             version: None,
             purl: None,
             licenses: None,
+            external_references: None,
+            hashes: None,
         }
     }
 
@@ -111,6 +131,161 @@ impl Component {
         self.licenses = Some(vec![license]);
         self
     }
+
+    pub fn with_download_url(mut self, url: impl Into<String>) -> Self {
+        let reference = ExternalReference {
+            reference_type: "distribution".to_string(),
+            url: url.into(),
+        };
+        match &mut self.external_references {
+            Some(refs) => refs.push(reference),
+            None => self.external_references = Some(vec![reference]),
+        }
+        self
+    }
+
+    pub fn with_hash(mut self, alg: impl Into<String>, content: impl Into<String>) -> Self {
+        let hash = Hash {
+            alg: alg.into(),
+            content: content.into(),
+        };
+        match &mut self.hashes {
+            Some(hashes) => hashes.push(hash),
+            None => self.hashes = Some(vec![hash]),
+        }
+        self
+    }
+}
+
+impl CycloneDxBom {
+    /// Convert to XML format
+    pub fn to_xml(&self) -> String {
+        let mut xml = String::new();
+
+        xml.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        xml.push_str("<bom xmlns=\"http://cyclonedx.org/schema/bom/1.5\" version=\"");
+        xml.push_str(&self.version.to_string());
+        xml.push_str("\" serialNumber=\"urn:uuid:");
+        xml.push_str(&uuid::Uuid::new_v4().to_string());
+        xml.push_str("\">\n");
+
+        // Metadata
+        xml.push_str("  <metadata>\n");
+        xml.push_str("    <timestamp>");
+        xml.push_str(&self.metadata.timestamp);
+        xml.push_str("</timestamp>\n");
+
+        if !self.metadata.tools.is_empty() {
+            xml.push_str("    <tools>\n");
+            for tool in &self.metadata.tools {
+                xml.push_str("      <tool>\n");
+                xml.push_str("        <name>");
+                xml.push_str(&xmlescape(&tool.name));
+                xml.push_str("</name>\n");
+                xml.push_str("        <version>");
+                xml.push_str(&xmlescape(&tool.version));
+                xml.push_str("</version>\n");
+                xml.push_str("      </tool>\n");
+            }
+            xml.push_str("    </tools>\n");
+        }
+        xml.push_str("  </metadata>\n");
+
+        // Components
+        if !self.components.is_empty() {
+            xml.push_str("  <components>\n");
+            for component in &self.components {
+                xml.push_str("    <component type=\"");
+                xml.push_str(&component.component_type);
+                xml.push_str("\">\n");
+
+                xml.push_str("      <name>");
+                xml.push_str(&xmlescape(&component.name));
+                xml.push_str("</name>\n");
+
+                if let Some(version) = &component.version {
+                    xml.push_str("      <version>");
+                    xml.push_str(&xmlescape(version));
+                    xml.push_str("</version>\n");
+                }
+
+                if let Some(purl) = &component.purl {
+                    xml.push_str("      <purl>");
+                    xml.push_str(&xmlescape(purl));
+                    xml.push_str("</purl>\n");
+                }
+
+                // Hashes
+                if let Some(hashes) = &component.hashes {
+                    if !hashes.is_empty() {
+                        xml.push_str("      <hashes>\n");
+                        for hash in hashes {
+                            xml.push_str("        <hash alg=\"");
+                            xml.push_str(&hash.alg);
+                            xml.push_str("\">");
+                            xml.push_str(&hash.content);
+                            xml.push_str("</hash>\n");
+                        }
+                        xml.push_str("      </hashes>\n");
+                    }
+                }
+
+                // Licenses
+                if let Some(licenses) = &component.licenses {
+                    if !licenses.is_empty() {
+                        xml.push_str("      <licenses>\n");
+                        for license in licenses {
+                            match &license.license {
+                                LicenseChoice::Id { id } => {
+                                    xml.push_str("        <license><id>");
+                                    xml.push_str(&xmlescape(id));
+                                    xml.push_str("</id></license>\n");
+                                }
+                                LicenseChoice::Name { name } => {
+                                    xml.push_str("        <license><name>");
+                                    xml.push_str(&xmlescape(name));
+                                    xml.push_str("</name></license>\n");
+                                }
+                            }
+                        }
+                        xml.push_str("      </licenses>\n");
+                    }
+                }
+
+                // External references
+                if let Some(external_refs) = &component.external_references {
+                    if !external_refs.is_empty() {
+                        xml.push_str("      <externalReferences>\n");
+                        for ext_ref in external_refs {
+                            xml.push_str("        <reference type=\"");
+                            xml.push_str(&ext_ref.reference_type);
+                            xml.push_str("\">\n");
+                            xml.push_str("          <url>");
+                            xml.push_str(&xmlescape(&ext_ref.url));
+                            xml.push_str("</url>\n");
+                            xml.push_str("        </reference>\n");
+                        }
+                        xml.push_str("      </externalReferences>\n");
+                    }
+                }
+
+                xml.push_str("    </component>\n");
+            }
+            xml.push_str("  </components>\n");
+        }
+
+        xml.push_str("</bom>\n");
+        xml
+    }
+}
+
+/// Escape XML special characters
+fn xmlescape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 #[cfg(test)]

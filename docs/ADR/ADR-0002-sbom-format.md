@@ -146,34 +146,65 @@ SPDX license identifiers from the [SPDX License List](https://spdx.org/licenses/
 
 **UPDATE (2025-10-17)**: Multi-format support has been implemented.
 
-BazBOM now generates both SPDX and CycloneDX formats:
+**UPDATE (2025-11-18)**: Enhanced SBOM features implemented (Phase 2).
+
+BazBOM now supports **5 SBOM output formats** across all ecosystems:
 
 ```bash
-# Generate SPDX 2.3 (primary format)
-bazel build //:workspace_sbom
+# SPDX 2.3 JSON (primary format, default)
+bazbom scan --format spdx
+# Output: sbom.spdx.json
 
-# Generate CycloneDX 1.5 (optional format)
-bazel build //:workspace_sbom_cyclonedx
+# SPDX 2.3 tag-value (traditional text format)
+bazbom scan --format spdx-tagvalue
+# Output: sbom.spdx
 
-# Generate both formats
-bazel build //:sbom_all_formats
+# CycloneDX 1.5 JSON
+bazbom scan --format cyclonedx
+# Output: sbom.cyclonedx.json
+
+# CycloneDX 1.5 XML
+bazbom scan --format cyclonedx-xml
+# Output: sbom.cyclonedx.xml
+
+# GitHub dependency snapshot (for GitHub Dependency Graph API)
+bazbom scan --format github-snapshot
+# Output: github-snapshot.json
 ```
 
-Implementation in `tools/supplychain/write_sbom.py`:
+**Phase 2 Enhanced Features:**
 
-```python
-def write_sbom(data, format="spdx"):
-    if format == "spdx":
-        return generate_spdx_document(data)
-    elif format == "cyclonedx":
-        return generate_cyclonedx_document(data)
-```
+1. **SHA256 Checksum Fetching** - Optional integrity verification from package registries:
+   ```bash
+   bazbom scan --fetch-checksums
+   # Fetches SHA256 from Maven Central, npm, PyPI, crates.io, RubyGems
+   ```
 
-**Rationale for dual format support:**
+2. **Download Location URLs** - Automatic population of download URLs for all 7 ecosystems:
+   - Maven: https://repo1.maven.org/maven2/...
+   - npm: https://registry.npmjs.org/...
+   - PyPI: https://pypi.org/project/...
+   - Cargo: https://crates.io/crates/...
+   - Go: https://proxy.golang.org/...
+   - RubyGems: https://rubygems.org/gems/...
+   - PHP: https://packagist.org/packages/...
+
+3. **Polyglot Ecosystem Support** - Unified SBOM across 7 language ecosystems:
+   - Maven (JVM) + Gradle (JVM)
+   - npm/Yarn/pnpm (JavaScript/TypeScript)
+   - Python (pip, poetry, pipenv)
+   - Go modules
+   - Rust (Cargo)
+   - Ruby (Bundler)
+   - PHP (Composer)
+
+**Rationale for expanded format support:**
 - SPDX remains primary for legal compliance and regulatory requirements
-- CycloneDX provided as optional format for security-focused tools
-- Zero overhead when CycloneDX not needed (opt-in via target)
-- Maintains single source of truth (dependency data) for both formats
+- CycloneDX provided for security-focused tools and Dependency-Track integration
+- Tag-value formats for legacy systems and human readability
+- GitHub snapshot enables native GitHub Dependency Graph integration
+- Zero overhead when optional formats not needed (opt-in via --format flag)
+- Maintains single source of truth (dependency data) for all formats
 
 ### Format Conversion
 
@@ -255,12 +286,23 @@ def test_spdx_generation():
 
 ## References
 
+### Specifications
 - [SPDX 2.3 Specification](https://spdx.github.io/spdx-spec/v2.3/)
-- [NTIA SBOM Minimum Elements](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom)
+- [CycloneDX 1.5 Specification](https://cyclonedx.org/specification/overview/)
+- [GitHub Dependency Submission API](https://docs.github.com/en/rest/dependency-graph/dependency-submission)
 - [Package URL Specification](https://github.com/package-url/purl-spec)
 - [SPDX License List](https://spdx.org/licenses/)
-- [CycloneDX Specification](https://cyclonedx.org/specification/overview/) (for comparison)
+
+### Compliance
+- [NTIA SBOM Minimum Elements](https://www.ntia.gov/report/2021/minimum-elements-software-bill-materials-sbom)
+
+### BazBOM Documentation
+- [SPDX Format Guide](../FORMAT_SPDX.md)
+- [CycloneDX Format Guide](../formats/cyclonedx.md)
+- [GitHub Snapshot Format Guide](../formats/github-snapshot.md)
 
 ## Review Date
 
 **Next Review**: 2026-01-01 (or when SPDX 3.0 is stable)
+
+**Last Updated**: 2025-11-18 (Phase 2 enhanced SBOM features)

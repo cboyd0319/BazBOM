@@ -50,6 +50,9 @@ artifact = true
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -107,6 +110,9 @@ fn test_sarif_2_1_0_compliance() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -179,6 +185,9 @@ fn test_analyzer_interfaces() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -313,6 +322,9 @@ fn test_output_formats() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -385,6 +397,9 @@ fn test_merged_sarif_deduplication() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 
@@ -463,6 +478,9 @@ fn test_enrichment_directory() -> Result<()> {
             threat_detection: None,
             incremental: false,
             benchmark: false,
+            fast: false,
+            reachability: false,
+            include_cicd: false,
         },
     )?;
 

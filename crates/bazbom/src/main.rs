@@ -170,6 +170,7 @@ async fn main() -> Result<()> {
         remediate_reachable_only: false,
         limit: None,
         include_cicd: false,
+        fetch_checksums: false,
     });
 
     match command {
@@ -207,6 +208,7 @@ async fn main() -> Result<()> {
             remediate_reachable_only,
             limit,
             include_cicd,
+            fetch_checksums,
         } => {
             handle_scan(
                 path,
@@ -242,6 +244,7 @@ async fn main() -> Result<()> {
                 remediate_reachable_only,
                 limit,
                 include_cicd,
+                fetch_checksums,
             )
             .await
         }
@@ -300,6 +303,7 @@ async fn main() -> Result<()> {
                 false,          // remediate_reachable_only
                 None,           // limit
                 false,          // include_cicd
+                false,          // fetch_checksums
             )
             .await
         }
@@ -340,6 +344,7 @@ async fn main() -> Result<()> {
                 false,          // remediate_reachable_only
                 None,           // limit
                 false,          // include_cicd
+                false,          // fetch_checksums
             )
             .await
         }
@@ -383,6 +388,7 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 None,           // limit
+                false,          // fetch_checksums
                 false,          // include_cicd
             )
             .await
@@ -427,6 +433,7 @@ async fn main() -> Result<()> {
                 false,          // remediate_reachable_only
                 limit,          // limit
                 false,          // include_cicd
+                false,          // fetch_checksums
             )
             .await
         }
@@ -467,6 +474,7 @@ async fn main() -> Result<()> {
                 false,                        // remediate_reachable_only
                 None,                         // limit
                 false,                        // include_cicd
+                false,                        // fetch_checksums
             )
             .await
         }

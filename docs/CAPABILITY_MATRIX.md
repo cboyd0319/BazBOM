@@ -82,9 +82,20 @@
 
 | Format | Version | Output File | Status | Features |
 |--------|---------|-------------|--------|----------|
-| **SPDX** | 2.3 | sbom.spdx.json | STABLE | Full spec, PURL support, relationships |
-| **CycloneDX** | 1.4 | sbom.cyclonedx.json | STABLE | Full spec, components, licenses |
-| **Dual Output** | N/A | Both files | STABLE | --cyclonedx flag, simultaneous generation |
+| **SPDX JSON** | 2.3 | sbom.spdx.json | STABLE | Full spec, PURL support, relationships, download URLs, SHA256 checksums |
+| **SPDX tag-value** | 2.3 | sbom.spdx | STABLE | Traditional text format, legacy system support, human-readable |
+| **CycloneDX JSON** | 1.5 | sbom.cyclonedx.json | STABLE | Full spec, components, licenses, hashes, external refs |
+| **CycloneDX XML** | 1.5 | sbom.cyclonedx.xml | STABLE | XML format, legacy pipelines, proper namespace |
+| **GitHub Snapshot** | 0 | github-snapshot.json | STABLE | GitHub Dependency Graph API, Dependabot integration |
+
+### SBOM Enhancement Features
+
+| Feature | Flag | Status | Ecosystems |
+|---------|------|--------|------------|
+| **SHA256 Checksums** | `--fetch-checksums` | STABLE | Maven, npm, PyPI, Cargo, RubyGems |
+| **Download URLs** | Auto-populated | STABLE | Maven, npm, PyPI, Cargo, Go, RubyGems, PHP |
+| **Polyglot Support** | Auto-detected | STABLE | 7 ecosystems (Maven, npm, PyPI, Go, Cargo, Ruby, PHP) |
+| **CI/CD Dependencies** | `--include-cicd` | STABLE | GitHub Actions detection |
 
 ---
 
@@ -326,7 +337,7 @@
 | **Build Systems** | STABLE | 6 | Maven, Gradle, Bazel, SBT, Ant, Buildr |
 | **JVM Languages** | STABLE | 6 | Java, Kotlin, Scala, Groovy, Clojure, Android |
 | **Polyglot Ecosystems** | STABLE | 6 | npm, Python, Go, Rust, Ruby, PHP (Full support for yarn.lock and pnpm-lock.yaml) |
-| **SBOM Formats** | STABLE | 2 | SPDX 2.3, CycloneDX 1.4 |
+| **SBOM Formats** | STABLE | 5 | SPDX 2.3 (JSON + tag-value), CycloneDX 1.5 (JSON + XML), GitHub snapshot |
 | **Analyzers** | STABLE | 5 | SCA, Semgrep, CodeQL, Syft, Threat Intel |
 | **Reports** | STABLE | 5 | Executive, Compliance, Developer, Trend, All |
 | **Compliance Frameworks** | STABLE | 7 | PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST |

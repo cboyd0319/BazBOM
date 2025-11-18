@@ -598,6 +598,7 @@ dependencies = [
  "jsonschema 0.35.0",
  "serde",
  "serde_json",
+ "uuid",
 ]
 
 [[package]]
@@ -811,6 +812,7 @@ name = "bazbom-polyglot"
 version = "6.5.0"
 dependencies = [
  "anyhow",
+ "base64",
  "bazbom-core",
  "bazbom-go-reachability",
  "bazbom-java-reachability",
@@ -822,6 +824,7 @@ dependencies = [
  "cargo-lock",
  "chrono",
  "glob",
+ "hex",
  "reqwest",
  "serde",
  "serde-xml-rs",
@@ -831,6 +834,7 @@ dependencies = [
  "thiserror 2.0.17",
  "tokio",
  "toml",
+ "tracing",
  "uuid",
  "walkdir",
 ]

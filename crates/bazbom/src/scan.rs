@@ -22,6 +22,7 @@ pub fn handle_legacy_scan(
     _benchmark: bool,
     _ml_risk: bool,
     include_cicd: bool,
+    fetch_checksums: bool,
 ) -> Result<()> {
     let root = PathBuf::from(&path);
     let system = detect_build_system(&root);
@@ -136,15 +137,178 @@ pub fn handle_legacy_scan(
         println!("[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
             total_packages, polyglot_results.len());
 
-        let unified_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
-        let spdx_path = out.join(format!("sbom.{}.json", format));
         std::fs::create_dir_all(&out)?;
-        std::fs::write(
-            &spdx_path,
-            serde_json::to_string_pretty(&unified_sbom)?,
-        )?;
-        tracing::info!("Wrote unified SPDX SBOM to {:?}", spdx_path);
-        println!("[bazbom] wrote unified SPDX SBOM to {:?}", spdx_path);
+
+        // Generate format-specific SBOM
+        match format.as_str() {
+            "cyclonedx-xml" => {
+                // Generate CycloneDX 1.5 XML
+                let mut cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new(
+                    "bazbom",
+                    env!("CARGO_PKG_VERSION")
+                );
+
+                // Convert all packages from polyglot results to CycloneDX components
+                for ecosystem_result in &polyglot_results {
+                    for package in &ecosystem_result.packages {
+                        let mut component = bazbom_formats::cyclonedx::Component::new(
+                            &package.name,
+                            "library"
+                        )
+                        .with_version(&package.version)
+                        .with_purl(&package.purl());
+
+                        if let Some(ref license) = package.license {
+                            component = component.with_license(license);
+                        }
+
+                        // Add download URL if available
+                        if let Some(download_url) = package.download_url() {
+                            component = component.with_download_url(download_url);
+                        }
+
+                        cdx_doc.add_component(component);
+                    }
+                }
+
+                let xml_content = cdx_doc.to_xml();
+                let cdx_path = out.join("sbom.cyclonedx.xml");
+                std::fs::write(&cdx_path, xml_content)?;
+                tracing::info!("Wrote CycloneDX 1.5 XML SBOM to {:?}", cdx_path);
+                println!("[bazbom] wrote CycloneDX 1.5 XML SBOM to {:?}", cdx_path);
+            }
+            "cyclonedx" => {
+                // Generate CycloneDX 1.5 JSON
+                let mut cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new(
+                    "bazbom",
+                    env!("CARGO_PKG_VERSION")
+                );
+
+                // Convert all packages from polyglot results to CycloneDX components
+                for ecosystem_result in &polyglot_results {
+                    for package in &ecosystem_result.packages {
+                        let mut component = bazbom_formats::cyclonedx::Component::new(
+                            &package.name,
+                            "library"
+                        )
+                        .with_version(&package.version)
+                        .with_purl(&package.purl());
+
+                        if let Some(ref license) = package.license {
+                            component = component.with_license(license);
+                        }
+
+                        // Add download URL if available
+                        if let Some(download_url) = package.download_url() {
+                            component = component.with_download_url(download_url);
+                        }
+
+                        cdx_doc.add_component(component);
+                    }
+                }
+
+                let cdx_path = out.join("sbom.cyclonedx.json");
+                std::fs::write(
+                    &cdx_path,
+                    serde_json::to_string_pretty(&cdx_doc)?,
+                )?;
+                tracing::info!("Wrote CycloneDX 1.5 SBOM to {:?}", cdx_path);
+                println!("[bazbom] wrote CycloneDX 1.5 SBOM to {:?}", cdx_path);
+            }
+            "github-snapshot" => {
+                // Generate GitHub dependency snapshot format
+                // Try to get git SHA and ref
+                let sha = std::process::Command::new("git")
+                    .args(["rev-parse", "HEAD"])
+                    .output()
+                    .ok()
+                    .and_then(|output| {
+                        if output.status.success() {
+                            String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| "0000000000000000000000000000000000000000".to_string());
+
+                let ref_name = std::process::Command::new("git")
+                    .args(["symbolic-ref", "HEAD"])
+                    .output()
+                    .ok()
+                    .and_then(|output| {
+                        if output.status.success() {
+                            String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+                        } else {
+                            None
+                        }
+                    })
+                    .unwrap_or_else(|| "refs/heads/main".to_string());
+
+                let snapshot = bazbom_polyglot::generate_github_snapshot(&polyglot_results, &sha, &ref_name)?;
+                let snapshot_path = out.join("github-snapshot.json");
+                std::fs::write(
+                    &snapshot_path,
+                    serde_json::to_string_pretty(&snapshot)?,
+                )?;
+                tracing::info!("Wrote GitHub dependency snapshot to {:?}", snapshot_path);
+                println!("[bazbom] wrote GitHub dependency snapshot to {:?}", snapshot_path);
+            }
+            "spdx-tagvalue" => {
+                // Generate SPDX 2.3 tag-value format
+                if fetch_checksums {
+                    println!("[bazbom] fetching SHA256 checksums from package registries (this may take a moment)...");
+                    tracing::info!("Fetching checksums for {} packages", total_packages);
+                }
+
+                // Generate JSON first
+                let unified_sbom = match tokio::runtime::Handle::try_current() {
+                    Ok(handle) => {
+                        tokio::task::block_in_place(|| {
+                            handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
+                        })?
+                    }
+                    Err(_) => {
+                        let rt = tokio::runtime::Runtime::new()?;
+                        rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                    }
+                };
+
+                // Convert to tag-value format
+                let tag_value_content = bazbom_polyglot::spdx_json_to_tag_value(&unified_sbom)?;
+                let spdx_path = out.join("sbom.spdx");
+                std::fs::write(&spdx_path, tag_value_content)?;
+                tracing::info!("Wrote SPDX 2.3 tag-value SBOM to {:?}", spdx_path);
+                println!("[bazbom] wrote SPDX 2.3 tag-value SBOM to {:?}", spdx_path);
+            }
+            "spdx" | _ => {
+                // Generate SPDX 2.3 JSON (default)
+                if fetch_checksums {
+                    println!("[bazbom] fetching SHA256 checksums from package registries (this may take a moment)...");
+                    tracing::info!("Fetching checksums for {} packages", total_packages);
+                }
+
+                let unified_sbom = match tokio::runtime::Handle::try_current() {
+                    Ok(handle) => {
+                        tokio::task::block_in_place(|| {
+                            handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
+                        })?
+                    }
+                    Err(_) => {
+                        // Create new runtime if not already in one
+                        let rt = tokio::runtime::Runtime::new()?;
+                        rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                    }
+                };
+
+                let spdx_path = out.join("sbom.spdx.json");
+                std::fs::write(
+                    &spdx_path,
+                    serde_json::to_string_pretty(&unified_sbom)?,
+                )?;
+                tracing::info!("Wrote SPDX 2.3 SBOM to {:?}", spdx_path);
+                println!("[bazbom] wrote SPDX 2.3 SBOM to {:?}", spdx_path);
+            }
+        }
     } else {
         // No packages detected - write stub SBOM
         tracing::warn!("No packages detected in any ecosystem");
@@ -153,14 +317,19 @@ pub fn handle_legacy_scan(
             .with_context(|| format!("failed writing stub SBOM to {:?}", out))?;
     }
 
-    // Also create a stub SARIF file for tests
-    let sarif_path = out.join("sca_findings.sarif");
-    let stub_sarif = serde_json::json!({
+    // Create stub findings files in both SARIF and JSON formats for compatibility
+    let stub_findings = serde_json::json!({
         "version": "2.1.0",
         "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
         "runs": []
     });
-    std::fs::write(&sarif_path, serde_json::to_string_pretty(&stub_sarif)?)?;
+    let findings_json = serde_json::to_string_pretty(&stub_findings)?;
+
+    // Write SARIF format (for SARIF consumers)
+    std::fs::write(out.join("sca_findings.sarif"), &findings_json)?;
+
+    // Also write as .json (for compatibility with other commands like fix, upgrade-intelligence)
+    std::fs::write(out.join("sca_findings.json"), &findings_json)?;
 
     // JSON output mode
     if std::env::var("BAZBOM_JSON_MODE").is_ok() {

@@ -29,6 +29,7 @@ pub struct ScanOrchestratorOptions {
     pub fast: bool,
     pub reachability: bool,
     pub include_cicd: bool,
+    pub fetch_checksums: bool,
 }
 
 pub struct ScanOrchestrator {
@@ -47,6 +48,7 @@ pub struct ScanOrchestrator {
     fast: bool,
     reachability: bool,
     include_cicd: bool,
+    fetch_checksums: bool,
 }
 
 impl ScanOrchestrator {
@@ -81,6 +83,7 @@ impl ScanOrchestrator {
             fast: options.fast,
             reachability: options.reachability,
             include_cicd: options.include_cicd,
+            fetch_checksums: options.fetch_checksums,
         })
     }
 
@@ -746,6 +749,7 @@ impl ScanOrchestrator {
             files_analyzed: false,
             license_concluded: None,
             license_declared: None,
+            checksums: None,
             external_refs: None,
         };
         doc.add_package(container_pkg);
@@ -765,6 +769,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
+            checksums: None,
                     external_refs: None,
                 }
             } else {
@@ -776,6 +781,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
+            checksums: None,
                     external_refs: None,
                 }
             };
@@ -817,6 +823,7 @@ impl ScanOrchestrator {
             files_analyzed: false,
             license_concluded: None,
             license_declared: None,
+            checksums: None,
             external_refs: None,
         };
         doc.add_package(container_pkg);
@@ -836,6 +843,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
+            checksums: None,
                     external_refs: None,
                 }
             } else {
@@ -847,6 +855,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
+            checksums: None,
                     external_refs: None,
                 }
             };
@@ -1284,7 +1293,23 @@ impl ScanOrchestrator {
             println!("[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
                 total_packages, polyglot_results.len());
 
-            let unified_sbom = bazbom_polyglot::generate_polyglot_sbom(&polyglot_results)?;
+            if self.fetch_checksums {
+                println!("[bazbom] fetching SHA256 checksums from package registries (this may take a moment)...");
+                tracing::info!("Fetching checksums for {} packages", total_packages);
+            }
+
+            let unified_sbom = match tokio::runtime::Handle::try_current() {
+                Ok(handle) => {
+                    tokio::task::block_in_place(|| {
+                        handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))
+                    })?
+                }
+                Err(_) => {
+                    // Create new runtime if not already in one
+                    let rt = tokio::runtime::Runtime::new()?;
+                    rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))?
+                }
+            };
             let spdx_path = self.context.sbom_dir.join("spdx.json");
             std::fs::create_dir_all(&self.context.sbom_dir)?;
             std::fs::write(

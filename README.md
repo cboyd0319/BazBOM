@@ -278,7 +278,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 <tr><td width="50%" valign="top">
 
 ### **Core Capabilities**
-- ✅ **SBOM Generation** (SPDX 2.3, CycloneDX 1.5, optional CI/CD deps)
+- ✅ **SBOM Generation** (SPDX 2.3 JSON/tag-value, CycloneDX 1.5 JSON/XML, GitHub snapshot, SHA256 checksums, download URLs, 7 ecosystems)
 - ✅ **SCA - Vulnerability Scanning** (OSV, NVD, CISA KEV, GHSA)
 - ✅ **Reachability Analysis** (7 languages, 70-90% noise reduction)
 - ✅ **Dependency Graph Analysis** (Transitive resolution + lockfile parsing)

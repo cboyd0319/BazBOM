@@ -69,7 +69,17 @@
       "Bash(env BAZBOM_DISABLE_CACHE=1 BAZBOM_NO_SMART_DEFAULTS=1 timeout 120 /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
       "Bash(xargs:*)",
       "Bash(env BAZBOM_DISABLE_CACHE=1 /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
-      "Bash(comm:*)"
+      "Bash(comm:*)",
+      "Bash(git cat-file:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:spdx.github.io)",
+      "Bash(env BAZBOM_JSON_MODE=1 /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
+      "Bash(perl -i -pe:*)",
+      "Bash(env RUST_LOG=debug /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
+      "Bash(time /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
+      "WebFetch(domain:cyclonedx.org)",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:refactoring.guru)"
     ],
     "deny": [],
     "ask": []

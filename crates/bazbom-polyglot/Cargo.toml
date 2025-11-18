@@ -26,6 +26,9 @@ reqwest = { version = "0.12", features = ["json"] }
 # Utilities
 uuid = { version = "1.0", features = ["v4"] }
 chrono = "0.4"
+base64 = "0.22"
+hex = "0.4"
+tracing = "0.1"
 
 # BazBOM core
 bazbom-core = { path = "../bazbom-core", version = "6.0.0" }

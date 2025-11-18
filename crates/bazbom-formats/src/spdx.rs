@@ -34,7 +34,15 @@ pub struct Package {
     pub files_analyzed: bool,
     pub license_concluded: Option<String>,
     pub license_declared: Option<String>,
+    pub checksums: Option<Vec<Checksum>>,
     pub external_refs: Option<Vec<ExternalRef>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Checksum {
+    pub algorithm: String,
+    pub checksum_value: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -91,6 +99,7 @@ impl Package {
             files_analyzed: false,
             license_concluded: None,
             license_declared: None,
+            checksums: None,
             external_refs: None,
         }
     }
@@ -114,6 +123,18 @@ impl Package {
         let lic = license.into();
         self.license_concluded = Some(lic.clone());
         self.license_declared = Some(lic);
+        self
+    }
+
+    pub fn with_checksum(mut self, algorithm: impl Into<String>, value: impl Into<String>) -> Self {
+        let checksum = Checksum {
+            algorithm: algorithm.into(),
+            checksum_value: value.into(),
+        };
+        match &mut self.checksums {
+            Some(checksums) => checksums.push(checksum),
+            None => self.checksums = Some(vec![checksum]),
+        }
         self
     }
 }

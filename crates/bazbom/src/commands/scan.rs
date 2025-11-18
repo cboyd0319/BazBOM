@@ -42,6 +42,7 @@ pub async fn handle_scan(
     remediate_reachable_only: bool,
     limit: Option<usize>,
     include_cicd: bool,
+    fetch_checksums: bool,
 ) -> Result<()> {
     debug!("Starting scan with path: {}", path);
     debug!("Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
@@ -166,6 +167,7 @@ pub async fn handle_scan(
                 fast,
                 reachability,
                 include_cicd,
+                fetch_checksums,
             },
         )?;
 
@@ -191,6 +193,7 @@ pub async fn handle_scan(
         benchmark,
         ml_risk,
         include_cicd,
+        fetch_checksums,
     );
 
     if scan_result.is_ok() {

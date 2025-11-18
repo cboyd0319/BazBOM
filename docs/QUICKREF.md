@@ -201,13 +201,28 @@ bazbom scan . --benchmark               # Show detailed performance metrics
 
 ## Output Formats
 
-| Format | Flag | Use Case |
-|--------|------|----------|
-| SPDX 2.3 | `--format spdx` (default) | Industry standard, compliance |
-| CycloneDX 1.5 | `--format cyclonedx` | OWASP ecosystem integration |
-| SARIF 2.1.0 | Auto-generated | GitHub Code Scanning |
-| CSV | Export via dashboard | Spreadsheet analysis |
-| GraphML | Auto-generated | Dependency visualization (Gephi) |
+| Format | Flag | Output File | Use Case |
+|--------|------|-------------|----------|
+| SPDX 2.3 JSON | `--format spdx` (default) | `sbom.spdx.json` | Industry standard, compliance |
+| SPDX 2.3 tag-value | `--format spdx-tagvalue` | `sbom.spdx` | Legacy systems, human-readable |
+| CycloneDX 1.5 JSON | `--format cyclonedx` or `--cyclonedx` | `sbom.cyclonedx.json` | OWASP ecosystem, Dependency-Track |
+| CycloneDX 1.5 XML | `--format cyclonedx-xml` | `sbom.cyclonedx.xml` | XML pipelines, legacy systems |
+| GitHub Snapshot | `--format github-snapshot` | `github-snapshot.json` | GitHub Dependency Graph API |
+| SARIF 2.1.0 | Auto-generated | `sca_findings.sarif` | GitHub Code Scanning |
+| CSV | Export via dashboard | Various | Spreadsheet analysis |
+| GraphML | Auto-generated | `dependency-graph.graphml` | Dependency visualization (Gephi) |
+
+### SBOM Enhancement Features
+
+```bash
+# Fetch SHA256 checksums from package registries (slower, adds integrity)
+bazbom scan --fetch-checksums
+
+# Include CI/CD tooling in SBOM
+bazbom scan --include-cicd
+```
+
+**Supported ecosystems for all formats:** Maven, Gradle, npm, Python, Go, Rust, Ruby, PHP
 
 ---
 

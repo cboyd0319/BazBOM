@@ -35,6 +35,7 @@
 //! # }
 //! ```
 
+pub mod checksum_fetcher;
 pub mod cicd;
 pub mod detection;
 pub mod ecosystems;
@@ -46,7 +47,7 @@ pub mod vulnerabilities;
 pub use detection::{detect_ecosystems, Ecosystem, EcosystemType};
 pub use ecosystems::{EcosystemScanResult, Package, ReachabilityData, Vulnerability};
 pub use reachability_integration::analyze_reachability;
-pub use sbom::generate_polyglot_sbom;
+pub use sbom::{generate_github_snapshot, generate_polyglot_sbom, spdx_json_to_tag_value};
 
 use anyhow::Result;
 

@@ -139,6 +139,9 @@ PROFILES:
         /// Include CI/CD dependencies (GitHub Actions, GitLab CI, etc.) in SBOM
         #[arg(long)]
         include_cicd: bool,
+        /// Fetch SHA256 checksums from package registries (slower but adds integrity verification)
+        #[arg(long)]
+        fetch_checksums: bool,
     },
 
     // ========== QUICK COMMAND ALIASES ==========
