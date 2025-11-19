@@ -46,6 +46,7 @@ artifact = true
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -117,6 +118,7 @@ depsdev = true
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -165,6 +167,7 @@ recipe_allowlist = ["commons-io", "jackson"]
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -206,6 +209,7 @@ fn test_orchestrated_scan_minimal() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -243,6 +247,7 @@ fn test_merged_sarif_structure() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -293,6 +298,7 @@ fn test_output_directories_created() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 
@@ -338,6 +344,7 @@ fn test_tool_cache_directory() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
+                sign_sbom: false,
         },
     )?;
 

@@ -1600,6 +1600,7 @@ mod tests {
                 reachability: false,
                 include_cicd: false,
                 fetch_checksums: false,
+                sign_sbom: false,
             },
         )?;
 
