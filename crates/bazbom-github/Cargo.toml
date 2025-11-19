@@ -49,7 +49,7 @@ regex = "1"
 serde_yaml = "0.9"
 
 # GitHub API
-octocrab = "0.41"
+octocrab = "0.47"
 
 [dev-dependencies]
 wiremock = "0.6"
