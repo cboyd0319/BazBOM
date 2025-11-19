@@ -454,8 +454,8 @@ open https://github.com/cboyd0319/BazBOM/issues
 
 ---
 
-**Quick Reference Version:** 1.0
-**Last Updated:** 2025-11-18
+**Quick Reference Version:** 1.1
+**Last Updated:** 2025-11-19 (Post-refactor: Scanner trait, parallel orchestration, OSV batch API)
 **BazBOM Version:** 6.5.0
 
 For complete documentation, see: [docs/README.md](docs/README.md)
