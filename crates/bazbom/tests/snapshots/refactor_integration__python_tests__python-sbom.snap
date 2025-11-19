@@ -6,14 +6,14 @@ expression: sbom
   "SPDXID": "SPDXRef-DOCUMENT",
   "comment": "Generated SBOM containing 4 packages across 1 ecosystems",
   "creationInfo": {
-    "created": "2025-11-19T17:41:44.280355+00:00",
+    "created": "2025-11-19T19:02:54.403875+00:00",
     "creators": [
       "Tool: BazBOM"
     ],
     "licenseListVersion": "3.21"
   },
   "dataLicense": "CC0-1.0",
-  "documentNamespace": "https://bazbom.dev/sbom/93ee17d2-58a1-4204-be74-cefe1afdad3f",
+  "documentNamespace": "https://bazbom.dev/sbom/dac8d90a-49cc-4595-9418-033c9a34ad4d",
   "name": "Polyglot SBOM",
   "packages": [
     {

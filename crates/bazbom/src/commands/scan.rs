@@ -146,6 +146,10 @@ pub async fn handle_scan(
 
     // Always use orchestrated scan mode (default behavior)
     info!("Using orchestrated scan mode (default)");
+
+    // Set cyclonedx flag when format is "cyclonedx"
+    let cyclonedx = cyclonedx || format == "cyclonedx";
+
     debug!("Orchestrator options - cyclonedx: {}, with_semgrep: {}, with_codeql: {:?}, autofix: {:?}, containers: {:?}",
         cyclonedx, with_semgrep, with_codeql, autofix, containers);
 

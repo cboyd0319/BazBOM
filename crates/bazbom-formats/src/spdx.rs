@@ -29,12 +29,17 @@ pub struct Package {
     #[serde(rename = "SPDXID")]
     pub spdxid: String,
     pub name: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version_info: Option<String>,
     pub download_location: String,
     pub files_analyzed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub license_concluded: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub license_declared: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub checksums: Option<Vec<Checksum>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub external_refs: Option<Vec<ExternalRef>>,
 }
 
