@@ -8,6 +8,7 @@ BazBOM is a developer-friendly security scanner with reachability analysis that 
 
 ## Table of Contents
 
+- [Validation Status](#validation-status)
 - [CLI Commands](#cli-commands)
 - [Ecosystem Support](#ecosystem-support)
 - [Reachability Analysis](#reachability-analysis)
@@ -15,6 +16,40 @@ BazBOM is a developer-friendly security scanner with reachability analysis that 
 - [Output Formats](#output-formats)
 - [Integrations](#integrations)
 - [Crate Architecture](#crate-architecture)
+
+---
+
+## Validation Status
+
+> **Legend:** ✅ Tested | ⚠️ Implemented (needs validation) | ❌ Not implemented
+
+### Core Feature Parity Matrix
+
+| Feature | npm | pip | cargo | bundler | composer | go | maven | gradle | bazel |
+|---------|-----|-----|-------|---------|----------|----|----|--------|-------|
+| **SBOM Generation** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Vulnerability Scanning** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Reachability Analysis** | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ | ⚠️ | ✅ | ✅ | ⚠️ |
+| **Auto-Remediation** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ |
+| **Typosquatting DB** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | N/A |
+| **License Scanning** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### Validation Notes
+
+**✅ Fully Tested:**
+- Unit tests pass
+- Integration tests pass
+- Tested against real-world projects
+
+**⚠️ Needs Validation:**
+- Code implemented with unit tests
+- Awaiting integration testing on real projects
+- May have edge cases not covered
+
+**Recent Additions (v6.6.0):**
+- Maven/Gradle/Bazel remediation updaters added - need real-world validation
+- Go typosquatting database added
+- Reachability analyzers for all languages implemented but accuracy estimates need validation
 
 ---
 
