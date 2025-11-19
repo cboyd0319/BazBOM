@@ -56,41 +56,7 @@ Each integration guide assumes familiarity with base BazBOM workflows. If you're
 2. Review the [Usage Guide](../user-guide/usage.md) for core commands
 3. Then explore the specific integration guides above
 
-## Integration Patterns
-
-### Pattern 1: BazBOM as Primary Scanner
-
-```bash
-# BazBOM handles everything
-bazbom scan . --with-semgrep --ml-risk
-```
-
-**Best for:** JVM projects with optional SAST analysis
-
-### Pattern 2: BazBOM + External Tools
-
-```bash
-# BazBOM for SCA
-bazbom scan . --format spdx
-
-# Syft for container layers
-syft myapp:latest -o spdx-json > container-sbom.json
-
-# Upload both to Dependency-Track
-```
-
-**Best for:** Multi-language projects, containers
-
-### Pattern 3: Orchestrated Scanning
-
-```bash
-# Use orchestrated-scan workflow
-bazbom orchestrate --config scan-config.yml
-```
-
-**Best for:** Enterprise environments with multiple scanning tools
-
-See [Orchestrated Scan Guide](orchestrated-scan.md) for details.
+**For integration patterns and examples**, see the [Complete Integration Guide](../INTEGRATIONS.md).
 
 ## Need Help?
 

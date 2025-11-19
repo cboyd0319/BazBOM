@@ -1,11 +1,13 @@
 # 🌍 BazBOM Polyglot Support
 
-**Version:** 6.5.0 (2025-11-12)  
-**Status:** ✅ Production Ready - All 6 ecosystems supported with reachability data
+**Version:** 6.5.0 (2025-11-18)
+**Status:** ✅ Production Ready - 6 non-JVM ecosystems supported
 
 ## Overview
 
-BazBOM now supports **multi-language monorepo scanning** beyond JVM! Automatically detect and analyze dependencies across six major ecosystems in a single unified SBOM.
+BazBOM supports **multi-language monorepo scanning** beyond JVM. Automatically detect and analyze dependencies across six major ecosystems in a single unified SBOM.
+
+**See [Reachability Analysis](../reachability/README.md) for call graph analysis across all 8 supported analyzers (7 languages + Bazel).**
 
 ### Supported Ecosystems
 
@@ -25,7 +27,7 @@ BazBOM now supports **multi-language monorepo scanning** beyond JVM! Automatical
 bazbom scan ./my-monorepo --cyclonedx --out-dir ./output
 
 # Example output:
-# 📦 Detected 6 polyglot ecosystems:
+# 📦 Detected 6 non-JVM ecosystems:
 #   📦 Node.js/npm - 45 packages, 3 vulnerabilities
 #   🐍 Python - 67 packages, 12 vulnerabilities
 #   🐹 Go - 23 packages, 1 vulnerability
@@ -57,10 +59,9 @@ bazbom scan ./my-monorepo --cyclonedx --out-dir ./output
 - ✅ Fixed version detection where available
 
 ### Reachability Integration
-- ✅ Reuses all 7 language-specific analyzers (JVM, JS/TS, Python, Go, Rust, Ruby, PHP) 
-- ✅ Tags each package with reachable/unreachable call graph data
-- ✅ Highlights exploitable dependencies in CLI/TUI output
-- ✅ Falls back gracefully when analyzers are unavailable
+BazBOM automatically integrates reachability analysis for all supported ecosystems when available. Each parsed dependency can be tagged with call graph data showing which functions are actually reachable from your application's entrypoints.
+
+**For complete reachability documentation**, see [Reachability Analysis Guide](../reachability/README.md).
 
 ## Architecture
 
@@ -158,6 +159,7 @@ cargo test -p bazbom-polyglot --lib detection
 
 ## Documentation
 
+- **[Reachability Analysis](../reachability/README.md)** - Call graph analysis for all 8 analyzers (7 languages + Bazel)
 - **[Implementation Status](POLYGLOT_STATUS.md)** - Detailed phase-by-phase completion status
 - **[Original Roadmap](../archive/roadmaps-old/POLYGLOT_ROADMAP_COMPLETED.md)** - Planning and architecture decisions (completed, archived)
 - **[Capability Matrix](../CAPABILITY_MATRIX.md)** - Full feature comparison

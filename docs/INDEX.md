@@ -22,9 +22,9 @@ This is the master index for all BazBOM documentation. Start here!
 
 **Latest documentation on what's working:**
 
-- **[FINAL_STATUS.md](FINAL_STATUS.md)** - ⭐ **Current status** of all features
+- **[CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md)** - ⭐ **Complete feature status** (single source of truth)
 - **[BENCHMARKS_AND_METRICS.md](BENCHMARKS_AND_METRICS.md)** - Performance metrics & benchmarks
-- **[SESSION_SUMMARY_2025-11-18.md](SESSION_SUMMARY_2025-11-18.md)** - Latest session achievements
+- **[Transitive Reachability Status](archive/status/FINAL_STATUS_V6_5_0.md)** - v6.5.0 completion announcement (archived)
 
 ---
 
@@ -199,7 +199,7 @@ This is the master index for all BazBOM documentation. Start here!
 
 **If you only read 5 docs, read these:**
 
-1. [FINAL_STATUS.md](FINAL_STATUS.md) - What works NOW
+1. [CAPABILITY_MATRIX.md](CAPABILITY_MATRIX.md) - Complete feature status (single source of truth)
 2. [Reachability Analysis](reachability/README.md) - Our killer feature (8/8 ecosystems)
 3. [Usage Guide](user-guide/usage.md) - How to use BazBOM
 4. [BENCHMARKS_AND_METRICS.md](BENCHMARKS_AND_METRICS.md) - Performance data

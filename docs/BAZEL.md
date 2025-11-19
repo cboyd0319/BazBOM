@@ -2,6 +2,11 @@
 
 How BazBOM integrates with Bazel build systems: aspects, rules, targets, and query patterns.
 
+## Related Documentation
+
+- **[Bazel Reachability Analysis](reachability/bazel.md)** - Targeted scanning and build graph analysis
+- **[Bazel Monorepo Workflows](examples/bazel-monorepo-workflows.md)** - Practical CI/CD workflows for large monorepos
+
 ## Overview
 
 BazBOM provides **native Bazel support** via:

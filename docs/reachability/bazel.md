@@ -5,6 +5,12 @@
 **Tests:** 3/3 passing ✅
 **Targeted Scanning:** ✅ Enabled (like EndorLabs!)
 
+## Related Documentation
+
+- **[Bazel Integration](../BAZEL.md)** - Technical details on aspects, rules, and query patterns
+- **[Bazel Monorepo Workflows](../examples/bazel-monorepo-workflows.md)** - Practical CI/CD workflows
+- **[Reachability Overview](README.md)** - Reachability analysis across all ecosystems
+
 ## Overview
 
 Bazel reachability analysis leverages Bazel's **explicit build graph** for highly accurate dependency analysis. Unlike other ecosystems that require AST parsing, Bazel already knows all dependencies.

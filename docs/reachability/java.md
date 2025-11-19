@@ -303,8 +303,9 @@ let reachable_deps = map_to_dependencies(&reachable, &dep_tree)?;
 ---
 
 **Related Documentation:**
-- [Complete Reachability Overview](TRANSITIVE_REACHABILITY_COMPLETE.md)
-- [Benchmarks & Metrics](BENCHMARKS_AND_METRICS.md)
-- [Final Status](FINAL_STATUS.md)
+- [Complete Reachability Overview](README.md)
+- [Benchmarks & Metrics](../BENCHMARKS_AND_METRICS.md)
+- [Capability Matrix](../CAPABILITY_MATRIX.md) - Current feature status
+- [v6.5.0 Completion Status](../archive/status/FINAL_STATUS_V6_5_0.md) - Historical snapshot
 
-**Questions?** See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) or open an issue on GitHub.
+**Questions?** See [TROUBLESHOOTING.md](../TROUBLESHOOTING.md) or open an issue on GitHub.

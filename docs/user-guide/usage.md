@@ -1,6 +1,6 @@
 # Usage Guide
 
-> **Quick Reference:** See [../USAGE.md](../USAGE.md) for a concise usage guide with common tasks and quick examples. This document provides comprehensive command details and advanced workflows.
+> **Quick Reference:** See [../QUICKREF.md](../QUICKREF.md) for a one-page command cheat sheet. This document provides comprehensive command details and advanced workflows.
 
 This guide covers day-to-day commands and workflows for BazBOM.
 

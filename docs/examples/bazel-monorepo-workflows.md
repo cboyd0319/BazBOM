@@ -2,6 +2,11 @@
 
 This guide demonstrates how to use BazBOM effectively in large Bazel monorepos, addressing the unique challenges that traditional SCA tools face with Bazel.
 
+## Related Documentation
+
+- **[Bazel Integration Guide](../BAZEL.md)** - Technical details on aspects, rules, and query patterns
+- **[Bazel Reachability Analysis](../reachability/bazel.md)** - Build graph analysis and targeted scanning
+
 ## Table of Contents
 
 - [The Problem with Traditional SCA Tools](#the-problem-with-traditional-sca-tools)
