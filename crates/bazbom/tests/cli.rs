@@ -213,3 +213,211 @@ fn no_command_defaults_to_scan() {
     // No command should default to scan and succeed
     cmd.assert().success();
 }
+
+// =============================================================================
+// Threats Command Tests
+// =============================================================================
+
+#[test]
+fn threats_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("threats").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Threat intelligence"))
+        .stdout(predicate::str::contains("typosquatting"))
+        .stdout(predicate::str::contains("dependency confusion"));
+}
+
+#[test]
+fn threats_scan_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("threats").arg("scan").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("typosquatting"))
+        .stdout(predicate::str::contains("scorecard"));
+}
+
+#[test]
+fn threats_scan_basic() {
+    let tmp = tempdir().unwrap();
+    let outdir = tmp.path().join("out");
+    fs::create_dir_all(&outdir).unwrap();
+
+    // Create a minimal SBOM
+    let sbom_dir = outdir.join("sbom");
+    fs::create_dir_all(&sbom_dir).unwrap();
+    fs::write(
+        sbom_dir.join("spdx.json"),
+        r#"{"packages": [{"name": "lodash", "versionInfo": "4.17.21", "SPDXID": "SPDXRef-Package-lodash-4.17.21"}]}"#,
+    )
+    .unwrap();
+
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.current_dir(tmp.path());
+    cmd.arg("threats").arg("scan");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("threat detection"));
+}
+
+#[test]
+fn threats_configure() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("threats").arg("configure");
+    // Configure may produce empty output or configuration info
+    cmd.assert().success();
+}
+
+// =============================================================================
+// Notify Command Tests
+// =============================================================================
+
+#[test]
+fn notify_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("notify").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Notification configuration"))
+        .stdout(predicate::str::contains("Slack"))
+        .stdout(predicate::str::contains("Teams"));
+}
+
+#[test]
+fn notify_configure_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("notify").arg("configure").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("channel"));
+}
+
+#[test]
+fn notify_test_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("notify").arg("test").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("channel"));
+}
+
+#[test]
+fn notify_history() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("notify").arg("history");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("notification"));
+}
+
+// =============================================================================
+// Anomaly Command Tests
+// =============================================================================
+
+#[test]
+fn anomaly_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("anomaly").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("ML-based anomaly detection"));
+}
+
+#[test]
+fn anomaly_scan_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("anomaly").arg("scan").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("anomaly detection"));
+}
+
+#[test]
+fn anomaly_train_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("anomaly").arg("train").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("--from-dir"));
+}
+
+#[test]
+fn anomaly_report_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("anomaly").arg("report").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("output"));
+}
+
+// =============================================================================
+// LSP Command Tests
+// =============================================================================
+
+#[test]
+fn lsp_command() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("lsp");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("BazBOM LSP Server"))
+        .stdout(predicate::str::contains("VS CODE SETUP"))
+        .stdout(predicate::str::contains("INTELLIJ SETUP"))
+        .stdout(predicate::str::contains("NEOVIM SETUP"));
+}
+
+// =============================================================================
+// Auth Command Tests
+// =============================================================================
+
+#[test]
+fn auth_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("auth").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Authentication"))
+        .stdout(predicate::str::contains("RBAC"));
+}
+
+#[test]
+fn auth_init_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("auth").arg("init").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Initialize"));
+}
+
+#[test]
+fn auth_user_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("auth").arg("user").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("add"))
+        .stdout(predicate::str::contains("list"))
+        .stdout(predicate::str::contains("remove"));
+}
+
+#[test]
+fn auth_token_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("auth").arg("token").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("create"))
+        .stdout(predicate::str::contains("list"))
+        .stdout(predicate::str::contains("revoke"));
+}
+
+#[test]
+fn auth_audit_log_help() {
+    let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.arg("auth").arg("audit-log").arg("--help");
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("limit"));
+}
