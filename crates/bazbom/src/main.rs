@@ -121,6 +121,9 @@ fn auto_detect_main_module(base_path: &str) -> Option<String> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Initialize Rustls crypto provider for HTTPS connections
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
     // Initialize tracing/logging with environment variable support
     // Set RUST_LOG=debug for verbose output, or RUST_LOG=info for normal output
     // Example: RUST_LOG=debug bazbom full
@@ -148,6 +151,14 @@ async fn main() -> Result<()> {
         bazel_targets: None,
         bazel_affected_by_files: None,
         bazel_universe: "//...".into(),
+        bazel_exclude_targets: None,
+        bazel_workspace_path: None,
+        include_path: None,
+        languages: None,
+        bazel_rc_path: None,
+        bazel_flags: None,
+        bazel_show_internal_targets: false,
+        bazel_vendor_manifest_path: None,
         cyclonedx: false,
         with_semgrep: false,
         with_codeql: None,
@@ -186,6 +197,14 @@ async fn main() -> Result<()> {
             bazel_targets,
             bazel_affected_by_files,
             bazel_universe,
+            bazel_exclude_targets,
+            bazel_workspace_path,
+            include_path,
+            languages,
+            bazel_rc_path,
+            bazel_flags,
+            bazel_show_internal_targets,
+            bazel_vendor_manifest_path,
             cyclonedx,
             with_semgrep,
             with_codeql,
@@ -222,6 +241,14 @@ async fn main() -> Result<()> {
                 bazel_targets,
                 bazel_affected_by_files,
                 bazel_universe,
+                bazel_exclude_targets,
+                bazel_workspace_path,
+                include_path,
+                languages,
+                bazel_rc_path,
+                bazel_flags,
+                bazel_show_internal_targets,
+                bazel_vendor_manifest_path,
                 cyclonedx,
                 with_semgrep,
                 with_codeql,
@@ -281,6 +308,14 @@ async fn main() -> Result<()> {
                 None,           // bazel_targets
                 None,           // bazel_affected_by_files
                 "//...".into(), // bazel_universe
+                None,           // bazel_exclude_targets
+                None,           // bazel_workspace_path
+                None,           // include_path
+                None,           // languages
+                None,           // bazel_rc_path
+                None,           // bazel_flags
+                false,          // bazel_show_internal_targets
+                None,           // bazel_vendor_manifest_path
                 false,          // cyclonedx
                 false,          // with_semgrep
                 None,           // with_codeql
@@ -322,6 +357,14 @@ async fn main() -> Result<()> {
                 None,           // bazel_targets
                 None,           // bazel_affected_by_files
                 "//...".into(), // bazel_universe
+                None,           // bazel_exclude_targets
+                None,           // bazel_workspace_path
+                None,           // include_path
+                None,           // languages
+                None,           // bazel_rc_path
+                None,           // bazel_flags
+                false,          // bazel_show_internal_targets
+                None,           // bazel_vendor_manifest_path
                 false,          // cyclonedx
                 false,          // with_semgrep
                 None,           // with_codeql
@@ -367,6 +410,14 @@ async fn main() -> Result<()> {
                 None,           // bazel_targets
                 None,           // bazel_affected_by_files
                 "//...".into(), // bazel_universe
+                None,           // bazel_exclude_targets
+                None,           // bazel_workspace_path
+                None,           // include_path
+                None,           // languages
+                None,           // bazel_rc_path
+                None,           // bazel_flags
+                false,          // bazel_show_internal_targets
+                None,           // bazel_vendor_manifest_path
                 false,          // cyclonedx
                 false,          // with_semgrep
                 None,           // with_codeql
@@ -388,8 +439,8 @@ async fn main() -> Result<()> {
                 None,           // remediate_min_severity
                 false,          // remediate_reachable_only
                 None,           // limit
-                false,          // fetch_checksums
                 false,          // include_cicd
+                false,          // fetch_checksums
             )
             .await
         }
@@ -411,6 +462,14 @@ async fn main() -> Result<()> {
                 None,           // bazel_targets
                 None,           // bazel_affected_by_files
                 "//...".into(), // bazel_universe
+                None,           // bazel_exclude_targets
+                None,           // bazel_workspace_path
+                None,           // include_path
+                None,           // languages
+                None,           // bazel_rc_path
+                None,           // bazel_flags
+                false,          // bazel_show_internal_targets
+                None,           // bazel_vendor_manifest_path
                 true,           // cyclonedx
                 false,          // with_semgrep
                 None,           // with_codeql
@@ -452,6 +511,14 @@ async fn main() -> Result<()> {
                 None,                         // bazel_targets
                 None,                         // bazel_affected_by_files
                 "//...".into(),               // bazel_universe
+                None,                         // bazel_exclude_targets
+                None,                         // bazel_workspace_path
+                None,                         // include_path
+                None,                         // languages
+                None,                         // bazel_rc_path
+                None,                         // bazel_flags
+                false,                        // bazel_show_internal_targets
+                None,                         // bazel_vendor_manifest_path
                 false,                        // cyclonedx
                 false,                        // with_semgrep
                 None,                         // with_codeql

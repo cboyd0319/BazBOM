@@ -148,29 +148,138 @@ fn estimate_effort_hours(
     (hours * 4.0).round() / 4.0
 }
 
+/// Load vulnerabilities from SARIF format
+fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<FixableVulnerability>> {
+    use bazbom_formats::sarif::SarifReport;
+    use std::fs;
+
+    let content = fs::read_to_string(sarif_path)?;
+    let sarif: SarifReport = serde_json::from_str(&content)?;
+
+    let mut fixable_vulns = Vec::new();
+
+    // Iterate through all runs in the SARIF report
+    for run in sarif.runs {
+        // Iterate through all results (vulnerabilities)
+        for result in run.results {
+            // Extract data from properties
+            if let Some(props) = result.properties {
+                let cve_id = result.rule_id.clone();
+
+                let package = props.get("component")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                let current_version = props.get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown")
+                    .to_string();
+
+                // For now, we don't have fixed_version in SARIF properties
+                // This will need to be queried from OSV or other advisory sources
+                // For the initial implementation, we'll skip vulnerabilities without fixes
+                // TODO: Query OSV API for fixed versions
+
+                // Parse severity from SARIF level
+                let severity_str = match result.level.as_str() {
+                    "error" => "CRITICAL",
+                    "warning" => "HIGH",
+                    "note" => "MEDIUM",
+                    _ => "LOW",
+                };
+
+                let severity = match severity_str {
+                    "CRITICAL" => Severity::Critical,
+                    "HIGH" => Severity::High,
+                    "MEDIUM" => Severity::Medium,
+                    _ => Severity::Low,
+                };
+
+                let epss_score = props.get("epss_score")
+                    .and_then(|v| v.as_f64());
+
+                let in_cisa_kev = props.get("cisa_kev")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+
+                let description = result.message.text.clone();
+
+                // For SARIF, we need to query OSV for fixed versions
+                // For now, create a placeholder that will trigger OSV query
+                let fixed_version = format!("(query OSV for {})", cve_id);
+
+                let breaking_changes = 0; // Will be calculated once we have fixed version
+                let estimated_effort_hours = 1.0; // Will be calculated once we have fixed version
+
+                fixable_vulns.push(FixableVulnerability {
+                    cve_id,
+                    package,
+                    current_version,
+                    fixed_version,
+                    severity,
+                    epss_score,
+                    in_cisa_kev,
+                    description,
+                    breaking_changes,
+                    estimated_effort_hours,
+                });
+            }
+        }
+    }
+
+    if fixable_vulns.is_empty() {
+        println!("[bazbom] no vulnerabilities found in SARIF");
+    } else {
+        println!("[bazbom] loaded {} vulnerabilities from SARIF", fixable_vulns.len());
+    }
+
+    Ok(fixable_vulns)
+}
+
 /// Load vulnerabilities from scan results
 fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
     use serde_json::Value;
     use std::fs;
     use std::path::PathBuf;
 
-    // Try multiple locations for findings file
-    let possible_paths = [
+    // Try SARIF files first (new format), then fall back to JSON (legacy)
+    let sarif_paths = [
+        PathBuf::from("./findings/sca.sarif"),
+        PathBuf::from("./bazbom-findings/sca.sarif"),
+        PathBuf::from("./findings/merged.sarif"),
+        PathBuf::from("./bazbom-findings/merged.sarif"),
+    ];
+
+    let json_paths = [
         PathBuf::from("./bazbom-findings/sca_findings.json"),
         PathBuf::from("./sca_findings.json"),
         PathBuf::from(".bazbom-cache/sca_findings.json"),
     ];
 
-    let findings_path = possible_paths.iter().find(|p| p.exists()).ok_or_else(|| {
+    // Try loading from SARIF first
+    if let Some(sarif_path) = sarif_paths.iter().find(|p| p.exists()) {
+        println!("[bazbom] loading vulnerabilities from SARIF: {}", sarif_path.display());
+        return load_vulnerabilities_from_sarif(sarif_path);
+    }
+
+    // Fall back to JSON (legacy format)
+    let findings_path = json_paths.iter().find(|p| p.exists()).ok_or_else(|| {
         anyhow::anyhow!(
             "No scan results found. Run 'bazbom scan' first to generate findings.\n\
-             Expected locations:\n  - {}\n  - {}\n  - {}",
-            possible_paths[0].display(),
-            possible_paths[1].display(),
-            possible_paths[2].display()
+             Expected SARIF locations:\n  - {}\n  - {}\n  - {}\n  - {}\n\
+             Expected JSON locations:\n  - {}\n  - {}\n  - {}",
+            sarif_paths[0].display(),
+            sarif_paths[1].display(),
+            sarif_paths[2].display(),
+            sarif_paths[3].display(),
+            json_paths[0].display(),
+            json_paths[1].display(),
+            json_paths[2].display()
         )
     })?;
 
+    println!("[bazbom] loading vulnerabilities from JSON (legacy): {}", findings_path.display());
     let content = fs::read_to_string(findings_path)?;
     let findings: Value = serde_json::from_str(&content)?;
 

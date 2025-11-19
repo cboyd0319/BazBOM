@@ -17,6 +17,14 @@ pub fn handle_legacy_scan(
     _bazel_targets: Option<Vec<String>>,
     _bazel_affected_by_files: Option<Vec<String>>,
     _bazel_universe: String,
+    _bazel_exclude_targets: Option<Vec<String>>,
+    _bazel_workspace_path: Option<String>,
+    _include_path: Option<Vec<String>>,
+    _languages: Option<Vec<String>>,
+    _bazel_rc_path: Option<String>,
+    _bazel_flags: Option<String>,
+    _bazel_show_internal_targets: bool,
+    _bazel_vendor_manifest_path: Option<String>,
     _incremental: bool,
     _base: String,
     _benchmark: bool,
@@ -54,6 +62,35 @@ pub fn handle_legacy_scan(
             }
         }
 
+        // Apply language filtering if requested
+        if let Some(langs) = _languages {
+            let before_count = polyglot_results.len();
+            polyglot_results.retain(|result| {
+                // Map language names to ecosystem names
+                let ecosystem_lower = result.ecosystem.to_lowercase();
+                langs.iter().any(|lang| {
+                    let lang_lower = lang.to_lowercase();
+                    match lang_lower.as_str() {
+                        "java" | "jvm" => ecosystem_lower.contains("maven") || ecosystem_lower.contains("gradle"),
+                        "javascript" | "js" | "typescript" | "ts" | "node" => ecosystem_lower.contains("npm") || ecosystem_lower.contains("yarn") || ecosystem_lower.contains("pnpm"),
+                        "python" | "py" | "pip" => ecosystem_lower.contains("python") || ecosystem_lower.contains("pip"),
+                        "go" | "golang" => ecosystem_lower.contains("go"),
+                        "rust" | "cargo" => ecosystem_lower.contains("rust") || ecosystem_lower.contains("cargo"),
+                        "ruby" | "rb" | "gem" => ecosystem_lower.contains("ruby") || ecosystem_lower.contains("bundler"),
+                        "php" | "composer" => ecosystem_lower.contains("php") || ecosystem_lower.contains("composer"),
+                        _ => ecosystem_lower.contains(&lang_lower),
+                    }
+                })
+            });
+            let filtered_count = before_count - polyglot_results.len();
+            if filtered_count > 0 {
+                tracing::info!("Language filtering: excluded {} ecosystems (keeping only: {})",
+                    filtered_count, langs.join(", "));
+                println!("[bazbom] language filter: excluded {} ecosystems, keeping only: {}",
+                    filtered_count, langs.join(", "));
+            }
+        }
+
         if !polyglot_results.is_empty() {
             let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
             tracing::info!("Found {} packages across {} polyglot ecosystems",
@@ -66,6 +103,7 @@ pub fn handle_legacy_scan(
     }
 
     // Handle Bazel projects - extract Maven dependencies and merge with polyglot
+    tracing::debug!("Build system check: {:?}, is_bazel={}", system, system == bazbom_core::BuildSystem::Bazel);
     if system == bazbom_core::BuildSystem::Bazel {
         tracing::debug!("Detected Bazel project, checking for maven_install.json");
         let maven_install_json = root_path.join("maven_install.json");
@@ -75,7 +113,114 @@ pub fn handle_legacy_scan(
             std::fs::create_dir_all(&out)?;
             let deps_json_path = out.join("bazel-deps.json");
 
-            match crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path) {
+            // Check if any Bazel-specific flags are set
+            let has_bazel_flags = _bazel_targets.is_some()
+                || _bazel_targets_query.is_some()
+                || _bazel_affected_by_files.is_some()
+                || _bazel_exclude_targets.is_some()
+                || _bazel_show_internal_targets;
+
+            tracing::debug!("Bazel flags check: targets={:?}, query={:?}, affected={:?}, exclude={:?}, show_internal={}, has_flags={}",
+                _bazel_targets.is_some(), _bazel_targets_query.is_some(), _bazel_affected_by_files.is_some(),
+                _bazel_exclude_targets.is_some(), _bazel_show_internal_targets, has_bazel_flags);
+
+            let extraction_result = if has_bazel_flags {
+                // Use targeted extraction with Bazel query
+                tracing::info!("Using targeted Bazel extraction (flags specified)");
+
+                // Determine workspace path
+                let workspace = if let Some(ref ws_path) = _bazel_workspace_path {
+                    std::path::PathBuf::from(ws_path)
+                } else {
+                    root_path.to_path_buf()
+                };
+
+                // Execute Bazel query to get targets
+                let targets = if let Some(ref targets_list) = _bazel_targets {
+                    // Explicit targets provided
+                    tracing::info!("Using explicit targets: {:?}", targets_list);
+                    targets_list.clone()
+                } else if let Some(ref query) = _bazel_targets_query {
+                    // Query expression provided
+                    tracing::info!("Executing Bazel query: {}", query);
+                    crate::bazel::query_bazel_targets(
+                        &workspace,
+                        Some(query),
+                        None,
+                        None,
+                        &_bazel_universe,
+                        _bazel_exclude_targets.as_deref(),
+                        _bazel_rc_path.as_deref(),
+                        _bazel_flags.as_deref(),
+                    )?
+                } else if let Some(ref files) = _bazel_affected_by_files {
+                    // Affected files provided (rdeps query)
+                    tracing::info!("Finding targets affected by {} files", files.len());
+                    crate::bazel::query_bazel_targets(
+                        &workspace,
+                        None,
+                        None,
+                        Some(files),
+                        &_bazel_universe,
+                        _bazel_exclude_targets.as_deref(),
+                        _bazel_rc_path.as_deref(),
+                        _bazel_flags.as_deref(),
+                    )?
+                } else if _bazel_show_internal_targets {
+                    // Show internal targets (libraries)
+                    tracing::info!("Querying all library targets");
+                    crate::bazel::query_bazel_targets(
+                        &workspace,
+                        Some("kind(\".*_library\", //...)"),
+                        None,
+                        None,
+                        &_bazel_universe,
+                        _bazel_exclude_targets.as_deref(),
+                        _bazel_rc_path.as_deref(),
+                        _bazel_flags.as_deref(),
+                    )?
+                } else {
+                    // Only exclude flags set, query all targets
+                    tracing::info!("Querying all targets with exclusions");
+                    crate::bazel::query_bazel_targets(
+                        &workspace,
+                        Some("//..."),
+                        None,
+                        None,
+                        &_bazel_universe,
+                        _bazel_exclude_targets.as_deref(),
+                        _bazel_rc_path.as_deref(),
+                        _bazel_flags.as_deref(),
+                    )?
+                };
+
+                if targets.is_empty() {
+                    tracing::warn!("No targets matched query/filters - falling back to full extraction");
+                    crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path)
+                } else {
+                    // Auto-build targets if needed (enabled by default for targeted scans)
+                    let built_targets = crate::bazel::build_bazel_targets(
+                        &workspace,
+                        &targets,
+                        true,
+                        _bazel_rc_path.as_deref(),
+                        _bazel_flags.as_deref(),
+                    )?;
+
+                    if built_targets.is_empty() {
+                        tracing::warn!("No targets successfully built - falling back to full extraction");
+                        crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path)
+                    } else {
+                        crate::bazel::extract_bazel_dependencies_for_targets(&workspace, &built_targets, &deps_json_path)
+                    }
+                }
+            } else {
+                // No flags set, use full extraction
+                tracing::info!("Using full Bazel extraction (no targeting flags)");
+                crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path)
+            };
+
+            match extraction_result {
                 Ok(graph) => {
                     tracing::info!(
                         "Successfully extracted {} Maven packages from maven_install.json",

@@ -7,6 +7,7 @@ use crate::ecosystems::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
 use cargo_lock::Lockfile;
 use std::collections::HashMap;
+use std::error::Error;
 use std::fs;
 
 /// Scan Rust ecosystem with reachability analysis
@@ -27,6 +28,12 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
     // Run reachability analysis
     if let Err(e) = analyze_reachability(ecosystem, &mut result) {
         eprintln!("Warning: Rust reachability analysis failed: {}", e);
+        // Print full error chain for debugging
+        let mut source = e.source();
+        while let Some(err) = source {
+            eprintln!("  Caused by: {}", err);
+            source = err.source();
+        }
         // Continue without reachability data
     }
 

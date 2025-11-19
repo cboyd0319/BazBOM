@@ -291,11 +291,14 @@ pub fn query_bazel_targets(
     kind: Option<&str>,
     affected_by_files: Option<&[String]>,
     universe: &str,
+    exclude_targets: Option<&[String]>,
+    bazel_rc_path: Option<&str>,
+    bazel_flags: Option<&str>,
 ) -> Result<Vec<String>> {
     // Build the query expression based on input parameters
     let query = if let Some(q) = query_expr {
-        // Use provided query directly
-        q.to_string()
+        // Apply universe scope to user query (replace //... with universe)
+        q.replace("//...", universe)
     } else if let Some(target_kind) = kind {
         // Generate kind query
         format!("kind({}, {})", target_kind, universe)
@@ -343,10 +346,25 @@ pub fn query_bazel_targets(
     println!("[bazbom] executing Bazel query: {}", query);
 
     let mut cmd = Command::new("bazel");
+
+    // Add custom bazelrc if specified
+    if let Some(rc_path) = bazel_rc_path {
+        cmd.arg(format!("--bazelrc={}", rc_path));
+    }
+
     cmd.arg("query")
         .arg(&query)
-        .arg("--output=label")
-        .current_dir(workspace_path);
+        .arg("--output=label");
+
+    // Add additional bazel flags if specified
+    if let Some(flags) = bazel_flags {
+        // Split flags by whitespace and add them
+        for flag in flags.split_whitespace() {
+            cmd.arg(flag);
+        }
+    }
+
+    cmd.current_dir(workspace_path);
 
     let output = cmd.output().context("failed to execute bazel query")?;
 
@@ -357,18 +375,148 @@ pub fn query_bazel_targets(
 
     // Parse output - one target per line
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let targets: Vec<String> = stdout
+    let mut targets: Vec<String> = stdout
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(|s| s.to_string())
         .collect();
 
     println!("[bazbom] found {} matching targets", targets.len());
+
+    // Apply exclusion filtering if requested
+    if let Some(exclude_patterns) = exclude_targets {
+        let before_count = targets.len();
+        targets.retain(|target| {
+            !exclude_patterns.iter().any(|pattern| {
+                // Support patterns like //tests/..., //vendor/..., //third_party/...
+                if pattern.ends_with("/...") {
+                    let prefix = pattern.trim_end_matches("/...");
+                    target.starts_with(prefix)
+                } else {
+                    // Exact match
+                    target == pattern
+                }
+            })
+        });
+        let excluded_count = before_count - targets.len();
+        if excluded_count > 0 {
+            println!(
+                "[bazbom] excluded {} targets matching patterns: {}",
+                excluded_count,
+                exclude_patterns.join(", ")
+            );
+        }
+    }
+
+    println!("[bazbom] final target count: {}", targets.len());
     Ok(targets)
 }
 
+/// Check if a Bazel target is already built
+fn is_target_built(workspace_path: &Path, target: &str) -> bool {
+    // Use bazel cquery to check if outputs exist
+    let output = Command::new("bazel")
+        .arg("cquery")
+        .arg(&format!("outputs({})", target))
+        .arg("--output=files")
+        .current_dir(workspace_path)
+        .output();
+
+    match output {
+        Ok(out) => {
+            if out.status.success() {
+                let stdout = String::from_utf8_lossy(&out.stdout);
+                !stdout.trim().is_empty()
+            } else {
+                false
+            }
+        }
+        Err(_) => false,
+    }
+}
+
+/// Build Bazel targets that aren't already built
+pub fn build_bazel_targets(
+    workspace_path: &Path,
+    targets: &[String],
+    auto_build: bool,
+    bazel_rc_path: Option<&str>,
+    bazel_flags: Option<&str>,
+) -> Result<Vec<String>> {
+    if !auto_build {
+        return Ok(targets.to_vec());
+    }
+
+    let mut built_targets = Vec::new();
+    let mut failed_targets = Vec::new();
+
+    println!("[bazbom] checking build status for {} targets", targets.len());
+
+    for target in targets {
+        // Check if already built
+        if is_target_built(workspace_path, target) {
+            tracing::debug!("Target already built: {}", target);
+            built_targets.push(target.clone());
+            continue;
+        }
+
+        // Need to build
+        println!("[bazbom] building target: {}", target);
+        let mut cmd = Command::new("bazel");
+
+        // Add custom bazelrc if specified
+        if let Some(rc_path) = bazel_rc_path {
+            cmd.arg(format!("--bazelrc={}", rc_path));
+        }
+
+        cmd.arg("build").arg(target);
+
+        // Add additional bazel flags if specified
+        if let Some(flags) = bazel_flags {
+            for flag in flags.split_whitespace() {
+                cmd.arg(flag);
+            }
+        }
+
+        let build_result = cmd.current_dir(workspace_path).status();
+
+        match build_result {
+            Ok(status) if status.success() => {
+                tracing::info!("Successfully built: {}", target);
+                built_targets.push(target.clone());
+            }
+            Ok(status) => {
+                tracing::warn!("Failed to build {}: exit code {:?}", target, status.code());
+                eprintln!("[bazbom] warning: failed to build {}", target);
+                failed_targets.push(target.clone());
+            }
+            Err(e) => {
+                tracing::warn!("Failed to execute bazel build for {}: {}", target, e);
+                eprintln!("[bazbom] warning: failed to build {}", target);
+                failed_targets.push(target.clone());
+            }
+        }
+    }
+
+    if !failed_targets.is_empty() {
+        println!(
+            "[bazbom] {} targets failed to build (will scan others): {}",
+            failed_targets.len(),
+            failed_targets.join(", ")
+        );
+    }
+
+    println!(
+        "[bazbom] build complete: {} succeeded, {} failed",
+        built_targets.len(),
+        failed_targets.len()
+    );
+
+    Ok(built_targets)
+}
+
 #[allow(dead_code)]
-/// Extract dependencies for specific Bazel targets
+/// Extract dependencies for specific Bazel targets (with optional auto-build)
 pub fn extract_bazel_dependencies_for_targets(
     workspace_path: &Path,
     targets: &[String],
@@ -441,7 +589,7 @@ impl BazelQueryOptimizer {
 
         // Execute query
         let result =
-            query_bazel_targets(&self.workspace_path, Some(query_expr), None, None, "//...")?;
+            query_bazel_targets(&self.workspace_path, Some(query_expr), None, None, "//...", None, None, None)?;
 
         // Update metrics
         self.metrics.query_time_ms += start.elapsed().as_millis() as u64;
@@ -611,7 +759,7 @@ pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
     let query = get_jvm_rule_query("//...");
     println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
 
-    query_bazel_targets(workspace_path, Some(&query), None, None, "//...")
+    query_bazel_targets(workspace_path, Some(&query), None, None, "//...", None, None, None)
 }
 
 #[cfg(test)]

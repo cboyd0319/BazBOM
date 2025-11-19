@@ -73,6 +73,30 @@ PROFILES:
         /// Bazel-specific: universe pattern for rdeps queries
         #[arg(long, value_name = "PATTERN", default_value = "//...")]
         bazel_universe: String,
+        /// Bazel-specific: exclude targets matching pattern (e.g., //tests/..., //vendor/...)
+        #[arg(long, value_name = "PATTERN", num_args = 0..)]
+        bazel_exclude_targets: Option<Vec<String>>,
+        /// Bazel-specific: path to Bazel workspace (for non-root workspaces)
+        #[arg(long, value_name = "PATH")]
+        bazel_workspace_path: Option<String>,
+        /// Monorepo: scan only files matching path patterns (e.g., ui/**, backend/**)
+        #[arg(long, value_name = "PATTERN", num_args = 0..)]
+        include_path: Option<Vec<String>>,
+        /// Monorepo: scan only specific languages (e.g., java, python, go, rust)
+        #[arg(long, value_name = "LANG", num_args = 0.., value_delimiter = ',')]
+        languages: Option<Vec<String>>,
+        /// Bazel-specific: path to custom .bazelrc file
+        #[arg(long, value_name = "PATH")]
+        bazel_rc_path: Option<String>,
+        /// Bazel-specific: additional flags to pass to bazel commands
+        #[arg(long, value_name = "FLAGS")]
+        bazel_flags: Option<String>,
+        /// Bazel-specific: show internal targets (libraries, not just binaries)
+        #[arg(long)]
+        bazel_show_internal_targets: bool,
+        /// Bazel-specific: path to Go vendor manifest (vendor/modules.txt)
+        #[arg(long, value_name = "PATH")]
+        bazel_vendor_manifest_path: Option<String>,
         /// Also emit CycloneDX SBOM (for interop)
         #[arg(long)]
         cyclonedx: bool,

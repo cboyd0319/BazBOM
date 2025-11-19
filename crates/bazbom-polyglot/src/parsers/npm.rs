@@ -24,6 +24,7 @@ struct PackageJson {
     #[serde(default, rename = "devDependencies")]
     #[allow(dead_code)]
     dev_dependencies: HashMap<String, String>,
+    license: Option<serde_json::Value>, // Can be string or object
 }
 
 /// package-lock.json structure (simplified)
@@ -80,13 +81,13 @@ pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
             match lockfile_name {
                 "package-lock.json" => {
-                    parse_package_lock(lockfile_path, &mut result)?;
+                    parse_package_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
                 }
                 "yarn.lock" => {
-                    parse_yarn_lock(lockfile_path, &mut result)?;
+                    parse_yarn_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
                 }
                 "pnpm-lock.yaml" => {
-                    parse_pnpm_lock(lockfile_path, &mut result)?;
+                    parse_pnpm_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
                 }
                 _ => {
                     // No lockfile, fallback to package.json dependencies
@@ -129,9 +130,47 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
     Ok(())
 }
 
+/// Read license from node_modules/{package}/package.json
+fn read_license_from_node_modules(
+    root_path: &std::path::Path,
+    package_name: &str,
+    namespace: &Option<String>,
+) -> Option<String> {
+    // Build path to package.json
+    let pkg_path = if let Some(ns) = namespace {
+        root_path.join("node_modules").join(ns).join(package_name).join("package.json")
+    } else {
+        root_path.join("node_modules").join(package_name).join("package.json")
+    };
+
+    // Try to read and parse package.json
+    if let Ok(content) = fs::read_to_string(&pkg_path) {
+        if let Ok(pkg_json) = serde_json::from_str::<PackageJson>(&content) {
+            return extract_license_string(pkg_json.license);
+        }
+    }
+
+    None
+}
+
+/// Extract license string from serde_json::Value (can be string or object)
+fn extract_license_string(license: Option<serde_json::Value>) -> Option<String> {
+    match license? {
+        serde_json::Value::String(s) => Some(s),
+        serde_json::Value::Object(obj) => {
+            // license can be {"type": "MIT"} or {"type": "MIT", "url": "..."}
+            obj.get("type")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+        }
+        _ => None,
+    }
+}
+
 /// Parse package-lock.json (npm v7+)
 fn parse_package_lock(
     lockfile_path: &std::path::Path,
+    root_path: &std::path::Path,
     result: &mut EcosystemScanResult,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
@@ -162,13 +201,15 @@ fn parse_package_lock(
                     (None, name.to_string())
                 };
 
+                let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+
                 result.add_package(Package {
                     name: package_name,
                     version: version.clone(),
                     ecosystem: "npm".to_string(),
                     namespace,
                     dependencies: pkg.dependencies.keys().cloned().collect(),
-                    license: None,
+                    license,
                     description: None,
                     homepage: None,
                     repository: None,
@@ -177,7 +218,7 @@ fn parse_package_lock(
         }
     } else if !lock.dependencies.is_empty() {
         // npm v6 uses "dependencies" field
-        parse_v6_dependencies(&lock.dependencies, result, &mut Vec::new());
+        parse_v6_dependencies(&lock.dependencies, root_path, result, &mut Vec::new());
     }
 
     Ok(())
@@ -186,6 +227,7 @@ fn parse_package_lock(
 /// Parse npm v6 style dependencies (recursive)
 fn parse_v6_dependencies(
     deps: &HashMap<String, LockfileDependency>,
+    root_path: &std::path::Path,
     result: &mut EcosystemScanResult,
     path: &mut Vec<String>,
 ) {
@@ -206,13 +248,15 @@ fn parse_v6_dependencies(
             (None, name.to_string())
         };
 
+        let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+
         result.add_package(Package {
             name: package_name,
             version: dep.version.clone(),
             ecosystem: "npm".to_string(),
             namespace,
             dependencies: dep.requires.keys().cloned().collect(),
-            license: None,
+            license,
             description: None,
             homepage: None,
             repository: None,
@@ -221,7 +265,7 @@ fn parse_v6_dependencies(
         // Parse nested dependencies
         if !dep.dependencies.is_empty() {
             path.push(name.clone());
-            parse_v6_dependencies(&dep.dependencies, result, path);
+            parse_v6_dependencies(&dep.dependencies, root_path, result, path);
             path.pop();
         }
     }
@@ -241,6 +285,7 @@ fn parse_v6_dependencies(
 /// ```
 fn parse_yarn_lock(
     lockfile_path: &std::path::Path,
+    root_path: &std::path::Path,
     result: &mut EcosystemScanResult,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path).context("Failed to read yarn.lock")?;
@@ -264,7 +309,7 @@ fn parse_yarn_lock(
             if let (Some(pkg_name), Some(version)) =
                 (current_package.take(), current_version.take())
             {
-                add_yarn_package(result, &pkg_name, &version, &current_deps);
+                add_yarn_package(result, root_path, &pkg_name, &version, &current_deps);
                 current_deps.clear();
             }
 
@@ -321,7 +366,7 @@ fn parse_yarn_lock(
 
     // Don't forget the last package
     if let (Some(pkg_name), Some(version)) = (current_package, current_version) {
-        add_yarn_package(result, &pkg_name, &version, &current_deps);
+        add_yarn_package(result, root_path, &pkg_name, &version, &current_deps);
     }
 
     Ok(())
@@ -352,7 +397,13 @@ fn extract_dependency_name(line: &str) -> Option<String> {
 }
 
 /// Add a yarn package to the result
-fn add_yarn_package(result: &mut EcosystemScanResult, name: &str, version: &str, deps: &[String]) {
+fn add_yarn_package(
+    result: &mut EcosystemScanResult,
+    root_path: &std::path::Path,
+    name: &str,
+    version: &str,
+    deps: &[String],
+) {
     let (namespace, package_name) = if name.starts_with('@') {
         // Scoped package like "@babel/code-frame"
         let parts: Vec<&str> = name.splitn(2, '/').collect();
@@ -365,33 +416,51 @@ fn add_yarn_package(result: &mut EcosystemScanResult, name: &str, version: &str,
         (None, name.to_string())
     };
 
+    let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+
     result.add_package(Package {
         name: package_name,
         version: version.to_string(),
         ecosystem: "npm".to_string(),
         namespace,
         dependencies: deps.to_vec(),
-        license: None,
+        license,
         description: None,
         homepage: None,
         repository: None,
     });
 }
 
-/// pnpm-lock.yaml structure
+/// pnpm-lock.yaml structure (supports both v5 and v6+ formats)
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct PnpmLockfile {
     #[allow(dead_code)]
     lockfile_version: Option<serde_yaml::Value>,
+    // v5 format - top-level dependencies
     #[serde(default)]
     #[allow(dead_code)]
     dependencies: HashMap<String, PnpmDependency>,
     #[serde(default)]
     #[allow(dead_code)]
     dev_dependencies: HashMap<String, PnpmDependency>,
+    // v6+ format - importers section with workspace projects
+    #[serde(default)]
+    importers: HashMap<String, PnpmImporter>,
+    // Both formats have packages section
     #[serde(default)]
     packages: HashMap<String, PnpmPackage>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct PnpmImporter {
+    #[serde(default)]
+    #[allow(dead_code)]
+    dependencies: HashMap<String, PnpmDependency>,
+    #[serde(default)]
+    #[allow(dead_code)]
+    dev_dependencies: HashMap<String, PnpmDependency>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -405,18 +474,18 @@ struct PnpmDependency {
 #[derive(Debug, Deserialize)]
 struct PnpmPackage {
     #[allow(dead_code)]
-    resolution: Option<PnpmResolution>,
+    resolution: Option<serde_yaml::Value>, // Can be string (v5) or object with integrity (v6)
     #[serde(default)]
     dependencies: HashMap<String, String>,
     #[serde(default)]
     #[allow(dead_code)]
     dev: Option<bool>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PnpmResolution {
+    #[serde(default)]
     #[allow(dead_code)]
-    integrity: Option<String>,
+    engines: Option<serde_yaml::Value>,
+    #[serde(default, rename = "peerDependencies")]
+    #[allow(dead_code)]
+    peer_dependencies: HashMap<String, String>,
 }
 
 /// Parse pnpm-lock.yaml
@@ -425,6 +494,7 @@ struct PnpmResolution {
 /// in a flat structure with their full paths as keys.
 fn parse_pnpm_lock(
     lockfile_path: &std::path::Path,
+    root_path: &std::path::Path,
     result: &mut EcosystemScanResult,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path).context("Failed to read pnpm-lock.yaml")?;
@@ -450,6 +520,7 @@ fn parse_pnpm_lock(
             };
 
             let deps: Vec<String> = package.dependencies.keys().cloned().collect();
+            let license = read_license_from_node_modules(root_path, &package_name, &namespace);
 
             result.add_package(Package {
                 name: package_name,
@@ -457,7 +528,7 @@ fn parse_pnpm_lock(
                 ecosystem: "npm".to_string(),
                 namespace,
                 dependencies: deps,
-                license: None,
+                license,
                 description: None,
                 homepage: None,
                 repository: None,
@@ -469,10 +540,15 @@ fn parse_pnpm_lock(
 }
 
 /// Parse pnpm package path like "/@babel/code-frame@7.18.6" or "/express@4.18.2"
+/// Also handles v6 format with trailing colon: "/@babel/code-frame@7.18.6:"
 /// Returns (name, version) tuple
 fn parse_pnpm_package_path(path: &str) -> Option<(String, String)> {
-    // Remove leading slash
-    let path = path.strip_prefix('/').unwrap_or(path);
+    // Remove leading slash and trailing colon (v6 format)
+    let path = path
+        .strip_prefix('/')
+        .unwrap_or(path)
+        .strip_suffix(':')
+        .unwrap_or(path.strip_prefix('/').unwrap_or(path));
 
     // For scoped packages like "@babel/code-frame@7.18.6"
     if path.starts_with('@') {

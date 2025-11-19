@@ -20,6 +20,14 @@ pub async fn handle_scan(
     bazel_targets: Option<Vec<String>>,
     bazel_affected_by_files: Option<Vec<String>>,
     bazel_universe: String,
+    bazel_exclude_targets: Option<Vec<String>>,
+    bazel_workspace_path: Option<String>,
+    include_path: Option<Vec<String>>,
+    languages: Option<Vec<String>>,
+    bazel_rc_path: Option<String>,
+    bazel_flags: Option<String>,
+    bazel_show_internal_targets: bool,
+    bazel_vendor_manifest_path: Option<String>,
     cyclonedx: bool,
     with_semgrep: bool,
     with_codeql: Option<bazbom::cli::CodeqlSuite>,
@@ -133,73 +141,43 @@ pub async fn handle_scan(
         std::env::set_var("BAZBOM_JSON_MODE", "1");
     }
 
-    // Check if any orchestration flags are set
-    let use_orchestrator = cyclonedx
-        || with_semgrep
-        || with_codeql.is_some()
-        || autofix.is_some()
-        || containers.is_some();
+    // Always use orchestrated scan mode (default behavior)
+    info!("Using orchestrated scan mode (default)");
+    debug!("Orchestrator options - cyclonedx: {}, with_semgrep: {}, with_codeql: {:?}, autofix: {:?}, containers: {:?}",
+        cyclonedx, with_semgrep, with_codeql, autofix, containers);
 
-    if use_orchestrator {
-        // Use new orchestration path
-        info!("Using orchestrated scan mode");
-        debug!("Orchestrator options - cyclonedx: {}, with_semgrep: {}, with_codeql: {:?}, autofix: {:?}, containers: {:?}",
-            cyclonedx, with_semgrep, with_codeql, autofix, containers);
-        println!("[bazbom] using orchestrated scan mode");
-        let workspace = PathBuf::from(&path);
-        let output_dir = PathBuf::from(&out_dir);
+    let workspace = PathBuf::from(&path);
+    let output_dir = PathBuf::from(&out_dir);
 
-        debug!("Creating scan orchestrator for workspace: {:?}, output: {:?}", workspace, output_dir);
-        let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
-            workspace,
-            output_dir,
-            bazbom::scan_orchestrator::ScanOrchestratorOptions {
-                cyclonedx,
-                with_semgrep,
-                with_codeql,
-                autofix,
-                containers,
-                no_upload,
-                target,
-                threat_detection: None,
-                incremental: false,
-                benchmark,
-                fast,
-                reachability,
-                include_cicd,
-                fetch_checksums,
-            },
-        )?;
+    debug!("Creating scan orchestrator for workspace: {:?}, output: {:?}", workspace, output_dir);
+    let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
+        workspace,
+        output_dir,
+        bazbom::scan_orchestrator::ScanOrchestratorOptions {
+            cyclonedx,
+            with_semgrep,
+            with_codeql,
+            autofix,
+            containers,
+            no_upload,
+            target,
+            threat_detection: None,
+            incremental: false,
+            benchmark,
+            fast,
+            reachability,
+            include_cicd,
+            fetch_checksums,
+        },
+    )?;
 
-        info!("Running scan orchestrator");
-        return orchestrator.run();
-    }
-
-    // Original scan logic - delegate to helper function
-    debug!("Using legacy scan mode");
-    info!("Starting legacy scan for path: {}", path);
-    let scan_result = bazbom::scan::handle_legacy_scan(
-        path.clone(),
-        reachability,
-        fast,
-        format.clone(),
-        out_dir.clone(),
-        bazel_targets_query,
-        bazel_targets,
-        bazel_affected_by_files,
-        bazel_universe,
-        incremental,
-        base,
-        benchmark,
-        ml_risk,
-        include_cicd,
-        fetch_checksums,
-    );
+    info!("Running scan orchestrator");
+    let scan_result = orchestrator.run();
 
     if scan_result.is_ok() {
-        info!("Legacy scan completed successfully");
+        info!("Scan completed successfully");
     } else {
-        warn!("Legacy scan encountered errors");
+        warn!("Scan encountered errors");
     }
 
     // After scan completes, run auto-remediation if enabled

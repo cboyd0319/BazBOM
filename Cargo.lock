@@ -424,6 +424,7 @@ dependencies = [
  "criterion",
  "dialoguer",
  "flate2",
+ "glob",
  "hex",
  "indicatif",
  "num_cpus",
@@ -431,6 +432,7 @@ dependencies = [
  "quick-xml",
  "rayon",
  "rusqlite",
+ "rustls",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -454,6 +456,7 @@ version = "6.5.0"
 dependencies = [
  "anyhow",
  "blake3",
+ "flate2",
  "semver",
  "serde",
  "serde_json",

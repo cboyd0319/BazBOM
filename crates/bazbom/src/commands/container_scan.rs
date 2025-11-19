@@ -1560,18 +1560,14 @@ async fn analyze_go_reachability(
 ) -> Result<std::collections::HashSet<String>> {
     use bazbom_go_reachability::analyze_go_project;
 
-    let report = analyze_go_project(project_path)?;
+    let _report = analyze_go_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
 
+    // Conservative approach: Mark all packages as reachable since we don't have
+    // package-level mapping from the function-level reachability report
+    // TODO: Map functions back to packages for accurate package-level reachability
     for package in packages.keys() {
-        let is_reachable = report
-            .vulnerabilities
-            .iter()
-            .any(|v| &v.package == package && v.reachable);
-
-        if is_reachable {
-            reachable.insert(package.clone());
-        }
+        reachable.insert(package.clone());
     }
 
     Ok(reachable)

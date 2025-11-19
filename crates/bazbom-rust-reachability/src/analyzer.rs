@@ -128,7 +128,20 @@ impl RustReachabilityAnalyzer {
     }
 
     fn process_file(&mut self, file_path: &Path) -> Result<()> {
-        let ast = parse_file(file_path)?;
+        // Try to parse the file, but handle parse errors gracefully
+        let ast = match parse_file(file_path) {
+            Ok(ast) => ast,
+            Err(e) => {
+                // Log parse error but continue processing other files
+                tracing::warn!(
+                    "Skipping {} due to parse error: {}",
+                    file_path.display(),
+                    e
+                );
+                return Ok(()); // Return Ok to continue processing other files
+            }
+        };
+
         let mut extractor = FunctionExtractor::new();
         extractor.extract(&ast);
 
@@ -250,46 +263,58 @@ impl RustReachabilityAnalyzer {
 
         // Process all files in the crate
         for file_path in rust_files {
-            // Parse the file and extract functions
-            if let Ok(ast) = parse_file(&file_path) {
-                let mut extractor = FunctionExtractor::new();
-                extractor.extract(&ast);
-
-                // Add functions to call graph with crate-qualified names
-                for func in &extractor.functions {
-                    // Create fully qualified function ID: crate::module::function
-                    let func_id = if func.is_pub {
-                        // Public functions get crate-qualified names
-                        format!("{}::{}", crate_name, func.name)
-                    } else {
-                        // Private functions include file path
-                        format!("{}::{}::{}", crate_name, file_path.display(), func.name)
-                    };
-
-                    let function_node = FunctionNode {
-                        id: func_id.clone(),
-                        name: func.name.clone(),
-                        file: file_path.clone(),
-                        line: func.line,
-                        column: 0,
-                        is_entrypoint: false,
-                        reachable: false,
-                        calls: Vec::new(),
-                        is_pub: func.is_pub,
-                        is_async: func.is_async,
-                        is_test: func.is_test,
-                    };
-
-                    self.call_graph.add_function(function_node);
+            // Parse the file and extract functions, handling parse errors gracefully
+            let ast = match parse_file(&file_path) {
+                Ok(ast) => ast,
+                Err(e) => {
+                    // Log parse error but continue processing other files
+                    tracing::debug!(
+                        "Skipping {} in crate {} due to parse error: {}",
+                        file_path.display(),
+                        crate_name,
+                        e
+                    );
+                    continue; // Skip this file and move to the next
                 }
+            };
 
-                // Add call edges within this crate
-                for call in &extractor.calls {
-                    if let Some(caller_context) = &call.caller_context {
-                        let caller_id = format!("{}::{}", crate_name, caller_context);
-                        let callee_id = self.resolve_function_call(&call.callee, &file_path);
-                        self.call_graph.add_call(&caller_id, &callee_id);
-                    }
+            let mut extractor = FunctionExtractor::new();
+            extractor.extract(&ast);
+
+            // Add functions to call graph with crate-qualified names
+            for func in &extractor.functions {
+                // Create fully qualified function ID: crate::module::function
+                let func_id = if func.is_pub {
+                    // Public functions get crate-qualified names
+                    format!("{}::{}", crate_name, func.name)
+                } else {
+                    // Private functions include file path
+                    format!("{}::{}::{}", crate_name, file_path.display(), func.name)
+                };
+
+                let function_node = FunctionNode {
+                    id: func_id.clone(),
+                    name: func.name.clone(),
+                    file: file_path.clone(),
+                    line: func.line,
+                    column: 0,
+                    is_entrypoint: false,
+                    reachable: false,
+                    calls: Vec::new(),
+                    is_pub: func.is_pub,
+                    is_async: func.is_async,
+                    is_test: func.is_test,
+                };
+
+                self.call_graph.add_function(function_node);
+            }
+
+            // Add call edges within this crate
+            for call in &extractor.calls {
+                if let Some(caller_context) = &call.caller_context {
+                    let caller_id = format!("{}::{}", crate_name, caller_context);
+                    let callee_id = self.resolve_function_call(&call.callee, &file_path);
+                    self.call_graph.add_call(&caller_id, &callee_id);
                 }
             }
         }

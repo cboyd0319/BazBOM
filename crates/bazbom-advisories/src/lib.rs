@@ -15,6 +15,7 @@
 //! - Version range matching for affected package detection
 
 use anyhow::Result;
+use flate2::read::GzDecoder;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Read;
@@ -132,14 +133,25 @@ pub fn db_sync<P: AsRef<Path>>(cache_dir: P, offline: bool) -> Result<Manifest> 
         &kev_bytes,
     )?);
 
-    // EPSS
+    // EPSS - download gzipped, decompress before writing
     let epss_bytes = if offline {
         placeholder_csv.to_vec()
     } else {
-        fetch_or_placeholder(
+        let gzipped_data = fetch_or_placeholder(
             "https://epss.cyentia.com/epss_scores-current.csv.gz",
             placeholder_csv,
-        )
+        );
+
+        // Decompress gzipped EPSS data
+        let mut decoder = GzDecoder::new(&gzipped_data[..]);
+        let mut decompressed = Vec::new();
+        match decoder.read_to_end(&mut decompressed) {
+            Ok(_) => decompressed,
+            Err(e) => {
+                eprintln!("Warning: Failed to decompress EPSS data: {}. Using placeholder.", e);
+                placeholder_csv.to_vec()
+            }
+        }
     };
     files.push(write_file(
         cache_dir.join("advisories/epss.csv"),

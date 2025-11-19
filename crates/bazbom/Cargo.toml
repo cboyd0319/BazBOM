@@ -28,6 +28,7 @@ quick-xml = "0.38"
 zip = "6.0"
 tar = "0.4"
 flate2 = "1.0"
+glob = "0.3"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 bazbom-core = { path = "../bazbom-core" }
@@ -63,6 +64,7 @@ dialoguer = "0.12"
 console = "0.16"
 indicatif = "0.18"
 tokio = { version = "1", features = ["rt", "rt-multi-thread"] }
+rustls = { version = "0.23", features = ["ring"], default-features = false }
 webbrowser = "1.0"
 num_cpus = "1.17"
 rayon = "1.11"

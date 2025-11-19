@@ -14,12 +14,22 @@ pub fn load_epss_scores<P: AsRef<Path>>(path: P) -> Result<HashMap<String, EpssS
     let reader = BufReader::new(file);
     let mut epss_map = HashMap::new();
 
-    // Skip header line
+    // Skip comment lines and header
     let mut lines = reader.lines();
-    if let Some(Ok(header)) = lines.next() {
-        // Verify header format
-        if !header.to_lowercase().contains("cve") {
-            return Err(anyhow::anyhow!("Invalid EPSS CSV header: {}", header));
+    let mut found_header = false;
+
+    while let Some(Ok(line)) = lines.next() {
+        // Skip comment lines
+        if line.trim().starts_with('#') {
+            continue;
+        }
+        // Found the header line (should contain "cve")
+        if !found_header {
+            if !line.to_lowercase().contains("cve") {
+                return Err(anyhow::anyhow!("Invalid EPSS CSV header: {}", line));
+            }
+            found_header = true;
+            break;
         }
     }
 

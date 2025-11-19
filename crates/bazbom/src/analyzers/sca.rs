@@ -406,6 +406,46 @@ impl ScaAnalyzer {
         Some(Priority::P3)
     }
 
+    /// Calculate priority from CVSS score and enrichment data (for polyglot vulnerabilities)
+    fn calculate_priority_from_cvss(
+        &self,
+        cvss_score: Option<f64>,
+        epss: Option<f64>,
+        in_kev: bool,
+    ) -> Option<Priority> {
+        // P0: KEV entries or high EPSS + Critical/High severity
+        if in_kev {
+            return Some(Priority::P0);
+        }
+
+        if let Some(epss_val) = epss {
+            if let Some(cvss) = cvss_score {
+                if epss_val > 0.7 && cvss >= 9.0 {
+                    return Some(Priority::P0);
+                }
+                if epss_val > 0.5 && cvss >= 7.0 {
+                    return Some(Priority::P1);
+                }
+            }
+        }
+
+        // Fallback based on CVSS score
+        if let Some(cvss) = cvss_score {
+            if cvss >= 9.0 {
+                return Some(Priority::P1);
+            } else if cvss >= 7.0 {
+                return Some(Priority::P2);
+            } else if cvss >= 4.0 {
+                return Some(Priority::P3);
+            } else {
+                return Some(Priority::P4);
+            }
+        }
+
+        // Default priority if we can't determine
+        Some(Priority::P3)
+    }
+
     fn enrich_with_reachability(
         &self,
         ctx: &Context,
@@ -635,18 +675,62 @@ impl Analyzer for ScaAnalyzer {
                 serde_json::from_str(&content)
                     .context("failed to parse polyglot vulnerability data")?;
 
-            // Convert polyglot vulnerabilities to our VulnerabilityMatch format
+            // Load EPSS and KEV data for enrichment
+            let advisory_dir = match self.ensure_advisory_database(ctx) {
+                Ok(dir) => dir,
+                Err(e) => {
+                    println!("[bazbom] warning: failed to sync advisory database: {}", e);
+                    println!("[bazbom] continuing without EPSS/KEV enrichment");
+                    ctx.workspace.join(".bazbom").join("advisories")
+                }
+            };
+
+            let epss_path = advisory_dir.join("advisories").join("epss.csv");
+            debug!("Loading EPSS scores from {:?}", epss_path);
+            let epss_scores = load_epss_scores(&epss_path).unwrap_or_else(|e| {
+                warn!("Failed to load EPSS scores: {}", e);
+                println!("[bazbom] warning: failed to load EPSS scores: {}", e);
+                HashMap::new()
+            });
+
+            let kev_path = advisory_dir.join("advisories").join("kev.json");
+            debug!("Loading KEV catalog from {:?}", kev_path);
+            let kev_entries = load_kev_catalog(&kev_path).unwrap_or_else(|e| {
+                warn!("Failed to load KEV catalog: {}", e);
+                println!("[bazbom] warning: failed to load KEV catalog: {}", e);
+                HashMap::new()
+            });
+
+            info!("Loaded {} EPSS scores and {} KEV entries for polyglot enrichment",
+                  epss_scores.len(), kev_entries.len());
+            println!("[bazbom] loaded {} EPSS scores and {} KEV entries for enrichment",
+                     epss_scores.len(), kev_entries.len());
+
+            // Convert polyglot vulnerabilities to our VulnerabilityMatch format with enrichment
             let mut vuln_matches = Vec::new();
             for ecosystem_result in ecosystem_results {
                 for vuln in ecosystem_result.vulnerabilities {
+                    // Look up EPSS score for this vulnerability
+                    let epss_score = epss_scores.get(&vuln.id).map(|e| e.score);
+
+                    // Check if vulnerability is in CISA KEV catalog
+                    let in_kev = kev_entries.contains_key(&vuln.id);
+
+                    // Calculate priority using CVSS score from polyglot scanner
+                    let priority = self.calculate_priority_from_cvss(
+                        vuln.cvss_score,
+                        epss_score,
+                        in_kev
+                    );
+
                     vuln_matches.push(VulnerabilityMatch {
                         vulnerability_id: vuln.id.clone(),
                         component_name: vuln.package_name.clone(),
                         component_version: vuln.package_version.clone(),
                         summary: Some(vuln.description.clone()),
-                        epss_score: None,  // Polyglot scanner doesn't include EPSS
-                        in_kev: false,     // Polyglot scanner doesn't include KEV
-                        priority: None,    // Will be calculated from severity if needed
+                        epss_score,
+                        in_kev,
+                        priority,
                         location: format!("{}@{}", vuln.package_name, vuln.package_version),
                         reachable: None,   // Will be enriched if reachability data exists
                     });
