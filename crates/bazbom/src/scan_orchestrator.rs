@@ -12,6 +12,7 @@ use crate::publish::GitHubPublisher;
 use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
 use anyhow::{Context as _, Result};
 use bazbom_cache::incremental::IncrementalAnalyzer;
+use bazbom_orchestrator::{OrchestratorConfig, ParallelOrchestrator};
 use colored::Colorize;
 use std::path::PathBuf;
 
@@ -1113,18 +1114,28 @@ impl ScanOrchestrator {
                 .to_str()
                 .ok_or_else(|| anyhow::anyhow!("invalid workspace path"))?;
 
+            // Configure parallel orchestrator
+            let orchestrator_config = OrchestratorConfig {
+                max_concurrent: num_cpus::get(),
+                show_progress: true,  // Show progress bars
+                enable_reachability: self.reachability,
+                enable_vulnerabilities: true,  // Always scan for vulnerabilities
+            };
+
+            let orchestrator = ParallelOrchestrator::with_config(orchestrator_config);
+
             // Try to use existing runtime, or create a new one if not in async context
             match tokio::runtime::Handle::try_current() {
                 Ok(handle) => {
                     // We're in an async context, use block_in_place
                     tokio::task::block_in_place(|| {
-                        handle.block_on(bazbom_scanner::scan_directory(workspace_path))
+                        handle.block_on(orchestrator.scan_directory(workspace_path))
                     })?
                 }
                 Err(_) => {
                     // No runtime available, create a new one
                     let rt = tokio::runtime::Runtime::new()?;
-                    rt.block_on(bazbom_scanner::scan_directory(workspace_path))?
+                    rt.block_on(orchestrator.scan_directory(workspace_path))?
                 }
             }
         };
@@ -1305,7 +1316,7 @@ impl ScanOrchestrator {
         }
 
         // Generate unified SBOM combining Bazel Maven + all polyglot ecosystems
-        let spdx_path = if !polyglot_results.is_empty() {
+        let _spdx_path = if !polyglot_results.is_empty() {
             let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
             tracing::info!("Generating unified SBOM with {} packages across {} ecosystems",
                 total_packages, polyglot_results.len());
@@ -1428,6 +1439,7 @@ mod tests {
                 fast: false,
                 reachability: false,
                 include_cicd: false,
+                fetch_checksums: false,
             },
         )?;
 
@@ -1461,6 +1473,7 @@ mod tests {
                 fast: false,
                 reachability: false,
                 include_cicd: false,
+                fetch_checksums: false,
             },
         )?;
 

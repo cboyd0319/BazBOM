@@ -16,18 +16,18 @@ pub async fn handle_scan(
     format: String,
     out_dir: String,
     mut json: bool,
-    bazel_targets_query: Option<String>,
-    bazel_targets: Option<Vec<String>>,
-    bazel_affected_by_files: Option<Vec<String>>,
-    bazel_universe: String,
-    bazel_exclude_targets: Option<Vec<String>>,
-    bazel_workspace_path: Option<String>,
-    include_path: Option<Vec<String>>,
-    languages: Option<Vec<String>>,
-    bazel_rc_path: Option<String>,
-    bazel_flags: Option<String>,
-    bazel_show_internal_targets: bool,
-    bazel_vendor_manifest_path: Option<String>,
+    _bazel_targets_query: Option<String>,
+    _bazel_targets: Option<Vec<String>>,
+    _bazel_affected_by_files: Option<Vec<String>>,
+    _bazel_universe: String,
+    _bazel_exclude_targets: Option<Vec<String>>,
+    _bazel_workspace_path: Option<String>,
+    _include_path: Option<Vec<String>>,
+    _languages: Option<Vec<String>>,
+    _bazel_rc_path: Option<String>,
+    _bazel_flags: Option<String>,
+    _bazel_show_internal_targets: bool,
+    _bazel_vendor_manifest_path: Option<String>,
     cyclonedx: bool,
     with_semgrep: bool,
     with_codeql: Option<bazbom::cli::CodeqlSuite>,
@@ -36,11 +36,11 @@ pub async fn handle_scan(
     no_upload: bool,
     target: Option<String>,
     mut incremental: bool,
-    base: String,
+    _base: String,
     mut diff: bool,
     baseline: Option<String>,
     benchmark: bool,
-    ml_risk: bool,
+    _ml_risk: bool,
     jira_create: bool,
     jira_dry_run: bool,
     github_pr: bool,
@@ -95,7 +95,10 @@ pub async fn handle_scan(
     if defaults.enable_incremental && !incremental && smart_defaults_enabled {
         println!("  → Enabling incremental mode for PR");
         debug!("Auto-enabled incremental mode for PR environment");
-        incremental = true;
+        #[allow(unused_assignments)]
+        {
+            incremental = true;
+        }
     }
 
     if defaults.enable_diff && !diff && baseline.is_some() && smart_defaults_enabled {

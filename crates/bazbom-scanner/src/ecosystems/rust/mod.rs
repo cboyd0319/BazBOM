@@ -8,7 +8,6 @@ use anyhow::{Context, Result};
 use async_trait::async_trait;
 use cargo_lock::Lockfile;
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs;
 use std::path::Path;
 

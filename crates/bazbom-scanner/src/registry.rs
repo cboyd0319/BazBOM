@@ -67,7 +67,7 @@ impl Default for ScannerRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
+    use crate::scanner::{ScanContext, Scanner};
     use crate::types::EcosystemScanResult;
     use async_trait::async_trait;
 

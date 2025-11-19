@@ -65,7 +65,7 @@ Full transitive dependency reachability analysis for Rust projects that traces f
 
 ### Files Created/Modified
 
-1. **`crates/bazbom-rust-reachability/src/dependency_resolver.rs`** (NEW)
+1. **`crates/bazbom-reachability/src/dependency_resolver.rs`** (NEW)
    ```rust
    pub struct DependencyResolver {
        project_root: PathBuf,
@@ -81,7 +81,7 @@ Full transitive dependency reachability analysis for Rust projects that traces f
    - Checks `vendor/` directory first (modern best practice)
    - Falls back to `~/.cargo/registry/src/`
 
-2. **`crates/bazbom-rust-reachability/src/analyzer.rs`** (MODIFIED)
+2. **`crates/bazbom-reachability/src/analyzer.rs`** (MODIFIED)
    - Added `dependencies: Vec<Dependency>` field
    - Added `crate_sources: HashMap<String, PathBuf>` field
    - Added `build_dependency_call_graphs()` method
@@ -89,7 +89,7 @@ Full transitive dependency reachability analysis for Rust projects that traces f
    - Enhanced `resolve_function_call()` for cross-crate resolution
    - Added Cargo.lock detection to prevent recursive dependency analysis
 
-3. **`crates/bazbom-rust-reachability/Cargo.toml`**
+3. **`crates/bazbom-reachability/Cargo.toml`**
    ```toml
    toml = "0.8"    # Parse Cargo.lock
    dirs = "5"      # Find ~/.cargo directory

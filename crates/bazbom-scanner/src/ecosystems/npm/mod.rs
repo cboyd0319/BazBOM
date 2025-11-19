@@ -514,6 +514,7 @@ struct PnpmLockfile {
     dev_dependencies: HashMap<String, PnpmDependency>,
     // v6+ format - importers section with workspace projects
     #[serde(default)]
+    #[allow(dead_code)]
     importers: HashMap<String, PnpmImporter>,
     // Both formats have packages section
     #[serde(default)]

@@ -35,7 +35,7 @@ fn build_dependency_call_graph()
 ## Usage
 
 ```rust
-use bazbom_ruby_reachability::analyze_ruby_project;
+use bazbom_reachability::ruby::analyze_ruby_project;
 use std::path::Path;
 
 let report = analyze_ruby_project(Path::new("./my-app"))?;

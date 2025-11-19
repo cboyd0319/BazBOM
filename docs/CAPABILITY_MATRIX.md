@@ -69,12 +69,12 @@
 
 | Ecosystem | Languages | Manifest | Lockfile(s) | Detection | Parsing | Reachability | Status | Notes |
 |-----------|-----------|----------|-------------|-----------|---------|--------------|--------|-------|
-| **npm** | JavaScript / TypeScript | `package.json` | `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` | ✅ | ✅ | ✅ (bazbom-js-reachability) | STABLE | Full lockfile parsing for all three package managers |
-| **Python** | Python | `pyproject.toml`, `Pipfile`, `requirements.txt` | `poetry.lock`, `Pipfile.lock` | ✅ | ✅ | ✅ (bazbom-python-reachability) | STABLE | Poetry + Pipenv aware |
-| **Go** | Go | `go.mod` | `go.sum` | ✅ | ✅ | ✅ (bazbom-go-reachability) | STABLE | Handles replace/indirect blocks |
-| **Rust** | Rust | `Cargo.toml` | `Cargo.lock` | ✅ | ✅ | ✅ (bazbom-rust-reachability) | STABLE | cargo-lock crate for accuracy |
-| **Ruby** | Ruby | `Gemfile` | `Gemfile.lock` | ✅ | ✅ | ✅ (bazbom-ruby-reachability) | STABLE | Rails/RSpec aware |
-| **PHP** | PHP | `composer.json` | `composer.lock` | ✅ | ✅ | ✅ (bazbom-php-reachability) | STABLE | Laravel/Symfony aware |
+| **npm** | JavaScript / TypeScript | `package.json` | `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | Full lockfile parsing for all three package managers |
+| **Python** | Python | `pyproject.toml`, `Pipfile`, `requirements.txt` | `poetry.lock`, `Pipfile.lock` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | Poetry + Pipenv aware |
+| **Go** | Go | `go.mod` | `go.sum` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | Handles replace/indirect blocks |
+| **Rust** | Rust | `Cargo.toml` | `Cargo.lock` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | cargo-lock crate for accuracy |
+| **Ruby** | Ruby | `Gemfile` | `Gemfile.lock` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | Rails/RSpec aware |
+| **PHP** | PHP | `composer.json` | `composer.lock` | ✅ | ✅ | ✅ (bazbom-reachability) | STABLE | Laravel/Symfony aware |
 
 ### Polyglot Features
 - Auto-detection: ✅ (no flags needed)
@@ -231,9 +231,9 @@
 | Area | Crates (examples) | Status | Notes |
 |------|-------------------|--------|-------|
 | CLI & Formats | `bazbom`, `bazbom-core`, `bazbom-formats`, `bazbom-graph` | ✅ STABLE | Unified commands, SBOM emitters, dependency graph primitives |
-| Advisory & Threat Intel | `bazbom-advisories`, `bazbom-threats`, `bazbom-ml` | ✅ STABLE | OSV/NVD/GHSA ingestion, EPSS/KEV enrichment, ML scoring |
+| Advisory & Threat Intel | `bazbom-vulnerabilities`, `bazbom-threats`, `bazbom-ml` | ✅ STABLE | OSV/NVD/GHSA ingestion, EPSS/KEV enrichment, ML scoring |
 | Policy & Automation | `bazbom-policy`, `bazbom-reports`, `bazbom-cache` | ✅ STABLE | Rego/YAML policies, compliance reports, deterministic caching |
-| Polyglot & Reachability | `bazbom-polyglot`, `bazbom-{js,python,go,rust,ruby,php}-reachability` | ✅ STABLE | AST/call-graph analysis for 6 non-JVM ecosystems + JVM bridge |
+| Polyglot & Reachability | `bazbom-scanner`, `bazbom-{js,python,go,rust,ruby,php}-reachability` | ✅ STABLE | AST/call-graph analysis for 6 non-JVM ecosystems + JVM bridge |
 | Containers & Supply Chain | `bazbom-containers`, `bazbom-operator`, `bazbom-cache` | ✅ STABLE | Container scanning, Kubernetes operator, reproducible artifacts |
 | Developer Experience | `bazbom-tui`, `bazbom-dashboard`, `bazbom-lsp` | ✅ STABLE | TUI explorer, Axum dashboard, IDE/LSP integrations |
 
@@ -252,7 +252,7 @@
 |----------|-------|--------|-------|
 | Core CLI + policy unit tests | 180+ | ✅ PASSING | `cargo test --all` across bazbom, core, policy, reports |
 | Reachability analyzers | 90+ | ✅ PASSING | Language-specific crates (JS/TS, Python, Go, Rust, Ruby, PHP) |
-| Polyglot parsers & detection | 50+ | ✅ PASSING | `bazbom-polyglot` unit + detection tests |
+| Polyglot parsers & detection | 50+ | ✅ PASSING | `bazbom-scanner` unit + detection tests |
 | Container + supply-chain workflows | 20 | ✅ PASSING | bazbom-containers, operator, provenance flows |
 | End-to-end workflow smoke tests | 20+ | ✅ PASSING | CLI golden examples + docs validation |
 | **Total** | **360+** | **100% PASS** | Reported in CI badges + release checklists |

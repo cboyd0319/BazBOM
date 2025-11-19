@@ -37,8 +37,10 @@ cargo test --workspace
 ```bash
 # Test a specific crate
 cargo test -p bazbom-core
-cargo test -p bazbom-advisories
+cargo test -p bazbom-vulnerabilities
 cargo test -p bazbom-policy
+cargo test -p bazbom-scanner
+cargo test -p bazbom-orchestrator
 ```
 
 ### Run Tests with Coverage

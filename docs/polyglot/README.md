@@ -143,18 +143,18 @@ graph TD
 
 ```bash
 # Run all polyglot tests
-cargo test -p bazbom-polyglot --lib
+cargo test -p bazbom-scanner --lib
 
 # Run specific ecosystem tests
-cargo test -p bazbom-polyglot --lib npm
-cargo test -p bazbom-polyglot --lib python
-cargo test -p bazbom-polyglot --lib go
-cargo test -p bazbom-polyglot --lib rust
-cargo test -p bazbom-polyglot --lib ruby
-cargo test -p bazbom-polyglot --lib php
+cargo test -p bazbom-scanner --lib npm
+cargo test -p bazbom-scanner --lib python
+cargo test -p bazbom-scanner --lib go
+cargo test -p bazbom-scanner --lib rust
+cargo test -p bazbom-scanner --lib ruby
+cargo test -p bazbom-scanner --lib php
 
 # Run detection tests
-cargo test -p bazbom-polyglot --lib detection
+cargo test -p bazbom-scanner --lib detection
 ```
 
 ## Documentation
@@ -236,15 +236,15 @@ See [CONTRIBUTING.md](../../CONTRIBUTING.md) for general guidelines.
 
 To add support for a new ecosystem:
 
-1. Create parser module: `crates/bazbom-polyglot/src/parsers/your_ecosystem.rs`
-2. Add ecosystem type: `crates/bazbom-polyglot/src/detection.rs`
-3. Implement `scan()` function with lockfile + fallback parsing
+1. Create scanner module: `crates/bazbom-scanner/src/ecosystems/your_ecosystem/mod.rs`
+2. Implement the `Scanner` trait with `detect()`, `scan()`, and `fetch_license()` methods
+3. Register the scanner in `crates/bazbom-scanner/src/registry.rs`
 4. Add 3+ unit tests covering:
    - Lockfile parsing
    - Manifest fallback parsing
    - Edge cases (version operators, scopes, etc.)
-5. Update `lib.rs` to dispatch to new parser
-6. Add OSV ecosystem mapping: `crates/bazbom-polyglot/src/vulnerabilities.rs`
+5. Add OSV ecosystem mapping in the scanner's `scan()` implementation
+6. Update documentation with examples
 
 ## Support
 

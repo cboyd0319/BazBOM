@@ -85,7 +85,7 @@ When `next_page_token` is present in a result, make another request with that to
 
 ### Phase 1: Create OSV API Client
 
-**Location:** `crates/bazbom-advisories/src/osv_client.rs` (new file)
+**Location:** `crates/bazbom-vulnerabilities/src/osv_client.rs` (new file)
 
 **Key Functions:**
 ```rust
@@ -171,7 +171,7 @@ Handle:
 - ⚠️ Debug logging added to highlight the issue
 
 **Next Steps:**
-1. Implement `OsvClient` in `bazbom-advisories` crate
+1. Implement `OsvClient` in `bazbom-vulnerabilities` crate
 2. Add `reqwest` dependency with `json` feature
 3. Update SCA analyzer to use API client
 4. Add tests with mocked API responses
@@ -199,7 +199,7 @@ mod tests {
 
 ## Dependencies
 
-Add to `crates/bazbom-advisories/Cargo.toml`:
+Add to `crates/bazbom-vulnerabilities/Cargo.toml`:
 ```toml
 [dependencies]
 reqwest = { version = "0.11", features = ["json"] }

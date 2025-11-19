@@ -39,6 +39,8 @@ build/
 # BazBOM cache and output files
 .bazbom/
 sbom.*.json
+*-sbom.json
+*-vulns.json
 sca_findings.*
 *.spdx.json
 *.cyclonedx.json
@@ -47,12 +49,12 @@ policy_result.json
 policy_violations.json
 policy_violations.sarif
 bazbom-output/
-/sbom/
-/findings/
-/enrich/
-/fixes/
-/security/
-/static/
+sbom/
+findings/
+enrich/
+fixes/
+security/
+static/
 
 # Container scanning outputs
 *-scan/

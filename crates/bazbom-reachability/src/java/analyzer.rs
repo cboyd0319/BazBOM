@@ -106,7 +106,7 @@ impl JavaReachabilityAnalyzer {
             .map(|h| h.join(".m2").join("repository"))
             .filter(|p| p.exists());
 
-        if let Some(maven_repo) = maven_repo {
+        if let Some(_maven_repo) = maven_repo {
             tracing::info!("Analyzing Maven dependencies in ~/.m2/repository");
             // NOTE: In production, we'd parse pom.xml to get specific dependencies
             // For now, we'll skip full Maven repo scan as it's massive
@@ -118,7 +118,7 @@ impl JavaReachabilityAnalyzer {
             .map(|h| h.join(".gradle").join("caches").join("modules-2").join("files-2.1"))
             .filter(|p| p.exists());
 
-        if let Some(gradle_cache) = gradle_cache {
+        if let Some(_gradle_cache) = gradle_cache {
             tracing::info!("Analyzing Gradle dependencies in ~/.gradle/caches");
             // NOTE: In production, we'd parse build.gradle to get specific dependencies
             // For now, we'll skip full Gradle cache scan as it's massive

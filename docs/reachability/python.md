@@ -97,7 +97,7 @@ When dynamic code is detected:
 ## Usage
 
 ```rust
-use bazbom_python_reachability::analyze_python_project;
+use bazbom_reachability::python::analyze_python_project;
 use std::path::Path;
 
 let report = analyze_python_project(Path::new("./my-app"))?;
@@ -143,7 +143,7 @@ All tests pass, including:
 ### Test Suite
 
 ```bash
-cargo test -p bazbom-python-reachability
+cargo test -p bazbom-reachability
 ```
 
 **Results:** 22/22 tests passing
@@ -223,7 +223,7 @@ Follows Python import semantics:
 ## Files
 
 ```
-crates/bazbom-python-reachability/
+crates/bazbom-reachability/
 ├── src/
 │   ├── lib.rs              - Public API
 │   ├── analyzer.rs         - Main orchestrator with venv support
@@ -270,10 +270,10 @@ Dynamic code warning:
 
 ## Integration with BazBOM
 
-Integrated via `bazbom-polyglot`:
+Integrated via `bazbom-scanner`:
 
 ```rust
-use bazbom_python_reachability::analyze_python_project;
+use bazbom_reachability::python::analyze_python_project;
 
 pub fn analyze_python_reachability(project_root: &Path) -> Result<ReachabilityReport> {
     analyze_python_project(project_root)

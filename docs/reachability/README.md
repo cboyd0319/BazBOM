@@ -200,7 +200,7 @@ bazbom scan --format sarif --output results.sarif /path/to/project
 ### Programmatic (Rust)
 
 ```rust
-use bazbom_js_reachability::analyze_js_project;
+use bazbom_reachability::javascript::analyze_js_project;
 use std::path::PathBuf;
 
 let project_root = PathBuf::from("/path/to/project");

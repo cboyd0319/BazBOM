@@ -146,7 +146,7 @@ Split analysis across multiple jobs:
 ```yaml
 strategy:
   matrix:
-    crate: [bazbom, bazbom-core, bazbom-formats, bazbom-advisories]
+    crate: [bazbom, bazbom-core, bazbom-formats, bazbom-vulnerabilities]
 ```
 
 ### Incremental Analysis

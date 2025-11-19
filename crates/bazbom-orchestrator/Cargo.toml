@@ -1,0 +1,29 @@
+[package]
+name = "bazbom-orchestrator"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[dependencies]
+# Async runtime for parallel scanning
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# Internal dependencies
+bazbom-scanner = { path = "../bazbom-scanner" }
+
+# Error handling
+anyhow = "1"
+thiserror = "1"
+
+# Progress indicators
+indicatif = "0.17"
+
+# CPU detection for optimal parallelism
+num_cpus = "1"
+
+# Logging
+tracing = "0.1"
+
+[dev-dependencies]
+tempfile = "3"

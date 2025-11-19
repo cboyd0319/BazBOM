@@ -33,6 +33,13 @@ tree-sitter-php = "0.24"
 # Java uses bytecode analysis
 # Go and Rust use their own parsing methods
 
+# Optional tracing setup (for debugging)
+tracing-subscriber = { version = "0.3", optional = true }
+
+[features]
+default = []
+tracing-support = ["tracing-subscriber"]
+
 [dev-dependencies]
 tempfile = "3"
 tokio-test = "0.4"

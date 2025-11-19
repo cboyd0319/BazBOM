@@ -7,15 +7,16 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 const OSV_API_URL: &str = "https://api.osv.dev/v1/query";
+const OSV_BATCH_API_URL: &str = "https://api.osv.dev/v1/querybatch";
 
 /// OSV Query Request
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct OsvQueryRequest {
     package: OsvPackage,
     version: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct OsvPackage {
     ecosystem: String,
     name: String,
@@ -26,6 +27,18 @@ struct OsvPackage {
 struct OsvQueryResponse {
     #[serde(default)]
     vulns: Vec<OsvVulnerability>,
+}
+
+/// OSV Batch Query Request
+#[derive(Debug, Serialize)]
+struct OsvBatchQueryRequest {
+    queries: Vec<OsvQueryRequest>,
+}
+
+/// OSV Batch Query Response
+#[derive(Debug, Deserialize)]
+struct OsvBatchQueryResponse {
+    results: Vec<OsvQueryResponse>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -91,44 +104,140 @@ struct OsvReference {
     url: String,
 }
 
-/// Scan packages for vulnerabilities using OSV API
+/// Scan packages for vulnerabilities using OSV API (batch mode for better performance)
 pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerability>> {
+    if packages.is_empty() {
+        return Ok(Vec::new());
+    }
+
     eprintln!("DEBUG: scan_vulnerabilities called with {} packages", packages.len());
     if !packages.is_empty() {
         eprintln!("DEBUG: First package: {}@{} (ecosystem: {})",
             packages[0].name, packages[0].version, packages[0].ecosystem);
     }
 
-    let mut vulnerabilities = Vec::new();
     let client = reqwest::Client::new();
 
-    for package in packages {
-        let osv_ecosystem = map_ecosystem(&package.ecosystem);
-        eprintln!("DEBUG: Querying OSV for {}@{} (OSV ecosystem: {})",
-            package.name, package.version, osv_ecosystem);
+    // Use batch API if more than 1 package, otherwise use single query
+    if packages.len() == 1 {
+        return scan_vulnerabilities_single(&client, &packages[0]).await;
+    }
 
-        // Query OSV API
-        let request = OsvQueryRequest {
-            package: OsvPackage {
-                ecosystem: osv_ecosystem.to_string(),
-                name: format_package_name(package),
-            },
-            version: package.version.clone(),
-        };
+    // Build batch query request
+    let queries: Vec<OsvQueryRequest> = packages
+        .iter()
+        .map(|package| {
+            let osv_ecosystem = map_ecosystem(&package.ecosystem);
+            OsvQueryRequest {
+                package: OsvPackage {
+                    ecosystem: osv_ecosystem.to_string(),
+                    name: format_package_name(package),
+                },
+                version: package.version.clone(),
+            }
+        })
+        .collect();
 
-        eprintln!("DEBUG: OSV request: {{\"package\": {{\"ecosystem\": \"{}\", \"name\": \"{}\"}}, \"version\": \"{}\"}}",
-            request.package.ecosystem, request.package.name, request.version);
+    eprintln!(
+        "DEBUG: Sending batch query to OSV for {} packages",
+        queries.len()
+    );
 
-        match query_osv(&client, &request).await {
-            Ok(response) => {
-                eprintln!("DEBUG: OSV returned {} vulnerabilities for {}@{}",
-                    response.vulns.len(), package.name, package.version);
-                for osv_vuln in response.vulns {
-                    if let Some(vuln) = convert_osv_vulnerability(&osv_vuln, package) {
+    // Query OSV batch API
+    match query_osv_batch(&client, &queries).await {
+        Ok(batch_response) => {
+            let mut vulnerabilities = Vec::new();
+
+            // Process each response
+            for (idx, response) in batch_response.results.iter().enumerate() {
+                if idx >= packages.len() {
+                    break;
+                }
+
+                let package = &packages[idx];
+                eprintln!(
+                    "DEBUG: OSV returned {} vulnerabilities for {}@{}",
+                    response.vulns.len(),
+                    package.name,
+                    package.version
+                );
+
+                for osv_vuln in &response.vulns {
+                    if let Some(vuln) = convert_osv_vulnerability(osv_vuln, package) {
                         vulnerabilities.push(vuln);
                     }
                 }
             }
+
+            Ok(vulnerabilities)
+        }
+        Err(e) => {
+            eprintln!("Warning: Batch OSV query failed, falling back to individual queries: {}", e);
+            // Fallback to individual queries
+            scan_vulnerabilities_fallback(&client, packages).await
+        }
+    }
+}
+
+/// Scan a single package (used when only 1 package to scan)
+async fn scan_vulnerabilities_single(
+    client: &reqwest::Client,
+    package: &Package,
+) -> Result<Vec<Vulnerability>> {
+    let osv_ecosystem = map_ecosystem(&package.ecosystem);
+    eprintln!(
+        "DEBUG: Querying OSV for {}@{} (OSV ecosystem: {})",
+        package.name, package.version, osv_ecosystem
+    );
+
+    let request = OsvQueryRequest {
+        package: OsvPackage {
+            ecosystem: osv_ecosystem.to_string(),
+            name: format_package_name(package),
+        },
+        version: package.version.clone(),
+    };
+
+    eprintln!(
+        "DEBUG: OSV request: {{\"package\": {{\"ecosystem\": \"{}\", \"name\": \"{}\"}}, \"version\": \"{}\"}}",
+        request.package.ecosystem, request.package.name, request.version
+    );
+
+    match query_osv(client, &request).await {
+        Ok(response) => {
+            eprintln!(
+                "DEBUG: OSV returned {} vulnerabilities for {}@{}",
+                response.vulns.len(),
+                package.name,
+                package.version
+            );
+
+            Ok(response
+                .vulns
+                .iter()
+                .filter_map(|osv_vuln| convert_osv_vulnerability(osv_vuln, package))
+                .collect())
+        }
+        Err(e) => {
+            eprintln!(
+                "Warning: Failed to query OSV for {}@{}: {}",
+                package.name, package.version, e
+            );
+            Ok(Vec::new())
+        }
+    }
+}
+
+/// Fallback to individual queries (if batch fails)
+async fn scan_vulnerabilities_fallback(
+    client: &reqwest::Client,
+    packages: &[Package],
+) -> Result<Vec<Vulnerability>> {
+    let mut vulnerabilities = Vec::new();
+
+    for package in packages {
+        match scan_vulnerabilities_single(client, package).await {
+            Ok(mut vulns) => vulnerabilities.append(&mut vulns),
             Err(e) => {
                 eprintln!(
                     "Warning: Failed to query OSV for {}@{}: {}",
@@ -145,7 +254,7 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
     Ok(vulnerabilities)
 }
 
-/// Query OSV API
+/// Query OSV API (single package)
 async fn query_osv(
     client: &reqwest::Client,
     request: &OsvQueryRequest,
@@ -167,6 +276,34 @@ async fn query_osv(
         .context("Failed to parse OSV API response")?;
 
     Ok(osv_response)
+}
+
+/// Query OSV Batch API (multiple packages in single request)
+async fn query_osv_batch(
+    client: &reqwest::Client,
+    queries: &[OsvQueryRequest],
+) -> Result<OsvBatchQueryResponse> {
+    let batch_request = OsvBatchQueryRequest {
+        queries: queries.to_vec(),
+    };
+
+    let response = client
+        .post(OSV_BATCH_API_URL)
+        .json(&batch_request)
+        .send()
+        .await
+        .context("Failed to send OSV batch API request")?;
+
+    if !response.status().is_success() {
+        anyhow::bail!("OSV batch API returned error: {}", response.status());
+    }
+
+    let batch_response = response
+        .json::<OsvBatchQueryResponse>()
+        .await
+        .context("Failed to parse OSV batch API response")?;
+
+    Ok(batch_response)
 }
 
 /// Convert OSV vulnerability to our format

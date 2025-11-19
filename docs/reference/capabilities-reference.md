@@ -429,7 +429,7 @@ bazel run //tools/supplychain:scan_container -- myimage:latest
 - Batch query optimization: Efficient for large dependency lists
 
 **Implementation:**
-- `bazbom-advisories` crate: Multiple modules, comprehensive coverage
+- `bazbom-vulnerabilities` crate: Multiple modules, comprehensive coverage
 - OSV batch API integration
 - NVD CPE matching
 - GHSA GraphQL queries

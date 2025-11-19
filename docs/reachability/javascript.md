@@ -79,7 +79,7 @@ This is intentionally conservative to avoid false negatives.
 ## Usage
 
 ```rust
-use bazbom_js_reachability::analyze_js_project;
+use bazbom_reachability::javascript::analyze_js_project;
 use std::path::Path;
 
 let report = analyze_js_project(Path::new("./my-app"))?;
@@ -116,7 +116,7 @@ All tests pass, including:
 ### Test Suite
 
 ```bash
-cargo test -p bazbom-js-reachability
+cargo test -p bazbom-reachability
 ```
 
 **Results:** 13/13 tests passing
@@ -152,11 +152,11 @@ All limitations err on the side of **over-reporting reachability** (safer for se
 
 ## Integration with BazBOM
 
-Integrated via `bazbom-polyglot`:
+Integrated via `bazbom-scanner`:
 
 ```rust
-// In bazbom-polyglot/src/reachability_integration.rs
-use bazbom_js_reachability::analyze_js_project;
+// In bazbom-scanner/src/reachability_integration.rs
+use bazbom_reachability::javascript::analyze_js_project;
 
 pub fn analyze_js_reachability(project_root: &Path) -> Result<ReachabilityReport> {
     analyze_js_project(project_root)
@@ -197,7 +197,7 @@ Conservative: when in doubt, mark as entrypoint.
 ## Files
 
 ```
-crates/bazbom-js-reachability/
+crates/bazbom-reachability/
 ├── src/
 │   ├── lib.rs              - Public API
 │   ├── analyzer.rs         - Main orchestrator with transitive deps

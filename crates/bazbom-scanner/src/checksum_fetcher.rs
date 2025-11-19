@@ -62,6 +62,7 @@ struct NpmPackageVersion {
 
 #[derive(Deserialize)]
 struct NpmDist {
+    #[allow(dead_code)]
     shasum: String,      // SHA-1 (legacy)
     integrity: Option<String>,  // Subresource Integrity (SHA-256, SHA-384, SHA-512)
 }
@@ -137,12 +138,14 @@ async fn fetch_pypi_checksum(client: &Client, package: &Package) -> Result<Optio
 // ============================================================================
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CargoVersion {
     #[serde(rename = "crate")]
     crate_info: CrateInfo,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct CrateInfo {
     max_version: String,
 }
@@ -219,16 +222,19 @@ async fn fetch_rubygems_checksum(client: &Client, package: &Package) -> Result<O
 
 #[derive(Deserialize)]
 struct PackagistResponse {
+    #[allow(dead_code)]
     packages: std::collections::HashMap<String, std::collections::HashMap<String, PackagistVersion>>,
 }
 
 #[derive(Deserialize)]
 struct PackagistVersion {
+    #[allow(dead_code)]
     dist: Option<PackagistDist>,
 }
 
 #[derive(Deserialize)]
 struct PackagistDist {
+    #[allow(dead_code)]
     shasum: Option<String>,  // SHA-1, not SHA-256
 }
 

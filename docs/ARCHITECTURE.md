@@ -39,7 +39,7 @@ Located in `crates/`:
 | `bazbom` | CLI entry point, command orchestration | Production |
 | `bazbom-core` | Shared types, inventory model | Production |
 | `bazbom-graph` | Dependency graph normalization, deduplication | Production |
-| `bazbom-advisories` | OSV/NVD/GHSA merge, KEV/EPSS enrichment | Production |
+| `bazbom-vulnerabilities` | OSV/NVD/GHSA merge, KEV/EPSS enrichment | Production |
 | `bazbom-policy` | YAML policy engine, Rego/OPA bridge | Production |
 | `bazbom-formats` | SPDX, CycloneDX, SARIF, VEX exporters | Production |
 | `bazbom-lsp` | Language Server Protocol for IDE integration | Production |
@@ -49,14 +49,9 @@ Located in `crates/`:
 | `bazbom-containers` | OCI image scanning with layer attribution | Production |
 | `bazbom-cache` | Advisory database caching | Production |
 | `bazbom-reports` | HTML/PDF report generation | Production |
-| `bazbom-polyglot` | Multi-language ecosystem support (npm, Python, Go, Rust, Ruby, PHP) | Production |
-| `bazbom-js-reachability` | JavaScript/TypeScript call graph analysis | Production |
-| `bazbom-python-reachability` | Python call graph analysis | Production |
-| `bazbom-go-reachability` | Go call graph analysis | Production |
-| `bazbom-rust-reachability` | Rust call graph analysis (syn-based) | Production |
-| `bazbom-ruby-reachability` | Ruby call graph analysis | Production |
-| `bazbom-php-reachability` | PHP call graph analysis | Production |
-| `bazbom-java-reachability` | JVM bytecode call graph analysis (OPAL-based) | Production |
+| `bazbom-scanner` | Multi-language ecosystem support (npm, Python, Go, Rust, Ruby, PHP, Maven, Gradle) | Production |
+| `bazbom-orchestrator` | Parallel ecosystem scanning with progress tracking | Production |
+| `bazbom-reachability` | Multi-language call graph analysis (JavaScript, TypeScript, Python, Go, Rust, Ruby, PHP, Java) | Production |
 | `bazbom-upgrade-analyzer` | Breaking change detection & migration intelligence | Production |
 | `bazbom-depsdev` | deps.dev API client | Production |
 | `bazbom-ml` | ML-based risk scoring & anomaly detection | Production |
@@ -85,7 +80,7 @@ Located in `crates/`:
 
 ### Polyglot Ecosystem Support (NEW in 6.0)
 
-**Location:** `crates/bazbom-polyglot/`
+**Location:** `crates/bazbom-scanner/`
 
 ```mermaid
 flowchart TD

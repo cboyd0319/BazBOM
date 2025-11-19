@@ -28,7 +28,10 @@ pub fn load_epss_scores<P: AsRef<Path>>(path: P) -> Result<HashMap<String, EpssS
             if !line.to_lowercase().contains("cve") {
                 return Err(anyhow::anyhow!("Invalid EPSS CSV header: {}", line));
             }
-            found_header = true;
+            #[allow(unused_assignments)]
+            {
+                found_header = true;
+            }
             break;
         }
     }

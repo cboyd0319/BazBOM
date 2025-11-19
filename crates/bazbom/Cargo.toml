@@ -46,6 +46,7 @@ bazbom-ml = { path = "../bazbom-ml" }
 bazbom-depsdev = { path = "../bazbom-depsdev" }
 bazbom-upgrade-analyzer = { path = "../bazbom-upgrade-analyzer" }
 bazbom-scanner = { path = "../bazbom-scanner" }
+bazbom-orchestrator = { path = "../bazbom-orchestrator" }
 bazbom-reachability = { path = "../bazbom-reachability" }
 bazbom-jira = { path = "../bazbom-jira" }
 bazbom-github = { path = "../bazbom-github" }

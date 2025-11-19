@@ -418,6 +418,7 @@ dependencies = [
  "bazbom-graph",
  "bazbom-jira",
  "bazbom-ml",
+ "bazbom-orchestrator",
  "bazbom-policy",
  "bazbom-reachability",
  "bazbom-reports",
@@ -436,7 +437,7 @@ dependencies = [
  "flate2",
  "glob",
  "hex",
- "indicatif",
+ "indicatif 0.18.3",
  "insta",
  "num_cpus",
  "predicates",
@@ -725,6 +726,21 @@ dependencies = [
  "tokio-test",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "bazbom-orchestrator"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bazbom-scanner",
+ "futures",
+ "indicatif 0.17.11",
+ "num_cpus",
+ "tempfile",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1374,6 +1390,7 @@ dependencies = [
  "encode_unicode",
  "libc",
  "once_cell",
+ "unicode-width 0.2.0",
  "windows-sys 0.59.0",
 ]
 
@@ -2890,6 +2907,19 @@ dependencies = [
 
 [[package]]
 name = "indicatif"
+version = "0.17.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "183b3088984b400f4cfac3620d5e076c84da5364016b4f49473de574b2586235"
+dependencies = [
+ "console 0.15.11",
+ "number_prefix",
+ "portable-atomic",
+ "unicode-width 0.2.0",
+ "web-time",
+]
+
+[[package]]
+name = "indicatif"
 version = "0.18.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9375e112e4b463ec1b1c6c011953545c65a30164fbab5b581df32b3abf0dcb88"
@@ -3722,6 +3752,12 @@ dependencies = [
  "hermit-abi",
  "libc",
 ]
+
+[[package]]
+name = "number_prefix"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "830b246a0e5f20af87141b25c173cd1b609bd7779a4617d6ec582abaf90870f3"
 
 [[package]]
 name = "objc2"

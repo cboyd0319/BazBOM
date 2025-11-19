@@ -50,7 +50,7 @@ bazbom scan --include-cicd # → Includes CI/CD tooling in SBOM
 | Layer | Component | Status | Notes |
 | --- | --- | --- | --- |
 | CLI | `crates/bazbom` | ✅ Production | Single Rust binary; Clap-based command parsing; zero Python dependencies |
-| Services | `bazbom-advisories`, `bazbom-policy`, `bazbom-formats`, `bazbom-graph` | ✅ Production | Advisory merge engine, policy enforcement, schema exporters, graph normalisation |
+| Services | `bazbom-vulnerabilities`, `bazbom-policy`, `bazbom-formats`, `bazbom-graph` | ✅ Production | Advisory merge engine, policy enforcement, schema exporters, graph normalisation |
 | Reachability | `tools/bazbom-reachability` | ✅ Production | OPAL-based bytecode analysis with caching and reachable/not reachable tagging |
 | IDE / LSP | `crates/bazbom-lsp` | 🛠 In validation | Publishes diagnostics & code actions; requires marketplace hardening |
 | Maven Plugin | `plugins/bazbom-maven-plugin` | 🛠 Integration testing | Extracts dependency trees, shading metadata, license data |
@@ -166,7 +166,7 @@ Converts build-system-specific outputs into a canonical graph model:
 
 ### 4. Advisory Intelligence & Enrichment
 
-**Location**: `crates/bazbom-advisories/`
+**Location**: `crates/bazbom-vulnerabilities/`
 
 Manages vulnerability data from multiple sources:
 
@@ -293,7 +293,7 @@ BazBOM generates SPDX 2.3 JSON format with enhanced features:
 
 ### 4. Vulnerability Scanner (SCA)
 
-**Location**: `crates/bazbom-advisories/`
+**Location**: `crates/bazbom-vulnerabilities/`
 
 Queries vulnerability databases offline using local cache:
 
@@ -441,7 +441,7 @@ See [../integrations/ripgrep-integration.md](../integrations/ripgrep-integration
 
 ### 7. Vulnerability Enrichment Pipeline
 
-**Location**: `crates/bazbom-advisories/`
+**Location**: `crates/bazbom-vulnerabilities/`
 
 Multi-source enrichment pipeline that enhances vulnerability findings with actionable intelligence:
 
@@ -632,7 +632,7 @@ Support additional SBOM formats:
 Integrate with other vulnerability databases:
 
 ```rust
-// crates/bazbom-advisories/src/custom_source.rs
+// crates/bazbom-vulnerabilities/src/custom_source.rs
 // Query additional vulnerability databases
 ```
 

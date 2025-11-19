@@ -258,6 +258,54 @@ def process_jars_parallel(jar_paths: list[str]) -> list[dict]:
 - Parallel (8 cores): 2.5 min
 - Speedup: 4.8x
 
+#### Polyglot Parallel Orchestration (NEW in 6.5)
+
+**Feature:** `ParallelOrchestrator` automatically scans multiple ecosystems concurrently.
+
+**How it works:**
+- Detects all polyglot ecosystems in a monorepo (npm, Python, Go, Rust, Ruby, PHP, Maven, Gradle)
+- Launches scanners in parallel using Tokio async runtime
+- Automatically adjusts concurrency based on available CPU cores
+- Shows real-time progress bars for each ecosystem
+
+**Configuration:**
+```rust
+use bazbom_orchestrator::{ParallelOrchestrator, OrchestratorConfig};
+
+let config = OrchestratorConfig {
+    max_concurrent: num_cpus::get(),  // Defaults to CPU count
+    show_progress: true,
+    enable_reachability: true,
+    enable_vulnerabilities: true,
+};
+
+let orchestrator = ParallelOrchestrator::with_config(config);
+let results = orchestrator.scan_directory("./my-monorepo").await?;
+```
+
+**Performance Impact:**
+
+Multi-ecosystem monorepo (npm + Go + Ruby):
+- **Sequential:** ~3-4 seconds
+- **Parallel:** ~0.54 seconds
+- **Speedup:** 6× faster
+
+Vulnerability scanning now uses **batch query API**:
+- **Before:** 91 HTTP requests for 91 packages (10ms delay each = ~900ms)
+- **After:** 3 HTTP requests (1 per ecosystem = ~300ms)
+- **Reduction:** 97% fewer API calls
+
+**Automatic Features:**
+- ✅ CPU-based concurrency (scales with available cores)
+- ✅ Progress tracking with `indicatif` crate
+- ✅ Graceful error handling (one ecosystem failure doesn't block others)
+- ✅ Batch OSV queries per ecosystem (massive performance win)
+
+**Best Practices:**
+- Enable for all multi-ecosystem scans (default behavior in CLI)
+- Use in CI/CD for monorepos with multiple language ecosystems
+- Combine with reachability analysis for maximum insight
+
 ### Streaming Processing
 
 **Problem:** Loading entire dependency graph into memory causes OOM on massive repos.

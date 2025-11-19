@@ -18,7 +18,7 @@ The Go reachability analyzer uses Go's native `go/ast` and `go/parser` packages 
    - Performs DFS-based reachability analysis
    - Outputs JSON to stdout
 
-2. **`crates/bazbom-go-reachability`** - Rust integration layer
+2. **`crates/bazbom-reachability`** - Rust integration layer
    - Finds or builds go-analyzer binary
    - Executes analyzer with project root
    - Parses JSON output
@@ -68,7 +68,7 @@ type FunctionNode struct {
 
 ### Rust Wrapper
 
-**`crates/bazbom-go-reachability/src/analyzer.rs`:**
+**`crates/bazbom-reachability/src/analyzer.rs`:**
 ```rust
 pub struct GoReachabilityAnalyzer;
 
@@ -197,10 +197,10 @@ cargo run --bin bazbom -- scan /tmp/gin-test --reachability
 
 ## Integration with BazBOM
 
-The Go analyzer integrates with BazBOM's polyglot reachability system via `bazbom-polyglot`:
+The Go analyzer integrates with BazBOM's polyglot reachability system via `bazbom-scanner`:
 
 ```rust
-use bazbom_go_reachability::analyze_go_project;
+use bazbom_reachability::go::analyze_go_project;
 
 let report = analyze_go_project(project_root)?;
 ```
@@ -242,15 +242,15 @@ Performance is excellent due to Go's fast native parser.
 ## Files
 
 - `tools/go-analyzer/main.go` - Go analyzer tool
-- `crates/bazbom-go-reachability/src/lib.rs` - Public API
-- `crates/bazbom-go-reachability/src/analyzer.rs` - Rust analyzer
-- `crates/bazbom-go-reachability/src/models.rs` - Data structures
-- `crates/bazbom-go-reachability/src/error.rs` - Error types
+- `crates/bazbom-reachability/src/lib.rs` - Public API
+- `crates/bazbom-reachability/src/analyzer.rs` - Rust analyzer
+- `crates/bazbom-reachability/src/models.rs` - Data structures
+- `crates/bazbom-reachability/src/error.rs` - Error types
 
 ## Summary
 
 ✅ **Implementation complete**
 ⏳ **Testing pending** (requires Go installation)
-🎯 **Ready for integration** with bazbom-polyglot
+🎯 **Ready for integration** with bazbom-scanner
 
 The Go analyzer provides production-ready reachability analysis using Go's native tooling for maximum accuracy and performance.

@@ -18,6 +18,7 @@ members = [
   "crates/bazbom-depsdev",
   "crates/bazbom-upgrade-analyzer",
   "crates/bazbom-scanner",
+  "crates/bazbom-orchestrator",
   "crates/bazbom-reachability",
   "crates/bazbom-auth",
   "crates/bazbom-crypto",

@@ -51,19 +51,19 @@ BazBOM/
 │   └── bazbom-graph         - Dependency graph analysis
 │
 ├── Security & Analysis (4 crates)
-│   ├── bazbom-advisories    - Vulnerability databases (OSV, NVD, GHSA)
+│   ├── bazbom-vulnerabilities    - Vulnerability databases (OSV, NVD, GHSA)
 │   ├── bazbom-threats       - Threat intelligence & malicious packages
 │   ├── bazbom-policy        - Policy enforcement (Rego/YAML/CUE)
 │   └── bazbom-ml            - ML-based risk scoring
 │
 ├── Reachability Analysis (7 crates)
 │   ├── bazbom-java-reachability     - JVM bytecode (>95% accuracy)
-│   ├── bazbom-rust-reachability     - Rust AST (>98% accuracy)
-│   ├── bazbom-go-reachability       - Go analysis (~90% accuracy)
-│   ├── bazbom-js-reachability       - JavaScript/TypeScript (~85% accuracy)
-│   ├── bazbom-python-reachability   - Python (~80% accuracy)
-│   ├── bazbom-ruby-reachability     - Ruby (~75% accuracy)
-│   └── bazbom-php-reachability      - PHP (~70% accuracy)
+│   ├── bazbom-reachability     - Rust AST (>98% accuracy)
+│   ├── bazbom-reachability       - Go analysis (~90% accuracy)
+│   ├── bazbom-reachability       - JavaScript/TypeScript (~85% accuracy)
+│   ├── bazbom-reachability   - Python (~80% accuracy)
+│   ├── bazbom-reachability     - Ruby (~75% accuracy)
+│   └── bazbom-reachability      - PHP (~70% accuracy)
 │
 ├── Network-Facing Services (3 crates) ⚠️ SECURITY CRITICAL
 │   ├── bazbom-dashboard     - Axum web server (port 3000)
@@ -76,7 +76,7 @@ BazBOM/
     ├── bazbom-reports       - PDF report generation
     ├── bazbom-upgrade-analyzer
     ├── bazbom-depsdev
-    ├── bazbom-polyglot
+    ├── bazbom-scanner
     └── bazbom-tui
 ```
 
@@ -131,7 +131,7 @@ BazBOM demonstrates **exceptional memory safety** with minimal unsafe code usage
    - **Risk:** NONE (standard library usage, safe context)
    - **Justification:** Axum framework requires HeaderValue for HTTP headers
 
-2. **crates/bazbom-go-reachability/src/models.rs**
+2. **crates/bazbom-reachability/src/models.rs**
    - **Context:** Data structure definitions only
    - **Risk:** NONE (no unsafe blocks, just data models)
    - **Analysis:** False positive from keyword search
