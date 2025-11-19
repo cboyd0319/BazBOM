@@ -4,6 +4,7 @@
 //! to improve modularity and maintainability.
 
 pub mod anomaly;
+pub mod auth;
 pub mod compare;
 pub mod container_scan;
 pub mod dashboard;
@@ -16,6 +17,7 @@ pub mod hooks;
 pub mod init;
 pub mod jira;
 pub mod license;
+pub mod lsp;
 pub mod notify;
 pub mod policy;
 pub mod report;

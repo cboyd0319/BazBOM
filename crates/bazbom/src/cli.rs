@@ -696,6 +696,62 @@ DETECTION TYPES:
         #[command(subcommand)]
         action: AnomalyCmd,
     },
+    /// LSP server for IDE integration (VS Code, IntelliJ, etc.)
+    #[command(after_help = "EXAMPLES:
+  # Start LSP server (stdio mode)
+  bazbom lsp
+
+  # VS Code: Add to settings.json:
+  \"bazbom.lsp.path\": \"bazbom-lsp\"
+
+  # IntelliJ: Install via LSP4IJ plugin
+
+FEATURES:
+  - Real-time vulnerability diagnostics
+  - Quick fixes to upgrade vulnerable dependencies
+  - Hover info with CVE details
+  - Supports: pom.xml, build.gradle, BUILD.bazel
+
+SETUP:
+  The LSP server is a separate binary. Install with:
+  cargo install bazbom-lsp")]
+    Lsp {
+        /// Use stdio transport (default)
+        #[arg(long, default_value = "true")]
+        stdio: bool,
+    },
+    /// Authentication and RBAC management
+    #[command(after_help = "EXAMPLES:
+  # Initialize authentication system
+  bazbom auth init
+
+  # Create a new user
+  bazbom auth user add alice@example.com --role admin
+
+  # List users
+  bazbom auth user list
+
+  # Create API token
+  bazbom auth token create --name ci-pipeline --scope read
+
+  # Revoke API token
+  bazbom auth token revoke <TOKEN_ID>
+
+ROLES:
+  admin           - Full access to all features
+  security-lead   - Manage security policies, assign work
+  developer       - Read/write SBOMs, read vulnerabilities
+  user            - Read-only access
+  ci              - Automated scanning permissions
+
+PERMISSIONS:
+  read-sbom, write-sbom, delete-sbom
+  read-vulnerabilities, manage-policy
+  manage-users, view-audit-log, manage-tokens")]
+    Auth {
+        #[command(subcommand)]
+        action: AuthCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -1166,5 +1222,76 @@ pub enum AnomalyCmd {
         /// Output file path
         #[arg(long, short = 'o', value_name = "FILE")]
         output: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthCmd {
+    /// Initialize authentication system
+    Init {},
+    /// User management
+    #[command(subcommand)]
+    User(AuthUserCmd),
+    /// API token management
+    #[command(subcommand)]
+    Token(AuthTokenCmd),
+    /// View audit log
+    AuditLog {
+        /// Number of entries to show
+        #[arg(long, value_name = "N", default_value = "50")]
+        limit: usize,
+        /// Filter by event type
+        #[arg(long, value_name = "TYPE")]
+        event_type: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthUserCmd {
+    /// Add a new user
+    Add {
+        /// User email
+        email: String,
+        /// User role (admin, security-lead, developer, user, ci)
+        #[arg(long, value_name = "ROLE", default_value = "user")]
+        role: String,
+    },
+    /// List all users
+    List {},
+    /// Remove a user
+    Remove {
+        /// User email
+        email: String,
+    },
+    /// Update user role
+    SetRole {
+        /// User email
+        email: String,
+        /// New role
+        #[arg(long, value_name = "ROLE")]
+        role: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthTokenCmd {
+    /// Create a new API token
+    Create {
+        /// Token name/description
+        #[arg(long, value_name = "NAME")]
+        name: String,
+        /// Token scope (read, write, admin)
+        #[arg(long, value_name = "SCOPE", default_value = "read")]
+        scope: String,
+        /// Expiration in days (0 for no expiration)
+        #[arg(long, value_name = "DAYS", default_value = "365")]
+        expires: u32,
+    },
+    /// List all tokens
+    List {},
+    /// Revoke a token
+    Revoke {
+        /// Token ID
+        token_id: String,
     },
 }

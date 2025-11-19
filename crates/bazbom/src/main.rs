@@ -843,5 +843,34 @@ async fn main() -> Result<()> {
             }
             Ok(())
         }
+
+        Commands::Lsp { stdio: _ } => {
+            use commands::lsp::handle_lsp;
+            handle_lsp()?;
+            Ok(())
+        }
+
+        Commands::Auth { action } => {
+            use bazbom::cli::{AuthCmd, AuthTokenCmd, AuthUserCmd};
+            use commands::auth::{
+                handle_auth_audit_log, handle_auth_init, handle_auth_token, handle_auth_user,
+            };
+
+            match action {
+                AuthCmd::Init {} => {
+                    handle_auth_init()?;
+                }
+                AuthCmd::User(user_cmd) => {
+                    handle_auth_user(user_cmd)?;
+                }
+                AuthCmd::Token(token_cmd) => {
+                    handle_auth_token(token_cmd)?;
+                }
+                AuthCmd::AuditLog { limit, event_type } => {
+                    handle_auth_audit_log(limit, event_type)?;
+                }
+            }
+            Ok(())
+        }
     }
 }
