@@ -443,6 +443,7 @@ dependencies = [
  "predicates",
  "quick-xml",
  "rayon",
+ "regex",
  "rusqlite",
  "rustls",
  "serde",
@@ -829,6 +830,7 @@ version = "6.6.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "lazy_static",
  "lettre",
  "log",
  "regex",

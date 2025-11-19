@@ -359,6 +359,18 @@ pub fn get_popular_packages(ecosystem: &str) -> HashSet<String> {
             "phpunit/phpunit", "doctrine/orm", "twig/twig", "psr/log", "vlucas/phpdotenv",
             "nesbot/carbon", "league/flysystem", "intervention/image", "predis/predis",
         ],
+        "go" | "golang" | "gomod" => vec![
+            "github.com/gin-gonic/gin", "github.com/gorilla/mux", "github.com/go-chi/chi",
+            "github.com/labstack/echo", "github.com/gofiber/fiber", "github.com/stretchr/testify",
+            "github.com/spf13/cobra", "github.com/spf13/viper", "github.com/sirupsen/logrus",
+            "go.uber.org/zap", "github.com/pkg/errors", "github.com/go-kit/kit",
+            "github.com/grpc-ecosystem/grpc-gateway", "google.golang.org/grpc",
+            "github.com/golang/protobuf", "github.com/jinzhu/gorm", "gorm.io/gorm",
+            "github.com/go-redis/redis", "github.com/aws/aws-sdk-go", "github.com/prometheus/client_golang",
+            "github.com/hashicorp/consul", "github.com/hashicorp/vault", "github.com/etcd-io/etcd",
+            "github.com/kubernetes/client-go", "github.com/go-sql-driver/mysql", "github.com/lib/pq",
+            "github.com/dgrijalva/jwt-go", "github.com/golang-jwt/jwt", "github.com/google/uuid",
+        ],
         "maven" | "java" | "gradle" => vec![
             "org.springframework:spring-core", "com.google.guava:guava",
             "org.apache.commons:commons-lang3", "com.fasterxml.jackson.core:jackson-databind",

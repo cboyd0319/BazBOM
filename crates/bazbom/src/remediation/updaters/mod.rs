@@ -1,6 +1,9 @@
 // Dependency updaters for different package ecosystems
 
+pub mod bazel;
 pub mod go;
+pub mod gradle;
+pub mod maven;
 pub mod npm;
 pub mod php;
 pub mod python;
@@ -34,7 +37,17 @@ pub fn get_updater(system: System) -> Box<dyn DependencyUpdater> {
         System::Go => Box::new(go::GoUpdater),
         System::Cargo => Box::new(rust::RustUpdater),
         System::RubyGems => Box::new(ruby::RubyUpdater),
-        // For PHP, we'd use a separate System variant, but for now use NuGet as placeholder
-        System::Maven | System::NuGet => panic!("Maven/Gradle updaters are in build_systems.rs"),
+        System::Maven => Box::new(maven::MavenUpdater),
+        System::NuGet => Box::new(maven::MavenUpdater), // NuGet uses similar XML format
     }
+}
+
+/// Get the Gradle updater
+pub fn get_gradle_updater() -> Box<dyn DependencyUpdater> {
+    Box::new(gradle::GradleUpdater)
+}
+
+/// Get the Bazel updater
+pub fn get_bazel_updater() -> Box<dyn DependencyUpdater> {
+    Box::new(bazel::BazelUpdater)
 }
