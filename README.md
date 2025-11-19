@@ -96,9 +96,10 @@ bazbom --version
 - ✅ **Universal Auto-Fix** - 9 package managers with multi-CVE grouping
 - ✅ **Exploit Intelligence** - EPSS/KEV integration, POC links, difficulty scoring
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
+- ✅ **Parallel Orchestration** - 6× faster multi-ecosystem scans, 97% fewer HTTP requests via OSV batch API
 - ✅ **Code Quality** - Zero clippy warnings, 100% passing tests, comprehensive bug fixes
 
-🦀 **30 crates** • **800+ tests** (360+ core, 107+ reachability, integration tests) • **Zero clippy warnings** • **Source install in <5 min**
+🦀 **28 crates** • **800+ tests** (360+ core, 107+ reachability, integration tests) • **Zero clippy warnings** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 
