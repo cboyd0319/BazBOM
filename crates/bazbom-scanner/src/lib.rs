@@ -161,7 +161,21 @@ async fn scan_ecosystem(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
 
             scanner.scan(&ctx).await
         }
-        EcosystemType::Python => ecosystems::python::scan(ecosystem).await,
+        EcosystemType::Python => {
+            // Use the new trait-based scanner
+            let scanner = ecosystems::python::PythonScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+
+            scanner.scan(&ctx).await
+        }
         EcosystemType::Go => ecosystems::go::scan(ecosystem).await,
         EcosystemType::Rust => ecosystems::rust::scan(ecosystem).await,
         EcosystemType::Ruby => ecosystems::ruby::scan(ecosystem).await,

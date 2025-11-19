@@ -1,13 +1,106 @@
-//! Python ecosystem parser
+//! Python ecosystem scanner
 //!
 //! Parses requirements.txt, poetry.lock, and Pipfile.lock
 
-use crate::detection::Ecosystem;
+use crate::cache::LicenseCache;
+use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
 use crate::types::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
+
+/// Python ecosystem scanner
+pub struct PythonScanner;
+
+impl PythonScanner {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Scanner for PythonScanner {
+    fn name(&self) -> &str {
+        "python"
+    }
+
+    fn detect(&self, root: &Path) -> bool {
+        root.join("requirements.txt").exists()
+            || root.join("pyproject.toml").exists()
+            || root.join("Pipfile").exists()
+            || root.join("poetry.lock").exists()
+    }
+
+    async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
+        let mut result = EcosystemScanResult::new(
+            "Python".to_string(),
+            ctx.root.display().to_string(),
+        );
+
+        // Try to parse lockfiles first (most accurate)
+        if let Some(ref lockfile_path) = ctx.lockfile {
+            let lockfile_name = lockfile_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+
+            match lockfile_name {
+                "poetry.lock" => {
+                    parse_poetry_lock(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                }
+                "Pipfile.lock" => {
+                    parse_pipfile_lock(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                }
+                "requirements-lock.txt" => {
+                    parse_requirements_file(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                }
+                _ => {
+                    // Unknown lockfile, try manifest
+                    if let Some(ref manifest) = ctx.manifest {
+                        parse_requirements_file(manifest, &ctx.root, &mut result, &ctx.cache)?;
+                    }
+                }
+            }
+        } else if let Some(ref manifest_path) = ctx.manifest {
+            // No lockfile, use manifest
+            let manifest_name = manifest_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+
+            match manifest_name {
+                "requirements.txt" => {
+                    parse_requirements_file(manifest_path, &ctx.root, &mut result, &ctx.cache)?;
+                }
+                "pyproject.toml" => {
+                    parse_pyproject_toml(manifest_path, &mut result)?;
+                }
+                "Pipfile" => {
+                    eprintln!("Warning: Pipfile found but no Pipfile.lock - run 'pipenv lock' for accurate versions");
+                }
+                _ => {}
+            }
+        }
+
+        // Run reachability analysis
+        if let Err(e) = analyze_reachability(&ctx.root, &mut result) {
+            eprintln!("Warning: Python reachability analysis failed: {}", e);
+        }
+
+        Ok(result)
+    }
+
+    fn fetch_license_uncached(&self, ctx: &LicenseContext) -> License {
+        if let Some(license_str) = read_python_license(ctx.root, ctx.package) {
+            License::Spdx(license_str)
+        } else {
+            License::Unknown
+        }
+    }
+}
 
 /// poetry.lock structure (TOML)
 #[derive(Debug, Deserialize)]
@@ -73,9 +166,31 @@ struct PoetryConfig {
     dev_dependencies: HashMap<String, serde_json::Value>,
 }
 
+/// Analyze reachability for Python project
+fn analyze_reachability(root: &Path, result: &mut EcosystemScanResult) -> Result<()> {
+    use bazbom_reachability::python::analyze_python_project;
+
+    let report = analyze_python_project(root)?;
+    let mut vulnerable_packages_reachable = HashMap::new();
+
+    for package in &result.packages {
+        let key = format!("{}@{}", package.name, package.version);
+        vulnerable_packages_reachable.insert(key, !report.reachable_functions.is_empty());
+    }
+
+    result.reachability = Some(ReachabilityData {
+        analyzed: true,
+        total_functions: report.all_functions.len(),
+        reachable_functions: report.reachable_functions.len(),
+        unreachable_functions: report.unreachable_functions.len(),
+        vulnerable_packages_reachable,
+    });
+    Ok(())
+}
+
 /// Read license from Python package metadata
 /// Tries to find and parse METADATA or PKG-INFO from site-packages
-fn read_python_license(root_path: &std::path::Path, package_name: &str) -> Option<String> {
+fn read_python_license(root_path: &Path, package_name: &str) -> Option<String> {
     // Common site-packages locations to check
     let possible_paths = vec![
         // Virtual environment
@@ -130,94 +245,13 @@ fn read_python_license(root_path: &std::path::Path, package_name: &str) -> Optio
     None
 }
 
-/// Scan Python ecosystem
-pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "Python".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
-
-    // Try to parse lockfiles first (most accurate)
-    if let Some(ref lockfile_path) = ecosystem.lockfile {
-        let lockfile_name = lockfile_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
-
-        match lockfile_name {
-            "poetry.lock" => {
-                parse_poetry_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
-            }
-            "Pipfile.lock" => {
-                parse_pipfile_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
-            }
-            "requirements-lock.txt" => {
-                parse_requirements_file(lockfile_path, &ecosystem.root_path, &mut result)?;
-            }
-            _ => {
-                // Unknown lockfile, try requirements.txt
-                if let Some(ref manifest) = ecosystem.manifest_file {
-                    parse_requirements_file(manifest, &ecosystem.root_path, &mut result)?;
-                }
-            }
-        }
-    } else if let Some(ref manifest_path) = ecosystem.manifest_file {
-        // No lockfile, use manifest
-        let manifest_name = manifest_path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
-
-        match manifest_name {
-            "requirements.txt" => {
-                parse_requirements_file(manifest_path, &ecosystem.root_path, &mut result)?;
-            }
-            "pyproject.toml" => {
-                parse_pyproject_toml(manifest_path, &mut result)?;
-            }
-            "Pipfile" => {
-                eprintln!("Warning: Pipfile found but no Pipfile.lock - run 'pipenv lock' for accurate versions");
-            }
-            _ => {}
-        }
-    }
-
-    // Run reachability analysis
-    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
-        eprintln!("Warning: Python reachability analysis failed: {}", e);
-    }
-
-    Ok(result)
-}
-
-/// Analyze reachability for Python project
-fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
-    use bazbom_reachability::python::analyze_python_project;
-
-    let report = analyze_python_project(&ecosystem.root_path)?;
-    let mut vulnerable_packages_reachable = HashMap::new();
-
-    for package in &result.packages {
-        let key = format!("{}@{}", package.name, package.version);
-        vulnerable_packages_reachable.insert(key, !report.reachable_functions.is_empty());
-    }
-
-    result.reachability = Some(ReachabilityData {
-        analyzed: true,
-        total_functions: report.all_functions.len(),
-        reachable_functions: report.reachable_functions.len(),
-        unreachable_functions: report.unreachable_functions.len(),
-        vulnerable_packages_reachable,
-    });
-    Ok(())
-}
-
 /// Parse requirements.txt format
 /// Supports: package==version, package>=version, package~=version
 fn parse_requirements_file(
-    file_path: &std::path::Path,
-    root_path: &std::path::Path,
+    file_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(file_path).context("Failed to read requirements file")?;
 
@@ -236,7 +270,14 @@ fn parse_requirements_file(
 
         // Parse package specification
         if let Some((name, version)) = parse_requirement_line(line) {
-            let license = read_python_license(root_path, name);
+            // Use cache for license fetching
+            let license_ctx = LicenseContext {
+                root: root_path,
+                package: name,
+                version,
+                cache,
+            };
+            let license = PythonScanner::new().fetch_license(&license_ctx);
 
             result.add_package(Package {
                 name: name.to_string(),
@@ -244,7 +285,7 @@ fn parse_requirements_file(
                 ecosystem: "PyPI".to_string(),
                 namespace: None,
                 dependencies: Vec::new(),
-                license,
+                license: Some(license.as_spdx()),
                 description: None,
                 homepage: None,
                 repository: None,
@@ -288,15 +329,23 @@ fn parse_requirement_line(line: &str) -> Option<(&str, &str)> {
 
 /// Parse poetry.lock (TOML format)
 fn parse_poetry_lock(
-    lockfile_path: &std::path::Path,
-    root_path: &std::path::Path,
+    lockfile_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
     let lock: PoetryLock = toml::from_str(&content).context("Failed to parse poetry.lock")?;
 
     for pkg in &lock.package {
-        let license = read_python_license(root_path, &pkg.name);
+        // Use cache for license fetching
+        let license_ctx = LicenseContext {
+            root: root_path,
+            package: &pkg.name,
+            version: &pkg.version,
+            cache,
+        };
+        let license = PythonScanner::new().fetch_license(&license_ctx);
 
         result.add_package(Package {
             name: pkg.name.clone(),
@@ -304,7 +353,7 @@ fn parse_poetry_lock(
             ecosystem: "PyPI".to_string(),
             namespace: None,
             dependencies: pkg.dependencies.keys().cloned().collect(),
-            license,
+            license: Some(license.as_spdx()),
             description: pkg.description.clone(),
             homepage: None,
             repository: None,
@@ -316,9 +365,10 @@ fn parse_poetry_lock(
 
 /// Parse Pipfile.lock (JSON format)
 fn parse_pipfile_lock(
-    lockfile_path: &std::path::Path,
-    root_path: &std::path::Path,
+    lockfile_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
     let lock: PipfileLock =
@@ -327,7 +377,15 @@ fn parse_pipfile_lock(
     // Parse default (production) dependencies
     for (name, dep) in &lock.default {
         let version = dep.version.trim_start_matches("==").to_string();
-        let license = read_python_license(root_path, name);
+
+        // Use cache for license fetching
+        let license_ctx = LicenseContext {
+            root: root_path,
+            package: name,
+            version: &version,
+            cache,
+        };
+        let license = PythonScanner::new().fetch_license(&license_ctx);
 
         result.add_package(Package {
             name: name.clone(),
@@ -335,7 +393,7 @@ fn parse_pipfile_lock(
             ecosystem: "PyPI".to_string(),
             namespace: None,
             dependencies: Vec::new(),
-            license,
+            license: Some(license.as_spdx()),
             description: None,
             homepage: None,
             repository: None,
@@ -345,7 +403,15 @@ fn parse_pipfile_lock(
     // Parse dev dependencies
     for (name, dep) in &lock.dev {
         let version = dep.version.trim_start_matches("==").to_string();
-        let license = read_python_license(root_path, name);
+
+        // Use cache for license fetching
+        let license_ctx = LicenseContext {
+            root: root_path,
+            package: name,
+            version: &version,
+            cache,
+        };
+        let license = PythonScanner::new().fetch_license(&license_ctx);
 
         result.add_package(Package {
             name: name.clone(),
@@ -353,7 +419,7 @@ fn parse_pipfile_lock(
             ecosystem: "PyPI".to_string(),
             namespace: None,
             dependencies: Vec::new(),
-            license,
+            license: Some(license.as_spdx()),
             description: None,
             homepage: None,
             repository: None,
@@ -365,7 +431,7 @@ fn parse_pipfile_lock(
 
 /// Parse pyproject.toml (PEP 621 or Poetry format)
 fn parse_pyproject_toml(
-    file_path: &std::path::Path,
+    file_path: &Path,
     result: &mut EcosystemScanResult,
 ) -> Result<()> {
     let content = fs::read_to_string(file_path).context("Failed to read pyproject.toml")?;
@@ -539,7 +605,17 @@ fn extract_poetry_version(spec: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
     use tempfile::TempDir;
+
+    #[test]
+    fn test_python_scanner_detect() {
+        let temp = TempDir::new().unwrap();
+        fs::write(temp.path().join("requirements.txt"), "").unwrap();
+
+        let scanner = PythonScanner::new();
+        assert!(scanner.detect(temp.path()));
+    }
 
     #[test]
     fn test_parse_requirement_line() {
@@ -581,14 +657,12 @@ six==1.16.0 ; python_version >= "3.6"
         )
         .unwrap();
 
-        let ecosystem = Ecosystem::new(
-            crate::detection::EcosystemType::Python,
-            temp.path().to_path_buf(),
-            Some(requirements),
-            None,
-        );
+        let scanner = PythonScanner::new();
+        let cache = Arc::new(LicenseCache::new());
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
+            .with_manifest(requirements);
 
-        let result = scan(&ecosystem).await.unwrap();
+        let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 4);
         assert!(result
             .packages
