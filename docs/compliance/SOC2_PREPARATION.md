@@ -92,7 +92,7 @@ This document outlines BazBOM's preparation for SOC 2 Type II certification, dem
 **CC3.2 - Risk Analysis**
 
 ✅ **Implemented**:
-- Risk ledger (docs/security/RISK_LEDGER.md)
+- Risk ledger (docs/archive/audits/RISK_LEDGER.md)
 - CVSS scoring for vulnerabilities
 - Impact assessment process
 

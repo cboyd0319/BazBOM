@@ -75,7 +75,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Threat Model](security/threat-model.md)
 - [Vulnerability Enrichment](security/vulnerability-enrichment.md)
 - [VEX Guidance](security/vex.md) and [VEX Statements](vex/README.md)
-- Security policy references: [Secure Coding](security/SECURE_CODING_GUIDE.md), [Risk Ledger](security/RISK_LEDGER.md), [Workflow Security Policy](security/WORKFLOW_SECURITY_POLICY.md)
+- Security policy references: [Secure Coding](security/SECURE_CODING_GUIDE.md), [Workflow Security Policy](security/WORKFLOW_SECURITY_POLICY.md)
 
 ## Architecture & Internals
 

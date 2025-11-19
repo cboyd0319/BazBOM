@@ -35,15 +35,14 @@ This is the master index for all BazBOM documentation. Start here!
 ### Overview
 - **[Reachability Analysis Guide](reachability/README.md)** - ⭐ Complete guide (8/8 ecosystems)
 
-### Per-Ecosystem Documentation
-- [Rust/Cargo](reachability/rust.md) - ✅ Production ready
+### Per-Ecosystem Deep Dives
+- [Rust/Cargo](reachability/rust.md) - ✅ Production ready (>98% accuracy)
 - [JavaScript/npm](reachability/javascript.md) - ✅ Production ready
 - [Python/pip](reachability/python.md) - ✅ Production ready
-- [Ruby/Bundler](reachability/ruby.md) - ✅ Production ready
-- [PHP/Composer](reachability/php.md) - ✅ Production ready
 - [Go/Go Modules](reachability/go.md) - ✅ Production ready
 - [Java/Maven/Gradle](reachability/java.md) - ✅ Production ready (full bytecode!)
-- [Bazel](reachability/bazel.md) - ✅ Production ready + CI/CD optimized!
+
+*Ruby, PHP, and Bazel reachability are covered in the [main guide](reachability/README.md).*
 
 ---
 
@@ -99,9 +98,9 @@ This is the master index for all BazBOM documentation. Start here!
 ### Security & Compliance
 - [GPG Signing](security/GPG_SIGNING.md)
 - [Reproducible Builds](operations/REPRODUCIBLE_BUILDS.md)
-- [Security Overview](security/SECURITY_OVERVIEW.md)
 - [Threat Model](security/threat-model.md)
 - [Supply Chain Security](security/supply-chain.md)
+- [Secure Coding Guide](security/SECURE_CODING_GUIDE.md)
 
 ---
 

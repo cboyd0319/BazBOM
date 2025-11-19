@@ -4,8 +4,9 @@ How BazBOM integrates with Bazel build systems: aspects, rules, targets, and que
 
 ## Related Documentation
 
-- **[Bazel Reachability Analysis](reachability/bazel.md)** - Targeted scanning and build graph analysis
+- **[Reachability Analysis](reachability/README.md)** - Reachability analysis across all ecosystems (including Bazel)
 - **[Bazel Monorepo Workflows](examples/bazel-monorepo-workflows.md)** - Practical CI/CD workflows for large monorepos
+- **[Advanced Bazel Features](user-guide/advanced-bazel-features.md)** - Query optimization and performance tuning
 
 ## Overview
 
