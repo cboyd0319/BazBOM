@@ -176,10 +176,19 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
                     .unwrap_or("unknown")
                     .to_string();
 
-                // For now, we don't have fixed_version in SARIF properties
-                // This will need to be queried from OSV or other advisory sources
-                // For the initial implementation, we'll skip vulnerabilities without fixes
-                // TODO: Query OSV API for fixed versions
+                // Query OSV for fixed version
+                let fixed_version = match bazbom_vulnerabilities::osv::get_fixed_version_for_package(&cve_id, &package) {
+                    Ok(Some(version)) => version,
+                    Ok(None) => {
+                        // No fixed version found, try with ecosystem prefix stripped
+                        let pkg_name = package.split('/').last().unwrap_or(&package);
+                        match bazbom_vulnerabilities::osv::get_fixed_version_for_package(&cve_id, pkg_name) {
+                            Ok(Some(v)) => v,
+                            _ => "unknown".to_string(),
+                        }
+                    }
+                    Err(_) => "unknown".to_string(),
+                };
 
                 // Parse severity from SARIF level
                 let severity_str = match result.level.as_str() {
@@ -205,12 +214,13 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
 
                 let description = result.message.text.clone();
 
-                // For SARIF, we need to query OSV for fixed versions
-                // For now, create a placeholder that will trigger OSV query
-                let fixed_version = format!("(query OSV for {})", cve_id);
-
-                let breaking_changes = 0; // Will be calculated once we have fixed version
-                let estimated_effort_hours = 1.0; // Will be calculated once we have fixed version
+                // Calculate breaking changes and effort based on version difference
+                let breaking_changes = if fixed_version != "unknown" {
+                    estimate_breaking_changes(&current_version, &fixed_version)
+                } else {
+                    0
+                };
+                let estimated_effort_hours = estimate_effort_hours(severity_str, &current_version, &fixed_version, breaking_changes);
 
                 fixable_vulns.push(FixableVulnerability {
                     cve_id,

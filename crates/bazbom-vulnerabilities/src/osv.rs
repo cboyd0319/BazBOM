@@ -111,6 +111,69 @@ pub fn query_package_vulnerabilities(
         .collect())
 }
 
+/// Query OSV by vulnerability ID and return fixed versions for a package
+///
+/// Returns a list of (ecosystem, package, fixed_version) tuples
+pub fn get_fixed_versions(vuln_id: &str) -> Result<Vec<(String, String, String)>> {
+    let url = format!("{}/vulns/{}", OSV_API_BASE, vuln_id);
+    let config = ureq::Agent::config_builder()
+        .timeout_global(Some(std::time::Duration::from_secs(10)))
+        .build();
+    let agent: ureq::Agent = config.into();
+
+    let mut response = match agent.get(&url).call() {
+        Ok(r) => r,
+        Err(e) => {
+            // Return empty if not found
+            if e.to_string().contains("404") {
+                return Ok(Vec::new());
+            }
+            return Err(anyhow::anyhow!("OSV API request failed: {}", e));
+        }
+    };
+
+    let osv: OsvVulnerability = response
+        .body_mut()
+        .read_json()
+        .context("failed to parse OSV vulnerability")?;
+
+    let mut fixed_versions = Vec::new();
+
+    for affected in osv.affected {
+        let ecosystem = affected.package.ecosystem.clone();
+        let package = affected.package.name.clone();
+
+        if let Some(ranges) = affected.ranges {
+            for range in ranges {
+                for event in range.events {
+                    if let Some(fixed) = event.fixed {
+                        fixed_versions.push((ecosystem.clone(), package.clone(), fixed));
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(fixed_versions)
+}
+
+/// Get the first fixed version for a specific package from a vulnerability
+pub fn get_fixed_version_for_package(
+    vuln_id: &str,
+    package_name: &str,
+) -> Result<Option<String>> {
+    let fixed = get_fixed_versions(vuln_id)?;
+
+    // Find the first fixed version for this package
+    for (_, pkg, version) in fixed {
+        if pkg == package_name || pkg.ends_with(&format!("/{}", package_name)) {
+            return Ok(Some(version));
+        }
+    }
+
+    Ok(None)
+}
+
 /// Download vulnerabilities for multiple packages in batch
 pub fn query_batch_vulnerabilities(
     packages: &[(String, String, String)], // (name, version, ecosystem) tuples
