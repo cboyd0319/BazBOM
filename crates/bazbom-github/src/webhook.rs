@@ -1,15 +1,67 @@
 use crate::error::{GitHubError, Result};
-use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use axum::{
+    body::Bytes,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    routing::post,
+    Router,
+};
+use hmac::{Hmac, Mac};
 use serde::Deserialize;
+use sha2::Sha256;
 use std::sync::Arc;
-use tracing::{error, info};
+use tracing::{error, info, warn};
+
+type HmacSha256 = Hmac<Sha256>;
 
 /// Webhook server for receiving GitHub events
 pub struct WebhookServer {
     port: u16,
-    #[allow(dead_code)]
     secret: String,
     handler: Arc<dyn WebhookHandler + Send + Sync>,
+}
+
+/// Verify GitHub webhook signature using HMAC-SHA256
+fn verify_signature(secret: &str, signature_header: Option<&str>, body: &[u8]) -> bool {
+    let signature = match signature_header {
+        Some(sig) => sig,
+        None => {
+            warn!("Missing X-Hub-Signature-256 header");
+            return false;
+        }
+    };
+
+    // GitHub sends signature as "sha256=<hex>"
+    let expected_signature = match signature.strip_prefix("sha256=") {
+        Some(sig) => sig,
+        None => {
+            warn!("Invalid signature format: {}", signature);
+            return false;
+        }
+    };
+
+    // Compute HMAC-SHA256
+    let mut mac = match HmacSha256::new_from_slice(secret.as_bytes()) {
+        Ok(mac) => mac,
+        Err(e) => {
+            error!("Failed to create HMAC: {}", e);
+            return false;
+        }
+    };
+    mac.update(body);
+    let computed = mac.finalize().into_bytes();
+    let computed_hex = hex::encode(computed);
+
+    // Constant-time comparison to prevent timing attacks
+    if computed_hex.len() != expected_signature.len() {
+        return false;
+    }
+
+    computed_hex
+        .bytes()
+        .zip(expected_signature.bytes())
+        .fold(0, |acc, (a, b)| acc | (a ^ b))
+        == 0
 }
 
 impl WebhookServer {
@@ -81,10 +133,24 @@ pub enum WebhookEvent {
 /// Webhook handler
 async fn handle_webhook(
     State(server): State<Arc<WebhookServer>>,
-    _headers: axum::http::HeaderMap,
-    Json(event): Json<WebhookEvent>,
+    headers: HeaderMap,
+    body: Bytes,
 ) -> std::result::Result<StatusCode, StatusCode> {
-    // TODO: Verify webhook signature
+    // Verify webhook signature
+    let signature = headers
+        .get("X-Hub-Signature-256")
+        .and_then(|v| v.to_str().ok());
+
+    if !verify_signature(&server.secret, signature, &body) {
+        warn!("Invalid webhook signature - rejecting request");
+        return Err(StatusCode::UNAUTHORIZED);
+    }
+
+    // Parse the event from the body
+    let event: WebhookEvent = serde_json::from_slice(&body).map_err(|e| {
+        error!("Failed to parse webhook event: {}", e);
+        StatusCode::BAD_REQUEST
+    })?;
 
     // Process event
     match event {
@@ -134,5 +200,61 @@ mod tests {
         let handler = Arc::new(TestHandler);
         let server = WebhookServer::new(8081, "secret".to_string(), handler);
         assert_eq!(server.port, 8081);
+    }
+
+    #[test]
+    fn test_verify_signature_valid() {
+        let secret = "test-secret";
+        let body = b"test body";
+
+        // Compute expected signature
+        let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
+        mac.update(body);
+        let expected = hex::encode(mac.finalize().into_bytes());
+        let signature = format!("sha256={}", expected);
+
+        assert!(verify_signature(secret, Some(&signature), body));
+    }
+
+    #[test]
+    fn test_verify_signature_invalid() {
+        let secret = "test-secret";
+        let body = b"test body";
+        let wrong_signature = "sha256=0000000000000000000000000000000000000000000000000000000000000000";
+
+        assert!(!verify_signature(secret, Some(wrong_signature), body));
+    }
+
+    #[test]
+    fn test_verify_signature_missing_header() {
+        let secret = "test-secret";
+        let body = b"test body";
+
+        assert!(!verify_signature(secret, None, body));
+    }
+
+    #[test]
+    fn test_verify_signature_invalid_format() {
+        let secret = "test-secret";
+        let body = b"test body";
+
+        // Missing sha256= prefix
+        assert!(!verify_signature(secret, Some("invalid-format"), body));
+    }
+
+    #[test]
+    fn test_verify_signature_tampered_body() {
+        let secret = "test-secret";
+        let original_body = b"original body";
+        let tampered_body = b"tampered body";
+
+        // Compute signature for original body
+        let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
+        mac.update(original_body);
+        let expected = hex::encode(mac.finalize().into_bytes());
+        let signature = format!("sha256={}", expected);
+
+        // Verify with tampered body should fail
+        assert!(!verify_signature(secret, Some(&signature), tampered_body));
     }
 }
