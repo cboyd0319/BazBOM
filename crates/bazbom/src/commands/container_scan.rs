@@ -1674,14 +1674,40 @@ async fn analyze_go_reachability(
 ) -> Result<std::collections::HashSet<String>> {
     use bazbom_reachability::go::analyze_go_project;
 
-    let _report = analyze_go_project(project_path)?;
+    let report = analyze_go_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
 
-    // Conservative approach: Mark all packages as reachable since we don't have
-    // package-level mapping from the function-level reachability report
-    // TODO: Map functions back to packages for accurate package-level reachability
+    // Extract package names from reachable function IDs
+    // Go function IDs are formatted as "package/path.FunctionName"
+    let reachable_packages: std::collections::HashSet<String> = report
+        .reachable_functions
+        .iter()
+        .filter_map(|func_id| {
+            // Find the last dot to separate package from function name
+            func_id.rfind('.').map(|idx| func_id[..idx].to_string())
+        })
+        .collect();
+
+    // Check each vulnerable package against reachable packages
     for package in packages.keys() {
-        reachable.insert(package.clone());
+        // Direct match
+        if reachable_packages.contains(package) {
+            reachable.insert(package.clone());
+            continue;
+        }
+
+        // Check if package is a prefix of any reachable package (sub-packages)
+        // e.g., "github.com/foo/bar" should match "github.com/foo/bar/subpkg"
+        if reachable_packages.iter().any(|rp| rp.starts_with(package)) {
+            reachable.insert(package.clone());
+            continue;
+        }
+
+        // Check if any reachable package is a prefix (parent packages)
+        // e.g., reachable "github.com/foo" should match vulnerable "github.com/foo/bar"
+        if reachable_packages.iter().any(|rp| package.starts_with(rp)) {
+            reachable.insert(package.clone());
+        }
     }
 
     Ok(reachable)
