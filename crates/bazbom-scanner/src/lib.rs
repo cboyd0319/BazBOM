@@ -197,10 +197,54 @@ async fn scan_ecosystem(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
             }
             scanner.scan(&ctx).await
         }
-        EcosystemType::Ruby => ecosystems::ruby::scan(ecosystem).await,
-        EcosystemType::Php => ecosystems::php::scan(ecosystem).await,
-        EcosystemType::Maven => ecosystems::maven::scan(ecosystem).await,
-        EcosystemType::Gradle => ecosystems::gradle::scan(ecosystem).await,
+        EcosystemType::Ruby => {
+            let scanner = ecosystems::ruby::RubyScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+            scanner.scan(&ctx).await
+        }
+        EcosystemType::Php => {
+            let scanner = ecosystems::php::PhpScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+            scanner.scan(&ctx).await
+        }
+        EcosystemType::Maven => {
+            let scanner = ecosystems::maven::MavenScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+            scanner.scan(&ctx).await
+        }
+        EcosystemType::Gradle => {
+            let scanner = ecosystems::gradle::GradleScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+            scanner.scan(&ctx).await
+        }
     }
 }
 

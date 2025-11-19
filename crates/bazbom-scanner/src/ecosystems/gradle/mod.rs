@@ -9,47 +9,71 @@
 //! - String notation and map notation
 //! - Version catalogs (libs.versions.toml)
 
-use crate::detection::Ecosystem;
+use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
 use crate::types::{EcosystemScanResult, Package};
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
 
-/// Scan Gradle ecosystem
-pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "Gradle".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
+/// Gradle scanner
+pub struct GradleScanner;
 
-    // Parse build.gradle or build.gradle.kts if available
-    if let Some(ref manifest_path) = ecosystem.manifest_file {
-        // Parse with multi-module support
-        let dependencies = parse_gradle_with_modules(manifest_path)?;
+impl GradleScanner {
+    pub fn new() -> Self {
+        Self
+    }
+}
 
-        for dep in dependencies {
-            // Skip test dependencies by default (can be made configurable)
-            if dep.configuration.contains("test") || dep.configuration.contains("Test") {
-                continue;
-            }
-
-            result.packages.push(Package {
-                name: gradle_package_id(&dep),
-                version: dep.version.clone(),
-                ecosystem: "Gradle".to_string(),
-                namespace: Some(dep.group.clone()),
-                dependencies: Vec::new(),
-                license: None,
-                description: None,
-                homepage: None,
-                repository: None,
-            });
-        }
+#[async_trait]
+impl Scanner for GradleScanner {
+    fn name(&self) -> &str {
+        "gradle"
     }
 
-    result.total_packages = result.packages.len();
-    Ok(result)
+    fn detect(&self, root: &Path) -> bool {
+        root.join("build.gradle").exists() || root.join("build.gradle.kts").exists()
+    }
+
+    async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
+        let mut result = EcosystemScanResult::new(
+            "Gradle".to_string(),
+            ctx.root.display().to_string(),
+        );
+
+        // Parse build.gradle or build.gradle.kts if available
+        if let Some(ref manifest_path) = ctx.manifest {
+            // Parse with multi-module support
+            let dependencies = parse_gradle_with_modules(manifest_path)?;
+
+            for dep in dependencies {
+                // Skip test dependencies by default (can be made configurable)
+                if dep.configuration.contains("test") || dep.configuration.contains("Test") {
+                    continue;
+                }
+
+                result.packages.push(Package {
+                    name: gradle_package_id(&dep),
+                    version: dep.version.clone(),
+                    ecosystem: "Gradle".to_string(),
+                    namespace: Some(dep.group.clone()),
+                    dependencies: Vec::new(),
+                    license: None,
+                    description: None,
+                    homepage: None,
+                    repository: None,
+                });
+            }
+        }
+
+        result.total_packages = result.packages.len();
+        Ok(result)
+    }
+
+    fn fetch_license_uncached(&self, _ctx: &LicenseContext) -> License {
+        License::Unknown
+    }
 }
 
 /// Gradle dependency information

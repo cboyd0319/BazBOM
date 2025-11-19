@@ -2,43 +2,68 @@
 //!
 //! Parses Gemfile and Gemfile.lock files
 
-use crate::detection::Ecosystem;
+use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
 use crate::types::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
-/// Scan Ruby ecosystem
-pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "Ruby".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
+/// Ruby scanner
+pub struct RubyScanner;
 
-    // Parse Gemfile.lock if available (most accurate)
-    if let Some(ref lockfile_path) = ecosystem.lockfile {
-        parse_gemfile_lock(lockfile_path, &mut result)?;
-    } else if let Some(ref manifest_path) = ecosystem.manifest_file {
-        // Fallback to Gemfile (less accurate)
-        eprintln!(
-            "Warning: Gemfile found but no Gemfile.lock - run 'bundle lock' for accurate versions"
+impl RubyScanner {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Scanner for RubyScanner {
+    fn name(&self) -> &str {
+        "ruby"
+    }
+
+    fn detect(&self, root: &Path) -> bool {
+        root.join("Gemfile").exists()
+    }
+
+    async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
+        let mut result = EcosystemScanResult::new(
+            "Ruby".to_string(),
+            ctx.root.display().to_string(),
         );
-        parse_gemfile(manifest_path, &mut result)?;
+
+        // Parse Gemfile.lock if available (most accurate)
+        if let Some(ref lockfile_path) = ctx.lockfile {
+            parse_gemfile_lock(lockfile_path, &mut result)?;
+        } else if let Some(ref manifest_path) = ctx.manifest {
+            // Fallback to Gemfile (less accurate)
+            eprintln!(
+                "Warning: Gemfile found but no Gemfile.lock - run 'bundle lock' for accurate versions"
+            );
+            parse_gemfile(manifest_path, &mut result)?;
+        }
+
+        // Run reachability analysis
+        if let Err(e) = analyze_reachability(&ctx.root, &mut result) {
+            eprintln!("Warning: Ruby reachability analysis failed: {}", e);
+        }
+
+        Ok(result)
     }
 
-    // Run reachability analysis
-    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
-        eprintln!("Warning: Ruby reachability analysis failed: {}", e);
+    fn fetch_license_uncached(&self, _ctx: &LicenseContext) -> License {
+        License::Unknown
     }
-
-    Ok(result)
 }
 
 /// Analyze reachability for Ruby project
-fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+fn analyze_reachability(root_path: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     use bazbom_reachability::ruby::analyze_ruby_project;
 
-    let report = analyze_ruby_project(&ecosystem.root_path)?;
+    let report = analyze_ruby_project(root_path)?;
     let mut vulnerable_packages_reachable = HashMap::new();
 
     for package in &result.packages {
@@ -240,6 +265,8 @@ fn parse_gemfile_line(line: &str) -> Option<(&str, &str)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cache::LicenseCache;
+    use std::sync::Arc;
     use tempfile::TempDir;
 
     #[test]
@@ -295,14 +322,10 @@ DEPENDENCIES
         )
         .unwrap();
 
-        let ecosystem = Ecosystem::new(
-            crate::detection::EcosystemType::Ruby,
-            temp.path().to_path_buf(),
-            None,
-            Some(gemfile_lock),
-        );
-
-        let result = scan(&ecosystem).await.unwrap();
+        let scanner = RubyScanner::new();
+        let cache = Arc::new(LicenseCache::new());
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_lockfile(gemfile_lock);
+        let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
         assert!(result

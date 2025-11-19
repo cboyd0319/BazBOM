@@ -2,40 +2,65 @@
 //!
 //! Parses composer.json and composer.lock files
 
-use crate::detection::Ecosystem;
+use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
 use crate::types::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 
-/// Scan PHP ecosystem
-pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result =
-        EcosystemScanResult::new("PHP".to_string(), ecosystem.root_path.display().to_string());
+/// PHP scanner
+pub struct PhpScanner;
 
-    // Parse composer.lock if available (most accurate)
-    if let Some(ref lockfile_path) = ecosystem.lockfile {
-        parse_composer_lock(lockfile_path, &mut result)?;
-    } else if let Some(ref manifest_path) = ecosystem.manifest_file {
-        // Fallback to composer.json (less accurate)
-        eprintln!("Warning: composer.json found but no composer.lock - run 'composer install' for accurate versions");
-        parse_composer_json(manifest_path, &mut result)?;
+impl PhpScanner {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Scanner for PhpScanner {
+    fn name(&self) -> &str {
+        "php"
     }
 
-    // Run reachability analysis
-    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
-        eprintln!("Warning: PHP reachability analysis failed: {}", e);
+    fn detect(&self, root: &Path) -> bool {
+        root.join("composer.json").exists()
     }
 
-    Ok(result)
+    async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
+        let mut result =
+            EcosystemScanResult::new("PHP".to_string(), ctx.root.display().to_string());
+
+        // Parse composer.lock if available (most accurate)
+        if let Some(ref lockfile_path) = ctx.lockfile {
+            parse_composer_lock(lockfile_path, &mut result)?;
+        } else if let Some(ref manifest_path) = ctx.manifest {
+            // Fallback to composer.json (less accurate)
+            eprintln!("Warning: composer.json found but no composer.lock - run 'composer install' for accurate versions");
+            parse_composer_json(manifest_path, &mut result)?;
+        }
+
+        // Run reachability analysis
+        if let Err(e) = analyze_reachability(&ctx.root, &mut result) {
+            eprintln!("Warning: PHP reachability analysis failed: {}", e);
+        }
+
+        Ok(result)
+    }
+
+    fn fetch_license_uncached(&self, _ctx: &LicenseContext) -> License {
+        License::Unknown
+    }
 }
 
 /// Analyze reachability for PHP project
-fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+fn analyze_reachability(root_path: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     use bazbom_reachability::php::analyze_php_project;
 
-    let report = analyze_php_project(&ecosystem.root_path)?;
+    let report = analyze_php_project(root_path)?;
     let mut vulnerable_packages_reachable = HashMap::new();
 
     for package in &result.packages {
@@ -245,6 +270,8 @@ fn extract_version(version_spec: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::cache::LicenseCache;
+    use std::sync::Arc;
     use tempfile::TempDir;
 
     #[test]
@@ -274,7 +301,7 @@ mod tests {
 
         assert_eq!(result.name, "symfony/console");
         assert_eq!(result.version, "5.4.0");
-        assert_eq!(result.ecosystem, "Packagist");
+        assert_eq!(result.ecosystem, "PHP");
         assert_eq!(result.namespace, Some("packagist.org/symfony".to_string()));
         assert_eq!(result.license, Some("MIT".to_string()));
         assert!(result
@@ -322,14 +349,10 @@ mod tests {
         )
         .unwrap();
 
-        let ecosystem = Ecosystem::new(
-            crate::detection::EcosystemType::Php,
-            temp.path().to_path_buf(),
-            None,
-            Some(composer_lock),
-        );
-
-        let result = scan(&ecosystem).await.unwrap();
+        let scanner = PhpScanner::new();
+        let cache = Arc::new(LicenseCache::new());
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_lockfile(composer_lock);
+        let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 3);
 
         assert!(result
