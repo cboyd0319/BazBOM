@@ -14,7 +14,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use bazbom_php_reachability::{PhpReachabilityAnalyzer, analyze_php_project};
+//! use bazbom_reachability::php::{PhpReachabilityAnalyzer, analyze_php_project};
 //! use std::path::PathBuf;
 //!
 //! let project_root = PathBuf::from("/path/to/php/project");
@@ -75,7 +75,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```no_run
-/// use bazbom_php_reachability::analyze_php_project;
+/// use bazbom_reachability::php::analyze_php_project;
 /// use std::path::PathBuf;
 ///
 /// let report = analyze_php_project(&PathBuf::from("./my-project")).unwrap();

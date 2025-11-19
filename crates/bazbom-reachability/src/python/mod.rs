@@ -17,7 +17,7 @@
 //! ## Example
 //!
 //! ```no_run
-//! use bazbom_python_reachability::PythonReachabilityAnalyzer;
+//! use bazbom_reachability::python::PythonReachabilityAnalyzer;
 //! use std::path::Path;
 //!
 //! let mut analyzer = PythonReachabilityAnalyzer::new();

@@ -1,7 +1,7 @@
 //! Call graph data structure and reachability analysis for Go code
 
-use crate::error::{GoReachabilityError, Result};
-use crate::models::{FunctionId, FunctionNode};
+use super::error::{GoReachabilityError, Result};
+use super::models::{FunctionId, FunctionNode};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::Dfs;
 use std::collections::HashMap;

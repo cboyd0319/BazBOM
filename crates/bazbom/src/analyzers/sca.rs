@@ -2,7 +2,7 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
-use bazbom_advisories::{
+use bazbom_vulnerabilities::{
     db_sync, is_version_affected, load_epss_scores, load_kev_catalog, Priority, VersionEvent,
     VersionRange,
 };
@@ -207,8 +207,8 @@ impl ScaAnalyzer {
         &self,
         osv_dir: &PathBuf,
         components: &[Component],
-        epss_scores: &HashMap<String, bazbom_advisories::EpssScore>,
-        kev_entries: &HashMap<String, bazbom_advisories::KevEntry>,
+        epss_scores: &HashMap<String, bazbom_vulnerabilities::EpssScore>,
+        kev_entries: &HashMap<String, bazbom_vulnerabilities::KevEntry>,
     ) -> Result<Vec<VulnerabilityMatch>> {
         use std::fs;
 
@@ -671,7 +671,7 @@ impl Analyzer for ScaAnalyzer {
             let content = std::fs::read_to_string(&polyglot_vulns_path)
                 .context("failed to read polyglot vulnerability data")?;
 
-            let ecosystem_results: Vec<bazbom_polyglot::EcosystemScanResult> =
+            let ecosystem_results: Vec<bazbom_scanner::EcosystemScanResult> =
                 serde_json::from_str(&content)
                     .context("failed to parse polyglot vulnerability data")?;
 

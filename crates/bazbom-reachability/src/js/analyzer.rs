@@ -1,11 +1,11 @@
 //! Main orchestrator for JavaScript/TypeScript reachability analysis
 
-use crate::ast_parser::{parse_file, FunctionExtractor};
-use crate::call_graph::CallGraph;
-use crate::entrypoints::EntrypointDetector;
-use crate::error::Result;
-use crate::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
-use crate::module_resolver::ModuleResolver;
+use super::ast_parser::{parse_file, FunctionExtractor};
+use super::call_graph::CallGraph;
+use super::entrypoints::EntrypointDetector;
+use super::error::Result;
+use super::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
+use super::module_resolver::ModuleResolver;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info};
@@ -250,7 +250,7 @@ impl JsReachabilityAnalyzer {
     /// Generate the final reachability report
     fn generate_report(
         &self,
-        entrypoints: Vec<crate::models::Entrypoint>,
+        entrypoints: Vec<super::models::Entrypoint>,
     ) -> Result<ReachabilityReport> {
         let all_functions = self.call_graph.functions().clone();
 

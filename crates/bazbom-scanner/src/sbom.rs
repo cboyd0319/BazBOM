@@ -1,7 +1,7 @@
 //! Unified SBOM generation for polyglot projects
 
 use crate::checksum_fetcher;
-use crate::ecosystems::{EcosystemScanResult, Package};
+use crate::types::{EcosystemScanResult, Package};
 use anyhow::Result;
 use serde_json::json;
 

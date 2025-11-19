@@ -1,0 +1,127 @@
+---
+source: crates/bazbom/tests/refactor_integration.rs
+expression: sbom
+---
+{
+  "SPDXID": "SPDXRef-DOCUMENT",
+  "comment": "Generated SBOM containing 4 packages across 1 ecosystems",
+  "creationInfo": {
+    "created": "2025-11-19T17:41:44.280355+00:00",
+    "creators": [
+      "Tool: BazBOM"
+    ],
+    "licenseListVersion": "3.21"
+  },
+  "dataLicense": "CC0-1.0",
+  "documentNamespace": "https://bazbom.dev/sbom/93ee17d2-58a1-4204-be74-cefe1afdad3f",
+  "name": "Polyglot SBOM",
+  "packages": [
+    {
+      "SPDXID": "SPDXRef-Package-Django-2.2.0",
+      "checksums": null,
+      "comment": "Ecosystem: PyPI",
+      "copyrightText": "NOASSERTION",
+      "description": "",
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:PyPI/Django@2.2.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "",
+      "licenseConcluded": "BSD",
+      "licenseDeclared": "BSD",
+      "name": "Django",
+      "versionInfo": "2.2.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-requests-2.25.0",
+      "checksums": null,
+      "comment": "Ecosystem: PyPI",
+      "copyrightText": "NOASSERTION",
+      "description": "",
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:PyPI/requests@2.25.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "",
+      "licenseConcluded": "Apache 2.0",
+      "licenseDeclared": "Apache 2.0",
+      "name": "requests",
+      "versionInfo": "2.25.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-urllib3-1.26.0",
+      "checksums": null,
+      "comment": "Ecosystem: PyPI",
+      "copyrightText": "NOASSERTION",
+      "description": "",
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:PyPI/urllib3@1.26.0",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "",
+      "licenseConcluded": "MIT",
+      "licenseDeclared": "MIT",
+      "name": "urllib3",
+      "versionInfo": "1.26.0"
+    },
+    {
+      "SPDXID": "SPDXRef-Package-Flask-1.1.1",
+      "checksums": null,
+      "comment": "Ecosystem: PyPI",
+      "copyrightText": "NOASSERTION",
+      "description": "",
+      "downloadLocation": "NOASSERTION",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceLocator": "pkg:PyPI/Flask@1.1.1",
+          "referenceType": "purl"
+        }
+      ],
+      "filesAnalyzed": false,
+      "homepage": "",
+      "licenseConcluded": "BSD-3-Clause",
+      "licenseDeclared": "BSD-3-Clause",
+      "name": "Flask",
+      "versionInfo": "1.1.1"
+    }
+  ],
+  "relationships": [
+    {
+      "relatedSpdxElement": "SPDXRef-Package-Django-2.2.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-requests-2.25.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-urllib3-1.26.0",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    },
+    {
+      "relatedSpdxElement": "SPDXRef-Package-Flask-1.1.1",
+      "relationshipType": "DESCRIBES",
+      "spdxElementId": "SPDXRef-DOCUMENT"
+    }
+  ],
+  "spdxVersion": "SPDX-2.3"
+}

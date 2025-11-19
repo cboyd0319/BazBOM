@@ -1,6 +1,6 @@
 // Suggestion generation for remediation
 
-use bazbom_advisories::Vulnerability;
+use bazbom_vulnerabilities::Vulnerability;
 use bazbom_core::BuildSystem;
 
 use super::types::{RemediationReport, RemediationSuggestion, RemediationSummary};
@@ -24,7 +24,7 @@ pub fn generate_suggestions(
             // Determine fixed version from ranges
             let fixed_version = affected.ranges.iter().find_map(|r| {
                 r.events.iter().find_map(|e| match e {
-                    bazbom_advisories::VersionEvent::Fixed { fixed } => Some(fixed.clone()),
+                    bazbom_vulnerabilities::VersionEvent::Fixed { fixed } => Some(fixed.clone()),
                     _ => None,
                 })
             });
@@ -190,14 +190,14 @@ fn generate_why_fix(vuln: &Vulnerability) -> String {
 
     if let Some(severity) = &vuln.severity {
         let severity_reason = match severity.level {
-            bazbom_advisories::SeverityLevel::Critical => {
+            bazbom_vulnerabilities::SeverityLevel::Critical => {
                 "CRITICAL severity - immediate action required"
             }
-            bazbom_advisories::SeverityLevel::High => "HIGH severity - fix as soon as possible",
-            bazbom_advisories::SeverityLevel::Medium => {
+            bazbom_vulnerabilities::SeverityLevel::High => "HIGH severity - fix as soon as possible",
+            bazbom_vulnerabilities::SeverityLevel::Medium => {
                 "MEDIUM severity - schedule fix in near term"
             }
-            bazbom_advisories::SeverityLevel::Low => "LOW severity - fix when convenient",
+            bazbom_vulnerabilities::SeverityLevel::Low => "LOW severity - fix when convenient",
             _ => "Unknown severity",
         };
         reasons.push(severity_reason.to_string());

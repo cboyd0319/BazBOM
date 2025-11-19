@@ -57,6 +57,7 @@ pub use reachability_integration::analyze_reachability;
 pub use sbom::{generate_github_snapshot, generate_polyglot_sbom, spdx_json_to_tag_value};
 
 use anyhow::Result;
+use std::sync::Arc;
 
 /// Scan a directory for packages only (fast SBOM generation without vulnerabilities or reachability)
 pub async fn scan_directory_sbom_only(path: &str, include_cicd: bool) -> Result<Vec<EcosystemScanResult>> {
@@ -145,7 +146,21 @@ pub async fn scan_directory(path: &str) -> Result<Vec<EcosystemScanResult>> {
 /// Scan a specific ecosystem
 async fn scan_ecosystem(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
     match ecosystem.ecosystem_type {
-        EcosystemType::Npm => ecosystems::npm::scan(ecosystem).await,
+        EcosystemType::Npm => {
+            // Use the new trait-based scanner
+            let scanner = ecosystems::npm::NpmScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+
+            scanner.scan(&ctx).await
+        }
         EcosystemType::Python => ecosystems::python::scan(ecosystem).await,
         EcosystemType::Go => ecosystems::go::scan(ecosystem).await,
         EcosystemType::Rust => ecosystems::rust::scan(ecosystem).await,

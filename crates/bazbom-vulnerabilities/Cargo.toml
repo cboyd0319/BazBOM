@@ -1,5 +1,5 @@
 [package]
-name = "bazbom-advisories"
+name = "bazbom-vulnerabilities"
 version = "6.5.0"
 edition = "2021"
 license = "MIT"

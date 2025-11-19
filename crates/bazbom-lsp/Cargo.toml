@@ -20,7 +20,7 @@ anyhow = "1"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 tempfile = "3"
-bazbom-advisories = { path = "../bazbom-advisories" }
+bazbom-vulnerabilities = { path = "../bazbom-vulnerabilities" }
 bazbom-core = { path = "../bazbom-core" }
 
 [dev-dependencies]

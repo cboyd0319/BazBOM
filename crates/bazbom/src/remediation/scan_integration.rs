@@ -4,7 +4,7 @@
 
 use crate::remediation::database::RemediationDatabase;
 use anyhow::{Context, Result};
-use bazbom_advisories::Vulnerability;
+use bazbom_vulnerabilities::Vulnerability;
 use colored::Colorize;
 
 /// Configuration for auto-remediation
@@ -295,11 +295,11 @@ async fn process_jira_tickets(
                 .first()
                 .and_then(|r| r.events.first())
                 .map(|e| match e {
-                    bazbom_advisories::VersionEvent::Introduced { introduced } => {
+                    bazbom_vulnerabilities::VersionEvent::Introduced { introduced } => {
                         introduced.as_str()
                     }
-                    bazbom_advisories::VersionEvent::Fixed { fixed } => fixed.as_str(),
-                    bazbom_advisories::VersionEvent::LastAffected { last_affected } => {
+                    bazbom_vulnerabilities::VersionEvent::Fixed { fixed } => fixed.as_str(),
+                    bazbom_vulnerabilities::VersionEvent::LastAffected { last_affected } => {
                         last_affected.as_str()
                     }
                 })

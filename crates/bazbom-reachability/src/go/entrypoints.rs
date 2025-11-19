@@ -1,8 +1,8 @@
 //! Go entrypoint detection
 
-use crate::ast_parser::parse_file;
-use crate::error::Result;
-use crate::models::{Entrypoint, EntrypointType};
+use super::ast_parser::parse_file;
+use super::error::Result;
+use super::models::{Entrypoint, EntrypointType};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info};

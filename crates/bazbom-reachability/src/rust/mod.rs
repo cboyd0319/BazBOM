@@ -14,7 +14,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use bazbom_rust_reachability::{RustReachabilityAnalyzer, analyze_rust_project};
+//! use bazbom_reachability::rust::{RustReachabilityAnalyzer, analyze_rust_project};
 //! use std::path::PathBuf;
 //!
 //! let project_root = PathBuf::from("/path/to/rust/project");
@@ -79,7 +79,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```no_run
-/// use bazbom_rust_reachability::analyze_rust_project;
+/// use bazbom_reachability::rust::analyze_rust_project;
 /// use std::path::PathBuf;
 ///
 /// let report = analyze_rust_project(&PathBuf::from("./my-project")).unwrap();
@@ -101,7 +101,7 @@ pub fn analyze_rust_project(project_root: &Path) -> Result<ReachabilityReport> {
 ///
 /// ```no_run
 /// # #[cfg(feature = "tracing-support")]
-/// bazbom_rust_reachability::init_tracing();
+/// bazbom_reachability::rust::init_tracing();
 /// ```
 #[cfg(feature = "tracing-support")]
 pub fn init_tracing() {

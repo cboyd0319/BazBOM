@@ -1,6 +1,6 @@
 //! AST parsing using tree-sitter for JavaScript and TypeScript
 
-use crate::error::{JsReachabilityError, Result};
+use super::error::{JsReachabilityError, Result};
 use std::path::Path;
 use tree_sitter::{Language, Parser, Tree};
 

@@ -1,6 +1,6 @@
 //! Module resolution for Node.js-style imports
 
-use crate::error::{JsReachabilityError, Result};
+use super::error::{JsReachabilityError, Result};
 use std::path::{Path, PathBuf};
 use tracing::debug;
 

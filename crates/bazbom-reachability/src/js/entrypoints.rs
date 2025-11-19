@@ -1,7 +1,7 @@
 //! Entrypoint detection for JavaScript/TypeScript projects
 
-use crate::error::Result;
-use crate::models::{Entrypoint, EntrypointType};
+use super::error::Result;
+use super::models::{Entrypoint, EntrypointType};
 use std::fs;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info};

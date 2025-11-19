@@ -13,6 +13,6 @@ pub mod php;
 pub mod bazel;
 
 // Re-export commonly used types
-pub use js::ReachabilityAnalyzer as JsReachabilityAnalyzer;
-pub use python::ReachabilityAnalyzer as PythonReachabilityAnalyzer;
-pub use java::ReachabilityAnalyzer as JavaReachabilityAnalyzer;
+pub use js::JsReachabilityAnalyzer;
+pub use python::PythonReachabilityAnalyzer;
+pub use java::JavaReachabilityAnalyzer;

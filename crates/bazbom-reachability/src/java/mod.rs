@@ -13,7 +13,7 @@
 //! # Usage
 //!
 //! ```rust,no_run
-//! use bazbom_java_reachability::analyze_java_project;
+//! use bazbom_reachability::java::analyze_java_project;
 //! use std::path::Path;
 //!
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -57,7 +57,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```rust,no_run
-/// use bazbom_java_reachability::analyze_java_project;
+/// use bazbom_reachability::java::analyze_java_project;
 /// use std::path::Path;
 ///
 /// # fn example() -> Result<(), Box<dyn std::error::Error>> {

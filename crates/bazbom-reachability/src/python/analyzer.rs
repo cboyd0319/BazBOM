@@ -1,13 +1,13 @@
 //! Main orchestrator for Python reachability analysis
 
-use crate::ast_parser::{parse_file, FunctionExtractor};
-use crate::call_graph::CallGraph;
-use crate::entrypoints::EntrypointDetector;
-use crate::error::Result;
-use crate::models::{
+use super::ast_parser::{parse_file, FunctionExtractor};
+use super::call_graph::CallGraph;
+use super::entrypoints::EntrypointDetector;
+use super::error::Result;
+use super::models::{
     DynamicCodeWarning, FunctionNode, ReachabilityReport, VulnerabilityReachability,
 };
-use crate::module_resolver::ModuleResolver;
+use super::module_resolver::ModuleResolver;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tracing::{debug, info, warn};
@@ -356,7 +356,7 @@ impl PythonReachabilityAnalyzer {
     /// Generate the final reachability report
     fn generate_report(
         &self,
-        entrypoints: Vec<crate::models::Entrypoint>,
+        entrypoints: Vec<super::models::Entrypoint>,
     ) -> Result<ReachabilityReport> {
         let all_functions = self.call_graph.functions().clone();
 

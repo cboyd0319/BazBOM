@@ -7,7 +7,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::ecosystems::{EcosystemScanResult, ReachabilityData};
+use crate::types::{EcosystemScanResult, ReachabilityData};
 
 /// Perform reachability analysis on vulnerable packages for a scanned ecosystem
 pub async fn analyze_reachability(
@@ -37,7 +37,7 @@ async fn analyze_js_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_js_reachability::analyzer::JsReachabilityAnalyzer;
+    use bazbom_reachability::js::analyzer::JsReachabilityAnalyzer;
 
     let mut analyzer = JsReachabilityAnalyzer::new();
     let report = analyzer.analyze(project_root)?;
@@ -75,7 +75,7 @@ async fn analyze_python_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_python_reachability::analyzer::PythonReachabilityAnalyzer;
+    use bazbom_reachability::python::analyzer::PythonReachabilityAnalyzer;
 
     let mut analyzer = PythonReachabilityAnalyzer::new();
     let report = analyzer.analyze(project_root)?;
@@ -110,7 +110,7 @@ async fn analyze_go_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_go_reachability::analyzer::GoReachabilityAnalyzer;
+    use bazbom_reachability::go::analyzer::GoReachabilityAnalyzer;
 
     let mut analyzer = GoReachabilityAnalyzer::new();
     let report = analyzer.analyze(project_root)?;
@@ -145,7 +145,7 @@ async fn analyze_rust_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_rust_reachability::analyzer::RustReachabilityAnalyzer;
+    use bazbom_reachability::rust::analyzer::RustReachabilityAnalyzer;
 
     let mut analyzer = RustReachabilityAnalyzer::new(project_root.to_path_buf());
     let report = analyzer.analyze()?;
@@ -182,7 +182,7 @@ async fn analyze_ruby_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_ruby_reachability::analyzer::RubyReachabilityAnalyzer;
+    use bazbom_reachability::ruby::analyzer::RubyReachabilityAnalyzer;
 
     let mut analyzer = RubyReachabilityAnalyzer::new(project_root.to_path_buf());
     let report = analyzer.analyze()?;
@@ -216,7 +216,7 @@ async fn analyze_php_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_php_reachability::analyzer::PhpReachabilityAnalyzer;
+    use bazbom_reachability::php::analyzer::PhpReachabilityAnalyzer;
 
     let mut analyzer = PhpReachabilityAnalyzer::new(project_root.to_path_buf());
     let report = analyzer.analyze()?;
@@ -250,7 +250,7 @@ async fn analyze_maven_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_java_reachability::analyzer::JavaReachabilityAnalyzer;
+    use bazbom_reachability::java::analyzer::JavaReachabilityAnalyzer;
 
     let mut analyzer = JavaReachabilityAnalyzer::new();
     let report = analyzer.analyze(project_root)?;
@@ -293,7 +293,7 @@ async fn analyze_gradle_reachability(
     result: &mut EcosystemScanResult,
     project_root: &Path,
 ) -> Result<()> {
-    use bazbom_java_reachability::analyzer::JavaReachabilityAnalyzer;
+    use bazbom_reachability::java::analyzer::JavaReachabilityAnalyzer;
 
     let mut analyzer = JavaReachabilityAnalyzer::new();
     let report = analyzer.analyze(project_root)?;

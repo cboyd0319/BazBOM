@@ -33,7 +33,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 bazbom-core = { path = "../bazbom-core" }
 bazbom-formats = { path = "../bazbom-formats" }
-bazbom-advisories = { path = "../bazbom-advisories" }
+bazbom-vulnerabilities = { path = "../bazbom-vulnerabilities" }
 bazbom-policy = { path = "../bazbom-policy" }
 bazbom-graph = { path = "../bazbom-graph" }
 bazbom-tui = { path = "../bazbom-tui" }
@@ -45,14 +45,8 @@ bazbom-containers = { path = "../bazbom-containers" }
 bazbom-ml = { path = "../bazbom-ml" }
 bazbom-depsdev = { path = "../bazbom-depsdev" }
 bazbom-upgrade-analyzer = { path = "../bazbom-upgrade-analyzer" }
-bazbom-polyglot = { path = "../bazbom-polyglot" }
-bazbom-js-reachability = { path = "../bazbom-js-reachability" }
-bazbom-python-reachability = { path = "../bazbom-python-reachability" }
-bazbom-go-reachability = { path = "../bazbom-go-reachability" }
-bazbom-rust-reachability = { path = "../bazbom-rust-reachability" }
-bazbom-ruby-reachability = { path = "../bazbom-ruby-reachability" }
-bazbom-php-reachability = { path = "../bazbom-php-reachability" }
-bazbom-java-reachability = { path = "../bazbom-java-reachability" }
+bazbom-scanner = { path = "../bazbom-scanner" }
+bazbom-reachability = { path = "../bazbom-reachability" }
 bazbom-jira = { path = "../bazbom-jira" }
 bazbom-github = { path = "../bazbom-github" }
 tempfile = "3"
@@ -76,6 +70,8 @@ predicates = "3"
 tempfile = "3"
 walkdir = "2"
 criterion = { version = "0.7", features = ["html_reports"] }
+assert_fs = "1.1"
+insta = { version = "1.40", features = ["json"] }
 
 [[bench]]
 name = "dependency_analysis"

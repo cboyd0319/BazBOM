@@ -1,6 +1,6 @@
 /// Integration tests for the complete advisory pipeline
 /// Tests parsing, enrichment, merging, and priority calculation
-use bazbom_advisories::{
+use bazbom_vulnerabilities::{
     calculate_priority, load_epss_scores, load_kev_catalog, merge_vulnerabilities,
     parse_ghsa_entry, parse_nvd_entry, parse_osv_entry,
 };
@@ -48,7 +48,7 @@ fn test_osv_complete_pipeline() {
         ]
     }"#;
 
-    let osv_entry: bazbom_advisories::parsers::osv::OsvEntry =
+    let osv_entry: bazbom_vulnerabilities::parsers::osv::OsvEntry =
         serde_json::from_str(osv_json).unwrap();
     let mut vuln = parse_osv_entry(&osv_entry).unwrap();
 
@@ -86,9 +86,9 @@ fn test_osv_complete_pipeline() {
 
     // Enrich vulnerability
     vuln.kev =
-        bazbom_advisories::enrichment::kev::find_kev_entry(&vuln.id, &vuln.aliases, &kev_map);
+        bazbom_vulnerabilities::enrichment::kev::find_kev_entry(&vuln.id, &vuln.aliases, &kev_map);
     vuln.epss =
-        bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+        bazbom_vulnerabilities::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
 
     assert!(vuln.kev.is_some());
     assert!(vuln.epss.is_some());
@@ -98,7 +98,7 @@ fn test_osv_complete_pipeline() {
     vuln.priority = Some(priority);
 
     // Should be P0 due to KEV + high CVSS
-    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P0);
+    assert_eq!(vuln.priority.unwrap(), bazbom_vulnerabilities::Priority::P0);
 }
 
 /// Test NVD parsing and enrichment
@@ -133,7 +133,7 @@ fn test_nvd_complete_pipeline() {
         }
     }"#;
 
-    let nvd_entry: bazbom_advisories::parsers::nvd::NvdEntry =
+    let nvd_entry: bazbom_vulnerabilities::parsers::nvd::NvdEntry =
         serde_json::from_str(nvd_json).unwrap();
     let mut vuln = parse_nvd_entry(&nvd_entry).unwrap();
 
@@ -149,14 +149,14 @@ fn test_nvd_complete_pipeline() {
 
     // Enrich with EPSS
     vuln.epss =
-        bazbom_advisories::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+        bazbom_vulnerabilities::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
 
     // Calculate priority
     let priority = calculate_priority(&vuln.severity, &vuln.kev, &vuln.epss);
     vuln.priority = Some(priority);
 
     // Should be P1 due to high CVSS (8.5) and high EPSS (0.6)
-    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P1);
+    assert_eq!(vuln.priority.unwrap(), bazbom_vulnerabilities::Priority::P1);
 }
 
 /// Test GHSA parsing and enrichment
@@ -190,7 +190,7 @@ fn test_ghsa_complete_pipeline() {
         }
     }"#;
 
-    let ghsa_entry: bazbom_advisories::parsers::ghsa::GhsaEntry =
+    let ghsa_entry: bazbom_vulnerabilities::parsers::ghsa::GhsaEntry =
         serde_json::from_str(ghsa_json).unwrap();
     let mut vuln = parse_ghsa_entry(&ghsa_entry).unwrap();
 
@@ -203,7 +203,7 @@ fn test_ghsa_complete_pipeline() {
     vuln.priority = Some(priority);
 
     // Should be P3 due to medium CVSS (5.5)
-    assert_eq!(vuln.priority.unwrap(), bazbom_advisories::Priority::P3);
+    assert_eq!(vuln.priority.unwrap(), bazbom_vulnerabilities::Priority::P3);
 }
 
 /// Test merging vulnerabilities from multiple sources
@@ -268,9 +268,9 @@ fn test_merge_multiple_sources() {
         }
     }"#;
 
-    let osv_entry: bazbom_advisories::parsers::osv::OsvEntry =
+    let osv_entry: bazbom_vulnerabilities::parsers::osv::OsvEntry =
         serde_json::from_str(osv_json).unwrap();
-    let nvd_entry: bazbom_advisories::parsers::nvd::NvdEntry =
+    let nvd_entry: bazbom_vulnerabilities::parsers::nvd::NvdEntry =
         serde_json::from_str(nvd_json).unwrap();
 
     let vuln1 = parse_osv_entry(&osv_entry).unwrap();
@@ -300,34 +300,34 @@ fn test_merge_multiple_sources() {
 fn test_complete_enrichment_workflow() {
     let vulnerabilities = vec![
         // P0: Critical CVSS + KEV
-        (9.8, true, 0.5, bazbom_advisories::Priority::P0),
+        (9.8, true, 0.5, bazbom_vulnerabilities::Priority::P0),
         // P1: High CVSS + High EPSS
-        (8.0, false, 0.6, bazbom_advisories::Priority::P1),
+        (8.0, false, 0.6, bazbom_vulnerabilities::Priority::P1),
         // P2: High CVSS, no KEV, low EPSS
-        (7.5, false, 0.05, bazbom_advisories::Priority::P2),
+        (7.5, false, 0.05, bazbom_vulnerabilities::Priority::P2),
         // P3: Medium CVSS
-        (5.0, false, 0.0, bazbom_advisories::Priority::P3),
+        (5.0, false, 0.0, bazbom_vulnerabilities::Priority::P3),
         // P4: Low CVSS
-        (2.0, false, 0.0, bazbom_advisories::Priority::P4),
+        (2.0, false, 0.0, bazbom_vulnerabilities::Priority::P4),
     ];
 
     for (cvss, has_kev, epss_score, expected_priority) in vulnerabilities {
-        let severity = Some(bazbom_advisories::Severity {
+        let severity = Some(bazbom_vulnerabilities::Severity {
             cvss_v3: Some(cvss),
             cvss_v4: None,
             level: if cvss >= 9.0 {
-                bazbom_advisories::SeverityLevel::Critical
+                bazbom_vulnerabilities::SeverityLevel::Critical
             } else if cvss >= 7.0 {
-                bazbom_advisories::SeverityLevel::High
+                bazbom_vulnerabilities::SeverityLevel::High
             } else if cvss >= 4.0 {
-                bazbom_advisories::SeverityLevel::Medium
+                bazbom_vulnerabilities::SeverityLevel::Medium
             } else {
-                bazbom_advisories::SeverityLevel::Low
+                bazbom_vulnerabilities::SeverityLevel::Low
             },
         });
 
         let kev = if has_kev {
-            Some(bazbom_advisories::KevEntry {
+            Some(bazbom_vulnerabilities::KevEntry {
                 cve_id: "CVE-TEST".to_string(),
                 vendor_project: "Test".to_string(),
                 product: "Test".to_string(),
@@ -341,7 +341,7 @@ fn test_complete_enrichment_workflow() {
         };
 
         let epss = if epss_score > 0.0 {
-            Some(bazbom_advisories::EpssScore {
+            Some(bazbom_vulnerabilities::EpssScore {
                 score: epss_score,
                 percentile: 0.9,
             })

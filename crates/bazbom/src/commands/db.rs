@@ -9,7 +9,7 @@ pub fn handle_db(action: DbCmd) -> Result<()> {
             println!("[bazbom] db sync");
             let cache_dir = PathBuf::from(".bazbom/cache");
             let offline = std::env::var("BAZBOM_OFFLINE").is_ok();
-            let manifest = bazbom_advisories::db_sync(&cache_dir, offline)
+            let manifest = bazbom_vulnerabilities::db_sync(&cache_dir, offline)
                 .context("failed advisory DB sync")?;
             println!(
                 "[bazbom] advisories cached at {:?} ({} files)",

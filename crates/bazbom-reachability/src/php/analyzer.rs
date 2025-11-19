@@ -1,10 +1,10 @@
 //! Main PHP reachability analyzer
 
-use crate::ast_parser::{parse_file, FunctionExtractor};
-use crate::call_graph::CallGraph;
-use crate::entrypoints::EntrypointDetector;
-use crate::error::Result;
-use crate::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
+use super::ast_parser::{parse_file, FunctionExtractor};
+use super::call_graph::CallGraph;
+use super::entrypoints::EntrypointDetector;
+use super::error::Result;
+use super::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tracing::{info, warn};
@@ -72,7 +72,7 @@ impl PhpReachabilityAnalyzer {
         Ok(report)
     }
 
-    fn detect_entrypoints(&self) -> Result<Vec<crate::models::Entrypoint>> {
+    fn detect_entrypoints(&self) -> Result<Vec<super::models::Entrypoint>> {
         let detector = EntrypointDetector::new(self.project_root.clone());
         detector.detect_entrypoints()
     }

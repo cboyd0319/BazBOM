@@ -1,8 +1,9 @@
 //! AST parsing using syn for Rust code analysis
 
-use crate::error::{Result, RustReachabilityError};
+use super::error::{Result, RustReachabilityError};
 use std::path::Path;
-use syn::{visit::Visit, Attribute, Expr, File, ItemFn};
+use syn::visit::Visit;
+use syn::{Attribute, Expr, File, ItemFn};
 
 /// Parse a Rust file into an AST
 pub fn parse_file(file_path: &Path) -> Result<File> {

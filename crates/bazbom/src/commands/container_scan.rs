@@ -1458,30 +1458,30 @@ async fn run_polyglot_reachability(
     let mut reachable = std::collections::HashSet::new();
 
     // Detect what languages are present in the container
-    let ecosystems = bazbom_polyglot::detect_ecosystems(project_path.to_str().unwrap_or("."))?;
+    let ecosystems = bazbom_scanner::detect_ecosystems(project_path.to_str().unwrap_or("."))?;
 
     // Run language-specific call graph analysis for each detected ecosystem
     for ecosystem in &ecosystems {
         let ecosystem_reachable = match ecosystem.ecosystem_type {
-            bazbom_polyglot::EcosystemType::Npm => {
+            bazbom_scanner::EcosystemType::Npm => {
                 analyze_npm_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Python => {
+            bazbom_scanner::EcosystemType::Python => {
                 analyze_python_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Go => {
+            bazbom_scanner::EcosystemType::Go => {
                 analyze_go_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Rust => {
+            bazbom_scanner::EcosystemType::Rust => {
                 analyze_rust_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Ruby => {
+            bazbom_scanner::EcosystemType::Ruby => {
                 analyze_ruby_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Php => {
+            bazbom_scanner::EcosystemType::Php => {
                 analyze_php_reachability(project_path, packages).await
             }
-            bazbom_polyglot::EcosystemType::Maven | bazbom_polyglot::EcosystemType::Gradle => {
+            bazbom_scanner::EcosystemType::Maven | bazbom_scanner::EcosystemType::Gradle => {
                 analyze_java_reachability(project_path, packages).await
             }
         };
@@ -1508,7 +1508,7 @@ async fn analyze_npm_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_js_reachability::analyze_js_project;
+    use bazbom_reachability::js::analyze_js_project;
 
     let report = analyze_js_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1534,7 +1534,7 @@ async fn analyze_python_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_python_reachability::analyze_python_project;
+    use bazbom_reachability::python::analyze_python_project;
 
     let report = analyze_python_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1558,7 +1558,7 @@ async fn analyze_go_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_go_reachability::analyze_go_project;
+    use bazbom_reachability::go::analyze_go_project;
 
     let _report = analyze_go_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1578,7 +1578,7 @@ async fn analyze_rust_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_rust_reachability::analyze_rust_project;
+    use bazbom_reachability::rust::analyze_rust_project;
 
     let report = analyze_rust_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1602,7 +1602,7 @@ async fn analyze_ruby_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_ruby_reachability::analyze_ruby_project;
+    use bazbom_reachability::ruby::analyze_ruby_project;
 
     let report = analyze_ruby_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1626,7 +1626,7 @@ async fn analyze_php_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_php_reachability::analyze_php_project;
+    use bazbom_reachability::php::analyze_php_project;
 
     let report = analyze_php_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();
@@ -1650,7 +1650,7 @@ async fn analyze_java_reachability(
     project_path: &Path,
     packages: &HashMap<String, Vec<String>>,
 ) -> Result<std::collections::HashSet<String>> {
-    use bazbom_java_reachability::analyze_java_project;
+    use bazbom_reachability::java::analyze_java_project;
 
     let report = analyze_java_project(project_path)?;
     let mut reachable = std::collections::HashSet::new();

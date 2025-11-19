@@ -1,6 +1,6 @@
 //! AST parsing using tree-sitter for Ruby code analysis
 
-use crate::error::{Result, RubyReachabilityError};
+use super::error::{Result, RubyReachabilityError};
 use std::path::Path;
 use tree_sitter::{Parser, Tree};
 

@@ -14,7 +14,7 @@
 //! # Example
 //!
 //! ```no_run
-//! use bazbom_ruby_reachability::{RubyReachabilityAnalyzer, analyze_ruby_project};
+//! use bazbom_reachability::ruby::{RubyReachabilityAnalyzer, analyze_ruby_project};
 //! use std::path::PathBuf;
 //!
 //! let project_root = PathBuf::from("/path/to/ruby/project");
@@ -75,7 +75,7 @@ use std::path::Path;
 /// # Example
 ///
 /// ```no_run
-/// use bazbom_ruby_reachability::analyze_ruby_project;
+/// use bazbom_reachability::ruby::analyze_ruby_project;
 /// use std::path::PathBuf;
 ///
 /// let report = analyze_ruby_project(&PathBuf::from("./my-project")).unwrap();

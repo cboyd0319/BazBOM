@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use bazbom_advisories::Vulnerability as AdvisoryVuln;
+use bazbom_vulnerabilities::Vulnerability as AdvisoryVuln;
 use bazbom_policy::{
     PolicyConfig, PolicyResult, Priority, SeverityLevel, Vulnerability as PolicyVuln,
 };
@@ -19,19 +19,19 @@ pub fn convert_to_policy_vuln_with_reachability(
     reachable: Option<bool>,
 ) -> PolicyVuln {
     let severity = match advisory_vuln.severity.as_ref().map(|s| s.level) {
-        Some(bazbom_advisories::SeverityLevel::Critical) => SeverityLevel::Critical,
-        Some(bazbom_advisories::SeverityLevel::High) => SeverityLevel::High,
-        Some(bazbom_advisories::SeverityLevel::Medium) => SeverityLevel::Medium,
-        Some(bazbom_advisories::SeverityLevel::Low) => SeverityLevel::Low,
-        Some(bazbom_advisories::SeverityLevel::Unknown) | None => SeverityLevel::None,
+        Some(bazbom_vulnerabilities::SeverityLevel::Critical) => SeverityLevel::Critical,
+        Some(bazbom_vulnerabilities::SeverityLevel::High) => SeverityLevel::High,
+        Some(bazbom_vulnerabilities::SeverityLevel::Medium) => SeverityLevel::Medium,
+        Some(bazbom_vulnerabilities::SeverityLevel::Low) => SeverityLevel::Low,
+        Some(bazbom_vulnerabilities::SeverityLevel::Unknown) | None => SeverityLevel::None,
     };
 
     let priority = match advisory_vuln.priority {
-        Some(bazbom_advisories::Priority::P0) => Priority::P0,
-        Some(bazbom_advisories::Priority::P1) => Priority::P1,
-        Some(bazbom_advisories::Priority::P2) => Priority::P2,
-        Some(bazbom_advisories::Priority::P3) => Priority::P3,
-        Some(bazbom_advisories::Priority::P4) | None => Priority::P4,
+        Some(bazbom_vulnerabilities::Priority::P0) => Priority::P0,
+        Some(bazbom_vulnerabilities::Priority::P1) => Priority::P1,
+        Some(bazbom_vulnerabilities::Priority::P2) => Priority::P2,
+        Some(bazbom_vulnerabilities::Priority::P3) => Priority::P3,
+        Some(bazbom_vulnerabilities::Priority::P4) | None => Priority::P4,
     };
 
     let description = advisory_vuln
@@ -48,7 +48,7 @@ pub fn convert_to_policy_vuln_with_reachability(
         .flat_map(|pkg| pkg.ranges.iter())
         .flat_map(|range| range.events.iter())
         .find_map(|event| {
-            if let bazbom_advisories::VersionEvent::Fixed { fixed } = event {
+            if let bazbom_vulnerabilities::VersionEvent::Fixed { fixed } = event {
                 Some(fixed.clone())
             } else {
                 None
@@ -139,7 +139,7 @@ pub fn check_policy_with_reachability(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bazbom_advisories::{
+    use bazbom_vulnerabilities::{
         AffectedPackage, EpssScore, KevEntry, Severity, SeverityLevel as AdvSeverityLevel,
         VersionEvent, VersionRange,
     };
@@ -187,7 +187,7 @@ mod tests {
                 required_action: "Update".to_string(),
                 due_date: "2024-02-01".to_string(),
             }),
-            priority: Some(bazbom_advisories::Priority::P0),
+            priority: Some(bazbom_vulnerabilities::Priority::P0),
         };
 
         let policy_vuln = convert_to_policy_vuln(&advisory_vuln, "Maven:test-lib");
@@ -290,7 +290,7 @@ vex_auto_apply: true
             modified: None,
             epss: None,
             kev: None,
-            priority: Some(bazbom_advisories::Priority::P4),
+            priority: Some(bazbom_vulnerabilities::Priority::P4),
         }];
 
         let policy = PolicyConfig {
@@ -325,7 +325,7 @@ vex_auto_apply: true
             modified: None,
             epss: None,
             kev: None,
-            priority: Some(bazbom_advisories::Priority::P0),
+            priority: Some(bazbom_vulnerabilities::Priority::P0),
         }];
 
         let policy = PolicyConfig {
@@ -369,7 +369,7 @@ vex_auto_apply: true
                 required_action: "Update".to_string(),
                 due_date: "2024-02-01".to_string(),
             }),
-            priority: Some(bazbom_advisories::Priority::P1),
+            priority: Some(bazbom_vulnerabilities::Priority::P1),
         }];
 
         let policy = PolicyConfig {

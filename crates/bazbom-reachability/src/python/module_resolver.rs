@@ -1,6 +1,6 @@
 //! Python module resolution (import statements)
 
-use crate::error::{PythonReachabilityError, Result};
+use super::error::{PythonReachabilityError, Result};
 use std::path::{Path, PathBuf};
 use tracing::debug;
 

@@ -1,6 +1,6 @@
 //! Java entrypoint detection
 
-use crate::models::MethodNode;
+use super::models::MethodNode;
 
 /// Check if a method is a Java entrypoint
 pub fn is_entrypoint(method: &MethodNode) -> bool {

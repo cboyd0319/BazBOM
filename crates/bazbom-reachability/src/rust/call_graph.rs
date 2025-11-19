@@ -1,7 +1,7 @@
 //! Call graph construction and reachability analysis
 
-use crate::error::Result;
-use crate::models::{FunctionId, FunctionNode};
+use super::error::Result;
+use super::models::{FunctionId, FunctionNode};
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 use tracing::{debug, info};

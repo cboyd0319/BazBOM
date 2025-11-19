@@ -1118,13 +1118,13 @@ impl ScanOrchestrator {
                 Ok(handle) => {
                     // We're in an async context, use block_in_place
                     tokio::task::block_in_place(|| {
-                        handle.block_on(bazbom_polyglot::scan_directory(workspace_path))
+                        handle.block_on(bazbom_scanner::scan_directory(workspace_path))
                     })?
                 }
                 Err(_) => {
                     // No runtime available, create a new one
                     let rt = tokio::runtime::Runtime::new()?;
-                    rt.block_on(bazbom_polyglot::scan_directory(workspace_path))?
+                    rt.block_on(bazbom_scanner::scan_directory(workspace_path))?
                 }
             }
         };
@@ -1152,7 +1152,7 @@ impl ScanOrchestrator {
                         );
                         result.total_packages = available;
                         // Note: The actual package data truncation would need to happen
-                        // within the bazbom_polyglot crate for full effectiveness
+                        // within the bazbom_scanner crate for full effectiveness
                     }
 
                     total_packages += result.total_packages;
@@ -1240,8 +1240,8 @@ impl ScanOrchestrator {
                         println!("[bazbom] found {} Maven packages from maven_install.json", graph.components.len());
 
                         // Convert Bazel Maven components to polyglot Package format
-                        let maven_packages: Vec<bazbom_polyglot::Package> = graph.components.iter().map(|component| {
-                            bazbom_polyglot::Package {
+                        let maven_packages: Vec<bazbom_scanner::Package> = graph.components.iter().map(|component| {
+                            bazbom_scanner::Package {
                                 name: component.name.clone(),
                                 version: component.version.clone(),
                                 ecosystem: "Maven".to_string(),
@@ -1260,7 +1260,7 @@ impl ScanOrchestrator {
 
                         // Merge Maven packages into polyglot results
                         if !maven_packages.is_empty() {
-                            let maven_result = bazbom_polyglot::EcosystemScanResult {
+                            let maven_result = bazbom_scanner::EcosystemScanResult {
                                 ecosystem: "Maven (Bazel)".to_string(),
                                 root_path: self.context.workspace.to_string_lossy().to_string(),
                                 packages: maven_packages,
@@ -1288,7 +1288,7 @@ impl ScanOrchestrator {
             if self.include_cicd {
                 tracing::info!("Detecting CI/CD tooling in Bazel workspace");
                 println!("[bazbom] detecting CI/CD dependencies...");
-                match bazbom_polyglot::cicd::detect_github_actions(&self.context.workspace) {
+                match bazbom_scanner::cicd::detect_github_actions(&self.context.workspace) {
                     Ok(cicd_result) => {
                         if !cicd_result.packages.is_empty() {
                             tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
@@ -1320,13 +1320,13 @@ impl ScanOrchestrator {
             let unified_sbom = match tokio::runtime::Handle::try_current() {
                 Ok(handle) => {
                     tokio::task::block_in_place(|| {
-                        handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))
+                        handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))
                     })?
                 }
                 Err(_) => {
                     // Create new runtime if not already in one
                     let rt = tokio::runtime::Runtime::new()?;
-                    rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))?
+                    rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))?
                 }
             };
             let spdx_path = self.context.sbom_dir.join("spdx.json");

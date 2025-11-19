@@ -1,6 +1,6 @@
 //! Call graph data structure for Java methods
 
-use crate::models::{MethodId, MethodNode};
+use super::models::{MethodId, MethodNode};
 use petgraph::graph::{DiGraph, NodeIndex};
 use std::collections::HashMap;
 

@@ -3,7 +3,7 @@
 //! Fetches SHA256 checksums from package registries for all supported ecosystems.
 //! This module is opt-in (--fetch-checksums flag) to avoid slowing down fast scans.
 
-use crate::ecosystems::Package;
+use crate::types::Package;
 use anyhow::{Context, Result};
 use reqwest::Client;
 use serde::Deserialize;

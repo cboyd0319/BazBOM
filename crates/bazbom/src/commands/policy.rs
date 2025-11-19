@@ -47,9 +47,9 @@ fn handle_policy_check() -> Result<()> {
 }
 
 /// Load vulnerabilities from scan results (SARIF or JSON)
-fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_advisories::Vulnerability>> {
+fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulnerability>> {
     use bazbom_formats::sarif::SarifReport;
-    use bazbom_advisories::{Vulnerability, Severity, SeverityLevel, Priority, EpssScore, KevEntry};
+    use bazbom_vulnerabilities::{Vulnerability, Severity, SeverityLevel, Priority, EpssScore, KevEntry};
 
     // Try SARIF files first (new format), then fall back to JSON (legacy)
     let sarif_paths = [
@@ -168,7 +168,7 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_advisories::Vulnerabili
 #[allow(dead_code)]
 fn load_advisories_from_cache(
     cache_dir: &PathBuf,
-) -> Result<Vec<bazbom_advisories::Vulnerability>> {
+) -> Result<Vec<bazbom_vulnerabilities::Vulnerability>> {
     if cache_dir.exists() {
         match advisory::load_advisories(cache_dir) {
             Ok(vulns) => {

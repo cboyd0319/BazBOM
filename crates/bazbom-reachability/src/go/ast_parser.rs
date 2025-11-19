@@ -1,7 +1,7 @@
 //! AST parsing using tree-sitter for Go code analysis
 
-use crate::error::{GoReachabilityError, Result};
-use crate::models::ReflectionType;
+use super::error::{GoReachabilityError, Result};
+use super::models::ReflectionType;
 use std::path::Path;
 use tree_sitter::{Parser, Tree};
 

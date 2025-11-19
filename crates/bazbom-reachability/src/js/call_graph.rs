@@ -1,7 +1,7 @@
 //! Call graph data structure and reachability analysis
 
-use crate::error::{JsReachabilityError, Result};
-use crate::models::{FunctionId, FunctionNode};
+use super::error::{JsReachabilityError, Result};
+use super::models::{FunctionId, FunctionNode};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::Dfs;
 use std::collections::HashMap;

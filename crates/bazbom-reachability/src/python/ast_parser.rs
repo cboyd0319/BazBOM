@@ -1,7 +1,7 @@
 //! AST parsing using tree-sitter for Python code analysis
 
-use crate::error::{PythonReachabilityError, Result};
-use crate::models::DynamicCodeType;
+use super::error::{PythonReachabilityError, Result};
+use super::models::DynamicCodeType;
 use std::path::Path;
 use tree_sitter::{Parser, Tree};
 

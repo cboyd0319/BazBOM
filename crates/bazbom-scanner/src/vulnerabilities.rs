@@ -2,7 +2,7 @@
 //!
 //! https://osv.dev/docs/
 
-use crate::ecosystems::{Package, Vulnerability};
+use crate::types::{Package, Vulnerability};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 

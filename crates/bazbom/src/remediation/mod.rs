@@ -37,7 +37,7 @@ pub use version::parse_semantic_version;
 
 use anyhow::Context;
 use anyhow::Result;
-use bazbom_advisories::Vulnerability;
+use bazbom_vulnerabilities::Vulnerability;
 use bazbom_formats::sarif::SarifReport;
 use std::path::PathBuf;
 
@@ -284,7 +284,7 @@ pub fn handle_fix_command(
 
 /// Load vulnerabilities from scan results (SARIF or JSON)
 fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
-    use bazbom_advisories::{EpssScore, KevEntry, Severity, SeverityLevel, Priority};
+    use bazbom_vulnerabilities::{EpssScore, KevEntry, Severity, SeverityLevel, Priority};
     use std::fs;
 
     // Try SARIF files first (new format), then fall back to JSON (legacy)

@@ -1,14 +1,106 @@
-//! Node.js/npm ecosystem parser
+//! Node.js/npm ecosystem scanner
 //!
 //! Parses package.json and lockfiles (package-lock.json, yarn.lock, pnpm-lock.yaml)
 
-use crate::detection::Ecosystem;
+use crate::cache::LicenseCache;
+use crate::scanner::{License, LicenseContext, ScanContext, Scanner};
 use crate::types::{EcosystemScanResult, Package, ReachabilityData};
 use anyhow::{Context, Result};
+use async_trait::async_trait;
 use serde::Deserialize;
 use serde_yaml;
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
+
+/// npm ecosystem scanner
+pub struct NpmScanner;
+
+impl NpmScanner {
+    pub fn new() -> Self {
+        Self
+    }
+}
+
+#[async_trait]
+impl Scanner for NpmScanner {
+    fn name(&self) -> &str {
+        "npm"
+    }
+
+    fn detect(&self, root: &Path) -> bool {
+        root.join("package.json").exists()
+    }
+
+    async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
+        let mut result = EcosystemScanResult::new(
+            "Node.js/npm".to_string(),
+            ctx.root.display().to_string(),
+        );
+
+        // Parse package.json if provided
+        if let Some(ref manifest_path) = ctx.manifest {
+            let content = fs::read_to_string(manifest_path).context("Failed to read package.json")?;
+            let package_json: PackageJson =
+                serde_json::from_str(&content).context("Failed to parse package.json")?;
+
+            // If we have a lockfile, parse it for exact versions
+            if let Some(ref lockfile_path) = ctx.lockfile {
+                let lockfile_name = lockfile_path
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("");
+
+                match lockfile_name {
+                    "package-lock.json" => {
+                        parse_package_lock(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                    }
+                    "yarn.lock" => {
+                        parse_yarn_lock(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                    }
+                    "pnpm-lock.yaml" => {
+                        parse_pnpm_lock(lockfile_path, &ctx.root, &mut result, &ctx.cache)?;
+                    }
+                    _ => {
+                        // No recognized lockfile, fallback to package.json dependencies
+                        parse_package_json_deps(&package_json, &mut result);
+                    }
+                }
+            } else {
+                // No lockfile, use package.json
+                parse_package_json_deps(&package_json, &mut result);
+            }
+        }
+
+        // Run reachability analysis
+        if let Err(e) = analyze_reachability(&ctx.root, &mut result) {
+            eprintln!("Warning: npm reachability analysis failed: {}", e);
+        }
+
+        Ok(result)
+    }
+
+    fn fetch_license_uncached(&self, ctx: &LicenseContext) -> License {
+        // Parse namespace from package name
+        let (namespace, package_name) = if ctx.package.starts_with('@') {
+            let parts: Vec<&str> = ctx.package.splitn(2, '/').collect();
+            if parts.len() == 2 {
+                (Some(parts[0].to_string()), parts[1])
+            } else {
+                (None, ctx.package)
+            }
+        } else {
+            (None, ctx.package)
+        };
+
+        // Try to read license from node_modules/{package}/package.json
+        if let Some(license_str) = read_license_from_node_modules(ctx.root, package_name, &namespace) {
+            License::Spdx(license_str)
+        } else {
+            License::Unknown
+        }
+    }
+}
 
 /// package.json structure
 #[derive(Debug, Deserialize)]
@@ -59,60 +151,11 @@ struct LockfileDependency {
     dependencies: HashMap<String, LockfileDependency>,
 }
 
-/// Scan npm ecosystem
-pub async fn scan(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
-    let mut result = EcosystemScanResult::new(
-        "Node.js/npm".to_string(),
-        ecosystem.root_path.display().to_string(),
-    );
-
-    // Parse package.json
-    if let Some(ref manifest_path) = ecosystem.manifest_file {
-        let content = fs::read_to_string(manifest_path).context("Failed to read package.json")?;
-        let package_json: PackageJson =
-            serde_json::from_str(&content).context("Failed to parse package.json")?;
-
-        // If we have a lockfile, parse it for exact versions
-        if let Some(ref lockfile_path) = ecosystem.lockfile {
-            let lockfile_name = lockfile_path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("");
-
-            match lockfile_name {
-                "package-lock.json" => {
-                    parse_package_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
-                }
-                "yarn.lock" => {
-                    parse_yarn_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
-                }
-                "pnpm-lock.yaml" => {
-                    parse_pnpm_lock(lockfile_path, &ecosystem.root_path, &mut result)?;
-                }
-                _ => {
-                    // No lockfile, fallback to package.json dependencies
-                    parse_package_json_deps(&package_json, &mut result);
-                }
-            }
-        } else {
-            // No lockfile, use package.json
-            parse_package_json_deps(&package_json, &mut result);
-        }
-    }
-
-    // Run reachability analysis
-    if let Err(e) = analyze_reachability(ecosystem, &mut result) {
-        eprintln!("Warning: npm reachability analysis failed: {}", e);
-    }
-
-    Ok(result)
-}
-
 /// Analyze reachability for npm/Node.js project
-fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult) -> Result<()> {
+fn analyze_reachability(root: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     use bazbom_reachability::js::analyze_js_project;
 
-    let report = analyze_js_project(&ecosystem.root_path)?;
+    let report = analyze_js_project(root)?;
     let mut vulnerable_packages_reachable = HashMap::new();
 
     for package in &result.packages {
@@ -132,7 +175,7 @@ fn analyze_reachability(ecosystem: &Ecosystem, result: &mut EcosystemScanResult)
 
 /// Read license from node_modules/{package}/package.json
 fn read_license_from_node_modules(
-    root_path: &std::path::Path,
+    root_path: &Path,
     package_name: &str,
     namespace: &Option<String>,
 ) -> Option<String> {
@@ -169,9 +212,10 @@ fn extract_license_string(license: Option<serde_json::Value>) -> Option<String> 
 
 /// Parse package-lock.json (npm v7+)
 fn parse_package_lock(
-    lockfile_path: &std::path::Path,
-    root_path: &std::path::Path,
+    lockfile_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path)?;
     let lock: PackageLockJson =
@@ -201,7 +245,14 @@ fn parse_package_lock(
                     (None, name.to_string())
                 };
 
-                let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+                // Use cache for license fetching
+                let license_ctx = LicenseContext {
+                    root: root_path,
+                    package: name,
+                    version: version,
+                    cache,
+                };
+                let license = NpmScanner::new().fetch_license(&license_ctx);
 
                 result.add_package(Package {
                     name: package_name,
@@ -209,7 +260,7 @@ fn parse_package_lock(
                     ecosystem: "npm".to_string(),
                     namespace,
                     dependencies: pkg.dependencies.keys().cloned().collect(),
-                    license,
+                    license: Some(license.as_spdx()),
                     description: None,
                     homepage: None,
                     repository: None,
@@ -218,7 +269,7 @@ fn parse_package_lock(
         }
     } else if !lock.dependencies.is_empty() {
         // npm v6 uses "dependencies" field
-        parse_v6_dependencies(&lock.dependencies, root_path, result, &mut Vec::new());
+        parse_v6_dependencies(&lock.dependencies, root_path, result, cache, &mut Vec::new());
     }
 
     Ok(())
@@ -227,8 +278,9 @@ fn parse_package_lock(
 /// Parse npm v6 style dependencies (recursive)
 fn parse_v6_dependencies(
     deps: &HashMap<String, LockfileDependency>,
-    root_path: &std::path::Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
     path: &mut Vec<String>,
 ) {
     for (name, dep) in deps {
@@ -248,7 +300,14 @@ fn parse_v6_dependencies(
             (None, name.to_string())
         };
 
-        let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+        // Use cache for license fetching
+        let license_ctx = LicenseContext {
+            root: root_path,
+            package: name,
+            version: &dep.version,
+            cache,
+        };
+        let license = NpmScanner::new().fetch_license(&license_ctx);
 
         result.add_package(Package {
             name: package_name,
@@ -256,7 +315,7 @@ fn parse_v6_dependencies(
             ecosystem: "npm".to_string(),
             namespace,
             dependencies: dep.requires.keys().cloned().collect(),
-            license,
+            license: Some(license.as_spdx()),
             description: None,
             homepage: None,
             repository: None,
@@ -265,7 +324,7 @@ fn parse_v6_dependencies(
         // Parse nested dependencies
         if !dep.dependencies.is_empty() {
             path.push(name.clone());
-            parse_v6_dependencies(&dep.dependencies, root_path, result, path);
+            parse_v6_dependencies(&dep.dependencies, root_path, result, cache, path);
             path.pop();
         }
     }
@@ -284,9 +343,10 @@ fn parse_v6_dependencies(
 ///     dep2 "version"
 /// ```
 fn parse_yarn_lock(
-    lockfile_path: &std::path::Path,
-    root_path: &std::path::Path,
+    lockfile_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path).context("Failed to read yarn.lock")?;
 
@@ -309,7 +369,7 @@ fn parse_yarn_lock(
             if let (Some(pkg_name), Some(version)) =
                 (current_package.take(), current_version.take())
             {
-                add_yarn_package(result, root_path, &pkg_name, &version, &current_deps);
+                add_yarn_package(result, root_path, &pkg_name, &version, &current_deps, cache);
                 current_deps.clear();
             }
 
@@ -366,7 +426,7 @@ fn parse_yarn_lock(
 
     // Don't forget the last package
     if let (Some(pkg_name), Some(version)) = (current_package, current_version) {
-        add_yarn_package(result, root_path, &pkg_name, &version, &current_deps);
+        add_yarn_package(result, root_path, &pkg_name, &version, &current_deps, cache);
     }
 
     Ok(())
@@ -399,10 +459,11 @@ fn extract_dependency_name(line: &str) -> Option<String> {
 /// Add a yarn package to the result
 fn add_yarn_package(
     result: &mut EcosystemScanResult,
-    root_path: &std::path::Path,
+    root_path: &Path,
     name: &str,
     version: &str,
     deps: &[String],
+    cache: &LicenseCache,
 ) {
     let (namespace, package_name) = if name.starts_with('@') {
         // Scoped package like "@babel/code-frame"
@@ -416,7 +477,14 @@ fn add_yarn_package(
         (None, name.to_string())
     };
 
-    let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+    // Use cache for license fetching
+    let license_ctx = LicenseContext {
+        root: root_path,
+        package: name,
+        version,
+        cache,
+    };
+    let license = NpmScanner::new().fetch_license(&license_ctx);
 
     result.add_package(Package {
         name: package_name,
@@ -424,7 +492,7 @@ fn add_yarn_package(
         ecosystem: "npm".to_string(),
         namespace,
         dependencies: deps.to_vec(),
-        license,
+        license: Some(license.as_spdx()),
         description: None,
         homepage: None,
         repository: None,
@@ -493,9 +561,10 @@ struct PnpmPackage {
 /// pnpm uses a YAML format with a "packages" section that contains all resolved dependencies
 /// in a flat structure with their full paths as keys.
 fn parse_pnpm_lock(
-    lockfile_path: &std::path::Path,
-    root_path: &std::path::Path,
+    lockfile_path: &Path,
+    root_path: &Path,
     result: &mut EcosystemScanResult,
+    cache: &LicenseCache,
 ) -> Result<()> {
     let content = fs::read_to_string(lockfile_path).context("Failed to read pnpm-lock.yaml")?;
 
@@ -520,7 +589,15 @@ fn parse_pnpm_lock(
             };
 
             let deps: Vec<String> = package.dependencies.keys().cloned().collect();
-            let license = read_license_from_node_modules(root_path, &package_name, &namespace);
+
+            // Use cache for license fetching
+            let license_ctx = LicenseContext {
+                root: root_path,
+                package: &name,
+                version: &version,
+                cache,
+            };
+            let license = NpmScanner::new().fetch_license(&license_ctx);
 
             result.add_package(Package {
                 name: package_name,
@@ -528,7 +605,7 @@ fn parse_pnpm_lock(
                 ecosystem: "npm".to_string(),
                 namespace,
                 dependencies: deps,
-                license,
+                license: Some(license.as_spdx()),
                 description: None,
                 homepage: None,
                 repository: None,
@@ -623,7 +700,17 @@ fn parse_package_json_deps(package_json: &PackageJson, result: &mut EcosystemSca
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Arc;
     use tempfile::TempDir;
+
+    #[tokio::test]
+    async fn test_npm_scanner_detect() {
+        let temp = TempDir::new().unwrap();
+        fs::write(temp.path().join("package.json"), "{}").unwrap();
+
+        let scanner = NpmScanner::new();
+        assert!(scanner.detect(temp.path()));
+    }
 
     #[tokio::test]
     async fn test_parse_package_json() {
@@ -643,14 +730,12 @@ mod tests {
         )
         .unwrap();
 
-        let ecosystem = Ecosystem::new(
-            crate::detection::EcosystemType::Npm,
-            temp.path().to_path_buf(),
-            Some(package_json),
-            None,
-        );
+        let scanner = NpmScanner::new();
+        let cache = Arc::new(LicenseCache::new());
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
+            .with_manifest(package_json);
 
-        let result = scan(&ecosystem).await.unwrap();
+        let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 2);
         assert!(result.packages.iter().any(|p| p.name == "express"));
         assert!(result

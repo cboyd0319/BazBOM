@@ -4,10 +4,10 @@
 //! For a full implementation, this would parse the bytecode constant pool
 //! and method code to extract all method invocations.
 
-use crate::call_graph::CallGraph;
-use crate::entrypoints::is_entrypoint;
-use crate::error::Result;
-use crate::models::MethodNode;
+use super::call_graph::CallGraph;
+use super::entrypoints::is_entrypoint;
+use super::error::Result;
+use super::models::MethodNode;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;

@@ -1,9 +1,9 @@
 //! Main Java reachability analyzer
 
-use crate::bytecode_analyzer::{analyze_classes, analyze_jars};
-use crate::call_graph::CallGraph;
-use crate::error::Result;
-use crate::models::ReachabilityReport;
+use super::bytecode_analyzer::{analyze_classes, analyze_jars};
+use super::call_graph::CallGraph;
+use super::error::Result;
+use super::models::ReachabilityReport;
 use petgraph::visit::Dfs;
 use std::path::Path;
 

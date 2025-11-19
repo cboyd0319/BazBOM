@@ -16,7 +16,7 @@
 //! ## Example
 //!
 //! ```no_run
-//! use bazbom_js_reachability::JsReachabilityAnalyzer;
+//! use bazbom_reachability::js::JsReachabilityAnalyzer;
 //! use std::path::Path;
 //!
 //! let mut analyzer = JsReachabilityAnalyzer::new();

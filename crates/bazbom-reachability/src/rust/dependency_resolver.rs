@@ -2,7 +2,7 @@
 //!
 //! Parses Cargo.lock to find all dependencies and locates their source code
 
-use crate::error::{Result, RustReachabilityError};
+use super::error::{Result, RustReachabilityError};
 use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;

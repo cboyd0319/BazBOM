@@ -1,7 +1,7 @@
 //! Call graph data structure and reachability analysis for Python code
 
-use crate::error::{PythonReachabilityError, Result};
-use crate::models::{FunctionId, FunctionNode};
+use super::error::{PythonReachabilityError, Result};
+use super::models::{FunctionId, FunctionNode};
 use petgraph::graph::{DiGraph, NodeIndex};
 use petgraph::visit::Dfs;
 use std::collections::HashMap;

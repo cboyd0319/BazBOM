@@ -1,7 +1,7 @@
 //! Go reachability analyzer
 
-use crate::error::{GoReachabilityError, Result};
-use crate::models::ReachabilityReport;
+use super::error::{GoReachabilityError, Result};
+use super::models::ReachabilityReport;
 use std::path::Path;
 use std::process::Command;
 use tracing::info;

@@ -53,12 +53,12 @@ pub fn handle_legacy_scan(
         match tokio::runtime::Handle::try_current() {
             Ok(handle) => {
                 polyglot_results = tokio::task::block_in_place(|| {
-                    handle.block_on(bazbom_polyglot::scan_directory_sbom_only(&path, include_cicd))
+                    handle.block_on(bazbom_scanner::scan_directory_sbom_only(&path, include_cicd))
                 })?;
             }
             Err(_) => {
                 let rt = tokio::runtime::Runtime::new()?;
-                polyglot_results = rt.block_on(bazbom_polyglot::scan_directory_sbom_only(&path, include_cicd))?;
+                polyglot_results = rt.block_on(bazbom_scanner::scan_directory_sbom_only(&path, include_cicd))?;
             }
         }
 
@@ -229,8 +229,8 @@ pub fn handle_legacy_scan(
                     println!("[bazbom] found {} Maven packages from maven_install.json", graph.components.len());
 
                     // Convert Bazel Maven components to polyglot Package format
-                    let maven_packages: Vec<bazbom_polyglot::Package> = graph.components.iter().map(|component| {
-                        bazbom_polyglot::Package {
+                    let maven_packages: Vec<bazbom_scanner::Package> = graph.components.iter().map(|component| {
+                        bazbom_scanner::Package {
                             name: component.name.clone(),
                             version: component.version.clone(),
                             ecosystem: "Maven".to_string(),
@@ -249,7 +249,7 @@ pub fn handle_legacy_scan(
 
                     // Merge Maven packages into polyglot results
                     if !maven_packages.is_empty() {
-                        let maven_result = bazbom_polyglot::EcosystemScanResult {
+                        let maven_result = bazbom_scanner::EcosystemScanResult {
                             ecosystem: "Maven (Bazel)".to_string(),
                             root_path: path.clone(),
                             packages: maven_packages,
@@ -277,7 +277,7 @@ pub fn handle_legacy_scan(
         if include_cicd {
             tracing::info!("Detecting CI/CD tooling in Bazel workspace");
             println!("[bazbom] detecting CI/CD dependencies...");
-            match bazbom_polyglot::cicd::detect_github_actions(root_path) {
+            match bazbom_scanner::cicd::detect_github_actions(root_path) {
                 Ok(cicd_result) => {
                     if !cicd_result.packages.is_empty() {
                         tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
@@ -408,7 +408,7 @@ pub fn handle_legacy_scan(
                     })
                     .unwrap_or_else(|| "refs/heads/main".to_string());
 
-                let snapshot = bazbom_polyglot::generate_github_snapshot(&polyglot_results, &sha, &ref_name)?;
+                let snapshot = bazbom_scanner::generate_github_snapshot(&polyglot_results, &sha, &ref_name)?;
                 let snapshot_path = out.join("github-snapshot.json");
                 std::fs::write(
                     &snapshot_path,
@@ -428,17 +428,17 @@ pub fn handle_legacy_scan(
                 let unified_sbom = match tokio::runtime::Handle::try_current() {
                     Ok(handle) => {
                         tokio::task::block_in_place(|| {
-                            handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
+                            handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
                         })?
                     }
                     Err(_) => {
                         let rt = tokio::runtime::Runtime::new()?;
-                        rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
                     }
                 };
 
                 // Convert to tag-value format
-                let tag_value_content = bazbom_polyglot::spdx_json_to_tag_value(&unified_sbom)?;
+                let tag_value_content = bazbom_scanner::spdx_json_to_tag_value(&unified_sbom)?;
                 let spdx_path = out.join("sbom.spdx");
                 std::fs::write(&spdx_path, tag_value_content)?;
                 tracing::info!("Wrote SPDX 2.3 tag-value SBOM to {:?}", spdx_path);
@@ -454,13 +454,13 @@ pub fn handle_legacy_scan(
                 let unified_sbom = match tokio::runtime::Handle::try_current() {
                     Ok(handle) => {
                         tokio::task::block_in_place(|| {
-                            handle.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
+                            handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
                         })?
                     }
                     Err(_) => {
                         // Create new runtime if not already in one
                         let rt = tokio::runtime::Runtime::new()?;
-                        rt.block_on(bazbom_polyglot::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
                     }
                 };
 

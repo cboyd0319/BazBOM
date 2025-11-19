@@ -1,7 +1,7 @@
 use anyhow::Result;
 use std::path::Path;
 use serde_yaml;
-use crate::ecosystems::{Package, EcosystemScanResult};
+use crate::types::{Package, EcosystemScanResult};
 
 pub fn detect_github_actions(workspace: &Path) -> Result<EcosystemScanResult> {
     let workflows_dir = workspace.join(".github/workflows");

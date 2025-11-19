@@ -14,7 +14,7 @@
 //! ## Usage
 //!
 //! ```no_run
-//! use bazbom_bazel_reachability::analyze_bazel_project;
+//! use bazbom_reachability::bazel::analyze_bazel_project;
 //! use std::path::Path;
 //!
 //! let report = analyze_bazel_project(Path::new("/workspace")).unwrap();
@@ -41,7 +41,7 @@ use std::process::Command;
 ///
 /// # Example
 /// ```no_run
-/// use bazbom_bazel_reachability::analyze_bazel_targets_for_files;
+/// use bazbom_reachability::bazel::analyze_bazel_targets_for_files;
 /// use std::path::Path;
 ///
 /// let changed = vec!["src/used.cc".to_string(), "src/helper.cc".to_string()];

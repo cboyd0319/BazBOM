@@ -1,6 +1,6 @@
 //! AST parsing using tree-sitter for PHP code analysis
 
-use crate::error::{PhpReachabilityError, Result};
+use super::error::{PhpReachabilityError, Result};
 use std::path::Path;
 use tree_sitter::{Parser, Tree};
 

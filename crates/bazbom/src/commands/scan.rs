@@ -229,7 +229,7 @@ async fn run_auto_remediation(
     let findings: serde_json::Value = serde_json::from_str(&findings_content)?;
 
     // Parse vulnerabilities from JSON
-    let vulnerabilities: Vec<bazbom_advisories::Vulnerability> = findings
+    let vulnerabilities: Vec<bazbom_vulnerabilities::Vulnerability> = findings
         .get("vulnerabilities")
         .and_then(|v| v.as_array())
         .map(|arr| {
