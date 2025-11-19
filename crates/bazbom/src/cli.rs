@@ -166,6 +166,9 @@ PROFILES:
         /// Fetch SHA256 checksums from package registries (slower but adds integrity verification)
         #[arg(long)]
         fetch_checksums: bool,
+        /// Sign generated SBOM with Cosign (requires cosign in PATH)
+        #[arg(long)]
+        sign_sbom: bool,
     },
 
     // ========== QUICK COMMAND ALIASES ==========

@@ -51,6 +51,7 @@ pub async fn handle_scan(
     limit: Option<usize>,
     include_cicd: bool,
     fetch_checksums: bool,
+    sign_sbom: bool,
 ) -> Result<()> {
     debug!("Starting scan with path: {}", path);
     debug!("Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
@@ -175,6 +176,7 @@ pub async fn handle_scan(
             reachability,
             include_cicd,
             fetch_checksums,
+            sign_sbom,
         },
     )?;
 

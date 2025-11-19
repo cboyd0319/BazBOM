@@ -33,6 +33,7 @@ pub struct ScanOrchestratorOptions {
     pub reachability: bool,
     pub include_cicd: bool,
     pub fetch_checksums: bool,
+    pub sign_sbom: bool,
 }
 
 pub struct ScanOrchestrator {
@@ -52,6 +53,7 @@ pub struct ScanOrchestrator {
     reachability: bool,
     include_cicd: bool,
     fetch_checksums: bool,
+    sign_sbom: bool,
 }
 
 impl ScanOrchestrator {
@@ -87,6 +89,7 @@ impl ScanOrchestrator {
             reachability: options.reachability,
             include_cicd: options.include_cicd,
             fetch_checksums: options.fetch_checksums,
+            sign_sbom: options.sign_sbom,
         })
     }
 
@@ -1465,6 +1468,68 @@ impl ScanOrchestrator {
             let sbom_json = serde_json::to_string_pretty(&sbom_data)?;
             std::fs::write(&polyglot_sbom_path, sbom_json)?;
             tracing::debug!("Saved polyglot SBOM with reachability data to {:?}", polyglot_sbom_path);
+
+            // Sign SBOM if requested
+            if self.sign_sbom {
+                self.sign_sbom_file(&polyglot_sbom_path)?;
+            }
+        }
+
+        // Also sign main SBOM files if signing is enabled
+        if self.sign_sbom {
+            let main_sbom = self.context.sbom_dir.join("sbom.spdx.json");
+            if main_sbom.exists() {
+                self.sign_sbom_file(&main_sbom)?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Sign an SBOM file using cosign
+    fn sign_sbom_file(&self, sbom_path: &std::path::Path) -> Result<()> {
+        use std::process::Command;
+
+        // Check if cosign is available
+        let cosign_check = Command::new("cosign").arg("version").output();
+        if cosign_check.is_err() {
+            println!(
+                "   {} Cosign not found, skipping SBOM signing",
+                "⚠️".yellow()
+            );
+            return Ok(());
+        }
+
+        println!(
+            "   🔐 Signing SBOM: {}",
+            sbom_path.display().to_string().dimmed()
+        );
+
+        // Sign the SBOM file using cosign
+        // Uses keyless signing with OIDC if no key is specified
+        let output = Command::new("cosign")
+            .args([
+                "sign-blob",
+                "--yes",  // Non-interactive
+                sbom_path.to_str().unwrap(),
+                "--output-signature",
+                &format!("{}.sig", sbom_path.display()),
+            ])
+            .output()
+            .context("failed to run cosign")?;
+
+        if output.status.success() {
+            println!(
+                "   ✅ Signature saved: {}.sig",
+                sbom_path.display()
+            );
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            println!(
+                "   {} Signing failed: {}",
+                "⚠️".yellow(),
+                stderr.lines().next().unwrap_or("unknown error")
+            );
         }
 
         Ok(())
@@ -1500,6 +1565,7 @@ mod tests {
                 reachability: false,
                 include_cicd: false,
                 fetch_checksums: false,
+                sign_sbom: false,
             },
         )?;
 

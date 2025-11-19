@@ -182,6 +182,7 @@ async fn main() -> Result<()> {
         limit: None,
         include_cicd: false,
         fetch_checksums: false,
+        sign_sbom: false,
     });
 
     match command {
@@ -228,6 +229,7 @@ async fn main() -> Result<()> {
             limit,
             include_cicd,
             fetch_checksums,
+            sign_sbom,
         } => {
             handle_scan(
                 path,
@@ -272,6 +274,7 @@ async fn main() -> Result<()> {
                 limit,
                 include_cicd,
                 fetch_checksums,
+                sign_sbom,
             )
             .await
         }
@@ -339,6 +342,7 @@ async fn main() -> Result<()> {
                 None,           // limit
                 false,          // include_cicd
                 false,          // fetch_checksums
+                false,          // sign_sbom
             )
             .await
         }
@@ -388,6 +392,7 @@ async fn main() -> Result<()> {
                 None,           // limit
                 false,          // include_cicd
                 false,          // fetch_checksums
+                false,          // sign_sbom
             )
             .await
         }
@@ -441,6 +446,7 @@ async fn main() -> Result<()> {
                 None,           // limit
                 false,          // include_cicd
                 false,          // fetch_checksums
+                false,          // sign_sbom
             )
             .await
         }
@@ -493,6 +499,7 @@ async fn main() -> Result<()> {
                 limit,          // limit
                 false,          // include_cicd
                 false,          // fetch_checksums
+                false,          // sign_sbom
             )
             .await
         }
@@ -542,6 +549,7 @@ async fn main() -> Result<()> {
                 None,                         // limit
                 false,                        // include_cicd
                 false,                        // fetch_checksums
+                false,                        // sign_sbom
             )
             .await
         }
