@@ -2,10 +2,11 @@
 
 use crate::ast_parser::{parse_file, FunctionExtractor};
 use crate::call_graph::CallGraph;
+use crate::dependency_resolver::{Dependency, DependencyResolver};
 use crate::entrypoints::EntrypointDetector;
 use crate::error::Result;
 use crate::models::{FunctionNode, ReachabilityReport, VulnerabilityReachability};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use tracing::info;
 use walkdir::WalkDir;
@@ -13,6 +14,9 @@ use walkdir::WalkDir;
 pub struct RustReachabilityAnalyzer {
     project_root: PathBuf,
     call_graph: CallGraph,
+    dependencies: Vec<Dependency>,
+    // Map crate name to source path
+    crate_sources: HashMap<String, PathBuf>,
 }
 
 impl RustReachabilityAnalyzer {
@@ -20,25 +24,49 @@ impl RustReachabilityAnalyzer {
         Self {
             project_root,
             call_graph: CallGraph::new(),
+            dependencies: Vec::new(),
+            crate_sources: HashMap::new(),
         }
     }
 
-    /// Run complete reachability analysis
+    /// Run complete reachability analysis (including transitive dependencies)
     pub fn analyze(&mut self) -> Result<ReachabilityReport> {
-        info!("Starting Rust reachability analysis");
+        let cargo_lock_path = self.project_root.join("Cargo.lock");
+        let has_cargo_lock = cargo_lock_path.exists();
 
-        // Step 1: Detect entrypoints
+        if has_cargo_lock {
+            info!("Starting Rust transitive reachability analysis (root project)");
+        } else {
+            info!("Starting Rust reachability analysis (dependency crate, no transitive analysis)");
+        }
+
+        // Step 1: Resolve dependencies from Cargo.lock (only for root projects)
+        if has_cargo_lock {
+            info!("Resolving dependencies from Cargo.lock");
+            self.resolve_dependencies()?;
+            info!("Found {} dependencies", self.dependencies.len());
+        }
+
+        // Step 2: Detect entrypoints
         let entrypoints = self.detect_entrypoints()?;
         info!("Found {} entrypoints", entrypoints.len());
 
-        // Step 2: Build call graph
+        // Step 3: Build call graph for this crate's source
+        info!("Building call graph for application");
         self.build_call_graph()?;
+
+        // Step 4: Build call graphs for dependencies (only for root projects)
+        if has_cargo_lock && !self.dependencies.is_empty() {
+            info!("Building call graphs for dependencies");
+            self.build_dependency_call_graphs()?;
+        }
+
         info!(
-            "Built call graph with {} functions",
+            "Built unified call graph with {} functions",
             self.call_graph.functions.len()
         );
 
-        // Step 3: Mark entrypoints
+        // Step 5: Mark entrypoints
         for entrypoint in &entrypoints {
             let func_id = format!(
                 "{}::{}",
@@ -50,17 +78,25 @@ impl RustReachabilityAnalyzer {
             }
         }
 
-        // Step 4: Analyze reachability
+        // Step 6: Analyze reachability
         self.call_graph.analyze_reachability()?;
 
-        // Step 5: Generate report
+        // Step 7: Generate report
         let report = self.generate_report()?;
 
-        info!(
-            "Analysis complete: {}/{} functions reachable",
-            report.reachable_functions.len(),
-            report.all_functions.len()
-        );
+        if has_cargo_lock {
+            info!(
+                "Analysis complete: {}/{} functions reachable (including transitive deps)",
+                report.reachable_functions.len(),
+                report.all_functions.len()
+            );
+        } else {
+            info!(
+                "Analysis complete: {}/{} functions reachable",
+                report.reachable_functions.len(),
+                report.all_functions.len()
+            );
+        }
 
         Ok(report)
     }
@@ -134,18 +170,131 @@ impl RustReachabilityAnalyzer {
     }
 
     fn resolve_function_call(&self, callee: &str, current_file: &Path) -> String {
-        // Simplified resolution - in reality we'd need:
-        // 1. Check local functions in same file
-        // 2. Check imports/use statements
-        // 3. Check standard library
-        // 4. Check external crates
-
-        // For now, assume same file if simple name
-        if !callee.contains("::") {
-            format!("{}::{}", current_file.display(), callee)
-        } else {
-            callee.to_string()
+        // Enhanced resolution with crate support
+        // 1. Check if it's a qualified path (contains ::)
+        if callee.contains("::") {
+            // Extract crate name from qualified path
+            // e.g., "chrono::Utc::now" -> check if "chrono" is a known crate
+            let parts: Vec<&str> = callee.split("::").collect();
+            if !parts.is_empty() {
+                let potential_crate = parts[0];
+                // If it's a known dependency crate, keep the full path
+                if self.crate_sources.contains_key(potential_crate) {
+                    return callee.to_string();
+                }
+            }
+            return callee.to_string();
         }
+
+        // Simple name - assume same file
+        format!("{}::{}", current_file.display(), callee)
+    }
+
+    /// Resolve dependencies from Cargo.lock
+    fn resolve_dependencies(&mut self) -> Result<()> {
+        let resolver = DependencyResolver::new(self.project_root.clone());
+        self.dependencies = resolver.resolve_dependencies()?;
+
+        // Build map of crate name -> source path
+        for dep in &self.dependencies {
+            if let Some(ref source_path) = dep.source_path {
+                self.crate_sources.insert(dep.name.clone(), source_path.clone());
+                tracing::debug!(
+                    "Mapped crate {} to source {:?}",
+                    dep.name,
+                    source_path
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Build call graphs for all dependencies
+    fn build_dependency_call_graphs(&mut self) -> Result<()> {
+        // Clone to avoid borrow checker issues
+        let deps = self.dependencies.clone();
+
+        for dep in &deps {
+            if let Some(ref source_path) = dep.source_path {
+                tracing::info!("Analyzing dependency: {} @ {}", dep.name, dep.version);
+                self.build_call_graph_for_crate(&dep.name, source_path)?;
+            } else {
+                tracing::warn!(
+                    "Skipping {} @ {} - source not available",
+                    dep.name,
+                    dep.version
+                );
+            }
+        }
+        Ok(())
+    }
+
+    /// Build call graph for a specific crate (dependency)
+    fn build_call_graph_for_crate(&mut self, crate_name: &str, crate_path: &Path) -> Result<()> {
+        // Collect all Rust files in the crate
+        let rust_files: Vec<PathBuf> = WalkDir::new(crate_path)
+            .into_iter()
+            .filter_entry(|e| !Self::should_skip_entry(e))
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+            .map(|e| e.path().to_path_buf())
+            .filter(|p| Self::is_rust_file(p))
+            .collect();
+
+        tracing::debug!(
+            "Found {} source files for crate {}",
+            rust_files.len(),
+            crate_name
+        );
+
+        // Process all files in the crate
+        for file_path in rust_files {
+            // Parse the file and extract functions
+            if let Ok(ast) = parse_file(&file_path) {
+                let mut extractor = FunctionExtractor::new();
+                extractor.extract(&ast);
+
+                // Add functions to call graph with crate-qualified names
+                for func in &extractor.functions {
+                    // Create fully qualified function ID: crate::module::function
+                    let func_id = if func.is_pub {
+                        // Public functions get crate-qualified names
+                        format!("{}::{}", crate_name, func.name)
+                    } else {
+                        // Private functions include file path
+                        format!("{}::{}::{}", crate_name, file_path.display(), func.name)
+                    };
+
+                    let function_node = FunctionNode {
+                        id: func_id.clone(),
+                        name: func.name.clone(),
+                        file: file_path.clone(),
+                        line: func.line,
+                        column: 0,
+                        is_entrypoint: false,
+                        reachable: false,
+                        calls: Vec::new(),
+                        is_pub: func.is_pub,
+                        is_async: func.is_async,
+                        is_test: func.is_test,
+                    };
+
+                    self.call_graph.add_function(function_node);
+                }
+
+                // Add call edges within this crate
+                for call in &extractor.calls {
+                    if let Some(caller_context) = &call.caller_context {
+                        let caller_id = format!("{}::{}", crate_name, caller_context);
+                        let callee_id = self.resolve_function_call(&call.callee, &file_path);
+                        self.call_graph.add_call(&caller_id, &callee_id);
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 
     fn generate_report(&self) -> Result<ReachabilityReport> {

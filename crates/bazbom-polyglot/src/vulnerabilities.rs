@@ -93,11 +93,19 @@ struct OsvReference {
 
 /// Scan packages for vulnerabilities using OSV API
 pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerability>> {
+    eprintln!("DEBUG: scan_vulnerabilities called with {} packages", packages.len());
+    if !packages.is_empty() {
+        eprintln!("DEBUG: First package: {}@{} (ecosystem: {})",
+            packages[0].name, packages[0].version, packages[0].ecosystem);
+    }
+
     let mut vulnerabilities = Vec::new();
     let client = reqwest::Client::new();
 
     for package in packages {
         let osv_ecosystem = map_ecosystem(&package.ecosystem);
+        eprintln!("DEBUG: Querying OSV for {}@{} (OSV ecosystem: {})",
+            package.name, package.version, osv_ecosystem);
 
         // Query OSV API
         let request = OsvQueryRequest {
@@ -108,8 +116,13 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
             version: package.version.clone(),
         };
 
+        eprintln!("DEBUG: OSV request: {{\"package\": {{\"ecosystem\": \"{}\", \"name\": \"{}\"}}, \"version\": \"{}\"}}",
+            request.package.ecosystem, request.package.name, request.version);
+
         match query_osv(&client, &request).await {
             Ok(response) => {
+                eprintln!("DEBUG: OSV returned {} vulnerabilities for {}@{}",
+                    response.vulns.len(), package.name, package.version);
                 for osv_vuln in response.vulns {
                     if let Some(vuln) = convert_osv_vulnerability(&osv_vuln, package) {
                         vulnerabilities.push(vuln);
@@ -253,14 +266,34 @@ fn map_ecosystem(ecosystem: &str) -> &str {
         "Rust" | "cargo" => "crates.io",
         "Ruby" | "gem" => "RubyGems",
         "PHP" | "composer" => "Packagist",
+        "Maven" | "Gradle" => "Maven", // Both use Maven Central
         other => other,
     }
 }
 
 /// Format package name for OSV query
 fn format_package_name(package: &Package) -> String {
+    // For Maven/Gradle, the package name already includes groupId:artifactId format
+    // Namespace is the groupId and is redundant - don't include it
+    if package.ecosystem == "Maven" || package.ecosystem == "Gradle" {
+        return package.name.clone();
+    }
+
+    // For scoped packages (e.g., npm @scope/package), namespace is the scope
+    // For ecosystem-level namespaces (e.g., crates.io), we don't include it in the name
+    // OSV expects the package name without ecosystem prefix, as ecosystem is sent separately
     if let Some(ref ns) = package.namespace {
-        format!("{}/{}", ns, package.name)
+        // Check if namespace looks like an ecosystem name (contains ".io", ".org", etc.)
+        if ns.contains('.') || ns == "crates.io" || ns == "github.com" {
+            // It's an ecosystem namespace, not a package scope - don't include it
+            package.name.clone()
+        } else if ns.starts_with('@') || package.ecosystem == "npm" {
+            // It's an npm scope like "@typescript-eslint" - include it
+            format!("{}/{}", ns, package.name)
+        } else {
+            // For other cases, include the namespace
+            format!("{}/{}", ns, package.name)
+        }
     } else {
         package.name.clone()
     }

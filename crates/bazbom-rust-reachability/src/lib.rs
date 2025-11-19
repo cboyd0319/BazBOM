@@ -52,6 +52,7 @@
 pub mod analyzer;
 pub mod ast_parser;
 pub mod call_graph;
+pub mod dependency_resolver;
 pub mod entrypoints;
 pub mod error;
 pub mod models;

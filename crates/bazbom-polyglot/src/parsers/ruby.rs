@@ -112,7 +112,7 @@ fn parse_gemfile_lock(
                     result.add_package(Package {
                         name: name.to_string(),
                         version: version.to_string(),
-                        ecosystem: "RubyGems".to_string(),
+                        ecosystem: "Ruby".to_string(),
                         namespace: Some("rubygems.org".to_string()),
                         dependencies: Vec::new(),
                         license: None,
@@ -213,9 +213,12 @@ fn parse_gemfile_line(line: &str) -> Option<(&str, &str)> {
         let version_part = parts[1].trim();
         // Check if it's a version string (not a hash key like "require:")
         if !version_part.contains(':') {
-            version_part
-                .trim_matches('\'')
-                .trim_matches('"')
+            // Remove comments (everything after #)
+            let version_clean = version_part.split('#').next().unwrap_or(version_part).trim();
+            // Remove quotes
+            let version_no_quotes = version_clean.trim_matches('\'').trim_matches('"').trim();
+            // Remove version operators
+            version_no_quotes
                 .trim_start_matches('~')
                 .trim_start_matches('>')
                 .trim_start_matches('=')

@@ -102,7 +102,7 @@ fn parse_cargo_lock(
         result.add_package(Package {
             name,
             version,
-            ecosystem: "crates.io".to_string(),
+            ecosystem: "Rust".to_string(),
             namespace,
             dependencies,
             license: None,
@@ -132,7 +132,7 @@ fn parse_cargo_toml(
             result.add_package(Package {
                 name: name.clone(),
                 version,
-                ecosystem: "crates.io".to_string(),
+                ecosystem: "Rust".to_string(),
                 namespace: Some("crates.io".to_string()),
                 dependencies: Vec::new(),
                 license: None,
@@ -154,7 +154,7 @@ fn parse_cargo_toml(
             result.add_package(Package {
                 name: name.clone(),
                 version,
-                ecosystem: "crates.io".to_string(),
+                ecosystem: "Rust".to_string(),
                 namespace: Some("crates.io".to_string()),
                 dependencies: Vec::new(),
                 license: None,

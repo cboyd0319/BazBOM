@@ -14,6 +14,127 @@ BazBOM is a **comprehensive software supply chain security platform** that solve
 2. **Cuts noise by 70-90% with reachability analysis** - Shows which vulnerabilities are ACTUALLY exploitable vs just present (237 vulns → 28 that matter)
 3. **Developer-friendly output** - Plain English instead of CVE jargon ("Hackers are using this right now" vs "EPSS threshold exceeded")
 
+---
+
+## 🚨 CRITICAL STATUS UPDATE (2025-11-18)
+
+### Major Vulnerability Detection Bug Discovered & Fixed
+
+**CRITICAL BUG FOUND:** Vulnerability detection was **completely broken** for ALL polyglot ecosystems until 2025-11-18.
+
+**Root Cause:**
+- `scan_orchestrator.rs` was calling `scan_directory_sbom_only()` instead of `scan_directory()`
+- This caused ALL vulnerability data from the polyglot scanner to be discarded
+- SBOM generation worked fine, but vulnerabilities were lost before SARIF output
+
+**Impact:**
+- ❌ Python vulnerability detection: **NEVER WORKED**
+- ❌ Go vulnerability detection: **NEVER WORKED**
+- ❌ Rust vulnerability detection: **NEVER WORKED**
+- ❌ Ruby vulnerability detection: **NEVER WORKED**
+- ❌ PHP vulnerability detection: **NEVER WORKED**
+- ✅ npm vulnerability detection: **NOW FIXED** (23 vulns detected in test)
+
+**Fix Applied (3 files changed):**
+1. `scan_orchestrator.rs:1121,1127` - Changed to call `scan_directory()` instead of `scan_directory_sbom_only()`
+2. `scan_orchestrator.rs:1380-1388` - Save polyglot vulnerabilities to `findings/polyglot-vulns.json`
+3. `analyzers/sca.rs:622-687` - Load polyglot vulnerabilities and convert to SARIF format
+
+**Status:** Fixed and validated for npm ecosystem only. Python/Go/Rust/Ruby/PHP **completely untested**.
+
+### Honest Validation Status
+
+**What We've ACTUALLY Tested:**
+- ✅ Build Systems: 2 of 13 (15%) - Bazel, npm
+- ✅ Polyglot Ecosystems: 1 of 6 (17%) - npm only
+- ❌ Reachability Analysis: 0 of 7 languages (0%) - infrastructure works, but NO evidence of 70-90% noise reduction
+- ✅ Test Repositories: 2 total (bazel-examples, vulnerable-npm-test)
+
+**What We've CLAIMED to Support:**
+- Build Systems: 13 (Maven, Gradle, Bazel, npm, pip, Go, Cargo, Ruby, PHP, sbt, Ant+Ivy, Buildr, Android)
+- Polyglot Ecosystems: 6 (npm, Python, Go, Rust, Ruby, PHP)
+- Reachability Analysis: 7 languages with 70-90% noise reduction
+- JVM Languages: 6 (Java, Kotlin, Scala, Groovy, Clojure, Android)
+
+**Gap Analysis:**
+| Feature | Claimed | Validated | Gap |
+|---------|---------|-----------|-----|
+| SBOM Generation | 13 build systems | 2 (15%) | **85% untested** |
+| Vulnerability Detection | 6 polyglot ecosystems | 1 (17%) | **83% untested** |
+| Reachability Analysis | 7 languages, 70-90% reduction | 0 (0%) | **100% untested** |
+| SARIF Output | All ecosystems | 1 (17%) | **83% untested** |
+
+### Immediate Next Steps (Before ANY Further Development)
+
+**Priority 1: Create Vulnerable Test Projects (12-15 hours)**
+
+Create test projects in `~/Documents/BazBOM_Testing/vulnerable-projects/`:
+
+```bash
+vulnerable-projects/
+├── vulnerable-npm/         # ✅ CREATED (23 vulns: axios@0.19.0, lodash@4.17.15, express@4.16.0)
+├── vulnerable-python/      # ❌ TODO: Django 2.2.0, requests 2.19.0, pyyaml 5.1, jinja2 2.10.0
+├── vulnerable-go/          # ❌ TODO: gin 1.6.0, gorilla/websocket 1.4.0, yaml.v2 2.2.7
+├── vulnerable-rust/        # ❌ TODO: serde_yaml 0.8.0, smallvec 0.6.0
+├── vulnerable-ruby/        # ❌ TODO: rails 5.2.0, nokogiri 1.10.0, loofah 2.2.0
+├── vulnerable-php/         # ❌ TODO: symfony 3.4.0, guzzle 6.3.0, monolog 1.24.0
+└── vulnerable-gradle/      # ❌ TODO: TBD
+```
+
+**Priority 2: Validate Vulnerability Detection (8-10 hours)**
+
+For EACH ecosystem, validate:
+1. Package detection: `bazbom scan` finds all packages
+2. Vulnerability scanning: `bazbom full` detects all known CVEs
+3. SARIF output: `jq '.runs[0].results | length'` matches expected count
+4. CVE details: Descriptions, severity, references are complete
+
+**Priority 3: Validate Reachability Claims (15-20 hours)**
+
+Current claim: "70-90% noise reduction" - **ZERO EVIDENCE**
+
+To validate:
+1. Create projects with actual CODE (not just dependency files)
+2. Measure baseline: `bazbom full` → X vulnerabilities
+3. Measure with reachability: `bazbom full -r` → Y vulnerabilities
+4. Calculate reduction: `(X - Y) / X * 100%` → should be 70-90%
+5. Repeat for all 7 languages (Java, Rust, Go, JS/TS, Python, Ruby, PHP)
+
+### Testing Plan Status
+
+**Phase 1: Fix Broken Tests** ✅ COMPLETE
+- All 21 tests passing
+- Fixed `ScanOrchestratorOptions` missing fields
+
+**Phase 2: SBOM Format & Output Flags** ✅ COMPLETE
+- 5 SBOM formats validated (SPDX JSON/tag-value, CycloneDX JSON/XML, GitHub snapshot)
+- Checksum fetching implemented
+- Dual format output working
+
+**Phase 3: SBOM Content Flags** 🔴 INCOMPLETE (17% coverage)
+- `--include-cicd`: Only tested on Bazel+npm
+- `--include-test`: UNTESTED (assumed working)
+- `--fetch-checksums`: UNTESTED (assumed working)
+- `--limit <N>`: UNTESTED
+
+**Phase 4: Scan Scope Flags** 🔴 INCOMPLETE (0% validated claims)
+- `--reachability`: Infrastructure works, but NO evidence of 70-90% reduction
+- `--fast`: ✅ Validated (0.007s, skips reachability)
+- `--ml-risk`: Flag accepted but effectiveness UNTESTED
+
+**Phases 5-15:** PENDING (73.3% of testing plan)
+
+### Documentation Updated
+
+**Updated files:**
+- `docs/COMPREHENSIVE_TESTING_PLAN.md` - Full honest assessment added
+- Multi-language validation matrix created
+- Risk assessment updated with critical findings
+
+**See:** `docs/COMPREHENSIVE_TESTING_PLAN.md` for complete details
+
+---
+
 ### Terminology
 
 BazBOM distinguishes between four related but distinct concepts:
@@ -503,13 +624,71 @@ jq '.packages | length' /tmp/test/sbom.spdx.json
 
 **Important:** This was about fixing the Bazel-specific dependency extraction pipeline. The rest of BazBOM's 11 commands, 7-language reachability analysis, container scanning, policy enforcement, compliance reporting, etc. were all working - this bug only affected Bazel projects specifically.
 
-### Key Lessons Learned
-1. Always check if detection code is actually called during scans
-2. Test with both small and large repositories
-3. Use `tracing` for debugging, not manual debug statements
-4. Maintain consistency between scan paths (legacy + orchestrator)
-5. Document architecture decisions immediately
-6. Dependency extraction is the foundation - without it, ALL features break
+### Critical Bug Fix (2025-11-18) - Vulnerability Detection for ALL Polyglot Ecosystems
+**Context:** This bug affected vulnerability detection for **ALL 6 polyglot ecosystems** (npm, Python, Go, Rust, Ruby, PHP). This was far more severe than the Bazel bug.
+
+**Problem:** Polyglot scanner successfully detected packages and queried OSV for vulnerabilities, but the vulnerability data was **discarded before SARIF output** - resulting in empty findings despite having detected 10s or 100s of CVEs.
+
+**Root Cause:**
+- `scan_orchestrator.rs:1121,1127` was calling `scan_directory_sbom_only()` instead of `scan_directory()`
+- The SBOM-only function skips OSV vulnerability queries entirely
+- Even worse: the orchestrator was using the full `scan_directory()` function but **discarding the vulnerability data** after SBOM generation
+- ScaAnalyzer tried to re-scan from SBOM files, but SBOM files only contain packages, not vulnerabilities
+
+**Impact:**
+- Python vulnerability detection: **NEVER WORKED** (unknown status - untested)
+- Go vulnerability detection: **NEVER WORKED** (unknown status - untested)
+- Rust vulnerability detection: **NEVER WORKED** (unknown status - untested)
+- Ruby vulnerability detection: **NEVER WORKED** (unknown status - untested)
+- PHP vulnerability detection: **NEVER WORKED** (unknown status - untested)
+- npm vulnerability detection: **BROKEN UNTIL 2025-11-18** (now fixed - 23 vulns detected)
+
+**Solution:**
+1. `scan_orchestrator.rs:1121,1127` - Changed both runtime paths to call `scan_directory()` instead of `scan_directory_sbom_only()`
+2. `scan_orchestrator.rs:1380-1388` - Save polyglot vulnerability data to `findings/polyglot-vulns.json` before it's lost
+3. `analyzers/sca.rs:622-687` - Load polyglot vulnerabilities from intermediate file and convert to SARIF
+
+**Data Flow Fix:**
+```
+BEFORE (BROKEN):
+scan_directory() → polyglot_results (23 vulns) → SBOM generation → DISCARDED ❌
+                                                                         ↓
+                                                               ScaAnalyzer reads SBOM
+                                                                         ↓
+                                                                  0 components found
+                                                                         ↓
+                                                               0 vulnerabilities → SARIF
+
+AFTER (FIXED):
+scan_directory() → polyglot_results (23 vulns) → Save to polyglot-vulns.json ✓
+                                    ↓                            ↓
+                             SBOM generation          ScaAnalyzer loads vulns
+                                                                 ↓
+                                                      23 vulnerabilities → SARIF ✓
+```
+
+**Testing:**
+- Created `~/Documents/BazBOM_Testing/real-repos/vulnerable-npm-test` with known CVEs
+- npm audit: 11 vulnerabilities
+- BazBOM: 23 vulnerabilities detected (includes transitive deps)
+- SARIF: 23 results with full CVE details ✅
+
+**Status:** Fixed and validated for npm only. **Python, Go, Rust, Ruby, PHP are COMPLETELY UNTESTED.**
+
+**Documentation:** See updated `docs/COMPREHENSIVE_TESTING_PLAN.md` with multi-language validation matrix
+
+**Critical Lesson:** Vulnerability detection is more fundamental than SBOM generation. Without it, BazBOM is just an inventory tool with zero security value. This bug went undetected because we never tested vulnerability detection end-to-end across all ecosystems.
+
+### Key Lessons Learned (From Both Critical Bugs)
+1. **Test end-to-end, not just components** - Both bugs had working detection code that was never actually used
+2. **Validate ALL claimed ecosystems** - Don't extrapolate from 1 working ecosystem to claim 6 work
+3. **Data flow is critical** - Track data through the entire pipeline: detection → storage → output
+4. **Test with vulnerable projects** - Clean projects hide broken vulnerability detection
+5. **Use `tracing` for debugging** - Not manual debug statements or println!
+6. **Maintain consistency** - Keep both scan paths (legacy + orchestrator) synchronized
+7. **Document architecture immediately** - Prevents forgetting why code exists
+8. **Foundation must be solid** - Dependency extraction and vulnerability detection are the base - if broken, everything fails
+9. **Marketing claims need evidence** - "70-90% noise reduction" requires actual validation, not just infrastructure existence
 
 ---
 
@@ -642,7 +821,100 @@ For additional context, team members can create personal instruction files:
 
 ---
 
-**Last Updated:** 2025-11-18
+## Session Restart Summary (2025-11-18)
+
+### What Just Happened
+
+**Critical Discovery:** Found and fixed a MAJOR vulnerability detection bug that affected ALL polyglot ecosystems.
+
+**Bug:** `scan_orchestrator.rs` was calling `scan_directory_sbom_only()` instead of `scan_directory()`, causing ALL vulnerability data to be discarded after SBOM generation. The SARIF output was empty despite detecting 10s or 100s of vulnerabilities.
+
+**Fix Status:**
+- ✅ npm: FIXED and validated (23 vulnerabilities detected in SARIF)
+- ❌ Python, Go, Rust, Ruby, PHP: UNTESTED - may or may not work
+
+**Honest Assessment Completed:**
+- Updated `docs/COMPREHENSIVE_TESTING_PLAN.md` with brutal reality check
+- Created multi-language validation matrix showing 83-100% untested
+- Documented that reachability "70-90% reduction" claim has ZERO evidence
+
+### Where We Are Now
+
+**Files Changed (Bug Fix):**
+1. `scan_orchestrator.rs:1121,1127` - Call `scan_directory()` instead of `scan_directory_sbom_only()`
+2. `scan_orchestrator.rs:1380-1388` - Save polyglot vulnerabilities to intermediate JSON file
+3. `analyzers/sca.rs:622-687` - Load polyglot vulnerabilities and convert to SARIF
+
+**Files Updated (Documentation):**
+1. `docs/COMPREHENSIVE_TESTING_PLAN.md` - Added critical discovery section, honest assessment, multi-language validation matrix
+2. `.claude/CLAUDE.md` - Added critical status update at top, historical context section updated
+
+**Test Repository Created:**
+- `~/Documents/BazBOM_Testing/real-repos/vulnerable-npm-test` - 23 vulnerabilities validated
+
+### Next Steps for Restart
+
+**DO NOT continue Phase 3-4 testing yet!**
+
+**Must do FIRST:**
+
+1. **Create 5 more vulnerable test projects (12-15 hours):**
+   ```bash
+   cd ~/Documents/BazBOM_Testing/vulnerable-projects/
+   # Create: vulnerable-python, vulnerable-go, vulnerable-rust, vulnerable-ruby, vulnerable-php
+   ```
+
+2. **Validate vulnerability detection for each (8-10 hours):**
+   ```bash
+   # For each project:
+   bazbom full -o /tmp/test
+   jq '.runs[0].results | length' /tmp/test/findings/sca.sarif
+   # Verify count matches expected CVEs
+   ```
+
+3. **Validate reachability claims (15-20 hours):**
+   - Create projects with actual CODE (not just dependency files)
+   - Measure: `bazbom full` (X vulns) vs `bazbom full -r` (Y vulns)
+   - Calculate: (X-Y)/X should be 70-90%
+   - Do for ALL 7 languages
+
+**Quick Start Commands for Restart:**
+```bash
+# See current testing status
+cat ~/Documents/GitHub/BazBOM/docs/COMPREHENSIVE_TESTING_PLAN.md | head -150
+
+# See multi-language validation matrix
+cat ~/Documents/GitHub/BazBOM/docs/COMPREHENSIVE_TESTING_PLAN.md | grep -A 50 "Multi-Language Validation Matrix"
+
+# Verify npm fix is working
+cd ~/Documents/BazBOM_Testing/real-repos/vulnerable-npm-test
+/Users/chad/Documents/GitHub/BazBOM/target/release/bazbom full -o /tmp/test
+jq '.runs[0].results | length' /tmp/test/findings/sca.sarif  # Should show 23
+
+# Start creating Python test project
+mkdir -p ~/Documents/BazBOM_Testing/vulnerable-projects/vulnerable-python
+cd ~/Documents/BazBOM_Testing/vulnerable-projects/vulnerable-python
+# Create requirements.txt with Django 2.2.0, requests 2.19.0, pyyaml 5.1, jinja2 2.10.0, pillow 6.0.0
+```
+
+### Key References
+
+- **Testing Plan:** `docs/COMPREHENSIVE_TESTING_PLAN.md`
+- **Bug Fix Details:** See "Critical Bug Fix (2025-11-18) - Vulnerability Detection" in this file
+- **Honest Assessment:** See "🚨 CRITICAL STATUS UPDATE" at top of this file
+- **Multi-Language Matrix:** `docs/COMPREHENSIVE_TESTING_PLAN.md` lines 67-163
+
+### Critical Reminders
+
+1. **DON'T claim Phase 3 or 4 are "complete"** - They're only 17% validated
+2. **DON'T skip ecosystem validation** - Python/Go/Rust/Ruby/PHP may not work at all
+3. **DON'T trust reachability claims** - Zero evidence of 70-90% reduction
+4. **DO validate end-to-end** - Package detection → vulnerability scanning → SARIF output
+5. **DO test with vulnerable projects** - Clean projects hide bugs
+
+---
+
+**Last Updated:** 2025-11-18 (Critical bug fix + honest assessment)
 **By:** Claude Code (automated)
-**Version:** Enhanced with agents, skills, and comprehensive memory system
+**Version:** Enhanced with critical discovery, multi-language validation plan, and session restart guide
 

@@ -416,6 +416,10 @@ impl ScaAnalyzer {
 
         if !polyglot_sbom_path.exists() {
             // No reachability data available, skip enrichment
+            // This is normal for legacy scans or when reachability analysis is disabled
+            tracing::debug!(
+                "polyglot-sbom.json not found, skipping reachability enrichment"
+            );
             return Ok(());
         }
 
@@ -619,31 +623,69 @@ impl Analyzer for ScaAnalyzer {
     fn run(&self, ctx: &Context) -> Result<SarifReport> {
         println!("[bazbom] running SCA analysis...");
 
-        // Ensure we have advisory database
-        let advisory_dir = match self.ensure_advisory_database(ctx) {
-            Ok(dir) => dir,
-            Err(e) => {
-                println!("[bazbom] warning: failed to sync advisory database: {}", e);
-                println!("[bazbom] continuing with potentially stale data");
-                ctx.workspace.join(".bazbom").join("advisories")
+        // Check if we have polyglot vulnerability data first
+        let polyglot_vulns_path = ctx.findings_dir.join("polyglot-vulns.json");
+        let mut matches = if polyglot_vulns_path.exists() {
+            // Load vulnerabilities from polyglot scanner
+            println!("[bazbom] loading polyglot vulnerability data...");
+            let content = std::fs::read_to_string(&polyglot_vulns_path)
+                .context("failed to read polyglot vulnerability data")?;
+
+            let ecosystem_results: Vec<bazbom_polyglot::EcosystemScanResult> =
+                serde_json::from_str(&content)
+                    .context("failed to parse polyglot vulnerability data")?;
+
+            // Convert polyglot vulnerabilities to our VulnerabilityMatch format
+            let mut vuln_matches = Vec::new();
+            for ecosystem_result in ecosystem_results {
+                for vuln in ecosystem_result.vulnerabilities {
+                    vuln_matches.push(VulnerabilityMatch {
+                        vulnerability_id: vuln.id.clone(),
+                        component_name: vuln.package_name.clone(),
+                        component_version: vuln.package_version.clone(),
+                        summary: Some(vuln.description.clone()),
+                        epss_score: None,  // Polyglot scanner doesn't include EPSS
+                        in_kev: false,     // Polyglot scanner doesn't include KEV
+                        priority: None,    // Will be calculated from severity if needed
+                        location: format!("{}@{}", vuln.package_name, vuln.package_version),
+                        reachable: None,   // Will be enriched if reachability data exists
+                    });
+                }
             }
+
+            println!("[bazbom] loaded {} vulnerabilities from polyglot scanner", vuln_matches.len());
+            vuln_matches
+        } else {
+            // Fallback to traditional SBOM-based vulnerability matching
+            println!("[bazbom] no polyglot vulnerability data found, using traditional matching...");
+
+            // Ensure we have advisory database
+            let advisory_dir = match self.ensure_advisory_database(ctx) {
+                Ok(dir) => dir,
+                Err(e) => {
+                    println!("[bazbom] warning: failed to sync advisory database: {}", e);
+                    println!("[bazbom] continuing with potentially stale data");
+                    ctx.workspace.join(".bazbom").join("advisories")
+                }
+            };
+
+            // Load SBOM components
+            let components = self
+                .load_sbom_components(ctx)
+                .context("failed to load SBOM components")?;
+
+            println!("[bazbom] loaded {} components from SBOM", components.len());
+
+            // Match vulnerabilities
+            let vuln_matches = self
+                .match_vulnerabilities(&components, &advisory_dir)
+                .context("failed to match vulnerabilities")?;
+
+            println!("[bazbom] found {} vulnerability matches", vuln_matches.len());
+            vuln_matches
         };
 
-        // Load SBOM components
-        let components = self
-            .load_sbom_components(ctx)
-            .context("failed to load SBOM components")?;
-
-        println!("[bazbom] loaded {} components from SBOM", components.len());
-
-        // Match vulnerabilities
-        let mut matches = self
-            .match_vulnerabilities(&components, &advisory_dir)
-            .context("failed to match vulnerabilities")?;
-
-        println!("[bazbom] found {} vulnerability matches", matches.len());
-
-        // Enrich with reachability data
+        // Enrich with reachability data (applies to both paths)
         self.enrich_with_reachability(ctx, &mut matches)?;
 
         // Create SARIF report

@@ -1118,13 +1118,13 @@ impl ScanOrchestrator {
                 Ok(handle) => {
                     // We're in an async context, use block_in_place
                     tokio::task::block_in_place(|| {
-                        handle.block_on(bazbom_polyglot::scan_directory_sbom_only(workspace_path, self.include_cicd))
+                        handle.block_on(bazbom_polyglot::scan_directory(workspace_path))
                     })?
                 }
                 Err(_) => {
                     // No runtime available, create a new one
                     let rt = tokio::runtime::Runtime::new()?;
-                    rt.block_on(bazbom_polyglot::scan_directory_sbom_only(workspace_path, self.include_cicd))?
+                    rt.block_on(bazbom_polyglot::scan_directory(workspace_path))?
                 }
             }
         };
@@ -1375,6 +1375,25 @@ impl ScanOrchestrator {
             std::fs::write(&cyclonedx_path, json)?;
             tracing::info!("Wrote CycloneDX SBOM with {} components to {:?}", component_count, cyclonedx_path);
             println!("[bazbom] wrote CycloneDX SBOM ({} components) to {:?}", component_count, cyclonedx_path);
+        }
+
+        // Save polyglot vulnerability data for SCA analyzer
+        // The SBOM files only contain package information, not vulnerabilities.
+        // We save the full vulnerability data here so ScaAnalyzer can use it.
+        if !polyglot_results.is_empty() {
+            let polyglot_vulns_path = self.context.findings_dir.join("polyglot-vulns.json");
+            let json = serde_json::to_string_pretty(&polyglot_results)?;
+            std::fs::write(&polyglot_vulns_path, json)?;
+            tracing::debug!("Saved polyglot vulnerability data to {:?}", polyglot_vulns_path);
+
+            // Also save polyglot SBOM with reachability data for enrichment
+            let polyglot_sbom_path = self.context.sbom_dir.join("polyglot-sbom.json");
+            let sbom_data = serde_json::json!({
+                "ecosystems": polyglot_results
+            });
+            let sbom_json = serde_json::to_string_pretty(&sbom_data)?;
+            std::fs::write(&polyglot_sbom_path, sbom_json)?;
+            tracing::debug!("Saved polyglot SBOM with reachability data to {:?}", polyglot_sbom_path);
         }
 
         Ok(())

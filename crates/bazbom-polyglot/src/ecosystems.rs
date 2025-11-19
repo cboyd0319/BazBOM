@@ -30,14 +30,48 @@ impl Package {
             "Node.js/npm" | "npm" => "npm",
             "Python" | "pip" => "pypi",
             "Go" => "golang",
-            "Rust" => "cargo",
-            "Ruby" => "gem",
-            "PHP" => "composer",
+            "Rust" | "cargo" => "cargo",
+            "Ruby" | "gem" | "RubyGems" => "gem",
+            "PHP" | "composer" => "composer",
+            "Maven" | "Gradle" => "maven",
             other => other,
         };
 
+        // Special handling for Maven/Gradle: namespace is groupId, name is "groupId:artifactId"
+        if self.ecosystem == "Maven" || self.ecosystem == "Gradle" {
+            let artifact = if self.name.contains(':') {
+                self.name.split(':').nth(1).unwrap_or(&self.name)
+            } else {
+                &self.name
+            };
+            if let Some(ref groupid) = self.namespace {
+                return format!("pkg:{}/{}/{}@{}", ecosystem, groupid, artifact, self.version);
+            } else {
+                return format!("pkg:{}/{}@{}", ecosystem, self.name, self.version);
+            }
+        }
+
+        // Special handling for Go: namespace is import path prefix, combine with name for full path
+        if self.ecosystem == "Go" {
+            if let Some(ref ns) = self.namespace {
+                return format!("pkg:{}/{}/{}@{}", ecosystem, ns, self.name, self.version);
+            } else {
+                return format!("pkg:{}/{}@{}", ecosystem, self.name, self.version);
+            }
+        }
+
         if let Some(ref ns) = self.namespace {
-            format!("pkg:{}/{}@{}", ecosystem, ns, self.version)
+            // Check if namespace is an ecosystem identifier (like "crates.io") or a package scope (like "@types")
+            if ns == "crates.io" || ns == "rubygems.org" || ns == "packagist.org" || ns.starts_with("packagist.org/") {
+                // Ecosystem namespace - don't include in purl, just use package name
+                format!("pkg:{}/{}@{}", ecosystem, self.name, self.version)
+            } else if ns.starts_with('@') || self.ecosystem == "npm" {
+                // npm scoped package - include namespace in path
+                format!("pkg:{}/{}/{}@{}", ecosystem, ns, self.name, self.version)
+            } else {
+                // Other namespaces (like Go import paths) - combine with name
+                format!("pkg:{}/{}/{}@{}", ecosystem, ns, self.name, self.version)
+            }
         } else {
             format!("pkg:{}/{}@{}", ecosystem, self.name, self.version)
         }

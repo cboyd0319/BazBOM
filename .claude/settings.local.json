@@ -79,7 +79,9 @@
       "Bash(time /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom scan:*)",
       "WebFetch(domain:cyclonedx.org)",
       "WebFetch(domain:docs.github.com)",
-      "WebFetch(domain:refactoring.guru)"
+      "WebFetch(domain:refactoring.guru)",
+      "Bash(tee:*)",
+      "Bash(env BAZBOM_DISABLE_CACHE=1 /Users/chad/Documents/GitHub/BazBOM/target/release/bazbom full:*)"
     ],
     "deny": [],
     "ask": []

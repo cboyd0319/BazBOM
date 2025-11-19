@@ -129,7 +129,7 @@ fn parse_composer_package(package: &Value) -> Option<Package> {
     Some(Package {
         name: name.clone(), // Keep full vendor/package name
         version,
-        ecosystem: "Packagist".to_string(),
+        ecosystem: "PHP".to_string(),
         namespace,
         dependencies,
         license: package
@@ -176,7 +176,7 @@ fn parse_composer_json(
                 result.add_package(Package {
                     name: name.clone(),
                     version,
-                    ecosystem: "Packagist".to_string(),
+                    ecosystem: "PHP".to_string(),
                     namespace,
                     dependencies: Vec::new(),
                     license: None,
@@ -204,7 +204,7 @@ fn parse_composer_json(
                 result.add_package(Package {
                     name: name.clone(),
                     version,
-                    ecosystem: "Packagist".to_string(),
+                    ecosystem: "PHP".to_string(),
                     namespace,
                     dependencies: Vec::new(),
                     license: None,

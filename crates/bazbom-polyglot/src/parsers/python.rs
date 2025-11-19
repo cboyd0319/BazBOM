@@ -175,6 +175,9 @@ fn parse_requirement_line(line: &str) -> Option<(&str, &str)> {
     // Remove environment markers (e.g., ; python_version >= "3.6")
     let line = line.split(';').next()?.trim();
 
+    // Remove inline comments (e.g., # CVE-2019-14234)
+    let line = line.split('#').next()?.trim();
+
     // Try different operators in order of specificity
     for op in &["===", "==", "~=", ">=", "<=", ">", "<", "!="] {
         if let Some(idx) = line.find(op) {

@@ -179,21 +179,14 @@ fn parse_replace_line(line: &str) -> Option<(&str, &str, &str)> {
 
 /// Create a Go package
 fn create_go_package(module: &str, version: &str) -> Package {
-    // Extract namespace and name from module path
-    // e.g., github.com/gin-gonic/gin -> namespace: "github.com/gin-gonic", name: "gin"
-    let (namespace, name) = if let Some(last_slash) = module.rfind('/') {
-        let namespace = &module[..last_slash];
-        let name = &module[last_slash + 1..];
-        (Some(namespace.to_string()), name.to_string())
-    } else {
-        (None, module.to_string())
-    };
-
+    // For Go, the full module path IS the package identifier in OSV
+    // e.g., "github.com/gin-gonic/gin" should be queried as-is, not split
+    // OSV Go ecosystem uses full import paths as package names
     Package {
-        name,
+        name: module.to_string(),
         version: version.to_string(),
         ecosystem: "Go".to_string(),
-        namespace,
+        namespace: None,
         dependencies: Vec::new(),
         license: None,
         description: None,
