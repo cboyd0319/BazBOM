@@ -756,5 +756,92 @@ async fn main() -> Result<()> {
             }
             Ok(())
         }
+
+        Commands::Threats { action } => {
+            use bazbom::cli::ThreatsCmd;
+            use commands::threats::{handle_threats_configure, handle_threats_scan};
+
+            match action {
+                ThreatsCmd::Scan {
+                    path,
+                    typosquatting,
+                    dep_confusion,
+                    maintainer_takeover,
+                    scorecard,
+                    json,
+                    output,
+                    min_level,
+                } => {
+                    handle_threats_scan(
+                        path,
+                        typosquatting,
+                        dep_confusion,
+                        maintainer_takeover,
+                        scorecard,
+                        json,
+                        output,
+                        min_level,
+                    )?;
+                }
+                ThreatsCmd::Configure {
+                    add_feed,
+                    remove_feed,
+                    list,
+                } => {
+                    handle_threats_configure(add_feed, remove_feed, list)?;
+                }
+            }
+            Ok(())
+        }
+
+        Commands::Notify { action } => {
+            use bazbom::cli::NotifyCmd;
+            use commands::notify::{handle_notify_configure, handle_notify_history, handle_notify_test};
+
+            match action {
+                NotifyCmd::Configure {
+                    slack_webhook,
+                    teams_webhook,
+                    email,
+                    smtp_host,
+                    github_repo,
+                    min_severity,
+                } => {
+                    handle_notify_configure(
+                        slack_webhook,
+                        teams_webhook,
+                        email,
+                        smtp_host,
+                        github_repo,
+                        min_severity,
+                    )?;
+                }
+                NotifyCmd::Test { channel } => {
+                    handle_notify_test(channel)?;
+                }
+                NotifyCmd::History { limit } => {
+                    handle_notify_history(limit)?;
+                }
+            }
+            Ok(())
+        }
+
+        Commands::Anomaly { action } => {
+            use bazbom::cli::AnomalyCmd;
+            use commands::anomaly::{handle_anomaly_report, handle_anomaly_scan, handle_anomaly_train};
+
+            match action {
+                AnomalyCmd::Scan { path, json, output } => {
+                    handle_anomaly_scan(path, json, output)?;
+                }
+                AnomalyCmd::Train { from_dir, output } => {
+                    handle_anomaly_train(from_dir, output)?;
+                }
+                AnomalyCmd::Report { path, output } => {
+                    handle_anomaly_report(path, output)?;
+                }
+            }
+            Ok(())
+        }
     }
 }

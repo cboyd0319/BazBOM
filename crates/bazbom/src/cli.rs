@@ -630,6 +630,72 @@ JUSTIFICATION VALUES (for not_affected):
         #[command(subcommand)]
         action: VexCmd,
     },
+    /// Threat intelligence scanning (typosquatting, dependency confusion, supply chain)
+    #[command(after_help = "EXAMPLES:
+  # Run full threat detection on project
+  bazbom threats scan
+
+  # Check for typosquatting attacks
+  bazbom threats scan --typosquatting
+
+  # Check for dependency confusion vulnerabilities
+  bazbom threats scan --dep-confusion
+
+  # Run OpenSSF Scorecard analysis
+  bazbom threats scan --scorecard
+
+  # Output threats as JSON
+  bazbom threats scan --json
+
+THREAT TYPES:
+  typosquatting        - Detect packages with names similar to popular packages
+  dependency-confusion - Detect internal package name collisions with public registries
+  maintainer-takeover  - Detect compromised or transferred maintainer accounts
+  supply-chain         - Detect supply chain attack indicators
+
+ECOSYSTEM SUPPORT:
+  npm, PyPI, crates.io, RubyGems, Maven Central, Go modules")]
+    Threats {
+        #[command(subcommand)]
+        action: ThreatsCmd,
+    },
+    /// Notification configuration (Slack, Teams, Email, GitHub)
+    #[command(after_help = "EXAMPLES:
+  # Configure Slack notifications
+  bazbom notify configure --slack-webhook https://hooks.slack.com/...
+
+  # Configure email notifications
+  bazbom notify configure --email security@example.com --smtp-host smtp.example.com
+
+  # Test notification delivery
+  bazbom notify test --channel slack
+
+  # View notification history
+  bazbom notify history")]
+    Notify {
+        #[command(subcommand)]
+        action: NotifyCmd,
+    },
+    /// ML-based anomaly detection for supply chain risks
+    #[command(after_help = "EXAMPLES:
+  # Run anomaly detection on current project
+  bazbom anomaly scan
+
+  # Train model on historical scan data
+  bazbom anomaly train --from-dir scan-history/
+
+  # Generate anomaly report
+  bazbom anomaly report --output anomaly-report.html
+
+DETECTION TYPES:
+  - Unusual transitive dependency counts
+  - Low maintainer reputation scores
+  - Suspicious release patterns
+  - Low package popularity (potential typosquat)")]
+    Anomaly {
+        #[command(subcommand)]
+        action: AnomalyCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -986,5 +1052,119 @@ pub enum VexCmd {
         /// Directory containing VEX statements
         #[arg(long, value_name = "DIR", default_value = "vex/statements")]
         vex_dir: String,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum ThreatsCmd {
+    /// Run threat detection scan
+    Scan {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Enable typosquatting detection
+        #[arg(long)]
+        typosquatting: bool,
+        /// Enable dependency confusion detection
+        #[arg(long)]
+        dep_confusion: bool,
+        /// Enable maintainer takeover detection
+        #[arg(long)]
+        maintainer_takeover: bool,
+        /// Run OpenSSF Scorecard analysis
+        #[arg(long)]
+        scorecard: bool,
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+        /// Output file path
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<String>,
+        /// Minimum threat level to report (critical, high, medium, low)
+        #[arg(long, value_name = "LEVEL", default_value = "low")]
+        min_level: String,
+    },
+    /// Configure threat feeds
+    Configure {
+        /// Add custom threat feed URL
+        #[arg(long, value_name = "URL")]
+        add_feed: Option<String>,
+        /// Remove threat feed
+        #[arg(long, value_name = "NAME")]
+        remove_feed: Option<String>,
+        /// List configured feeds
+        #[arg(long)]
+        list: bool,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum NotifyCmd {
+    /// Configure notification channels
+    Configure {
+        /// Slack webhook URL
+        #[arg(long, value_name = "URL")]
+        slack_webhook: Option<String>,
+        /// Microsoft Teams webhook URL
+        #[arg(long, value_name = "URL")]
+        teams_webhook: Option<String>,
+        /// Email address for notifications
+        #[arg(long, value_name = "EMAIL")]
+        email: Option<String>,
+        /// SMTP host for email
+        #[arg(long, value_name = "HOST")]
+        smtp_host: Option<String>,
+        /// GitHub repository for issue creation (owner/repo)
+        #[arg(long, value_name = "REPO")]
+        github_repo: Option<String>,
+        /// Minimum severity to notify (critical, high, medium, low)
+        #[arg(long, value_name = "LEVEL", default_value = "high")]
+        min_severity: String,
+    },
+    /// Test notification delivery
+    Test {
+        /// Channel to test (slack, teams, email, github)
+        #[arg(long, value_name = "CHANNEL")]
+        channel: String,
+    },
+    /// View notification history
+    History {
+        /// Number of entries to show
+        #[arg(long, value_name = "N", default_value = "20")]
+        limit: usize,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AnomalyCmd {
+    /// Run anomaly detection scan
+    Scan {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+        /// Output file path
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<String>,
+    },
+    /// Train anomaly detection model on historical data
+    Train {
+        /// Directory containing historical scan data
+        #[arg(long, value_name = "DIR")]
+        from_dir: String,
+        /// Output model file
+        #[arg(long, short = 'o', value_name = "FILE", default_value = ".bazbom/anomaly-model.json")]
+        output: String,
+    },
+    /// Generate anomaly detection report
+    Report {
+        /// Path to project (defaults to current directory)
+        #[arg(default_value = ".")]
+        path: String,
+        /// Output file path
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<String>,
     },
 }

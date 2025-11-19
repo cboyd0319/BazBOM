@@ -3,6 +3,7 @@
 //! This module contains the implementation of all CLI commands, extracted from main.rs
 //! to improve modularity and maintainability.
 
+pub mod anomaly;
 pub mod compare;
 pub mod container_scan;
 pub mod dashboard;
@@ -15,11 +16,13 @@ pub mod hooks;
 pub mod init;
 pub mod jira;
 pub mod license;
+pub mod notify;
 pub mod policy;
 pub mod report;
 pub mod scan;
 pub mod status;
 pub mod team;
+pub mod threats;
 pub mod upgrade_intelligence;
 pub mod vex;
 pub mod watch;
