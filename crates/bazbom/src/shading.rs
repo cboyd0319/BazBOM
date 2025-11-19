@@ -6,7 +6,7 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use ureq::Agent;
 use zip::ZipArchive;
 
@@ -328,6 +328,154 @@ pub fn identify_jars(
         .iter()
         .map(|jar_path| identify_jar(jar_path, agent))
         .collect()
+}
+
+/// Information about an extracted and identified JAR
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IdentifiedJar {
+    /// Path to the extracted JAR file
+    pub path: PathBuf,
+    /// Original name within the archive
+    pub archive_name: String,
+    /// Identified Maven coordinates (if successful)
+    pub identity: Option<JarIdentity>,
+}
+
+/// Extract nested JARs from a fat JAR and identify each one
+///
+/// This is the main entry point for analyzing unknown JARs in containers/repos.
+/// It combines extraction with identity resolution to provide full artifact information.
+///
+/// # Example
+/// ```ignore
+/// use bazbom::shading::extract_and_identify_jars;
+///
+/// let results = extract_and_identify_jars(
+///     Path::new("app.jar"),
+///     Path::new("/tmp/extracted"),
+///     None, // or Some(&http_agent) for checksum lookups
+/// )?;
+///
+/// for jar in &results {
+///     if let Some(ref id) = jar.identity {
+///         println!("Found: {}:{}:{}", id.group_id, id.artifact_id, id.version);
+///     }
+/// }
+/// ```
+pub fn extract_and_identify_jars(
+    jar_path: &Path,
+    output_dir: &Path,
+    agent: Option<&Agent>,
+) -> Result<Vec<IdentifiedJar>> {
+    use tracing::{debug, info};
+
+    info!("Extracting and identifying JARs from {:?}", jar_path);
+
+    // First extract the nested JARs
+    let extracted_names = extract_nested_jars(jar_path, output_dir)?;
+
+    if extracted_names.is_empty() {
+        debug!("No nested JARs found in {:?}", jar_path);
+        return Ok(Vec::new());
+    }
+
+    info!("Found {} nested JARs, identifying...", extracted_names.len());
+
+    // Identify each extracted JAR
+    let mut results = Vec::with_capacity(extracted_names.len());
+
+    for name in extracted_names {
+        let extracted_path = output_dir.join(&name);
+
+        let identity = match identify_jar(&extracted_path, agent) {
+            Ok(id) => {
+                if let Some(ref identity) = id {
+                    debug!(
+                        "Identified {}: {}:{}:{}",
+                        name, identity.group_id, identity.artifact_id, identity.version
+                    );
+                } else {
+                    debug!("Could not identify {}", name);
+                }
+                id
+            }
+            Err(e) => {
+                debug!("Error identifying {}: {}", name, e);
+                None
+            }
+        };
+
+        results.push(IdentifiedJar {
+            path: extracted_path,
+            archive_name: name,
+            identity,
+        });
+    }
+
+    let identified_count = results.iter().filter(|r| r.identity.is_some()).count();
+    info!(
+        "Identified {}/{} JARs from {:?}",
+        identified_count,
+        results.len(),
+        jar_path
+    );
+
+    Ok(results)
+}
+
+/// Scan a directory for JAR files and identify each one
+///
+/// Useful for scanning lib/ directories or extracted container layers.
+pub fn scan_and_identify_jars(
+    dir: &Path,
+    agent: Option<&Agent>,
+) -> Result<Vec<IdentifiedJar>> {
+    use glob::glob;
+    use tracing::{debug, info};
+
+    info!("Scanning {:?} for JAR files", dir);
+
+    let pattern = format!("{}/**/*.jar", dir.display());
+    let mut results = Vec::new();
+
+    for entry in glob(&pattern).context("failed to read glob pattern")? {
+        match entry {
+            Ok(path) => {
+                debug!("Found JAR: {:?}", path);
+
+                let identity = match identify_jar(&path, agent) {
+                    Ok(id) => id,
+                    Err(e) => {
+                        debug!("Error identifying {:?}: {}", path, e);
+                        None
+                    }
+                };
+
+                results.push(IdentifiedJar {
+                    path: path.clone(),
+                    archive_name: path
+                        .file_name()
+                        .and_then(|s| s.to_str())
+                        .unwrap_or("unknown")
+                        .to_string(),
+                    identity,
+                });
+            }
+            Err(e) => {
+                debug!("Glob error: {}", e);
+            }
+        }
+    }
+
+    let identified_count = results.iter().filter(|r| r.identity.is_some()).count();
+    info!(
+        "Found {} JARs, identified {}/{}",
+        results.len(),
+        identified_count,
+        results.len()
+    );
+
+    Ok(results)
 }
 
 /// Represents a class relocation mapping (e.g., org.foo -> com.shaded.org.foo)

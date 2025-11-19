@@ -112,7 +112,8 @@ bazbom watch --critical-only
 - [Status Command](status-command.md)
 - [Compare Command](compare-command.md)
 - [Watch Mode](watch-mode.md)
-- [Container Scanning](container-scanning.md) ⭐ NEW
+- [Container Scanning](container-scanning.md)
+- [JAR Identity Extraction](jar-identity-extraction.md) ⭐ NEW
 - [CI Templates](ci-templates.md)
 - [Beautiful Output](beautiful-output.md)
 
