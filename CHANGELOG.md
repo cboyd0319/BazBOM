@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Threat Intelligence Command** - Detect supply chain threats
+  - New `bazbom threats` command with scan/configure subcommands
+  - Typosquatting detection for malicious package name variants
+  - Dependency confusion detection for internal/public namespace conflicts
+  - Maintainer takeover risk assessment
+  - OpenSSF Scorecard integration for project health scoring
+  - JSON output for CI/CD integration
+
+- **ML-Based Anomaly Detection** - Identify unusual dependency patterns
+  - New `bazbom anomaly` command with scan/train/report subcommands
+  - Train custom models on project's historical scan data
+  - Detect anomalous behavior in dependency updates
+  - Generate detailed anomaly reports
+
+- **Notification System** - Alert on security findings
+  - New `bazbom notify` command with configure/test/history subcommands
+  - Slack webhook integration
+  - Microsoft Teams webhook integration
+  - Email notifications via SMTP
+  - GitHub Issues automatic creation
+  - Notification history tracking
+
+- **Authentication & RBAC** - User and token management
+  - New `bazbom auth` command with init/user/token/audit-log subcommands
+  - User management with role-based access (admin, developer, viewer)
+  - API token generation with scopes (read, write, admin)
+  - Token expiration and revocation
+  - Audit logging for all authentication events
+
+- **LSP Server Integration** - IDE setup documentation
+  - New `bazbom lsp` command with setup instructions
+  - VS Code, IntelliJ, and Neovim configuration guides
+  - Real-time vulnerability diagnostics in build files
+
+- **CLI Integration Tests** - 19 new tests for advanced commands
+  - Tests for threats, notify, anomaly, lsp, and auth commands
+  - Help text validation
+  - Basic functionality verification
+
 ## [6.6.0] - 2025-11-19
 
 ### Added
