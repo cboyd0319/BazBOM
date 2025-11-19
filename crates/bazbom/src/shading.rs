@@ -33,6 +33,7 @@ pub enum JarIdentitySource {
     Fingerprint,
 }
 
+#[allow(dead_code)]
 impl JarIdentity {
     /// Convert to Maven GAV string (groupId:artifactId:version)
     pub fn gav(&self) -> String {
@@ -270,11 +271,13 @@ struct MavenSearchResponse {
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MavenSearchDocs {
     docs: Vec<MavenSearchDoc>,
 }
 
 #[derive(Deserialize)]
+#[allow(dead_code)]
 struct MavenSearchDoc {
     g: String,  // groupId
     a: String,  // artifactId
@@ -282,6 +285,7 @@ struct MavenSearchDoc {
 }
 
 /// Look up a JAR in Maven Central by its SHA-256 checksum
+#[allow(dead_code)]
 pub fn lookup_jar_by_checksum(agent: &Agent, sha256: &str) -> Result<Option<JarIdentity>> {
     // Maven Central Search API
     let url = format!(
@@ -320,6 +324,7 @@ pub fn lookup_jar_by_checksum(agent: &Agent, sha256: &str) -> Result<Option<JarI
 }
 
 /// Identify multiple JARs (can be parallelized with rayon)
+#[allow(dead_code)]
 pub fn identify_jars(
     jar_paths: &[&Path],
     agent: Option<&Agent>,
@@ -332,6 +337,7 @@ pub fn identify_jars(
 
 /// Information about an extracted and identified JAR
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct IdentifiedJar {
     /// Path to the extracted JAR file
     pub path: PathBuf,
@@ -362,6 +368,7 @@ pub struct IdentifiedJar {
 ///     }
 /// }
 /// ```
+#[allow(dead_code)]
 pub fn extract_and_identify_jars(
     jar_path: &Path,
     output_dir: &Path,
@@ -426,6 +433,7 @@ pub fn extract_and_identify_jars(
 /// Scan a directory for JAR files and identify each one
 ///
 /// Useful for scanning lib/ directories or extracted container layers.
+#[allow(dead_code)]
 pub fn scan_and_identify_jars(
     dir: &Path,
     agent: Option<&Agent>,
