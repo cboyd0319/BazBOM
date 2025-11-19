@@ -15,6 +15,7 @@ tokio = { version = "1", features = ["full"] }
 chrono = { version = "0.4", features = ["serde"] }
 regex = "1.12"
 strsim = "0.11"  # For typosquatting detection
+lazy_static = "1.4"  # For static lookup tables
 log = "0.4"
 lettre = "0.11"  # For SMTP email notifications
 
