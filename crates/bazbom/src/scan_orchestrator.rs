@@ -10,7 +10,9 @@ use crate::performance::PerformanceMonitor;
 use crate::pipeline::{merge_sarif_reports, Analyzer};
 use crate::publish::GitHubPublisher;
 use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
+use crate::shading::{scan_and_identify_jars, IdentifiedJar};
 use anyhow::{Context as _, Result};
+use tracing::info;
 use bazbom_cache::incremental::IncrementalAnalyzer;
 use bazbom_orchestrator::{OrchestratorConfig, ParallelOrchestrator};
 use colored::Colorize;
@@ -166,6 +168,14 @@ impl ScanOrchestrator {
             monitor.end_phase();
         }
         phase_idx += 1;
+
+        // Step 1.5: Identify unknown JARs (shaded/fat JAR detection)
+        if !self.fast {
+            progress.update_phase(phase_idx - 1, 90, "Identifying JAR artifacts...");
+            if let Err(e) = self.identify_unknown_jars() {
+                info!("JAR identification skipped: {}", e);
+            }
+        }
 
         // Run analyzers
         let mut reports = Vec::new();
@@ -1093,6 +1103,56 @@ impl ScanOrchestrator {
         }
 
         Ok(())
+    }
+
+    /// Scan for JAR files and identify unknown/shaded artifacts
+    fn identify_unknown_jars(&self) -> Result<Vec<IdentifiedJar>> {
+        info!("Scanning for JAR artifacts to identify...");
+
+        // Scan lib directories and build output for JAR files
+        let lib_dirs = [
+            self.context.workspace.join("lib"),
+            self.context.workspace.join("libs"),
+            self.context.workspace.join("target"),
+            self.context.workspace.join("build"),
+        ];
+
+        let mut all_identified = Vec::new();
+
+        for dir in &lib_dirs {
+            if dir.exists() {
+                match scan_and_identify_jars(dir, None) {
+                    Ok(identified) => {
+                        let count = identified.iter().filter(|j| j.identity.is_some()).count();
+                        if !identified.is_empty() {
+                            info!("Identified {}/{} JARs in {:?}", count, identified.len(), dir);
+                            all_identified.extend(identified);
+                        }
+                    }
+                    Err(e) => {
+                        info!("Skipping {:?}: {}", dir, e);
+                    }
+                }
+            }
+        }
+
+        // Log summary
+        let total_identified = all_identified.iter().filter(|j| j.identity.is_some()).count();
+        if !all_identified.is_empty() {
+            println!(
+                "[bazbom] identified {}/{} JAR artifacts",
+                total_identified, all_identified.len()
+            );
+
+            // Print identified artifacts
+            for jar in &all_identified {
+                if let Some(ref identity) = jar.identity {
+                    println!("   {} {}:{}:{}", "→".dimmed(), identity.group_id, identity.artifact_id, identity.version);
+                }
+            }
+        }
+
+        Ok(all_identified)
     }
 
     fn generate_sbom(&self) -> Result<()> {
