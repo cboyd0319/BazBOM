@@ -1,0 +1,49 @@
+[package]
+name = "bazbom-scanner"
+version = "6.5.0"
+edition = "2021"
+authors = ["BazBOM Contributors"]
+description = "Polyglot ecosystem support for Node.js, Python, Go, Rust, and more"
+license = "MIT"
+repository = "https://github.com/cboyd0319/BazBOM"
+
+[dependencies]
+# Core
+anyhow = "1.0"
+async-trait = "0.1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+
+# Lockfile parsers
+cargo-lock = "11.0"  # Rust Cargo.lock parser
+serde_yaml = "0.9"  # YAML parsing
+toml = "0.9"  # Python poetry.lock TOML parser
+serde-xml-rs = "0.8"  # Maven pom.xml parser
+
+# HTTP client for OSV API
+reqwest = { version = "0.12", features = ["json"] }
+
+# Utilities
+uuid = { version = "1.0", features = ["v4"] }
+chrono = "0.4"
+base64 = "0.22"
+hex = "0.4"
+tracing = "0.1"
+
+# BazBOM core
+bazbom-core = { path = "../bazbom-core", version = "6.0.0" }
+
+# Reachability analyzer (unified)
+bazbom-reachability = { path = "../bazbom-reachability" }
+
+# File system
+walkdir = "2.5"
+glob = "0.3"
+
+# Async
+tokio = { version = "1", features = ["process", "io-util"] }
+
+[dev-dependencies]
+tempfile = "3.0"
+tokio = { version = "1", features = ["macros", "rt"] }

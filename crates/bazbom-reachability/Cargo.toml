@@ -1,0 +1,32 @@
+[package]
+name = "bazbom-reachability"
+version = "6.5.0"
+edition = "2021"
+license = "MIT"
+description = "Multi-language reachability analysis for BazBOM"
+repository = "https://github.com/cboyd0319/BazBOM"
+
+[dependencies]
+anyhow = "1"
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = "0.1"
+walkdir = "2"
+petgraph = "0.8"
+
+# Tree-sitter for all supported languages
+tree-sitter = "0.25"
+tree-sitter-javascript = "0.25"
+tree-sitter-typescript = "0.23"
+tree-sitter-python = "0.25"
+tree-sitter-java = "0.25"
+tree-sitter-go = "0.25"
+tree-sitter-rust = "0.25"
+tree-sitter-ruby = "0.25"
+tree-sitter-php = "0.25"
+
+[dev-dependencies]
+tempfile = "3"
+tokio-test = "0.4"
+tracing-subscriber = "0.3"
