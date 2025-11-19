@@ -726,5 +726,35 @@ async fn main() -> Result<()> {
             handle_github(cmd).await?;
             Ok(())
         }
+
+        Commands::Vex { action } => {
+            use bazbom::cli::VexCmd;
+            use commands::vex::{handle_vex_apply, handle_vex_create, handle_vex_list};
+
+            match action {
+                VexCmd::Create {
+                    cve,
+                    status,
+                    justification,
+                    impact,
+                    package,
+                    author,
+                    output,
+                } => {
+                    handle_vex_create(cve, status, justification, impact, package, author, output)?;
+                }
+                VexCmd::Apply {
+                    vex_dir,
+                    findings,
+                    output,
+                } => {
+                    handle_vex_apply(vex_dir, findings, output)?;
+                }
+                VexCmd::List { vex_dir } => {
+                    handle_vex_list(vex_dir)?;
+                }
+            }
+            Ok(())
+        }
     }
 }

@@ -27,6 +27,7 @@ pub mod merge;
 pub mod osv;
 pub mod parsers;
 pub mod version_match;
+pub mod vex;
 
 pub use enrichment::{load_epss_scores, load_kev_catalog};
 pub use merge::{
@@ -36,6 +37,9 @@ pub use merge::{
 pub use osv::{query_batch_vulnerabilities, query_package_vulnerabilities};
 pub use parsers::{parse_ghsa_entry, parse_nvd_entry, parse_osv_entry};
 pub use version_match::is_version_affected;
+pub use vex::{
+    filter_vulnerabilities, VexDocument, VexFilter, VexJustification, VexStatement, VexStatus,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ManifestEntry {

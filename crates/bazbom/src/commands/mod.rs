@@ -21,6 +21,7 @@ pub mod scan;
 pub mod status;
 pub mod team;
 pub mod upgrade_intelligence;
+pub mod vex;
 pub mod watch;
 
 // Re-export command handlers for convenience
@@ -40,4 +41,5 @@ pub use report::handle_report;
 pub use scan::handle_scan;
 pub use status::handle_status;
 pub use team::handle_team;
+pub use vex::{handle_vex_apply, handle_vex_create, handle_vex_list};
 pub use watch::handle_watch;

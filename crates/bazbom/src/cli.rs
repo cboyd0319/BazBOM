@@ -601,6 +601,35 @@ FEATURES (v6.8):
         #[command(subcommand)]
         action: GitHubCmd,
     },
+    /// VEX (Vulnerability Exploitability eXchange) management
+    #[command(after_help = "EXAMPLES:
+  # Create VEX statement for a CVE
+  bazbom vex create CVE-2023-12345 --status not_affected \\
+    --justification vulnerable_code_not_in_execute_path \\
+    --impact \"The vulnerable code path is never reached\"
+
+  # Apply VEX statements to filter findings
+  bazbom vex apply --vex-dir vex/statements --findings sca_findings.json
+
+  # List all VEX statements
+  bazbom vex list --vex-dir vex/statements
+
+VEX STATUS VALUES:
+  not_affected         - Vulnerability does not impact this product
+  affected             - Vulnerability impacts this product
+  fixed                - Vulnerability was fixed
+  under_investigation  - Status unknown, investigating
+
+JUSTIFICATION VALUES (for not_affected):
+  component_not_present
+  vulnerable_code_not_present
+  vulnerable_code_not_in_execute_path
+  vulnerable_code_cannot_be_controlled_by_adversary
+  inline_mitigations_already_exist")]
+    Vex {
+        #[command(subcommand)]
+        action: VexCmd,
+    },
 }
 
 #[derive(Copy, Clone, Debug, ValueEnum)]
@@ -912,5 +941,50 @@ pub enum GitHubPrCmd {
         /// PR state (open, closed, all)
         #[arg(long, value_name = "STATE")]
         state: Option<String>,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum VexCmd {
+    /// Create a VEX statement
+    Create {
+        /// CVE ID (e.g., CVE-2023-12345)
+        cve: String,
+        /// VEX status
+        #[arg(long, value_name = "STATUS")]
+        status: String,
+        /// Justification (for not_affected status)
+        #[arg(long, value_name = "JUSTIFICATION")]
+        justification: Option<String>,
+        /// Impact statement explaining why the status applies
+        #[arg(long, value_name = "TEXT")]
+        impact: Option<String>,
+        /// Package PURL (optional, for package-specific VEX)
+        #[arg(long, value_name = "PURL")]
+        package: Option<String>,
+        /// Author email
+        #[arg(long, value_name = "EMAIL", default_value = "security@example.com")]
+        author: String,
+        /// Output file path
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<String>,
+    },
+    /// Apply VEX statements to filter findings
+    Apply {
+        /// Directory containing VEX statements
+        #[arg(long, value_name = "DIR")]
+        vex_dir: String,
+        /// Input findings file (JSON)
+        #[arg(long, value_name = "FILE")]
+        findings: String,
+        /// Output file for filtered findings
+        #[arg(long, short = 'o', value_name = "FILE")]
+        output: Option<String>,
+    },
+    /// List VEX statements
+    List {
+        /// Directory containing VEX statements
+        #[arg(long, value_name = "DIR", default_value = "vex/statements")]
+        vex_dir: String,
     },
 }
