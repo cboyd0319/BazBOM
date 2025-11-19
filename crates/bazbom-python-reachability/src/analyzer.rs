@@ -98,7 +98,28 @@ impl PythonReachabilityAnalyzer {
     fn discover_and_parse_files(&mut self, project_root: &Path) -> Result<()> {
         info!("Discovering and parsing Python files...");
 
-        // Common directories to skip
+        // Check if this is inside a virtual environment
+        let is_in_venv = project_root
+            .to_str()
+            .map(|s| s.contains("site-packages") || s.contains("dist-packages"))
+            .unwrap_or(false);
+
+        // First, parse application code
+        self.discover_and_parse_application_files(project_root)?;
+
+        // Then, parse transitive dependencies if not already in venv
+        if !is_in_venv {
+            self.discover_and_parse_dependency_files(project_root)?;
+        }
+
+        Ok(())
+    }
+
+    /// Parse application source files (skip venv, __pycache__, etc.)
+    fn discover_and_parse_application_files(&mut self, project_root: &Path) -> Result<()> {
+        info!("Parsing application files...");
+
+        // Directories to skip for application code
         let skip_dirs = [
             "venv",
             ".venv",
@@ -111,6 +132,8 @@ impl PythonReachabilityAnalyzer {
             "build",
             ".pytest_cache",
             ".mypy_cache",
+            ".eggs",
+            "*.egg-info",
         ];
 
         for entry in WalkDir::new(project_root)
@@ -131,6 +154,97 @@ impl PythonReachabilityAnalyzer {
                 if self.is_python_file(path) && !self.processed_files.contains(path) {
                     if let Err(e) = self.parse_and_build_graph(path) {
                         debug!("Failed to parse {}: {}", path.display(), e);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Parse transitive dependency files in venv/site-packages
+    fn discover_and_parse_dependency_files(&mut self, project_root: &Path) -> Result<()> {
+        // Look for common venv locations
+        let venv_candidates = vec![
+            project_root.join("venv"),
+            project_root.join(".venv"),
+            project_root.join("env"),
+        ];
+
+        let mut site_packages: Option<PathBuf> = None;
+
+        for venv_path in &venv_candidates {
+            if !venv_path.exists() {
+                continue;
+            }
+
+            // Find site-packages within venv
+            // Could be: venv/lib/python3.X/site-packages (Unix)
+            // Or: venv/Lib/site-packages (Windows)
+            let lib_dir = venv_path.join("lib");
+            if lib_dir.exists() {
+                for entry in WalkDir::new(&lib_dir)
+                    .max_depth(2)
+                    .into_iter()
+                    .filter_map(|e| e.ok())
+                {
+                    if entry.file_type().is_dir()
+                        && entry.file_name().to_str() == Some("site-packages")
+                    {
+                        site_packages = Some(entry.path().to_path_buf());
+                        break;
+                    }
+                }
+            }
+
+            // Windows path
+            let lib_dir_win = venv_path.join("Lib").join("site-packages");
+            if lib_dir_win.exists() {
+                site_packages = Some(lib_dir_win);
+            }
+
+            if site_packages.is_some() {
+                break;
+            }
+        }
+
+        let site_packages = match site_packages {
+            Some(sp) => sp,
+            None => {
+                info!("No virtual environment found, skipping dependency analysis");
+                return Ok(());
+            }
+        };
+
+        info!("Parsing transitive dependencies in {:?}...", site_packages);
+
+        // Skip directories even within site-packages
+        let skip_dirs = ["__pycache__", "tests", "test", ".dist-info", ".egg-info"];
+
+        for entry in WalkDir::new(&site_packages)
+            .into_iter()
+            .filter_entry(|e| {
+                if e.file_type().is_dir() {
+                    let dir_name = e.file_name().to_str().unwrap_or("");
+                    !skip_dirs.iter().any(|&skip| dir_name.contains(skip))
+                } else {
+                    true
+                }
+            })
+            .filter_map(|e| e.ok())
+        {
+            if entry.file_type().is_file() {
+                let path = entry.path();
+
+                // Skip test files
+                let path_str = path.to_str().unwrap_or("");
+                if path_str.contains("/test_") || path_str.contains("/tests/") {
+                    continue;
+                }
+
+                if self.is_python_file(path) && !self.processed_files.contains(path) {
+                    if let Err(e) = self.parse_and_build_graph(path) {
+                        debug!("Failed to parse dependency {}: {}", path.display(), e);
                     }
                 }
             }

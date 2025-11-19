@@ -1,5 +1,7 @@
 # BazBOM Documentation
 
+**👉 NEW: [Complete Documentation Index](INDEX.md)** - Master index of all BazBOM documentation
+
 Curated entry point for every BazBOM guide. Files are grouped by the job they help you complete—start with "Getting Started" and branch out to deeper references as needed.
 
 ## Quick Navigation
@@ -7,7 +9,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 **Essential docs** (from tech writer persona):
 - **[QUICKREF.md](QUICKREF.md)** - One-page cheat sheet for all common BazBOM operations
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Components, data flow, boundaries, decisions (ADR-style summaries)
-- **[USAGE.md](USAGE.md)** - Quick start guide with links to comprehensive usage documentation
+- **[Usage Guide](user-guide/usage.md)** - Comprehensive usage guide with core commands, SBOM outputs, policy workflows
 - **[BAZEL.md](BAZEL.md)** - Aspects, rules, targets, macros, minimal reproducible examples
 - **[CI.md](CI.md)** - Bazel + CI recipes (GitHub Actions baseline), caching, artifacts, SARIF/attestations
 - **[FORMAT_SPDX.md](FORMAT_SPDX.md)** - SPDX 2.3 mapping, fields, known gaps
@@ -35,7 +37,7 @@ Curated entry point for every BazBOM guide. Files are grouped by the job they he
 - [Report Generation](user-guide/report-generation.md) – executive, compliance, and SARIF reporting
 - [Advanced Bazel Usage](user-guide/advanced-bazel-features.md) – query tuning and large monorepos (also see [BAZEL.md](BAZEL.md))
 - [Policy Integration](user-guide/policy-integration.md) & [Rego Best Practices](user-guide/rego-best-practices.md)
-- [Troubleshooting Playbook](user-guide/troubleshooting.md) (also see top-level [TROUBLESHOOTING.md](TROUBLESHOOTING.md))
+- [Troubleshooting Guide](TROUBLESHOOTING.md) - Top 20 failures with exact error text and fixes
 
 ## Integrations
 

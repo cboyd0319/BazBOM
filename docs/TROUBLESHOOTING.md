@@ -579,7 +579,6 @@ ls -lh ~/.bazbom/db/
 
 ## Related Docs
 
-- [Usage guide](USAGE.md) - Commands and flags
+- [Usage guide](user-guide/usage.md) - Commands and flags
 - [Architecture](ARCHITECTURE.md) - How components work
 - [CI integration](CI.md) - GitHub Actions debugging
-- [User guide](user-guide/troubleshooting.md) - Extended troubleshooting

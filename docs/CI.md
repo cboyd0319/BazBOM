@@ -593,7 +593,7 @@ jobs:
 
 ## Next Steps
 
-- [Usage guide](USAGE.md) - CLI commands
+- [Usage guide](user-guide/usage.md) - CLI commands
 - [Policy integration](user-guide/policy-integration.md) - Custom policies
-- [Troubleshooting](user-guide/troubleshooting.md) - Debug CI issues
+- [Troubleshooting](TROUBLESHOOTING.md) - Debug CI issues
 - [GitHub Action docs](../action.yml) - Full configuration reference

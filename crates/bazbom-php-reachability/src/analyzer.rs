@@ -80,22 +80,86 @@ impl PhpReachabilityAnalyzer {
     fn build_call_graph(&mut self) -> Result<()> {
         info!("Building call graph from PHP source");
 
-        // Collect all PHP files first to avoid borrow checker issues
+        // First, parse application code
+        self.build_application_call_graph()?;
+
+        // Then, parse transitive dependencies
+        self.build_dependency_call_graph()?;
+
+        Ok(())
+    }
+
+    fn build_application_call_graph(&mut self) -> Result<()> {
+        info!("Parsing application PHP files...");
+
+        // Collect application files (skip vendor, .git, etc.)
         let php_files: Vec<PathBuf> = WalkDir::new(&self.project_root)
             .into_iter()
-            .filter_entry(|e| !Self::should_skip(e))
+            .filter_entry(|e| !Self::should_skip_application(e))
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
             .map(|e| e.path().to_path_buf())
             .filter(|p| Self::is_php_file(p))
             .collect();
 
-        // Now process all files
         for file_path in php_files {
             self.process_file(&file_path)?;
         }
 
         Ok(())
+    }
+
+    fn build_dependency_call_graph(&mut self) -> Result<()> {
+        // Look for Composer vendor directory
+        let vendor_dir = self.project_root.join("vendor");
+
+        if !vendor_dir.exists() {
+            info!("No vendor directory found, skipping dependency analysis");
+            return Ok(());
+        }
+
+        info!("Parsing transitive dependencies in vendor/...");
+
+        // Parse all packages in vendor (skip composer/ and bin/)
+        let package_files: Vec<PathBuf> = WalkDir::new(&vendor_dir)
+            .into_iter()
+            .filter_entry(|e| !Self::should_skip_dependency(e))
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+            .map(|e| e.path().to_path_buf())
+            .filter(|p| Self::is_php_file(p))
+            .collect();
+
+        for file_path in package_files {
+            if let Err(e) = self.process_file(&file_path) {
+                // Dependencies might have parse errors, log and continue
+                tracing::debug!("Failed to parse package file {}: {}", file_path.display(), e);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn should_skip_application(entry: &walkdir::DirEntry) -> bool {
+        let skip_dirs = ["vendor", ".git", "node_modules", "tmp", "log", "cache"];
+
+        if entry.file_type().is_dir() {
+            let dir_name = entry.file_name().to_str().unwrap_or("");
+            skip_dirs.contains(&dir_name)
+        } else {
+            false
+        }
+    }
+
+    fn should_skip_dependency(entry: &walkdir::DirEntry) -> bool {
+        let skip_patterns = ["test", "tests", "Test", "Tests", "example", "examples", "doc", "docs", "composer", "bin"];
+
+        if entry.file_type().is_dir() {
+            let dir_name = entry.file_name().to_str().unwrap_or("");
+            skip_patterns.iter().any(|pattern| dir_name.contains(pattern))
+        } else {
+            false
+        }
     }
 
     fn process_file(&mut self, file_path: &Path) -> Result<()> {
@@ -232,16 +296,6 @@ impl PhpReachabilityAnalyzer {
             .collect()
     }
 
-    fn should_skip(entry: &walkdir::DirEntry) -> bool {
-        let skip_dirs = ["vendor", ".git", "node_modules", "tmp", "log"];
-
-        if entry.file_type().is_dir() {
-            let dir_name = entry.file_name().to_str().unwrap_or("");
-            skip_dirs.contains(&dir_name)
-        } else {
-            false
-        }
-    }
 
     fn is_php_file(path: &Path) -> bool {
         if let Some(ext) = path.extension() {

@@ -72,7 +72,28 @@ impl JsReachabilityAnalyzer {
     fn discover_and_parse_files(&mut self, project_root: &Path) -> Result<()> {
         info!("Discovering and parsing files...");
 
-        // Common directories to skip
+        // Check if this is a dependency analysis (inside node_modules)
+        let is_dependency = project_root
+            .to_str()
+            .map(|s| s.contains("node_modules"))
+            .unwrap_or(false);
+
+        // First, parse application code (non-node_modules)
+        self.discover_and_parse_application_files(project_root)?;
+
+        // Then, parse transitive dependencies if not already in node_modules
+        if !is_dependency {
+            self.discover_and_parse_dependency_files(project_root)?;
+        }
+
+        Ok(())
+    }
+
+    /// Parse application source files (skip node_modules, dist, build)
+    fn discover_and_parse_application_files(&mut self, project_root: &Path) -> Result<()> {
+        info!("Parsing application files...");
+
+        // Directories to skip for application code
         let skip_dirs = ["node_modules", "dist", "build", "coverage", ".git"];
 
         for entry in WalkDir::new(project_root)
@@ -93,6 +114,54 @@ impl JsReachabilityAnalyzer {
                 if self.is_js_or_ts_file(path) && !self.processed_files.contains(path) {
                     if let Err(e) = self.parse_and_build_graph(path) {
                         debug!("Failed to parse {}: {}", path.display(), e);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Parse transitive dependency files in node_modules
+    fn discover_and_parse_dependency_files(&mut self, project_root: &Path) -> Result<()> {
+        let node_modules = project_root.join("node_modules");
+
+        if !node_modules.exists() {
+            info!("No node_modules directory found, skipping dependency analysis");
+            return Ok(());
+        }
+
+        info!("Parsing transitive dependencies in node_modules...");
+
+        // Skip directories even within node_modules
+        let skip_dirs = ["dist", "build", "coverage", ".git", "test", "tests", "__tests__"];
+
+        for entry in WalkDir::new(&node_modules)
+            .into_iter()
+            .filter_entry(|e| {
+                if e.file_type().is_dir() {
+                    let dir_name = e.file_name().to_str().unwrap_or("");
+                    !skip_dirs.contains(&dir_name)
+                } else {
+                    true
+                }
+            })
+            .filter_map(|e| e.ok())
+        {
+            if entry.file_type().is_file() {
+                let path = entry.path();
+
+                // Skip test files and declaration files
+                let path_str = path.to_str().unwrap_or("");
+                if path_str.contains(".test.")
+                    || path_str.contains(".spec.")
+                    || path_str.ends_with(".d.ts") {
+                    continue;
+                }
+
+                if self.is_js_or_ts_file(path) && !self.processed_files.contains(path) {
+                    if let Err(e) = self.parse_and_build_graph(path) {
+                        debug!("Failed to parse dependency {}: {}", path.display(), e);
                     }
                 }
             }
@@ -125,15 +194,53 @@ impl JsReachabilityAnalyzer {
             self.call_graph.add_function(function_node)?;
         }
 
-        // Add call edges
-        for call in &extractor.calls {
-            // Try to resolve the callee
-            // For now, assume calls within the same file
-            let caller_id = format!("{}:unknown", file_path.display());
-            let callee_id = format!("{}:{}", file_path.display(), call.callee);
+        // Collect all function IDs first to avoid borrow checker issues
+        let all_func_ids: Vec<String> = self.call_graph.functions().keys().cloned().collect();
 
-            // Try to add the call edge (may fail if callee not found, which is OK)
-            let _ = self.call_graph.add_call(&caller_id, &callee_id);
+        // Add call edges with improved resolution
+        for call in &extractor.calls {
+            // Try to resolve the callee to actual function
+            let callee_parts: Vec<&str> = call.callee.split('.').collect();
+
+            // Attempt multiple resolution strategies:
+            // 1. Same file (local call)
+            let callee_id_local = format!("{}:{}", file_path.display(), call.callee);
+            if all_func_ids.contains(&callee_id_local) {
+                // Find all functions in this file that could be callers
+                for func in &extractor.functions {
+                    let caller_id = format!("{}:{}", file_path.display(), func.name);
+                    let _ = self.call_graph.add_call(&caller_id, &callee_id_local);
+                }
+                continue;
+            }
+
+            // 2. Simple function name (might be from import)
+            if callee_parts.len() == 1 {
+                let func_name = callee_parts[0];
+                // Try to find this function in any file (conservative approach)
+                for func_id in &all_func_ids {
+                    if func_id.ends_with(&format!(":{}", func_name)) {
+                        for func in &extractor.functions {
+                            let caller_id = format!("{}:{}", file_path.display(), func.name);
+                            let _ = self.call_graph.add_call(&caller_id, func_id);
+                        }
+                    }
+                }
+            }
+
+            // 3. Method calls (obj.method, module.function)
+            if callee_parts.len() >= 2 {
+                let method_name = callee_parts.last().unwrap();
+                // Try to find this method in node_modules or other files
+                for func_id in &all_func_ids {
+                    if func_id.ends_with(&format!(":{}", method_name)) {
+                        for func in &extractor.functions {
+                            let caller_id = format!("{}:{}", file_path.display(), func.name);
+                            let _ = self.call_graph.add_call(&caller_id, func_id);
+                        }
+                    }
+                }
+            }
         }
 
         self.processed_files.insert(file_path.to_path_buf());
@@ -270,21 +377,31 @@ main();
     }
 
     #[test]
-    fn test_skip_node_modules() {
+    fn test_analyze_node_modules_dependencies() {
         let temp_dir = TempDir::new().unwrap();
         let node_modules = temp_dir.path().join("node_modules");
-        fs::create_dir(&node_modules).unwrap();
+        let dep_dir = node_modules.join("test-package");
+        fs::create_dir_all(&dep_dir).unwrap();
 
-        fs::write(node_modules.join("package.js"), "function foo() {}").unwrap();
-        fs::write(temp_dir.path().join("index.js"), "function bar() {}").unwrap();
+        // Create a dependency file
+        fs::write(dep_dir.join("index.js"), "function foo() {}").unwrap();
+
+        // Create application file
+        fs::write(temp_dir.path().join("index.js"), "function bar() { foo(); }").unwrap();
 
         let mut analyzer = JsReachabilityAnalyzer::new();
         let _ = analyzer.discover_and_parse_files(temp_dir.path());
 
-        // Should not have parsed node_modules
-        assert!(!analyzer
+        // SHOULD have parsed node_modules for transitive analysis
+        assert!(analyzer
             .processed_files
             .iter()
             .any(|p| p.to_str().unwrap().contains("node_modules")));
+
+        // Should have parsed both application and dependency code
+        assert!(analyzer
+            .processed_files
+            .iter()
+            .any(|p| p.to_str().unwrap().ends_with("index.js") && !p.to_str().unwrap().contains("node_modules")));
     }
 }

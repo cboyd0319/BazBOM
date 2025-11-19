@@ -3,10 +3,16 @@
 ## Feature Status Overview
 
 ### Legend
-- **STABLE** - Production-ready, fully tested
-- **INCOMPLETE** - Partial implementation, stubs exist
-- **EXPERIMENTAL** - Under development
+- **STABLE** - Production-ready, fully validated (phases 1-4)
+- **IN TESTING** - Implemented but not yet fully validated
+- **EXPERIMENTAL** - Under development, not feature-complete
 - **TODO** - Planned but not implemented
+
+**Validation Status (as of v6.5.0):**
+- ✅ **Transitive Reachability** (8 ecosystems) - STABLE
+- ✅ **Basic SBOM Generation** (SPDX, CycloneDX) - STABLE
+- ✅ **Basic Vulnerability Scanning** (OSV API) - STABLE
+- ⚠️ **All other features** - IN TESTING
 
 ---
 
@@ -16,18 +22,18 @@
 
 | Command | Subcommands | Status | Key Capabilities |
 |---------|------------|--------|-------------------|
-| scan | - | STABLE | SBOM generation, SCA, plugin integration, Bazel support |
-| container-scan | - | STABLE | OCI image scanning, SBOM generation, comparison |
-| policy | check, init, validate | STABLE | Policy enforcement, YAML templates, Rego support |
-| fix | - | STABLE | Upgrade intelligence, breaking changes, LLM integration |
-| license | obligations, compatibility, contamination | STABLE | License detection, compliance checking |
-| db | sync | STABLE | Offline advisory database sync |
-| install-hooks | - | STABLE | Git pre-commit hook installation |
-| init | - | STABLE | Interactive project setup |
-| explore | - | STABLE | TUI-based SBOM exploration |
-| dashboard | - | STABLE | Web-based visualization (Axum/Tokio) |
-| team | assign, list, mine, audit-log, config | STABLE | Team coordination, assignment tracking |
-| report | executive, compliance, developer, trend, all | STABLE | Multi-framework compliance reports |
+| scan | - | STABLE | Basic SBOM generation, OSV vulnerability scanning, reachability analysis |
+| container-scan | - | IN TESTING | OCI image scanning, SBOM generation, comparison |
+| policy | check, init, validate | IN TESTING | Policy enforcement, YAML templates, Rego support |
+| fix | - | IN TESTING | Upgrade intelligence, breaking changes, LLM integration |
+| license | obligations, compatibility, contamination | IN TESTING | License detection, compliance checking |
+| db | sync | IN TESTING | Offline advisory database sync |
+| install-hooks | - | IN TESTING | Git pre-commit hook installation |
+| init | - | IN TESTING | Interactive project setup |
+| explore | - | IN TESTING | TUI-based SBOM exploration |
+| dashboard | - | IN TESTING | Web-based visualization (Axum/Tokio) |
+| team | assign, list, mine, audit-log, config | IN TESTING | Team coordination, assignment tracking |
+| report | executive, compliance, developer, trend, all | IN TESTING | Multi-framework compliance reports |
 
 ---
 
@@ -94,7 +100,7 @@
 |---------|------|--------|------------|
 | **SHA256 Checksums** | `--fetch-checksums` | STABLE | Maven, npm, PyPI, Cargo, RubyGems |
 | **Download URLs** | Auto-populated | STABLE | Maven, npm, PyPI, Cargo, Go, RubyGems, PHP |
-| **Polyglot Support** | Auto-detected | STABLE | 7 ecosystems (Maven, npm, PyPI, Go, Cargo, Ruby, PHP) |
+| **Polyglot Support** | Auto-detected | STABLE | 8 ecosystem analyzers: 7 languages (Java/Maven, JS/npm, Python/pip, Go, Rust/Cargo, Ruby/Bundler, PHP/Composer) + Bazel |
 | **CI/CD Dependencies** | `--include-cicd` | STABLE | GitHub Actions detection |
 
 ---
@@ -105,29 +111,29 @@
 
 | Source | Type | Status | Details |
 |--------|------|--------|---------|
-| **OSV API** | Advisory | STABLE | All 6 ecosystems, no API key required, rate limited |
-| **GitHub Advisories** | Advisory | STABLE | Integrated via OSV |
-| **NVD (CVE)** | Advisory | STABLE | Integrated via OSV |
-| **CVSS Scoring** | Risk Assessment | STABLE | 3.1 specification |
-| **EPSS** | Risk Assessment | STABLE | Incorporated when available |
+| **OSV API** | Advisory | STABLE | Basic integration validated, all ecosystems supported |
+| **GitHub Advisories** | Advisory | IN TESTING | Integrated via OSV |
+| **NVD (CVE)** | Advisory | IN TESTING | Integrated via OSV |
+| **CVSS Scoring** | Risk Assessment | IN TESTING | 3.1 specification |
+| **EPSS** | Risk Assessment | IN TESTING | Incorporated when available |
 
 ### Analyzer Pipeline
 
 | Analyzer | Type | Technology | Status | Command |
 |----------|------|-----------|--------|---------|
 | **SCA** | Dependency | OSV | STABLE | (Always runs) |
-| **Semgrep** | SAST | Pattern matching | STABLE | --with-semgrep |
-| **CodeQL** | SAST | Semantic analysis | STABLE | --with-codeql |
-| **Syft** | Container | Image scanning | STABLE | --containers |
-| **Threat Intel** | Threat | Pattern detection | STABLE | (Integrated) |
+| **Semgrep** | SAST | Pattern matching | IN TESTING | --with-semgrep |
+| **CodeQL** | SAST | Semantic analysis | IN TESTING | --with-codeql |
+| **Syft** | Container | Image scanning | IN TESTING | --containers |
+| **Threat Intel** | Threat | Pattern detection | IN TESTING | (Integrated) |
 
 ### Report Output
 
 | Format | Default | Alternative | Status |
 |--------|---------|-------------|--------|
-| **SARIF** | 2.1 | Merged from all tools | STABLE |
+| **SARIF** | 2.1 | Merged from all tools | IN TESTING |
 | **JSON** | sca_findings.json | Structured vulnerabilities | STABLE |
-| **HTML** | Reports via `report` cmd | Multiple types | STABLE |
+| **HTML** | Reports via `report` cmd | Multiple types | IN TESTING |
 
 ---
 
@@ -137,39 +143,39 @@
 
 | Feature | Component | Status | Speed Impact |
 |---------|-----------|--------|--------------|
-| OPAL Integration | Reachability | STABLE | Significant (mitigated with --fast) |
-| Caching | Incremental | STABLE | Hit/miss tracking |
-| Filtering | Reachable code only | STABLE | Reduces false positives |
+| AST-based call graph analysis (8 ecosystems) | Reachability | STABLE | Validated in phases 1-4 |
+| Caching | Incremental | IN TESTING | Hit/miss tracking |
+| Filtering | Reachable code only | STABLE | Core validated feature |
 
 ### Upgrade Intelligence
 
 | Feature | Status | Details |
 |---------|--------|---------|
-| Recursive transitive analysis | STABLE | All dependency changes tracked |
-| Breaking change detection | STABLE | GitHub release notes parsed |
-| Effort estimation | STABLE | Hours-based, not vague levels |
-| Risk scoring | STABLE | LOW/MEDIUM/HIGH/CRITICAL |
-| Migration guides | STABLE | Auto-discovered |
-| LLM integration | STABLE | Ollama, Anthropic, OpenAI |
+| Recursive transitive analysis | IN TESTING | All dependency changes tracked |
+| Breaking change detection | IN TESTING | GitHub release notes parsed |
+| Effort estimation | IN TESTING | Hours-based, not vague levels |
+| Risk scoring | IN TESTING | LOW/MEDIUM/HIGH/CRITICAL |
+| Migration guides | IN TESTING | Auto-discovered |
+| LLM integration | IN TESTING | Ollama, Anthropic, OpenAI |
 
 ### Policy Management
 
 | Feature | Status | Details |
 |---------|--------|---------|
-| YAML policies | STABLE | Custom rules definable |
-| Rego support | STABLE | Optional feature gate |
-| Built-in templates | STABLE | PCI-DSS, HIPAA, FedRAMP, SOC2 |
-| SARIF output | STABLE | CI/CD integration ready |
-| Policy validation | STABLE | Schema checking |
+| YAML policies | IN TESTING | Custom rules definable |
+| Rego support | IN TESTING | Optional feature gate |
+| Built-in templates | IN TESTING | PCI-DSS, HIPAA, FedRAMP, SOC2 |
+| SARIF output | IN TESTING | CI/CD integration ready |
+| Policy validation | IN TESTING | Schema checking |
 
 ### Performance Features
 
 | Feature | Flag | Status |
 |---------|------|--------|
-| Benchmarking | --benchmark | STABLE |
-| Fast mode (skip reachability) | --fast | STABLE |
-| Incremental scanning | --incremental | STABLE |
-| Caching | (automatic) | STABLE |
+| Benchmarking | --benchmark | IN TESTING |
+| Fast mode (skip reachability) | --fast | IN TESTING |
+| Incremental scanning | --incremental | IN TESTING |
+| Caching | (automatic) | IN TESTING |
 | Parallel processing | (automatic) | STABLE |
 
 ---
@@ -180,18 +186,18 @@
 
 | Type | Format | Framework Support | Status |
 |------|--------|-------------------|--------|
-| **Executive** | HTML (1-page) | Any | STABLE |
-| **Compliance** | HTML | PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST | STABLE |
-| **Developer** | HTML (Technical) | N/A | STABLE |
-| **Trend** | HTML (Historical) | N/A | STABLE |
+| **Executive** | HTML (1-page) | Any | IN TESTING |
+| **Compliance** | HTML | PCI-DSS, HIPAA, FedRAMP, SOC2, GDPR, ISO27001, NIST | IN TESTING |
+| **Developer** | HTML (Technical) | N/A | IN TESTING |
+| **Trend** | HTML (Historical) | N/A | IN TESTING |
 
 ### Interactive Interfaces
 
 | Interface | Framework | Status | Purpose |
 |-----------|-----------|--------|---------|
-| **Dashboard** | Axum 0.8 + Tokio | STABLE | Web-based visualization |
-| **TUI Explorer** | Ratatui 0.29 + Crossterm | STABLE | Terminal-based exploration |
-| **CLI Output** | Colored console | STABLE | Human-readable summaries |
+| **Dashboard** | Axum 0.8 + Tokio | IN TESTING | Web-based visualization |
+| **TUI Explorer** | Ratatui 0.29 + Crossterm | IN TESTING | Terminal-based exploration |
+| **CLI Output** | Colored console | STABLE | Basic output validated |
 
 ---
 

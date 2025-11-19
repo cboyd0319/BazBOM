@@ -455,7 +455,7 @@ open https://github.com/cboyd0319/BazBOM/issues
 ---
 
 **Quick Reference Version:** 1.0
-**Last Updated:** 2025-11-11
-**BazBOM Version:** 1.0.0
+**Last Updated:** 2025-11-18
+**BazBOM Version:** 6.5.0
 
 For complete documentation, see: [docs/README.md](docs/README.md)

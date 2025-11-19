@@ -1,9 +1,9 @@
 [package]
-name = "bazbom-java-reachability"
+name = "bazbom-bazel-reachability"
 version = "6.5.0"
 edition = "2021"
 authors = ["BazBOM Contributors"]
-description = "Java bytecode reachability analysis for BazBOM vulnerability scanning"
+description = "Bazel build graph reachability analysis for BazBOM"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/cboyd0319/BazBOM"
 
@@ -13,12 +13,6 @@ thiserror = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tracing = "0.1"
-walkdir = "2"
-petgraph = "0.8"
-dirs = "5"
-classfile-parser = "0.3"
-zip = "2"
 
 [dev-dependencies]
 tempfile = "3"
-tracing-subscriber = "0.3"

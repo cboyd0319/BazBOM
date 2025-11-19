@@ -1,31 +1,23 @@
 //! Error types for Go reachability analysis
 
-use std::io;
-use std::path::PathBuf;
 use thiserror::Error;
-
-pub type Result<T> = std::result::Result<T, GoReachabilityError>;
 
 #[derive(Error, Debug)]
 pub enum GoReachabilityError {
+    #[error("I/O error: {0}")]
+    IoError(#[from] std::io::Error),
+
+    #[error("JSON error: {0}")]
+    JsonError(#[from] serde_json::Error),
+
     #[error("Parse error: {0}")]
     ParseError(String),
 
-    #[error("IO error: {0}")]
-    IoError(#[from] io::Error),
+    #[error("Go analyzer not found: {0}")]
+    AnalyzerNotFound(String),
 
-    #[error("Call graph error: {0}")]
-    CallGraphError(String),
-
-    #[error("Module resolution error: {0}")]
-    ModuleResolutionError(String),
-
-    #[error("Entrypoint detection error: {0}")]
-    EntrypointError(String),
-
-    #[error("File not found: {}", .0.display())]
-    FileNotFound(PathBuf),
-
-    #[error("Invalid Go code: {0}")]
-    InvalidGo(String),
+    #[error("Go analyzer failed: {0}")]
+    AnalyzerFailed(String),
 }
+
+pub type Result<T> = std::result::Result<T, GoReachabilityError>;

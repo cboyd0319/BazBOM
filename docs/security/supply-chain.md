@@ -337,7 +337,7 @@ BazBOM helps meet compliance requirements:
 
 ## Troubleshooting
 
-See [../user-guide/troubleshooting.md](../user-guide/troubleshooting.md) for common SCA issues:
+See [../TROUBLESHOOTING.md](../TROUBLESHOOTING.md) for common SCA issues:
 
 - OSV API rate limiting
 - Network connectivity issues

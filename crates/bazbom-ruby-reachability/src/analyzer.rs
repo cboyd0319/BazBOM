@@ -80,22 +80,86 @@ impl RubyReachabilityAnalyzer {
     fn build_call_graph(&mut self) -> Result<()> {
         info!("Building call graph from Ruby source");
 
-        // Collect all Ruby files first to avoid borrow checker issues
+        // First, parse application code
+        self.build_application_call_graph()?;
+
+        // Then, parse transitive dependencies
+        self.build_dependency_call_graph()?;
+
+        Ok(())
+    }
+
+    fn build_application_call_graph(&mut self) -> Result<()> {
+        info!("Parsing application Ruby files...");
+
+        // Collect application files (skip vendor, .git, etc.)
         let ruby_files: Vec<PathBuf> = WalkDir::new(&self.project_root)
             .into_iter()
-            .filter_entry(|e| !Self::should_skip(e))
+            .filter_entry(|e| !Self::should_skip_application(e))
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
             .map(|e| e.path().to_path_buf())
             .filter(|p| Self::is_ruby_file(p))
             .collect();
 
-        // Now process all files
         for file_path in ruby_files {
             self.process_file(&file_path)?;
         }
 
         Ok(())
+    }
+
+    fn build_dependency_call_graph(&mut self) -> Result<()> {
+        // Look for Bundler vendor directory
+        let vendor_bundle = self.project_root.join("vendor").join("bundle");
+
+        if !vendor_bundle.exists() {
+            info!("No vendor/bundle directory found, skipping dependency analysis");
+            return Ok(());
+        }
+
+        info!("Parsing transitive dependencies in vendor/bundle...");
+
+        // Parse all gems in vendor/bundle
+        let gem_files: Vec<PathBuf> = WalkDir::new(&vendor_bundle)
+            .into_iter()
+            .filter_entry(|e| !Self::should_skip_dependency(e))
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+            .map(|e| e.path().to_path_buf())
+            .filter(|p| Self::is_ruby_file(p))
+            .collect();
+
+        for file_path in gem_files {
+            if let Err(e) = self.process_file(&file_path) {
+                // Dependencies might have parse errors, log and continue
+                tracing::debug!("Failed to parse gem file {}: {}", file_path.display(), e);
+            }
+        }
+
+        Ok(())
+    }
+
+    fn should_skip_application(entry: &walkdir::DirEntry) -> bool {
+        let skip_dirs = ["vendor", ".git", "node_modules", "tmp", "log", "coverage"];
+
+        if entry.file_type().is_dir() {
+            let dir_name = entry.file_name().to_str().unwrap_or("");
+            skip_dirs.contains(&dir_name)
+        } else {
+            false
+        }
+    }
+
+    fn should_skip_dependency(entry: &walkdir::DirEntry) -> bool {
+        let skip_patterns = ["test", "spec", "examples", "doc", "docs"];
+
+        if entry.file_type().is_dir() {
+            let dir_name = entry.file_name().to_str().unwrap_or("");
+            skip_patterns.iter().any(|pattern| dir_name.contains(pattern))
+        } else {
+            false
+        }
     }
 
     fn process_file(&mut self, file_path: &Path) -> Result<()> {
@@ -232,16 +296,6 @@ impl RubyReachabilityAnalyzer {
             .collect()
     }
 
-    fn should_skip(entry: &walkdir::DirEntry) -> bool {
-        let skip_dirs = ["vendor", ".git", "node_modules", "tmp", "log"];
-
-        if entry.file_type().is_dir() {
-            let dir_name = entry.file_name().to_str().unwrap_or("");
-            skip_dirs.contains(&dir_name)
-        } else {
-            false
-        }
-    }
 
     fn is_ruby_file(path: &Path) -> bool {
         if let Some(ext) = path.extension() {

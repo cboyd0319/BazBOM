@@ -7,8 +7,8 @@
 **Find vulnerabilities that actually matter - cut alert noise by 70-90%**
 
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions)
-[![Tests](https://img.shields.io/badge/tests-700%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-800%2B%20passing-brightgreen)](https://github.com/cboyd0319/BazBOM/actions/workflows/rust.yml)
+[![License](https://img.shields.io/badge/license-BSL%201.1-blue.svg)](LICENSE)
 [![SLSA v1.1 Level 3](https://img.shields.io/badge/SLSA-v1.1%20Level%203-green)](docs/operations/provenance.md)
 
 [Install](#installation) • [Quick Start](#quick-start) • [Documentation](docs/README.md)
@@ -19,7 +19,7 @@
 
 ## What is BazBOM?
 
-BazBOM is a **developer-friendly security scanner** that uses reachability analysis to show which vulnerabilities are actually exploitable - not every CVE in every transitive dependency. It works natively with Bazel monorepos, speaks plain English instead of CVE jargon, and cuts false positives by 70-90%.
+BazBOM is a **developer-friendly security scanner** that uses reachability analysis to show which vulnerabilities are actually exploitable - not every CVE in every transitive dependency. BazBOM works natively with Bazel monorepos, speaks plain English instead of CVE jargon, and cuts false positives by 70-90%.
 
 **Stop drowning in alerts.** Traditional scanners report 237 vulnerabilities. BazBOM tells you the 28 that actually matter through advanced reachability analysis.
 
@@ -98,7 +98,7 @@ bazbom --version
 - ✅ **Developer UX** - TUI graph viz, beautiful output, smart defaults, watch mode
 - ✅ **Code Quality** - Zero clippy warnings, 100% passing tests, comprehensive bug fixes
 
-🦀 **29 crates** • **700+ tests** • **Zero clippy warnings** • **Source install in <5 min**
+🦀 **30 crates** • **800+ tests** (360+ core, 107+ reachability, integration tests) • **Zero clippy warnings** • **Source install in <5 min**
 
 [📚 Full changelog](CHANGELOG.md) | [See all v6.5 features →](#whats-new-in-v65-details)
 
@@ -186,7 +186,7 @@ bazbom scan --bazel-affected-by-files $(git diff --name-only HEAD~1)
 bazbom scan --bazel-targets-query 'kind(java_binary, //services/...)'
 ```
 
-**Tested on 5000+ target monorepos.** Works with Maven, Gradle, and Bazel in the same repo.
+**Handles 5000+ target monorepos.** Works with Maven, Gradle, and Bazel in the same repo.
 
 ### 2. **Cuts noise by 70-90% with reachability analysis**
 
@@ -261,7 +261,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 
 ### Container Scanning Enhancements
 
-- **🎯 Full Call Graph Reachability** - AST-based analysis for 6 languages (JS, Python, Go, Rust, Ruby, PHP)
+- **🎯 Full Call Graph Reachability** - AST-based analysis for 7 languages (Java, Rust, Go, JS/TS, Python, Ruby, PHP)
 - **📋 Multi-Language Copy-Paste Fixes** - Ready-to-use upgrade commands for 7 languages
 - **🔀 Framework Migration Guides** - Spring Boot, Django, Rails, React, Vue, Angular, Express
 - **💎 Ecosystem-Specific Guidance** - Rust pre-1.0, Go v2+ modules, npm semver
@@ -427,7 +427,7 @@ Auto-detects CI environment, PR context, repo size, and adjusts behavior automat
 
 ## Contributing
 
-We welcome contributions! BazBOM is open-source (MIT) and community-driven.
+BazBOM welcomes your contributions! Source-available (BSL 1.1) and community-driven.
 
 **Quick Links:**
 - [Contributing Guide](CONTRIBUTING.md)
@@ -466,18 +466,20 @@ See [Development Guide](docs/development/README.md) for details.
 
 ## License
 
-**MIT License** - Use it however you want.
+**Business Source License 1.1** - Free for most use cases, protects against SaaS competitors.
 
 ```
-Commercial use ✅
+Internal company use ✅
 Modification ✅
 Distribution ✅
 Private use ✅
+Open source projects ✅
+SaaS offerings ❌ (requires commercial license)
 ```
 
-Just include the license. That's it.
+**Converts to Apache 2.0 on 2030-01-01** - Becomes fully open source in 4 years.
 
-See [LICENSE](LICENSE) for full text.
+See [LICENSE](LICENSE) for full terms.
 
 ---
 
