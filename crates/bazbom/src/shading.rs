@@ -2,10 +2,333 @@ use anyhow::{Context, Result};
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
 use std::path::Path;
+use ureq::Agent;
+use zip::ZipArchive;
+
+// ============================================================================
+// JAR Identity Extraction
+// ============================================================================
+
+/// Identified JAR artifact with Maven coordinates
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct JarIdentity {
+    pub group_id: String,
+    pub artifact_id: String,
+    pub version: String,
+    pub source: JarIdentitySource,
+    pub checksum: Option<String>,
+}
+
+/// How the JAR identity was determined
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum JarIdentitySource {
+    PomProperties,
+    Manifest,
+    ChecksumLookup,
+    Fingerprint,
+}
+
+impl JarIdentity {
+    /// Convert to Maven GAV string (groupId:artifactId:version)
+    pub fn gav(&self) -> String {
+        format!("{}:{}:{}", self.group_id, self.artifact_id, self.version)
+    }
+
+    /// Convert to PURL format
+    pub fn purl(&self) -> String {
+        format!(
+            "pkg:maven/{}/{}@{}",
+            self.group_id, self.artifact_id, self.version
+        )
+    }
+}
+
+/// Extract identity from an unknown JAR file
+///
+/// Tries multiple strategies in order:
+/// 1. pom.properties (most reliable)
+/// 2. MANIFEST.MF (fallback)
+/// 3. Maven Central checksum lookup (requires network)
+pub fn identify_jar(jar_path: &Path, agent: Option<&Agent>) -> Result<Option<JarIdentity>> {
+    // Calculate checksum first (needed for lookup and reporting)
+    let checksum = compute_jar_checksum(jar_path)?;
+
+    // Strategy 1: Try pom.properties
+    if let Some(mut identity) = extract_pom_properties(jar_path)? {
+        identity.checksum = Some(checksum);
+        return Ok(Some(identity));
+    }
+
+    // Strategy 2: Try MANIFEST.MF
+    if let Some(mut identity) = extract_manifest_identity(jar_path)? {
+        identity.checksum = Some(checksum);
+        return Ok(Some(identity));
+    }
+
+    // Strategy 3: Maven Central checksum lookup
+    if let Some(agent) = agent {
+        if let Some(mut identity) = lookup_jar_by_checksum(agent, &checksum)? {
+            identity.checksum = Some(checksum);
+            return Ok(Some(identity));
+        }
+    }
+
+    Ok(None)
+}
+
+/// Compute SHA-256 checksum of a JAR file
+pub fn compute_jar_checksum(jar_path: &Path) -> Result<String> {
+    let mut file = fs::File::open(jar_path)
+        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 8192];
+
+    loop {
+        let bytes_read = file.read(&mut buffer)?;
+        if bytes_read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..bytes_read]);
+    }
+
+    Ok(hex::encode(hasher.finalize()))
+}
+
+/// Extract identity from META-INF/maven/<groupId>/<artifactId>/pom.properties
+pub fn extract_pom_properties(jar_path: &Path) -> Result<Option<JarIdentity>> {
+    let file = fs::File::open(jar_path)
+        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+    let mut archive = ZipArchive::new(file)
+        .context("failed to read JAR as ZIP archive")?;
+
+    // Look for pom.properties files
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i)?;
+        let name = entry.name().to_string();
+
+        // Match pattern: META-INF/maven/<groupId>/<artifactId>/pom.properties
+        if name.starts_with("META-INF/maven/") && name.ends_with("/pom.properties") {
+            let mut content = String::new();
+            entry.read_to_string(&mut content)?;
+
+            let mut group_id = None;
+            let mut artifact_id = None;
+            let mut version = None;
+
+            for line in content.lines() {
+                let line = line.trim();
+                if line.starts_with('#') || line.is_empty() {
+                    continue;
+                }
+
+                if let Some((key, value)) = line.split_once('=') {
+                    match key.trim() {
+                        "groupId" => group_id = Some(value.trim().to_string()),
+                        "artifactId" => artifact_id = Some(value.trim().to_string()),
+                        "version" => version = Some(value.trim().to_string()),
+                        _ => {}
+                    }
+                }
+            }
+
+            if let (Some(g), Some(a), Some(v)) = (group_id, artifact_id, version) {
+                return Ok(Some(JarIdentity {
+                    group_id: g,
+                    artifact_id: a,
+                    version: v,
+                    source: JarIdentitySource::PomProperties,
+                    checksum: None,
+                }));
+            }
+        }
+    }
+
+    Ok(None)
+}
+
+/// Extract identity from META-INF/MANIFEST.MF
+pub fn extract_manifest_identity(jar_path: &Path) -> Result<Option<JarIdentity>> {
+    let file = fs::File::open(jar_path)
+        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+    let mut archive = ZipArchive::new(file)
+        .context("failed to read JAR as ZIP archive")?;
+
+    // Find MANIFEST.MF
+    let manifest_entry = archive.by_name("META-INF/MANIFEST.MF");
+    if manifest_entry.is_err() {
+        return Ok(None);
+    }
+
+    let mut manifest = manifest_entry.unwrap();
+    let mut content = String::new();
+    manifest.read_to_string(&mut content)?;
+
+    let mut impl_title = None;
+    let mut impl_version = None;
+    let mut impl_vendor_id = None;
+    let mut bundle_name = None;
+    let mut bundle_version = None;
+    let mut bundle_symbolic_name = None;
+
+    // Parse manifest attributes (handle line continuations)
+    let mut current_line = String::new();
+    for line in content.lines() {
+        if line.starts_with(' ') || line.starts_with('\t') {
+            // Continuation line
+            current_line.push_str(line.trim_start());
+            continue;
+        }
+
+        // Process previous line
+        if !current_line.is_empty() {
+            parse_manifest_line(&current_line, &mut impl_title, &mut impl_version,
+                &mut impl_vendor_id, &mut bundle_name, &mut bundle_version, &mut bundle_symbolic_name);
+        }
+        current_line = line.to_string();
+    }
+    // Process last line
+    if !current_line.is_empty() {
+        parse_manifest_line(&current_line, &mut impl_title, &mut impl_version,
+            &mut impl_vendor_id, &mut bundle_name, &mut bundle_version, &mut bundle_symbolic_name);
+    }
+
+    // Try to construct identity from manifest attributes
+    // Priority: OSGi Bundle > Implementation attributes
+
+    if let (Some(name), Some(version)) = (&bundle_symbolic_name, &bundle_version) {
+        // OSGi bundle - symbolic name often has groupId.artifactId format
+        let (group_id, artifact_id) = if let Some(last_dot) = name.rfind('.') {
+            (name[..last_dot].to_string(), name[last_dot + 1..].to_string())
+        } else {
+            ("unknown".to_string(), name.clone())
+        };
+
+        return Ok(Some(JarIdentity {
+            group_id,
+            artifact_id,
+            version: version.clone(),
+            source: JarIdentitySource::Manifest,
+            checksum: None,
+        }));
+    }
+
+    if let (Some(title), Some(version)) = (&impl_title, &impl_version) {
+        // Implementation-Title is often just artifactId
+        let group_id = impl_vendor_id.unwrap_or_else(|| "unknown".to_string());
+
+        return Ok(Some(JarIdentity {
+            group_id,
+            artifact_id: title.clone(),
+            version: version.clone(),
+            source: JarIdentitySource::Manifest,
+            checksum: None,
+        }));
+    }
+
+    Ok(None)
+}
+
+fn parse_manifest_line(
+    line: &str,
+    impl_title: &mut Option<String>,
+    impl_version: &mut Option<String>,
+    impl_vendor_id: &mut Option<String>,
+    bundle_name: &mut Option<String>,
+    bundle_version: &mut Option<String>,
+    bundle_symbolic_name: &mut Option<String>,
+) {
+    if let Some((key, value)) = line.split_once(':') {
+        let key = key.trim();
+        let value = value.trim().to_string();
+
+        match key {
+            "Implementation-Title" => *impl_title = Some(value),
+            "Implementation-Version" => *impl_version = Some(value),
+            "Implementation-Vendor-Id" => *impl_vendor_id = Some(value),
+            "Bundle-Name" => *bundle_name = Some(value),
+            "Bundle-Version" => *bundle_version = Some(value),
+            "Bundle-SymbolicName" => {
+                // Strip directives like ";singleton:=true"
+                let name = value.split(';').next().unwrap_or(&value).trim();
+                *bundle_symbolic_name = Some(name.to_string());
+            }
+            _ => {}
+        }
+    }
+}
+
+/// Response from Maven Central Search API
+#[derive(Deserialize)]
+struct MavenSearchResponse {
+    response: MavenSearchDocs,
+}
+
+#[derive(Deserialize)]
+struct MavenSearchDocs {
+    docs: Vec<MavenSearchDoc>,
+}
+
+#[derive(Deserialize)]
+struct MavenSearchDoc {
+    g: String,  // groupId
+    a: String,  // artifactId
+    v: String,  // version
+}
+
+/// Look up a JAR in Maven Central by its SHA-256 checksum
+pub fn lookup_jar_by_checksum(agent: &Agent, sha256: &str) -> Result<Option<JarIdentity>> {
+    // Maven Central Search API
+    let url = format!(
+        "https://search.maven.org/solrsearch/select?q=1:\"{}\"&rows=1&wt=json",
+        sha256
+    );
+
+    let response = agent
+        .get(&url)
+        .call()
+        .context("failed to query Maven Central")?;
+
+    if response.status() != 200 {
+        return Ok(None);
+    }
+
+    let body = response
+        .into_body()
+        .read_to_string()
+        .context("failed to read Maven Central response")?;
+
+    let search_result: MavenSearchResponse = serde_json::from_str(&body)
+        .context("failed to parse Maven Central response")?;
+
+    if let Some(doc) = search_result.response.docs.first() {
+        return Ok(Some(JarIdentity {
+            group_id: doc.g.clone(),
+            artifact_id: doc.a.clone(),
+            version: doc.v.clone(),
+            source: JarIdentitySource::ChecksumLookup,
+            checksum: Some(sha256.to_string()),
+        }));
+    }
+
+    Ok(None)
+}
+
+/// Identify multiple JARs (can be parallelized with rayon)
+pub fn identify_jars(
+    jar_paths: &[&Path],
+    agent: Option<&Agent>,
+) -> Vec<Result<Option<JarIdentity>>> {
+    jar_paths
+        .iter()
+        .map(|jar_path| identify_jar(jar_path, agent))
+        .collect()
+}
 
 /// Represents a class relocation mapping (e.g., org.foo -> com.shaded.org.foo)
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -1296,5 +1619,169 @@ mod tests {
         let result = super::extract_class_name_from_bytecode(short_valid);
         // Should return None as we don't fully parse the constant pool
         assert!(result.is_none());
+    }
+
+    #[test]
+    fn test_compute_jar_checksum() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a minimal JAR file
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+        zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
+        zip.write_all(b"Manifest-Version: 1.0\n").unwrap();
+        zip.finish().unwrap();
+
+        let checksum = compute_jar_checksum(temp_file.path()).unwrap();
+        assert_eq!(checksum.len(), 64); // SHA-256 hex string
+        assert!(checksum.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn test_extract_pom_properties() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a JAR with pom.properties
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+        zip.start_file("META-INF/maven/com.example/my-artifact/pom.properties", options).unwrap();
+        zip.write_all(b"groupId=com.example\nartifactId=my-artifact\nversion=1.0.0\n").unwrap();
+        zip.finish().unwrap();
+
+        let identity = extract_pom_properties(temp_file.path()).unwrap().unwrap();
+        assert_eq!(identity.group_id, "com.example");
+        assert_eq!(identity.artifact_id, "my-artifact");
+        assert_eq!(identity.version, "1.0.0");
+        assert_eq!(identity.source, JarIdentitySource::PomProperties);
+    }
+
+    #[test]
+    fn test_extract_pom_properties_not_found() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a JAR without pom.properties
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+        zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
+        zip.write_all(b"Manifest-Version: 1.0\n").unwrap();
+        zip.finish().unwrap();
+
+        let identity = extract_pom_properties(temp_file.path()).unwrap();
+        assert!(identity.is_none());
+    }
+
+    #[test]
+    fn test_extract_manifest_identity() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a JAR with MANIFEST.MF containing identity info
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+        zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
+        zip.write_all(b"Manifest-Version: 1.0\nImplementation-Title: my-artifact\nImplementation-Version: 2.0.0\nImplementation-Vendor-Id: org.example\n").unwrap();
+        zip.finish().unwrap();
+
+        let identity = extract_manifest_identity(temp_file.path()).unwrap().unwrap();
+        assert_eq!(identity.group_id, "org.example");
+        assert_eq!(identity.artifact_id, "my-artifact");
+        assert_eq!(identity.version, "2.0.0");
+        assert_eq!(identity.source, JarIdentitySource::Manifest);
+    }
+
+    #[test]
+    fn test_extract_manifest_identity_bundle_style() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a JAR with OSGi bundle-style MANIFEST.MF
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+        zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
+        zip.write_all(b"Manifest-Version: 1.0\nBundle-SymbolicName: org.osgi.bundle\nBundle-Version: 3.0.0\n").unwrap();
+        zip.finish().unwrap();
+
+        let identity = extract_manifest_identity(temp_file.path()).unwrap().unwrap();
+        assert_eq!(identity.group_id, "org.osgi");
+        assert_eq!(identity.artifact_id, "bundle");
+        assert_eq!(identity.version, "3.0.0");
+        assert_eq!(identity.source, JarIdentitySource::Manifest);
+    }
+
+    #[test]
+    fn test_identify_jar_uses_pom_properties_first() {
+        use std::io::Write;
+        use tempfile::NamedTempFile;
+        use zip::write::SimpleFileOptions;
+        use zip::ZipWriter;
+
+        // Create a JAR with both pom.properties and MANIFEST.MF
+        let temp_file = NamedTempFile::new().unwrap();
+        let file = std::fs::File::create(temp_file.path()).unwrap();
+        let mut zip = ZipWriter::new(file);
+
+        let options = SimpleFileOptions::default();
+
+        // Add pom.properties
+        zip.start_file("META-INF/maven/com.pom/pom-artifact/pom.properties", options).unwrap();
+        zip.write_all(b"groupId=com.pom\nartifactId=pom-artifact\nversion=1.0.0\n").unwrap();
+
+        // Add MANIFEST.MF with different values
+        zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
+        zip.write_all(b"Manifest-Version: 1.0\nImplementation-Title: manifest-artifact\nImplementation-Version: 2.0.0\nImplementation-Vendor-Id: com.manifest\n").unwrap();
+
+        zip.finish().unwrap();
+
+        // identify_jar should prefer pom.properties
+        let identity = identify_jar(temp_file.path(), None).unwrap().unwrap();
+        assert_eq!(identity.group_id, "com.pom");
+        assert_eq!(identity.artifact_id, "pom-artifact");
+        assert_eq!(identity.version, "1.0.0");
+        assert_eq!(identity.source, JarIdentitySource::PomProperties);
+    }
+
+    #[test]
+    fn test_jar_identity_source_serialization() {
+        let identity = JarIdentity {
+            group_id: "com.example".to_string(),
+            artifact_id: "test".to_string(),
+            version: "1.0.0".to_string(),
+            source: JarIdentitySource::PomProperties,
+            checksum: Some("abc123".to_string()),
+        };
+
+        let json = serde_json::to_string(&identity).unwrap();
+        assert!(json.contains("PomProperties"));
+
+        let parsed: JarIdentity = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.source, JarIdentitySource::PomProperties);
     }
 }
