@@ -247,20 +247,20 @@ N/A = Not applicable to ecosystem
 
 ### BazBOM vs Commercial SCA
 
-| Feature | BazBOM | Snyk | Sonatype | EndorLabs |
-|---------|--------|------|----------|-----------|
-| Transitive reachability | ✅ 8 langs | ⚠️ Limited | ⚠️ Limited | ✅ 3 langs |
-| Bytecode analysis | ✅ Java | ❌ | ✅ Java | ✅ Java |
-| Bazel targeted scan | ✅ | ❌ | ❌ | ✅ |
+| Feature | BazBOM | Snyk | Sonatype | Commercial SCA |
+|---------|--------|------|----------|----------------|
+| Transitive reachability | ✅ 8 langs | ⚠️ Limited | ⚠️ Limited | ⚠️ 3-4 langs |
+| Bytecode analysis | ✅ Java | ❌ | ✅ Java | ⚠️ Varies |
+| Bazel targeted scan | ✅ | ❌ | ❌ | ⚠️ Limited |
 | Open source | ✅ | ❌ | ❌ | ❌ |
 | Cost | Free | $$$$ | $$$$ | $$$$ |
-| Performance | Fast | Medium | Slow | Fast |
+| Performance | Fast | Medium | Slow | Varies |
 
 **BazBOM advantages:**
-- More ecosystems (8 vs 3)
-- Open source
-- CI/CD optimized
-- Full bytecode analysis
+- Broadest ecosystem coverage (8 languages)
+- Open source and extensible
+- CI/CD optimized for monorepos
+- Full bytecode analysis for Java
 
 ---
 

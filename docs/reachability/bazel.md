@@ -3,7 +3,7 @@
 ## Status: PRODUCTION READY + CI/CD OPTIMIZED
 
 **Tests:** 3/3 passing ✅
-**Targeted Scanning:** ✅ Enabled (like EndorLabs!)
+**Targeted Scanning:** ✅ Enabled for CI/CD pipelines
 
 ## Related Documentation
 
@@ -40,7 +40,7 @@ Bazel reachability analysis leverages Bazel's **explicit build graph** for highl
 - **Perfect dependency information** - No guessing, no conservative over-approximation
 - **Language-agnostic** - Works for C++, Java, Go, Python, Rust, etc.
 - **CI/CD optimized** - Targeted scanning saves hours in large monorepos
-- **Industry standard** - Same approach as EndorLabs and other commercial SCA tools
+- **Industry-proven approach** - Build graph analysis used by commercial SCA tools
 
 ## Usage
 
@@ -101,15 +101,13 @@ bazbom scan --bazel-changed-files "$CHANGED_FILES"
 2. **Full scan** - Real Bazel workspace (7 targets)
 3. **Targeted scan** - Changed file analysis (5 targets)
 
-## Comparison with EndorLabs
+## Feature Summary
 
-| Feature | EndorLabs | BazBOM |
-|---------|-----------|--------|
-| Build graph analysis | ✅ | ✅ |
-| Entrypoint detection | ✅ | ✅ |
-| Targeted scanning (`rdeps`) | ✅ | ✅ |
-| Multi-language support | Java, Python, Go | Any Bazel language |
-| Open source | ❌ | ✅ |
+✅ **Build graph analysis** - Native Bazel query integration
+✅ **Entrypoint detection** - Rule-kind based (binary, test, etc.)
+✅ **Targeted scanning** - `rdeps()` for incremental CI/CD
+✅ **Multi-language support** - Any Bazel-supported language
+✅ **Open source** - MIT licensed
 
 ## Summary
 
