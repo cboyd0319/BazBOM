@@ -88,6 +88,24 @@ struct QuickWin {
     estimated_minutes: u32,
 }
 
+/// Container signature verification status
+#[derive(Debug, Clone)]
+enum SignatureStatus {
+    Verified,
+    NotSigned,
+    ToolNotAvailable,
+    Invalid(String),
+}
+
+/// SLSA provenance verification status
+#[derive(Debug, Clone)]
+enum ProvenanceStatus {
+    Verified,
+    NotAvailable,
+    ToolNotAvailable,
+    Invalid(String),
+}
+
 /// Action item for prioritized plan
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
@@ -244,13 +262,53 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     std::fs::create_dir_all(opts.output_dir.join("findings"))?;
 
     // Step 1: Check for required tools
-    println!("🔧 {} Checking for required tools...", "Step 1/5:".bold());
+    println!("🔧 {} Checking for required tools...", "Step 1/6:".bold());
     check_tools()?;
     println!("   ✅ All tools available");
     println!();
 
-    // Step 2: Generate SBOM with Syft
-    println!("📦 {} Generating SBOM with Syft...", "Step 2/5:".bold());
+    // Step 2: Verify container signature (if cosign available)
+    println!("🔐 {} Verifying container signature...", "Step 2/6:".bold());
+    match verify_container_signature(&opts.image_name).await {
+        Ok(SignatureStatus::Verified) => {
+            println!("   ✅ Cosign signature verified");
+        }
+        Ok(SignatureStatus::NotSigned) => {
+            println!("   ⚠️  {} No signature found", "Warning:".yellow());
+        }
+        Ok(SignatureStatus::ToolNotAvailable) => {
+            println!("   ⊘ Cosign not available, skipping signature verification");
+        }
+        Ok(SignatureStatus::Invalid(msg)) => {
+            println!("   ❌ {} Signature invalid: {}", "Error:".red(), msg);
+        }
+        Err(e) => {
+            println!("   ⊘ Signature check skipped: {}", e.to_string().dimmed());
+        }
+    }
+
+    // Verify SLSA provenance (if available)
+    match verify_slsa_provenance(&opts.image_name).await {
+        Ok(ProvenanceStatus::Verified) => {
+            println!("   ✅ SLSA provenance verified");
+        }
+        Ok(ProvenanceStatus::NotAvailable) => {
+            // Don't print anything, most images don't have provenance
+        }
+        Ok(ProvenanceStatus::ToolNotAvailable) => {
+            // Don't print, cosign not available
+        }
+        Ok(ProvenanceStatus::Invalid(msg)) => {
+            println!("   ⚠️  {} Provenance invalid: {}", "Warning:".yellow(), msg);
+        }
+        Err(_) => {
+            // Silent failure for provenance
+        }
+    }
+    println!();
+
+    // Step 3: Generate SBOM with Syft
+    println!("📦 {} Generating SBOM with Syft...", "Step 3/6:".bold());
     let sbom_path = generate_sbom(&opts).await?;
     let package_count = count_packages(&sbom_path)?;
     println!(
@@ -259,10 +317,10 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     );
     println!();
 
-    // Step 3: Scan for vulnerabilities with Trivy
+    // Step 4: Scan for vulnerabilities with Trivy
     println!(
         "🔎 {} Scanning for vulnerabilities with Trivy...",
-        "Step 3/5:".bold()
+        "Step 4/6:".bold()
     );
     let vuln_path = scan_vulnerabilities(&opts).await?;
     let vuln_count = count_vulnerabilities(&vuln_path)?;
@@ -272,8 +330,8 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     );
     println!();
 
-    // Step 4: Analyze layers and attribute vulnerabilities
-    println!("🔍 {} Analyzing layer attribution...", "Step 4/5:".bold());
+    // Step 5: Analyze layers and attribute vulnerabilities
+    println!("🔍 {} Analyzing layer attribution...", "Step 5/6:".bold());
     let mut results = analyze_layer_attribution(&opts.image_name, &sbom_path, &vuln_path).await?;
     println!(
         "   ✅ Mapped vulnerabilities to {} layers",
@@ -285,7 +343,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     if opts.with_reachability {
         println!(
             "🎯 {} Running reachability analysis...",
-            "Step 4.5/5:".bold()
+            "Step 5.5/6:".bold()
         );
         match extract_container_filesystem(&opts.image_name, &opts.output_dir).await {
             Ok(filesystem_dir) => {
@@ -314,8 +372,8 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         println!();
     }
 
-    // Step 5: Generate beautiful summary
-    println!("✨ {} Generating security report...", "Step 5/5:".bold());
+    // Step 6: Generate beautiful summary
+    println!("✨ {} Generating security report...", "Step 6/6:".bold());
     println!();
     display_results(&results, &opts)?;
 
@@ -455,6 +513,62 @@ fn check_tools() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Verify container image signature using cosign
+async fn verify_container_signature(image: &str) -> Result<SignatureStatus> {
+    // Check if cosign is available
+    let cosign_check = Command::new("cosign").arg("version").output();
+    if cosign_check.is_err() {
+        return Ok(SignatureStatus::ToolNotAvailable);
+    }
+
+    // Try to verify signature
+    let output = Command::new("cosign")
+        .args(["verify", image, "--output", "text"])
+        .output()
+        .context("failed to run cosign")?;
+
+    if output.status.success() {
+        Ok(SignatureStatus::Verified)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("no matching signatures") || stderr.contains("not found") {
+            Ok(SignatureStatus::NotSigned)
+        } else {
+            Ok(SignatureStatus::Invalid(stderr.to_string()))
+        }
+    }
+}
+
+/// Verify SLSA provenance attestation using cosign
+async fn verify_slsa_provenance(image: &str) -> Result<ProvenanceStatus> {
+    // Check if cosign is available
+    let cosign_check = Command::new("cosign").arg("version").output();
+    if cosign_check.is_err() {
+        return Ok(ProvenanceStatus::ToolNotAvailable);
+    }
+
+    // Try to verify SLSA provenance attestation
+    let output = Command::new("cosign")
+        .args([
+            "verify-attestation",
+            "--type", "slsaprovenance",
+            image,
+        ])
+        .output()
+        .context("failed to run cosign verify-attestation")?;
+
+    if output.status.success() {
+        Ok(ProvenanceStatus::Verified)
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("no matching attestations") || stderr.contains("not found") {
+            Ok(ProvenanceStatus::NotAvailable)
+        } else {
+            Ok(ProvenanceStatus::Invalid(stderr.to_string()))
+        }
+    }
 }
 
 /// Generate SBOM using Syft (both SPDX and native JSON for layer metadata)
