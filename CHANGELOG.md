@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [6.6.0] - 2025-11-19
+
+### Added
+
+- **SBOM Signing with Cosign** - Sign generated SBOMs using Sigstore's Cosign
+  - New `--sign-sbom` flag for `bazbom scan` command
+  - Uses keyless OIDC authentication for signing
+  - Generates `.sig` signature files alongside SBOMs
+  - Gracefully degrades if Cosign is not installed
+  - Supports both SPDX and CycloneDX SBOM formats
+
+- **VEX (Vulnerability Exploitability eXchange) Support** - Document and manage false positives
+  - New `bazbom vex` command with create/apply/list subcommands
+  - OpenVEX format support for vulnerability status documentation
+  - Status types: not_affected, affected, fixed, under_investigation
+  - Justification support: component_not_present, vulnerable_code_not_in_execute_path, etc.
+  - Filter scan findings based on VEX statements
+  - Package-specific and global CVE suppressions
+
+### Fixed
+
+- **Go Reachability Analysis** - Fixed function-to-package mapping
+  - Previously marked all packages as reachable (false positives)
+  - Now properly extracts package paths from function IDs
+  - Supports direct match, sub-packages, and parent package matching
+  - Accurately identifies which vulnerable packages are actually reachable
+
+- **Dead Code Warnings** - Cleaned up unused code warnings in shading.rs
+  - Added `#[allow(dead_code)]` to intentional public API functions
+  - Functions retained for JAR identity extraction and Maven lookup features
+
+---
+
+## [6.5.1] - 2025-11-18 (Internal)
+
 ### Fixed
 
 - **Bazel Dependency Detection** - Critical bug fix for Bazel projects returning 0 packages
