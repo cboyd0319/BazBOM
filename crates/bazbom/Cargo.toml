@@ -1,6 +1,6 @@
 [package]
 name = "bazbom"
-version = "6.5.0"
+version = "6.6.0"
 edition = "2021"
 license = "MIT"
 description = "Build-time SBOM, SCA, and dependency graph for JVM projects (Maven, Gradle, Bazel)"

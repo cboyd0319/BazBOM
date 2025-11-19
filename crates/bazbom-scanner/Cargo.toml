@@ -1,6 +1,6 @@
 [package]
 name = "bazbom-scanner"
-version = "6.5.0"
+version = "6.6.0"
 edition = "2021"
 authors = ["BazBOM Contributors"]
 description = "Polyglot ecosystem support for Node.js, Python, Go, Rust, and more"

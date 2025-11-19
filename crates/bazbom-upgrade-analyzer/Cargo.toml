@@ -1,6 +1,6 @@
 [package]
 name = "bazbom-upgrade-analyzer"
-version = "6.5.0"
+version = "6.6.0"
 edition = "2021"
 description = "Recursive transitive upgrade analysis with breaking change detection"
 license = "MIT"
