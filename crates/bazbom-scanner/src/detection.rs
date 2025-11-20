@@ -27,6 +27,8 @@ pub enum EcosystemType {
     Maven,
     /// Gradle (Java) ecosystem
     Gradle,
+    /// Bazel build system (polyglot)
+    Bazel,
 }
 
 impl EcosystemType {
@@ -40,6 +42,7 @@ impl EcosystemType {
             EcosystemType::Php => "PHP",
             EcosystemType::Maven => "Maven",
             EcosystemType::Gradle => "Gradle",
+            EcosystemType::Bazel => "Bazel",
         }
     }
 
@@ -53,6 +56,7 @@ impl EcosystemType {
             EcosystemType::Php => "🐘",
             EcosystemType::Maven => "☕",
             EcosystemType::Gradle => "🐘",
+            EcosystemType::Bazel => "🏗️",
         }
     }
 }
@@ -211,6 +215,18 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
                     let lockfile = find_lockfile(&dir_path, &["gradle.lockfile"]);
                     ecosystems.push(Ecosystem::new(
                         EcosystemType::Gradle,
+                        dir_path.clone(),
+                        Some(file_path.to_path_buf()),
+                        lockfile,
+                    ));
+                }
+
+                // Bazel
+                "BUILD" | "BUILD.bazel" | "WORKSPACE" | "WORKSPACE.bazel" | "MODULE.bazel" => {
+                    // Bazel lockfiles vary by version
+                    let lockfile = find_lockfile(&dir_path, &["MODULE.bazel.lock", "maven_install.json"]);
+                    ecosystems.push(Ecosystem::new(
+                        EcosystemType::Bazel,
                         dir_path.clone(),
                         Some(file_path.to_path_buf()),
                         lockfile,

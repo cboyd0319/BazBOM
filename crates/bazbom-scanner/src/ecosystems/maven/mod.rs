@@ -19,6 +19,12 @@ use std::path::Path;
 /// Maven scanner
 pub struct MavenScanner;
 
+impl Default for MavenScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl MavenScanner {
     pub fn new() -> Self {
         Self

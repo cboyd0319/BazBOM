@@ -108,6 +108,9 @@ pub struct VulnerabilityDetail {
     pub is_reachable: bool,
     pub is_kev: bool,
     pub epss_score: Option<f64>,
+    /// Call chain from entrypoint to vulnerable function (if reachable)
+    #[serde(default)]
+    pub call_chain: Option<Vec<String>>,
 }
 
 /// Policy status for report generation
@@ -118,11 +121,35 @@ pub struct PolicyStatus {
     pub blocked_packages: usize,
 }
 
+/// Reachability analysis summary
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ReachabilitySummary {
+    pub total_analyzed: usize,
+    pub reachable_count: usize,
+    pub unreachable_count: usize,
+    pub noise_reduction_percent: f64,
+}
+
+/// Container compliance results
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ContainerCompliance {
+    pub pci_dss_pass: bool,
+    pub hipaa_pass: bool,
+    pub soc2_pass: bool,
+    pub pci_issues: Vec<String>,
+    pub hipaa_issues: Vec<String>,
+    pub soc2_issues: Vec<String>,
+}
+
 /// Main report generator
 pub struct ReportGenerator {
     sbom: SbomData,
     vulnerabilities: VulnerabilityFindings,
     policy: PolicyStatus,
+    /// Optional reachability summary (for container scans)
+    reachability: Option<ReachabilitySummary>,
+    /// Optional compliance details (for container scans)
+    compliance: Option<ContainerCompliance>,
 }
 
 impl ReportGenerator {
@@ -136,6 +163,25 @@ impl ReportGenerator {
             sbom,
             vulnerabilities,
             policy,
+            reachability: None,
+            compliance: None,
+        }
+    }
+
+    /// Create a report generator with container-specific data
+    pub fn with_container_data(
+        sbom: SbomData,
+        vulnerabilities: VulnerabilityFindings,
+        policy: PolicyStatus,
+        reachability: ReachabilitySummary,
+        compliance: ContainerCompliance,
+    ) -> Self {
+        Self {
+            sbom,
+            vulnerabilities,
+            policy,
+            reachability: Some(reachability),
+            compliance: Some(compliance),
         }
     }
 
@@ -187,6 +233,16 @@ impl ReportGenerator {
     pub fn policy(&self) -> &PolicyStatus {
         &self.policy
     }
+
+    /// Get reachability summary (for container scans)
+    pub fn reachability(&self) -> Option<&ReachabilitySummary> {
+        self.reachability.as_ref()
+    }
+
+    /// Get compliance details (for container scans)
+    pub fn compliance(&self) -> Option<&ContainerCompliance> {
+        self.compliance.as_ref()
+    }
 }
 
 /// Helper function to write HTML content to file
@@ -223,6 +279,7 @@ mod tests {
                 is_reachable: true,
                 is_kev: true,
                 epss_score: Some(0.975),
+                call_chain: Some(vec!["main()".to_string(), "Logger.error()".to_string()]),
             }],
             high: vec![],
             medium: vec![],

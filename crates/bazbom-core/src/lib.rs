@@ -16,6 +16,30 @@ pub fn version() -> &'static str {
     VERSION
 }
 
+/// Get BazBOM's shared cache directory
+///
+/// Returns `~/.cache/bazbom` on Linux/macOS or equivalent on Windows.
+/// Creates the directory if it doesn't exist.
+pub fn cache_dir() -> PathBuf {
+    let dir = dirs::cache_dir()
+        .unwrap_or_else(|| PathBuf::from("."))
+        .join("bazbom");
+
+    // Ensure the directory exists
+    let _ = std::fs::create_dir_all(&dir);
+
+    dir
+}
+
+/// Get a subdirectory within BazBOM's cache
+///
+/// Example: `cache_subdir("advisories")` returns `~/.cache/bazbom/advisories`
+pub fn cache_subdir(name: &str) -> PathBuf {
+    let dir = cache_dir().join(name);
+    let _ = std::fs::create_dir_all(&dir);
+    dir
+}
+
 /// Supported JVM build systems
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BuildSystem {

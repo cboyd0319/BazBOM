@@ -20,14 +20,61 @@ This document provides information about third-party tools and software that Baz
 - **Website**: <https://codeql.github.com/>
 - **Note**: BazBOM does not redistribute CodeQL binaries or queries
 
-### Syft
+### Container Security Tools
+
+#### Trivy
+
+- **License**: Apache License 2.0
+- **Copyright**: Aqua Security Software Ltd.
+- **Usage**: BazBOM invokes Trivy for container vulnerability scanning
+- **Installation**: User-installed via `brew install trivy` or from <https://github.com/aquasecurity/trivy>
+- **Website**: <https://trivy.dev/>
+- **Note**: BazBOM does not redistribute Trivy binaries
+
+#### Grype
 
 - **License**: Apache License 2.0
 - **Copyright**: Anchore, Inc.
-- **Usage**: BazBOM can optionally invoke Syft for container SBOM generation
+- **Usage**: BazBOM can optionally invoke Grype as a backup vulnerability scanner
+- **Installation**: User-installed via `brew install grype` or from <https://github.com/anchore/grype>
+- **Website**: <https://github.com/anchore/grype>
+- **Note**: BazBOM does not redistribute Grype binaries
+
+#### Syft
+
+- **License**: Apache License 2.0
+- **Copyright**: Anchore, Inc.
+- **Usage**: BazBOM invokes Syft for container SBOM generation
 - **Installation**: User-installed via `brew install syft` or from <https://github.com/anchore/syft>
 - **Website**: <https://github.com/anchore/syft>
 - **Note**: BazBOM does not redistribute Syft binaries
+
+#### Dockle
+
+- **License**: Apache License 2.0
+- **Copyright**: Tomoya Kabe
+- **Usage**: BazBOM invokes Dockle for CIS Docker Benchmark checks
+- **Installation**: User-installed via `brew install goodwithtech/r/dockle` or from <https://github.com/goodwithtech/dockle>
+- **Website**: <https://github.com/goodwithtech/dockle>
+- **Note**: BazBOM does not redistribute Dockle binaries
+
+#### Dive
+
+- **License**: MIT License
+- **Copyright**: Alex Goodman
+- **Usage**: BazBOM invokes Dive for container image efficiency analysis
+- **Installation**: User-installed via `brew install dive` or from <https://github.com/wagoodman/dive>
+- **Website**: <https://github.com/wagoodman/dive>
+- **Note**: BazBOM does not redistribute Dive binaries
+
+#### TruffleHog
+
+- **License**: AGPL-3.0
+- **Copyright**: Truffle Security Co.
+- **Usage**: BazBOM can optionally invoke TruffleHog for deep secrets detection in container images
+- **Installation**: User-installed via `brew install trufflehog` or from <https://github.com/trufflesecurity/trufflehog>
+- **Website**: <https://github.com/trufflesecurity/trufflehog>
+- **Note**: BazBOM invokes TruffleHog as an external CLI tool and does not redistribute or link against it. Users should review AGPL-3.0 terms if using TruffleHog in their environment.
 
 ## Rust Dependencies
 

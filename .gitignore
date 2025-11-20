@@ -88,3 +88,10 @@ crates/bazbom-intellij-plugin/gradle-local/
 bazbom-diagnostics/
 ._bazbom-diagnostics
 bazbom-diagnostics.tar.gz
+
+# Local scan outputs
+scans/
+
+# Gradle build output
+plugins/*/bin/
+plugins/*/.gradle/

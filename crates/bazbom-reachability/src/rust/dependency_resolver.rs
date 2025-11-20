@@ -62,7 +62,7 @@ impl DependencyResolver {
         }
 
         let cargo_lock_content = fs::read_to_string(&cargo_lock_path)
-            .map_err(|e| RustReachabilityError::IoError(e))?;
+            .map_err(RustReachabilityError::IoError)?;
 
         let cargo_lock: CargoLock = toml::from_str(&cargo_lock_content)
             .map_err(|e| RustReachabilityError::ParseError(e.to_string()))?;

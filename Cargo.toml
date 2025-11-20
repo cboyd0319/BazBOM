@@ -27,6 +27,14 @@ members = [
   # v6.8 - Jira + GitHub Integration
   "crates/bazbom-jira",
   "crates/bazbom-github",
+  # v6.9 - Packagist Integration
+  "crates/bazbom-packagist",
+  # v6.10 - Ecosystem Expansion
+  "crates/bazbom-alpine",
+  "crates/bazbom-debian",
+  "crates/bazbom-redhat",
+  "crates/bazbom-hex",
+  "crates/bazbom-pub",
 ]
 resolver = "2"
 

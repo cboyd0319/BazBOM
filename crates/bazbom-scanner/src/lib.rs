@@ -245,6 +245,18 @@ async fn scan_ecosystem(ecosystem: &Ecosystem) -> Result<EcosystemScanResult> {
             }
             scanner.scan(&ctx).await
         }
+        EcosystemType::Bazel => {
+            let scanner = ecosystems::bazel::BazelScanner::new();
+            let cache = Arc::new(LicenseCache::new());
+            let mut ctx = ScanContext::new(ecosystem.root_path.clone(), cache);
+            if let Some(ref manifest) = ecosystem.manifest_file {
+                ctx = ctx.with_manifest(manifest.clone());
+            }
+            if let Some(ref lockfile) = ecosystem.lockfile {
+                ctx = ctx.with_lockfile(lockfile.clone());
+            }
+            scanner.scan(&ctx).await
+        }
     }
 }
 

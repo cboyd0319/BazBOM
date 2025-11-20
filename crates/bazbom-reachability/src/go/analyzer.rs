@@ -8,6 +8,12 @@ use tracing::info;
 
 pub struct GoReachabilityAnalyzer;
 
+impl Default for GoReachabilityAnalyzer {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl GoReachabilityAnalyzer {
     pub fn new() -> Self {
         Self
@@ -124,7 +130,7 @@ impl GoReachabilityAnalyzer {
         if main_go.exists() {
             info!("Building go-analyzer from source");
             let build_output = Command::new("go")
-                .args(&["build", "-o", "tools/go-analyzer/go-analyzer"])
+                .args(["build", "-o", "tools/go-analyzer/go-analyzer"])
                 .current_dir("tools/go-analyzer")
                 .output();
 

@@ -556,6 +556,7 @@ async fn main() -> Result<()> {
 
         Commands::ContainerScan {
             image,
+            preset,
             output,
             format,
             baseline,
@@ -570,9 +571,50 @@ async fn main() -> Result<()> {
             use commands::container_scan::ContainerScanOptions;
             use std::path::PathBuf;
 
+            // Smart output directory default: ~/Documents/container-scans/<image-name>
+            let output_dir = output.unwrap_or_else(|| {
+                let safe_name = image
+                    .replace(':', "_")
+                    .replace('/', "_")
+                    .replace('@', "_");
+                let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
+                format!("{}/Documents/container-scans/{}", home, safe_name)
+            });
+
+            // Apply preset settings (default = full capabilities)
+            let (enable_reachability, show_preset_info) = match preset.as_deref() {
+                Some("quick") => {
+                    println!("🚀 Quick scan mode: fast CI check, no reachability");
+                    (false, true)
+                }
+                Some("standard") => {
+                    println!("📋 Standard scan mode: vulnerability analysis");
+                    (false, true)
+                }
+                Some("full") | None => {
+                    // Default: full capabilities
+                    if preset.is_none() {
+                        println!("🔍 Full scan mode: all capabilities enabled (reachability, compliance, Jira tickets)");
+                    }
+                    (true, preset.is_some())
+                }
+                Some("compliance") => {
+                    println!("📜 Compliance scan mode: focus on compliance reports");
+                    (true, true)
+                }
+                Some(other) => {
+                    eprintln!("⚠️  Unknown preset '{}', using full scan", other);
+                    (true, false)
+                }
+            };
+
+            if show_preset_info || preset.is_none() {
+                println!("📁 Output: {}\n", output_dir);
+            }
+
             let opts = ContainerScanOptions {
                 image_name: image,
-                output_dir: PathBuf::from(output),
+                output_dir: PathBuf::from(output_dir),
                 format,
                 baseline,
                 compare_baseline,
@@ -581,7 +623,7 @@ async fn main() -> Result<()> {
                 interactive,
                 report_file: report,
                 filter: show,
-                with_reachability,
+                with_reachability: with_reachability || enable_reachability,
             };
 
             commands::container_scan::handle_container_scan(opts).await?;
@@ -851,7 +893,7 @@ async fn main() -> Result<()> {
         }
 
         Commands::Auth { action } => {
-            use bazbom::cli::{AuthCmd, AuthTokenCmd, AuthUserCmd};
+            use bazbom::cli::AuthCmd;
             use commands::auth::{
                 handle_auth_audit_log, handle_auth_init, handle_auth_token, handle_auth_user,
             };

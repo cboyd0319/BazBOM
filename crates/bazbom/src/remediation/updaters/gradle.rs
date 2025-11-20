@@ -21,7 +21,7 @@ impl DependencyUpdater for GradleUpdater {
         let group_id = parts[0];
         let artifact_id = parts[1];
 
-        let is_kotlin = file_path.extension().map_or(false, |ext| ext == "kts");
+        let is_kotlin = file_path.extension().is_some_and(|ext| ext == "kts");
         let updated = if is_kotlin {
             self.update_kotlin_dsl(&content, group_id, artifact_id, new_version)?
         } else {

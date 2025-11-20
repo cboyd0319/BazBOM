@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum System {
+    // Language package managers (deps.dev supported)
     Maven,
     Npm,
     Cargo,
@@ -13,6 +14,28 @@ pub enum System {
     NuGet,
     #[serde(rename = "RUBYGEMS")]
     RubyGems,
+
+    // Language package managers (BazBOM native support)
+    /// PHP/Composer packages from Packagist
+    #[serde(rename = "PACKAGIST")]
+    Packagist,
+    /// Elixir packages from Hex.pm
+    #[serde(rename = "HEX")]
+    Hex,
+    /// Dart/Flutter packages from pub.dev
+    #[serde(rename = "PUB")]
+    Pub,
+
+    // OS package managers (BazBOM native support)
+    /// Alpine Linux packages (apk)
+    #[serde(rename = "ALPINE")]
+    Alpine,
+    /// Debian/Ubuntu packages (apt/dpkg)
+    #[serde(rename = "DEBIAN")]
+    Debian,
+    /// Red Hat/CentOS/Fedora packages (rpm/yum/dnf)
+    #[serde(rename = "RPM")]
+    Rpm,
 }
 
 impl System {
@@ -25,7 +48,32 @@ impl System {
             System::Go => "GO",
             System::NuGet => "NUGET",
             System::RubyGems => "RUBYGEMS",
+            System::Packagist => "PACKAGIST",
+            System::Hex => "HEX",
+            System::Pub => "PUB",
+            System::Alpine => "ALPINE",
+            System::Debian => "DEBIAN",
+            System::Rpm => "RPM",
         }
+    }
+
+    /// Check if this is an OS-level package manager
+    pub fn is_os_package(&self) -> bool {
+        matches!(self, System::Alpine | System::Debian | System::Rpm)
+    }
+
+    /// Check if this system is supported by deps.dev API
+    pub fn is_depsdev_supported(&self) -> bool {
+        matches!(
+            self,
+            System::Maven
+                | System::Npm
+                | System::Cargo
+                | System::PyPI
+                | System::Go
+                | System::NuGet
+                | System::RubyGems
+        )
     }
 }
 
@@ -48,6 +96,12 @@ impl VersionKey {
             System::Go => "golang",
             System::NuGet => "nuget",
             System::RubyGems => "gem",
+            System::Packagist => "composer",
+            System::Hex => "hex",
+            System::Pub => "pub",
+            System::Alpine => "apk",
+            System::Debian => "deb",
+            System::Rpm => "rpm",
         };
 
         // Maven uses namespace/name format
@@ -59,6 +113,24 @@ impl VersionKey {
                     system_lower, parts[0], parts[1], self.version
                 );
             }
+        }
+
+        // Packagist/Hex use vendor/package format
+        if matches!(self.system, System::Packagist | System::Hex) {
+            return format!("pkg:{}/{}@{}", system_lower, self.name, self.version);
+        }
+
+        // OS packages may include distro qualifier
+        if self.system == System::Alpine {
+            return format!("pkg:{}{}@{}", system_lower, self.name, self.version);
+        }
+
+        if self.system == System::Debian {
+            return format!("pkg:{}{}@{}", system_lower, self.name, self.version);
+        }
+
+        if self.system == System::Rpm {
+            return format!("pkg:{}{}@{}", system_lower, self.name, self.version);
         }
 
         format!("pkg:{}/{}@{}", system_lower, self.name, self.version)

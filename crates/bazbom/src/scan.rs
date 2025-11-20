@@ -320,7 +320,7 @@ pub fn handle_legacy_scan(
                             "library"
                         )
                         .with_version(&package.version)
-                        .with_purl(&package.purl());
+                        .with_purl(package.purl());
 
                         if let Some(ref license) = package.license {
                             component = component.with_license(license);
@@ -356,7 +356,7 @@ pub fn handle_legacy_scan(
                             "library"
                         )
                         .with_version(&package.version)
-                        .with_purl(&package.purl());
+                        .with_purl(package.purl());
 
                         if let Some(ref license) = package.license {
                             component = component.with_license(license);
@@ -444,7 +444,7 @@ pub fn handle_legacy_scan(
                 tracing::info!("Wrote SPDX 2.3 tag-value SBOM to {:?}", spdx_path);
                 println!("[bazbom] wrote SPDX 2.3 tag-value SBOM to {:?}", spdx_path);
             }
-            "spdx" | _ => {
+            _ => {
                 // Generate SPDX 2.3 JSON (default)
                 if fetch_checksums {
                     println!("[bazbom] fetching SHA256 checksums from package registries (this may take a moment)...");

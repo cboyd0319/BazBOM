@@ -270,6 +270,67 @@ fn add_executive_summary(
         y_pos -= Mm(5.0);
     }
 
+    // Reachability summary (if available)
+    if let Some(reachability) = generator.reachability() {
+        y_pos -= Mm(3.0);
+        add_text(layer, font_bold, 12.0, "Reachability Analysis:", Mm(20.0), y_pos);
+        y_pos -= Mm(6.0);
+
+        add_text(
+            layer,
+            font,
+            10.0,
+            &format!("• Analyzed: {} vulnerabilities", reachability.total_analyzed),
+            Mm(25.0),
+            y_pos,
+        );
+        y_pos -= Mm(5.0);
+
+        add_text(
+            layer,
+            font,
+            10.0,
+            &format!(
+                "• Reachable: {} | Unreachable: {}",
+                reachability.reachable_count, reachability.unreachable_count
+            ),
+            Mm(25.0),
+            y_pos,
+        );
+        y_pos -= Mm(5.0);
+
+        add_text(
+            layer,
+            font,
+            10.0,
+            &format!("• Noise reduction: {:.0}%", reachability.noise_reduction_percent),
+            Mm(25.0),
+            y_pos,
+        );
+        y_pos -= Mm(5.0);
+    }
+
+    // Compliance summary (if available)
+    if let Some(compliance) = generator.compliance() {
+        y_pos -= Mm(3.0);
+        add_text(layer, font_bold, 12.0, "Compliance Status:", Mm(20.0), y_pos);
+        y_pos -= Mm(6.0);
+
+        let pci_status = if compliance.pci_dss_pass { "Pass" } else { "Fail" };
+        let hipaa_status = if compliance.hipaa_pass { "Pass" } else { "Fail" };
+        let soc2_status = if compliance.soc2_pass { "Pass" } else { "Fail" };
+
+        add_text(
+            layer,
+            font,
+            10.0,
+            &format!("• PCI-DSS: {} | HIPAA: {} | SOC 2: {}", pci_status, hipaa_status, soc2_status),
+            Mm(25.0),
+            y_pos,
+        );
+        y_pos -= Mm(5.0);
+    }
+
     Ok(y_pos)
 }
 
@@ -386,12 +447,17 @@ fn add_vulnerability_entry(
     );
     y_pos -= Mm(5.0);
 
-    // CVSS score
+    // CVSS and EPSS scores on same line
+    let epss_info = if let Some(epss) = vuln.epss_score {
+        format!(" | EPSS: {:.1}%", epss * 100.0)
+    } else {
+        String::new()
+    };
     add_text(
         layer,
         font,
         9.0,
-        &format!("CVSS Score: {:.1}", vuln.cvss_score),
+        &format!("CVSS: {:.1}{}", vuln.cvss_score, epss_info),
         Mm(25.0),
         y_pos,
     );
@@ -419,27 +485,55 @@ fn add_vulnerability_entry(
         y_pos -= Mm(4.0);
     }
 
-    // Flags
+    // Flags with priority calculation
     let mut flags = Vec::new();
     if vuln.is_kev {
-        flags.push("KEV");
+        flags.push("KEV".to_string());
     }
     if vuln.is_reachable {
-        flags.push("REACHABLE");
-    }
-    if !flags.is_empty() {
-        add_text(
-            layer,
-            font,
-            9.0,
-            &format!("Flags: {}", flags.join(", ")),
-            Mm(25.0),
-            y_pos,
-        );
-        y_pos -= Mm(4.0);
+        flags.push("REACHABLE".to_string());
     }
 
+    // Calculate priority (P0-P4)
+    let priority = calculate_priority(vuln);
+    flags.insert(0, priority);
+
+    add_text(
+        layer,
+        font,
+        9.0,
+        &format!("Priority: {}", flags.join(" | ")),
+        Mm(25.0),
+        y_pos,
+    );
+    y_pos -= Mm(4.0);
+
     Ok(y_pos)
+}
+
+/// Calculate vulnerability priority (P0-P4)
+fn calculate_priority(vuln: &crate::VulnerabilityDetail) -> String {
+    // P0: KEV + Critical/High + EPSS > 50%
+    // P1: Critical + (KEV or EPSS > 30% or Reachable)
+    // P2: High + (KEV or EPSS > 10% or Reachable)
+    // P3: Medium or Low with EPSS > 5%
+    // P4: Everything else
+
+    let epss = vuln.epss_score.unwrap_or(0.0);
+    let is_critical = vuln.severity.to_uppercase() == "CRITICAL";
+    let is_high = vuln.severity.to_uppercase() == "HIGH";
+
+    if vuln.is_kev && (is_critical || is_high) && epss > 0.5 {
+        "P0".to_string()
+    } else if is_critical && (vuln.is_kev || epss > 0.3 || vuln.is_reachable) {
+        "P1".to_string()
+    } else if is_high && (vuln.is_kev || epss > 0.1 || vuln.is_reachable) {
+        "P2".to_string()
+    } else if epss > 0.05 {
+        "P3".to_string()
+    } else {
+        "P4".to_string()
+    }
 }
 
 /// Add SBOM section
@@ -622,6 +716,7 @@ mod tests {
                 is_reachable: true,
                 is_kev: true,
                 epss_score: Some(0.975),
+                call_chain: Some(vec!["main()".to_string(), "Logger.error()".to_string()]),
             }],
             high: vec![],
             medium: vec![],

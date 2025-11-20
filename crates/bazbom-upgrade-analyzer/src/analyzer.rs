@@ -2,11 +2,13 @@ use crate::community_data::CommunityDatabase;
 use crate::ecosystem_detection::detect_ecosystem_from_package;
 use crate::github::GitHubAnalyzer;
 use crate::models::*;
+use crate::native_deps;
 use crate::semver::analyze_semver_risk;
 use anyhow::{Context, Result};
 use bazbom_depsdev::{DependencyGraph, DependencyNode, DepsDevClient, Relation, System};
 use futures::future::join_all;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use tracing::{debug, info, warn};
 
 /// Main upgrade analyzer with recursive transitive analysis
@@ -16,6 +18,8 @@ pub struct UpgradeAnalyzer {
     community_db: CommunityDatabase,
     /// Cache for already-analyzed packages to avoid duplicate work
     analysis_cache: HashMap<String, SinglePackageAnalysis>,
+    /// Project root for lockfile-based analysis (non-deps.dev ecosystems)
+    project_root: Option<PathBuf>,
 }
 
 /// Analysis result for a single package (cached)
@@ -33,7 +37,14 @@ impl UpgradeAnalyzer {
             github: GitHubAnalyzer::new()?,
             community_db: CommunityDatabase::new()?,
             analysis_cache: HashMap::new(),
+            project_root: None,
         })
+    }
+
+    /// Create analyzer with a project root for lockfile-based analysis
+    pub fn with_project_root(mut self, root: PathBuf) -> Self {
+        self.project_root = Some(root);
+        self
     }
 
     /// Recursively analyze an upgrade including ALL transitive dependency changes
@@ -59,22 +70,84 @@ impl UpgradeAnalyzer {
             .await?;
 
         // 2. Get dependency graphs for both versions
-        let from_deps = self
-            .deps_dev
-            .get_dependencies(system, package, from_version)
-            .await
-            .context("Failed to fetch from_version dependencies")?;
+        let required_upgrades = if system.is_depsdev_supported() {
+            // Use deps.dev API for supported ecosystems
+            let from_deps = self
+                .deps_dev
+                .get_dependencies(system, package, from_version)
+                .await
+                .context("Failed to fetch from_version dependencies")?;
 
-        let to_deps = self
-            .deps_dev
-            .get_dependencies(system, package, to_version)
-            .await
-            .context("Failed to fetch to_version dependencies")?;
+            let to_deps = self
+                .deps_dev
+                .get_dependencies(system, package, to_version)
+                .await
+                .context("Failed to fetch to_version dependencies")?;
 
-        // 3. Recursively analyze ALL required dependency upgrades
-        let required_upgrades = self
-            .analyze_dependency_changes(&from_deps, &to_deps, package)
-            .await?;
+            // 3. Recursively analyze ALL required dependency upgrades
+            self.analyze_dependency_changes(&from_deps, &to_deps, package)
+                .await?
+        } else if self.project_root.is_some() {
+            // Use native lockfile-based analysis for non-deps.dev ecosystems
+            info!(
+                "Using native lockfile analysis for {:?} ecosystem",
+                system
+            );
+
+            let _from_deps = native_deps::get_native_dependencies(
+                system,
+                package,
+                from_version,
+                self.project_root.as_deref(),
+            )
+            .await
+            .unwrap_or_else(|e| {
+                warn!("Failed to get native dependencies: {}", e);
+                DependencyGraph {
+                    nodes: vec![],
+                    edges: vec![],
+                }
+            });
+
+            // For the "to" version, we need to resolve what would change
+            // This is complex - for now, use the change detection
+            let changes = native_deps::resolve_upgrade_changes(
+                system,
+                package,
+                from_version,
+                to_version,
+                self.project_root.as_deref(),
+            )
+            .await
+            .unwrap_or_default();
+
+            // Convert changes to RequiredUpgrade format
+            changes
+                .into_iter()
+                .map(|change| RequiredUpgrade {
+                    package: change.package,
+                    from_version: change.from_version.unwrap_or_else(|| "none".to_string()),
+                    to_version: change.to_version.unwrap_or_else(|| "unknown".to_string()),
+                    reason: match change.change_type {
+                        native_deps::ChangeType::Added => UpgradeReason::NewDependency,
+                        native_deps::ChangeType::Removed => UpgradeReason::Removed,
+                        native_deps::ChangeType::Updated => UpgradeReason::VersionAlignment {
+                            required_by: package.to_string(),
+                        },
+                    },
+                    breaking_changes: vec![],
+                    risk_level: RiskLevel::Low,
+                    optional: false,
+                })
+                .collect()
+        } else {
+            // No project root and not deps.dev supported - basic analysis only
+            debug!(
+                "Transitive dependency analysis not available for {:?} - using semver-only",
+                system
+            );
+            vec![]
+        };
 
         // 4. Calculate overall risk
         let overall_risk = self.calculate_overall_risk(
@@ -153,13 +226,18 @@ impl UpgradeAnalyzer {
         // 1. Get semver-based risk
         let semver_risk = analyze_semver_risk(from_version, to_version);
 
-        // 2. Try to find GitHub repo
-        let github_repo = self
-            .deps_dev
-            .find_github_repo(system, package, to_version)
-            .await
-            .ok()
-            .flatten();
+        // 2. Try to find GitHub repo - use deps.dev for supported ecosystems,
+        //    or native crates for others
+        let github_repo = if system.is_depsdev_supported() {
+            self.deps_dev
+                .find_github_repo(system, package, to_version)
+                .await
+                .ok()
+                .flatten()
+        } else {
+            // For non-deps.dev ecosystems, try to get repo from native crates
+            self.find_github_repo_native(system, package).await
+        };
 
         // 3. If we have a GitHub repo, fetch breaking changes from release notes
         let breaking_changes = if let Some(ref repo) = github_repo {
@@ -298,8 +376,11 @@ impl UpgradeAnalyzer {
 
         // Now analyze each changed dependency
         for (pkg, from_ver, to_ver, reason) in results {
+            // Detect ecosystem for each dependency (don't assume Maven!)
+            let dep_system = detect_ecosystem_from_package(&pkg);
+
             match self
-                .analyze_single_package(System::Maven, &pkg, &from_ver, &to_ver)
+                .analyze_single_package(dep_system, &pkg, &from_ver, &to_ver)
                 .await
             {
                 Ok(analysis) => {
@@ -441,6 +522,102 @@ impl UpgradeAnalyzer {
         // Round to nearest 0.25 hours
         (hours * 4.0).round() / 4.0
     }
+
+    /// Find GitHub repository URL for non-deps.dev ecosystems
+    async fn find_github_repo_native(&self, system: System, package: &str) -> Option<String> {
+        match system {
+            System::Packagist => {
+                // Parse vendor/package format
+                let parts: Vec<&str> = package.split('/').collect();
+                if parts.len() == 2 {
+                    match bazbom_packagist::get_package_info(parts[0], parts[1]) {
+                        Ok(info) => {
+                            // Look for GitHub URL in repository field
+                            if let Some(repo) = info.repository {
+                                if repo.contains("github.com") {
+                                    return extract_github_repo(&repo);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            debug!("Failed to fetch Packagist info for {}: {}", package, e);
+                        }
+                    }
+                }
+                None
+            }
+            System::Hex => {
+                match bazbom_hex::get_package_info(package) {
+                    Ok(info) => {
+                        // Check links for GitHub
+                        if let Some(github) = info.meta.links.get("GitHub") {
+                            return extract_github_repo(github);
+                        }
+                        if let Some(github) = info.meta.links.get("github") {
+                            return extract_github_repo(github);
+                        }
+                    }
+                    Err(e) => {
+                        debug!("Failed to fetch Hex info for {}: {}", package, e);
+                    }
+                }
+                None
+            }
+            System::Pub => {
+                match bazbom_pub::get_package_info(package) {
+                    Ok(info) => {
+                        // Check repository in pubspec
+                        if let Some(repo) = info.latest.pubspec.repository {
+                            if repo.contains("github.com") {
+                                return extract_github_repo(&repo);
+                            }
+                        }
+                        // Check homepage as fallback
+                        if let Some(home) = info.latest.pubspec.homepage {
+                            if home.contains("github.com") {
+                                return extract_github_repo(&home);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        debug!("Failed to fetch pub.dev info for {}: {}", package, e);
+                    }
+                }
+                None
+            }
+            // OS packages don't typically have GitHub repos
+            System::Alpine | System::Debian | System::Rpm => None,
+            // deps.dev supported - shouldn't reach here
+            _ => None,
+        }
+    }
+}
+
+/// Extract GitHub owner/repo from URL
+fn extract_github_repo(url: &str) -> Option<String> {
+    // Handle various GitHub URL formats
+    let url = url.trim_end_matches('/').trim_end_matches(".git");
+
+    if let Some(rest) = url.strip_prefix("https://github.com/") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() >= 2 {
+            return Some(format!("{}/{}", parts[0], parts[1]));
+        }
+    }
+    if let Some(rest) = url.strip_prefix("git://github.com/") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() >= 2 {
+            return Some(format!("{}/{}", parts[0], parts[1]));
+        }
+    }
+    if let Some(rest) = url.strip_prefix("git@github.com:") {
+        let parts: Vec<&str> = rest.split('/').collect();
+        if parts.len() >= 2 {
+            return Some(format!("{}/{}", parts[0], parts[1]));
+        }
+    }
+
+    None
 }
 
 impl Default for UpgradeAnalyzer {

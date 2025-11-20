@@ -14,6 +14,12 @@ use std::path::Path;
 /// Rust ecosystem scanner
 pub struct RustScanner;
 
+impl Default for RustScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl RustScanner {
     pub fn new() -> Self {
         Self

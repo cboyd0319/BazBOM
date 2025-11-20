@@ -16,6 +16,12 @@ use std::path::Path;
 /// npm ecosystem scanner
 pub struct NpmScanner;
 
+impl Default for NpmScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl NpmScanner {
     pub fn new() -> Self {
         Self
@@ -249,7 +255,7 @@ fn parse_package_lock(
                 let license_ctx = LicenseContext {
                     root: root_path,
                     package: name,
-                    version: version,
+                    version,
                     cache,
                 };
                 let license = NpmScanner::new().fetch_license(&license_ctx);

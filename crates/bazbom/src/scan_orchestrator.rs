@@ -1434,7 +1434,7 @@ impl ScanOrchestrator {
                         "library"
                     )
                     .with_version(&package.version)
-                    .with_purl(&package.purl());
+                    .with_purl(package.purl());
 
                     if let Some(ref license) = package.license {
                         component = component.with_license(license);

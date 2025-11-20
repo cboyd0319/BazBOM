@@ -10,6 +10,8 @@ pub mod community_data;
 pub mod ecosystem_detection;
 pub mod github;
 pub mod models;
+pub mod native_deps;
+pub mod os_upgrade;
 pub mod semver;
 
 pub use analyzer::UpgradeAnalyzer;

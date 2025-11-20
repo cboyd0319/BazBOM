@@ -55,7 +55,7 @@ fn run_scan(dir: &Path) -> std::process::Output {
 fn read_sbom(dir: &Path) -> Value {
     let sbom_path = dir.join("sbom").join("spdx.json");
     let content = std::fs::read_to_string(&sbom_path)
-        .expect(&format!("Failed to read SBOM at {:?}", sbom_path));
+        .unwrap_or_else(|_| panic!("Failed to read SBOM at {:?}", sbom_path));
     serde_json::from_str(&content).expect("Failed to parse SBOM JSON")
 }
 
@@ -63,7 +63,7 @@ fn read_sbom(dir: &Path) -> Value {
 fn read_sarif(dir: &Path) -> Value {
     let sarif_path = dir.join("findings").join("sca.sarif");
     let content = std::fs::read_to_string(&sarif_path)
-        .expect(&format!("Failed to read SARIF at {:?}", sarif_path));
+        .unwrap_or_else(|_| panic!("Failed to read SARIF at {:?}", sarif_path));
     serde_json::from_str(&content).expect("Failed to parse SARIF JSON")
 }
 
@@ -118,7 +118,7 @@ mod npm_tests {
         let results = sarif["runs"][0]["results"].as_array().expect("No results array");
 
         // npm fixture uses vulnerable packages (lodash 4.17.15, axios 0.21.1)
-        assert!(results.len() > 0, "Expected vulnerabilities to be detected");
+        assert!(!results.is_empty(), "Expected vulnerabilities to be detected");
     }
 }
 
@@ -173,6 +173,6 @@ mod python_tests {
         let results = sarif["runs"][0]["results"].as_array().expect("No results array");
 
         // Python fixture uses vulnerable packages (Django 2.2.0, Flask 1.1.1)
-        assert!(results.len() > 0, "Expected vulnerabilities to be detected");
+        assert!(!results.is_empty(), "Expected vulnerabilities to be detected");
     }
 }

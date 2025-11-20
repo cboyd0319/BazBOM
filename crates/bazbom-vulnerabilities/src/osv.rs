@@ -7,6 +7,332 @@ use std::path::Path;
 
 const OSV_API_BASE: &str = "https://api.osv.dev/v1";
 
+/// Fetch severity information from OSV API for CVEs with unknown severity
+///
+/// Queries OSV for each CVE and extracts severity from CVSS scores or database_specific fields.
+/// Returns a map of CVE ID to severity string (CRITICAL, HIGH, MEDIUM, LOW).
+///
+/// The `os_hint` parameter can be used to optimize lookups by trying the relevant
+/// OS-specific prefix first (e.g., "alpine", "debian", "ubuntu", "rhel").
+pub fn fetch_osv_severities(cve_ids: &[String]) -> HashMap<String, String> {
+    fetch_osv_severities_with_hint(cve_ids, None)
+}
+
+/// Fetch severity with an optional OS hint for faster lookups
+pub fn fetch_osv_severities_with_hint(cve_ids: &[String], os_hint: Option<&str>) -> HashMap<String, String> {
+    #[derive(Deserialize)]
+    struct OsvSeverityResponse {
+        severity: Option<Vec<OsvSeverityEntry>>,
+        database_specific: Option<serde_json::Value>,
+    }
+
+    #[derive(Deserialize)]
+    struct OsvSeverityEntry {
+        #[serde(rename = "type")]
+        severity_type: String,
+        score: String,
+    }
+
+    let mut severity_map = HashMap::new();
+    let mut remaining_cves: Vec<String> = Vec::new();
+
+    for cve_id in cve_ids {
+        // Build ID variants based on OS hint for faster lookups
+        // See: https://osv.dev/vulnerability/CVE-2023-42363 for example of many aliases
+        let id_variants: Vec<String> = match os_hint.map(|s| s.to_lowercase()).as_deref() {
+            Some(os) if os.contains("alpine") => vec![
+                format!("ALPINE-{}", cve_id),
+                cve_id.clone(),
+            ],
+            Some(os) if os.contains("debian") => vec![
+                format!("DSA-{}", cve_id),       // Debian Security Advisory format
+                cve_id.clone(),
+            ],
+            Some(os) if os.contains("ubuntu") => vec![
+                format!("USN-{}", cve_id),       // Ubuntu Security Notice format
+                cve_id.clone(),
+            ],
+            Some(os) if os.contains("rhel") || os.contains("centos") || os.contains("fedora") => vec![
+                format!("RHSA-{}", cve_id),      // Red Hat Security Advisory format
+                cve_id.clone(),
+            ],
+            _ => vec![
+                cve_id.clone(),                  // Plain CVE ID first (most common)
+            ],
+        };
+
+        let mut found = false;
+        for variant in &id_variants {
+            let url = format!("{}/vulns/{}", OSV_API_BASE, variant);
+
+            let config = ureq::Agent::config_builder()
+                .timeout_global(Some(std::time::Duration::from_secs(5)))
+                .build();
+            let agent: ureq::Agent = config.into();
+
+            match agent.get(&url).call() {
+                Ok(response) => {
+                    if let Ok(body) = response.into_body().read_to_string() {
+                        if let Ok(osv_data) = serde_json::from_str::<OsvSeverityResponse>(&body) {
+                            // Try to get severity from CVSS score
+                            if let Some(severities) = osv_data.severity {
+                                for sev in severities {
+                                    if sev.severity_type == "CVSS_V3" || sev.severity_type == "CVSS_V2" {
+                                        if let Some(score) = parse_cvss_score(&sev.score) {
+                                            let severity = cvss_to_severity(score);
+                                            severity_map.insert(cve_id.clone(), severity);
+                                            found = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Try database_specific.severity as fallback
+                            if !found && !severity_map.contains_key(cve_id) {
+                                if let Some(db_specific) = osv_data.database_specific {
+                                    if let Some(severity) = db_specific.get("severity").and_then(|s| s.as_str()) {
+                                        severity_map.insert(cve_id.clone(), severity.to_uppercase());
+                                        found = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if found {
+                        break;
+                    }
+                }
+                Err(_) => {
+                    // Try next variant
+                }
+            }
+        }
+
+        if !found {
+            remaining_cves.push(cve_id.clone());
+        }
+    }
+
+    // NVD API fallback for CVEs not found in OSV
+    // Rate limit: 5 requests per 30 seconds without API key
+    if !remaining_cves.is_empty() {
+        let nvd_results = fetch_nvd_severities(&remaining_cves);
+        severity_map.extend(nvd_results);
+    }
+
+    severity_map
+}
+
+/// Fetch severity from NVD API as fallback
+/// Rate limited to 5 requests per 30 seconds (public API limit)
+fn fetch_nvd_severities(cve_ids: &[String]) -> HashMap<String, String> {
+    #[derive(Deserialize)]
+    struct NvdResponse {
+        vulnerabilities: Option<Vec<NvdVulnerability>>,
+    }
+
+    #[derive(Deserialize)]
+    struct NvdVulnerability {
+        cve: NvdCve,
+    }
+
+    #[derive(Deserialize)]
+    struct NvdCve {
+        id: String,
+        metrics: Option<NvdMetrics>,
+    }
+
+    #[derive(Deserialize)]
+    struct NvdMetrics {
+        #[serde(rename = "cvssMetricV31")]
+        cvss_v31: Option<Vec<NvdCvssMetric>>,
+        #[serde(rename = "cvssMetricV30")]
+        cvss_v30: Option<Vec<NvdCvssMetric>>,
+        #[serde(rename = "cvssMetricV2")]
+        cvss_v2: Option<Vec<NvdCvssMetric>>,
+    }
+
+    #[derive(Deserialize)]
+    struct NvdCvssMetric {
+        #[serde(rename = "cvssData")]
+        cvss_data: NvdCvssData,
+    }
+
+    #[derive(Deserialize)]
+    struct NvdCvssData {
+        #[serde(rename = "baseScore")]
+        base_score: f64,
+    }
+
+    let mut severity_map = HashMap::new();
+
+    // Process in batches of 5 (NVD rate limit)
+    for (batch_idx, chunk) in cve_ids.chunks(5).enumerate() {
+        if batch_idx > 0 {
+            // Wait 30 seconds between batches to respect rate limit
+            std::thread::sleep(std::time::Duration::from_secs(30));
+        }
+
+        for cve_id in chunk {
+            let url = format!(
+                "https://services.nvd.nist.gov/rest/json/cves/2.0?cveId={}",
+                cve_id
+            );
+
+            let config = ureq::Agent::config_builder()
+                .timeout_global(Some(std::time::Duration::from_secs(10)))
+                .build();
+            let agent: ureq::Agent = config.into();
+
+            match agent.get(&url).call() {
+                Ok(mut response) => {
+                    if let Ok(nvd_data) = response.body_mut().read_json::<NvdResponse>() {
+                        if let Some(vulns) = nvd_data.vulnerabilities {
+                            for vuln in vulns {
+                                if vuln.cve.id == *cve_id {
+                                    if let Some(metrics) = vuln.cve.metrics {
+                                        // Try CVSS v3.1 first, then v3.0, then v2
+                                        let score = metrics.cvss_v31
+                                            .and_then(|m| m.first().map(|c| c.cvss_data.base_score))
+                                            .or_else(|| metrics.cvss_v30
+                                                .and_then(|m| m.first().map(|c| c.cvss_data.base_score)))
+                                            .or_else(|| metrics.cvss_v2
+                                                .and_then(|m| m.first().map(|c| c.cvss_data.base_score)));
+
+                                        if let Some(score) = score {
+                                            severity_map.insert(cve_id.clone(), cvss_to_severity(score));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                Err(_) => {
+                    // Skip this CVE if NVD lookup fails
+                }
+            }
+        }
+    }
+
+    severity_map
+}
+
+/// Parse CVSS score from string (number or vector)
+///
+/// Handles both raw scores ("7.5") and CVSS vectors ("CVSS:3.1/AV:N/AC:L/...").
+pub fn parse_cvss_score(cvss_string: &str) -> Option<f64> {
+    // If it's just a number, return it
+    if let Ok(score) = cvss_string.parse::<f64>() {
+        return Some(score);
+    }
+
+    // Parse CVSS v3.x vector string
+    // Format: CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H
+    if cvss_string.starts_with("CVSS:3") {
+        return parse_cvss_v3_vector(cvss_string);
+    }
+
+    None
+}
+
+/// Parse CVSS v3 vector string and calculate approximate base score
+/// This is a simplified calculation - full CVSS calculation is more complex
+fn parse_cvss_v3_vector(vector: &str) -> Option<f64> {
+    let mut metrics: std::collections::HashMap<&str, &str> = std::collections::HashMap::new();
+
+    for part in vector.split('/') {
+        if let Some((key, value)) = part.split_once(':') {
+            metrics.insert(key, value);
+        }
+    }
+
+    // Impact weights
+    let c_impact = match metrics.get("C") {
+        Some(&"H") => 0.56,
+        Some(&"L") => 0.22,
+        _ => 0.0,
+    };
+    let i_impact = match metrics.get("I") {
+        Some(&"H") => 0.56,
+        Some(&"L") => 0.22,
+        _ => 0.0,
+    };
+    let a_impact = match metrics.get("A") {
+        Some(&"H") => 0.56,
+        Some(&"L") => 0.22,
+        _ => 0.0,
+    };
+
+    // ISS (Impact Sub Score)
+    let iss = 1.0 - ((1.0 - c_impact) * (1.0 - i_impact) * (1.0 - a_impact));
+
+    // Scope
+    let scope_changed = metrics.get("S") == Some(&"C");
+
+    // Impact
+    let impact: f64 = if scope_changed {
+        7.52 * (iss - 0.029) - 3.25 * f64::powf(iss - 0.02, 15.0)
+    } else {
+        6.42 * iss
+    };
+
+    if impact <= 0.0 {
+        return Some(0.0);
+    }
+
+    // Exploitability weights
+    let av = match metrics.get("AV") {
+        Some(&"N") => 0.85,  // Network
+        Some(&"A") => 0.62,  // Adjacent
+        Some(&"L") => 0.55,  // Local
+        Some(&"P") => 0.20,  // Physical
+        _ => 0.85,
+    };
+    let ac = match metrics.get("AC") {
+        Some(&"L") => 0.77,  // Low
+        Some(&"H") => 0.44,  // High
+        _ => 0.77,
+    };
+    let pr = match (metrics.get("PR"), scope_changed) {
+        (Some(&"N"), _) => 0.85,      // None
+        (Some(&"L"), false) => 0.62,  // Low, unchanged
+        (Some(&"L"), true) => 0.68,   // Low, changed
+        (Some(&"H"), false) => 0.27,  // High, unchanged
+        (Some(&"H"), true) => 0.50,   // High, changed
+        _ => 0.85,
+    };
+    let ui = match metrics.get("UI") {
+        Some(&"N") => 0.85,  // None
+        Some(&"R") => 0.62,  // Required
+        _ => 0.85,
+    };
+
+    let exploitability: f64 = 8.22 * av * ac * pr * ui;
+
+    // Base score
+    let base_score: f64 = if scope_changed {
+        f64::min(1.08 * (impact + exploitability), 10.0)
+    } else {
+        f64::min(impact + exploitability, 10.0)
+    };
+
+    // Round up to 1 decimal place
+    Some((base_score * 10.0).ceil() / 10.0)
+}
+
+/// Convert CVSS score to severity string
+pub fn cvss_to_severity(score: f64) -> String {
+    match score {
+        s if s >= 9.0 => "CRITICAL".to_string(),
+        s if s >= 7.0 => "HIGH".to_string(),
+        s if s >= 4.0 => "MEDIUM".to_string(),
+        s if s > 0.0 => "LOW".to_string(),
+        _ => "UNKNOWN".to_string(),
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 struct OsvQueryRequest {
     version: String,

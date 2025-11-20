@@ -20,6 +20,12 @@ use std::path::Path;
 /// Gradle scanner
 pub struct GradleScanner;
 
+impl Default for GradleScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl GradleScanner {
     pub fn new() -> Self {
         Self

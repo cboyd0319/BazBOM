@@ -13,6 +13,12 @@ use std::path::Path;
 /// Go ecosystem scanner
 pub struct GoScanner;
 
+impl Default for GoScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl GoScanner {
     pub fn new() -> Self {
         Self

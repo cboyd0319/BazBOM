@@ -7,14 +7,18 @@ use bazbom_depsdev::System;
 
 /// Detect ecosystem from package name format
 ///
+/// This is the canonical ecosystem detection function for all of BazBOM.
+/// It combines patterns from upgrade analysis and container scanning.
+///
 /// # Examples
 ///
 /// ```
 /// use bazbom_upgrade_analyzer::detect_ecosystem_from_package;
 /// use bazbom_depsdev::System;
 ///
-/// // Maven: group:artifact
+/// // Maven: group:artifact or Java package names
 /// assert_eq!(detect_ecosystem_from_package("org.springframework:spring-core"), System::Maven);
+/// assert_eq!(detect_ecosystem_from_package("org.apache.commons.lang3"), System::Maven);
 ///
 /// // npm: scoped or simple name
 /// assert_eq!(detect_ecosystem_from_package("@types/node"), System::Npm);
@@ -25,9 +29,11 @@ use bazbom_depsdev::System;
 ///
 /// // Python: package name (hyphens common)
 /// assert_eq!(detect_ecosystem_from_package("scikit-learn"), System::PyPI);
+/// assert_eq!(detect_ecosystem_from_package("django"), System::PyPI);
 ///
 /// // Rust: crate name (hyphens or underscores)
 /// assert_eq!(detect_ecosystem_from_package("serde"), System::Cargo);
+/// assert_eq!(detect_ecosystem_from_package("tokio"), System::Cargo);
 /// ```
 pub fn detect_ecosystem_from_package(package: &str) -> System {
     // Empty or whitespace - default to Maven
@@ -40,11 +46,25 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         return System::Maven;
     }
 
+    // Maven: Java package names (org.*, com.*, io.*, net.*)
+    if package.contains('.')
+        && (package.starts_with("org.")
+            || package.starts_with("com.")
+            || package.starts_with("io.")
+            || package.starts_with("net."))
+    {
+        return System::Maven;
+    }
+
     // Go: import path (e.g., github.com/gin-gonic/gin, golang.org/x/crypto)
     if package.starts_with("github.com/")
         || package.starts_with("golang.org/")
         || package.starts_with("go.uber.org/")
         || package.starts_with("gopkg.in/")
+        || package.starts_with("k8s.io/")
+        || package.starts_with("sigs.k8s.io/")
+        || package.starts_with("cloud.google.com/")
+        || package.starts_with("google.golang.org/")
     {
         return System::Go;
     }
@@ -54,29 +74,37 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         return System::Npm;
     }
 
-    // Ruby: gems often have hyphens and are lowercase
-    // But this is ambiguous with Python, so we need more context
-    // For now, let's use a heuristic: if it ends with common Ruby suffixes
-    if package.ends_with("-rails") || package.ends_with("-ruby") || package == "rails" {
+    // Ruby: gems with common suffixes or names
+    if package.ends_with("-rails")
+        || package.ends_with("-ruby")
+        || package.ends_with("-rb")
+        || matches!(
+            package,
+            "rails" | "rake" | "bundler" | "sinatra" | "puma" | "rspec" | "sidekiq"
+            | "devise" | "pundit" | "redis" | "pg" | "mysql2" | "nokogiri" | "capybara"
+            | "factory_bot" | "rubocop" | "activerecord" | "activesupport" | "actionpack"
+        )
+    {
         return System::RubyGems;
     }
 
     // PHP: composer packages (vendor/package format, e.g., symfony/symfony)
+    // Uses bazbom-packagist crate for package intelligence instead of deps.dev
     if package.contains('/') && !package.starts_with('@') && !package.starts_with("github.com/") {
-        // Check if it looks like a composer package (lowercase, hyphens allowed)
         let parts: Vec<&str> = package.split('/').collect();
         if parts.len() == 2
             && parts[0].chars().all(|c| c.is_lowercase() || c == '-')
             && parts[1].chars().all(|c| c.is_lowercase() || c == '-')
         {
-            // Could be PHP or others, but PHP is more common with vendor/package format
-            // Check for common PHP package patterns
-            if parts[0] == "symfony"
-                || parts[0] == "laravel"
-                || parts[0] == "phpunit"
-                || parts[0] == "doctrine"
-            {
-                return System::NuGet; // Placeholder - need to add PHP support to System enum
+            // Common PHP package vendors
+            if matches!(
+                parts[0],
+                "symfony" | "laravel" | "phpunit" | "doctrine" | "guzzlehttp" | "monolog"
+                | "psr" | "composer" | "league" | "illuminate" | "nesbot" | "ramsey"
+                | "vlucas" | "fzaninotto" | "nikic" | "swiftmailer" | "twig" | "sensio"
+                | "egulias" | "webmozart" | "friendsofphp" | "phpseclib" | "paragonie"
+            ) {
+                return System::Packagist;
             }
         }
     }
@@ -87,48 +115,180 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         .all(|c| c.is_lowercase() || c == '-' || c == '_' || c == '.' || c.is_numeric())
     {
         // Common npm packages (very popular ones)
-        if matches!(
-            package,
-            "express"
-                | "react"
-                | "lodash"
-                | "axios"
-                | "vue"
-                | "webpack"
-                | "next"
-                | "typescript"
-                | "eslint"
-                | "prettier"
-                | "jest"
-                | "mocha"
-        ) {
+        if package.starts_with("babel-")
+            || package.starts_with("postcss-")
+            || package.starts_with("rollup-")
+            || package.starts_with("vite-")
+            || package.starts_with("esbuild-")
+            || package.starts_with("eslint-")
+            || package.starts_with("webpack-")
+            || matches!(
+                package,
+                "express"
+                    | "react"
+                    | "lodash"
+                    | "axios"
+                    | "vue"
+                    | "webpack"
+                    | "next"
+                    | "typescript"
+                    | "eslint"
+                    | "prettier"
+                    | "jest"
+                    | "mocha"
+                    | "angular"
+                    | "moment"
+                    | "dayjs"
+                    | "date-fns"
+                    | "uuid"
+                    | "chalk"
+                    | "commander"
+                    | "yargs"
+                    | "inquirer"
+                    | "ora"
+                    | "debug"
+                    | "dotenv"
+                    | "cors"
+                    | "body-parser"
+                    | "mongoose"
+                    | "sequelize"
+                    | "prisma"
+                    | "graphql"
+                    | "apollo"
+                    | "socket.io"
+                    | "chart.js"
+                    | "three"
+                    | "d3"
+            )
+        {
             return System::Npm;
         }
 
-        // Common Python packages
-        if matches!(
-            package,
-            "django" | "flask" | "numpy" | "pandas" | "requests" | "pytest" | "setuptools" | "pip"
-        ) {
+        // Common Python packages (expanded list)
+        if package.starts_with("python-")
+            || package.starts_with("py")
+            || package.ends_with("3")  // urllib3, etc.
+            || matches!(
+                package,
+                "django"
+                    | "flask"
+                    | "numpy"
+                    | "pandas"
+                    | "requests"
+                    | "pytest"
+                    | "setuptools"
+                    | "pip"
+                    | "pillow"
+                    | "cryptography"
+                    | "scipy"
+                    | "matplotlib"
+                    | "tensorflow"
+                    | "torch"
+                    | "boto3"
+                    | "botocore"
+                    | "awscli"
+                    | "celery"
+                    | "redis"
+                    | "sqlalchemy"
+                    | "alembic"
+                    | "keras"
+                    | "transformers"
+                    | "huggingface-hub"
+                    | "scikit-image"
+                    | "scikit-learn"
+                    | "certifi"
+                    | "charset-normalizer"
+                    | "idna"
+                    | "uvicorn"
+                    | "fastapi"
+                    | "starlette"
+                    | "httpx"
+                    | "aiohttp"
+                    | "black"
+                    | "mypy"
+                    | "flake8"
+                    | "isort"
+                    | "poetry"
+                    | "pipenv"
+            )
+        {
             return System::PyPI;
         }
 
-        // Common Rust crates
+        // Common Rust crates (expanded list)
         if matches!(
             package,
-            "serde" | "tokio" | "reqwest" | "anyhow" | "clap" | "actix" | "hyper" | "async_std"
+            "serde"
+                | "tokio"
+                | "reqwest"
+                | "anyhow"
+                | "clap"
+                | "actix"
+                | "hyper"
+                | "async_std"
+                | "tracing"
+                | "thiserror"
+                | "futures"
+                | "rand"
+                | "regex"
+                | "chrono"
+                | "log"
+                | "env_logger"
+                | "lazy_static"
+                | "once_cell"
+                | "async-trait"
+                | "pin-project"
+                | "tower"
+                | "warp"
+                | "rocket"
+                | "axum"
+                | "diesel"
+                | "sqlx"
+                | "sea-orm"
+                | "syn"
+                | "quote"
+                | "proc-macro2"
+                | "bytes"
+                | "parking_lot"
+                | "crossbeam"
+                | "rayon"
+                | "itertools"
+                | "num"
+                | "bitflags"
         ) {
             return System::Cargo;
         }
 
-        // Python packages with hyphens (strong signal)
-        if package.contains('-') && package.len() > 5 {
+        // Python packages with hyphens (strong signal, but not short ones)
+        if package.contains('-') && package.len() > 5 && !package.contains('_') {
             return System::PyPI;
         }
 
         // Rust crates with underscores (strong signal)
         if package.contains('_') {
             return System::Cargo;
+        }
+
+        // Elixir/Hex packages (common ones)
+        if matches!(
+            package,
+            "phoenix" | "ecto" | "plug" | "cowboy" | "jason" | "poison"
+                | "httpoison" | "timex" | "ex_machina" | "bamboo" | "oban"
+                | "absinthe" | "guardian" | "comeonin" | "bcrypt_elixir"
+                | "ex_doc" | "credo" | "dialyxir" | "mix_test_watch"
+        ) {
+            return System::Hex;
+        }
+
+        // Dart/Pub packages (common ones)
+        if matches!(
+            package,
+            "flutter" | "provider" | "bloc" | "riverpod" | "dio" | "http"
+                | "path_provider" | "shared_preferences" | "sqflite" | "hive"
+                | "get" | "mobx" | "freezed" | "json_serializable" | "equatable"
+                | "dartz" | "rxdart" | "flutter_bloc" | "go_router"
+        ) {
+            return System::Pub;
         }
 
         // Default: npm is most popular for simple names

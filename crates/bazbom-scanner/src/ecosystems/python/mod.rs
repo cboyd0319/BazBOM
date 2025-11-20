@@ -15,6 +15,12 @@ use std::path::Path;
 /// Python ecosystem scanner
 pub struct PythonScanner;
 
+impl Default for PythonScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl PythonScanner {
     pub fn new() -> Self {
         Self
@@ -209,7 +215,7 @@ fn read_python_license(root_path: &Path, package_name: &str) -> Option<String> {
         if let Ok(entries) = fs::read_dir(&base_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).map_or(false, |n| n.starts_with("python")) {
+                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with("python")) {
                     let site_packages = path.join("site-packages");
                     if site_packages.exists() {
                         // Try .dist-info directory
@@ -458,7 +464,7 @@ fn parse_pyproject_toml(
         }
 
         // Parse optional dependencies (extras)
-        for (_extra_name, deps) in &project.optional_dependencies {
+        for deps in project.optional_dependencies.values() {
             for dep_spec in deps {
                 if let Some((name, version)) = parse_dependency_spec(dep_spec) {
                     result.add_package(Package {

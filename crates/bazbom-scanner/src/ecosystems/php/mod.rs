@@ -14,6 +14,12 @@ use std::path::Path;
 /// PHP scanner
 pub struct PhpScanner;
 
+impl Default for PhpScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl PhpScanner {
     pub fn new() -> Self {
         Self

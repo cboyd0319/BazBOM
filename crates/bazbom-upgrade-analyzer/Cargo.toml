@@ -9,6 +9,16 @@ repository = "https://github.com/cboyd0319/BazBOM"
 [dependencies]
 bazbom-depsdev = { path = "../bazbom-depsdev" }
 bazbom-core = { path = "../bazbom-core" }
+# Non-deps.dev ecosystem support
+bazbom-packagist = { path = "../bazbom-packagist" }
+bazbom-hex = { path = "../bazbom-hex" }
+bazbom-pub = { path = "../bazbom-pub" }
+# For lockfile-based dependency tree analysis
+bazbom-scanner = { path = "../bazbom-scanner" }
+# OS package upgrade intelligence
+bazbom-alpine = { path = "../bazbom-alpine" }
+bazbom-debian = { path = "../bazbom-debian" }
+bazbom-redhat = { path = "../bazbom-redhat" }
 semver = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

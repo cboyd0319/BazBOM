@@ -11,7 +11,7 @@ use crate::{ThreatIndicator, ThreatLevel, ThreatType};
 use std::collections::{HashMap, HashSet};
 use strsim::{levenshtein, normalized_levenshtein};
 
-/// Keyboard layout for proximity analysis (QWERTY)
+// Keyboard layout for proximity analysis (QWERTY)
 lazy_static::lazy_static! {
     static ref KEYBOARD_ADJACENT: HashMap<char, Vec<char>> = {
         let mut m = HashMap::new();
@@ -285,10 +285,10 @@ pub fn comprehensive_typosquatting_check(
         }
 
         // Update best match if this is higher risk
-        if risk_score > 40.0 {
-            if best_match.is_none() || risk_score > best_match.as_ref().unwrap().1 {
-                best_match = Some((known_pkg.clone(), risk_score, evidence));
-            }
+        if risk_score > 40.0
+            && (best_match.is_none() || risk_score > best_match.as_ref().unwrap().1)
+        {
+            best_match = Some((known_pkg.clone(), risk_score, evidence));
         }
     }
 

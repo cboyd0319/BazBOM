@@ -11,6 +11,6 @@ pub mod ruby;
 pub mod php;
 pub mod maven;
 pub mod gradle;
-// pub mod bazel; // Phase 2
+pub mod bazel;
 
 // Re-exports will be added as Scanner trait is implemented

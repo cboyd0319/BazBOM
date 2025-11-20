@@ -5,8 +5,28 @@
 //! - Maven/Gradle artifacts
 //! - Security vulnerabilities
 //! - SBOM generation for containerized applications
+//!
+//! # Tool Integrations
+//!
+//! The `tools` module provides integrations with external security scanners:
+//! - Trivy - Vulnerabilities, misconfigurations, secrets
+//! - Grype - Backup vulnerability scanner
+//! - Syft - SBOM generation
+//! - Dockle - CIS Docker benchmarks
+//! - Dive - Image efficiency analysis
+//! - TruffleHog - Deep secrets detection
+//!
+//! # Native OS Package Scanning
+//!
+//! The `os_packages` module provides native vulnerability scanning for OS packages
+//! without requiring external tools. Supports:
+//! - Alpine Linux (apk)
+//! - Debian/Ubuntu (dpkg)
+//! - RHEL/CentOS/Fedora (rpm)
 
 pub mod oci_parser;
+pub mod os_packages;
+pub mod tools;
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
@@ -612,19 +632,6 @@ impl ContainerScanner {
         })
     }
 
-    /// Find Java artifacts in container layers
-    #[allow(dead_code)]
-    fn find_java_artifacts(&self, _image: &ContainerImage) -> Result<Vec<JavaArtifact>> {
-        // NOTE: This is a stub implementation
-        // In a real implementation, this would:
-        // 1. Extract each layer to a temp directory
-        // 2. Recursively search for .jar, .war, .ear files
-        // 3. Extract Maven metadata from JAR manifests
-        // 4. Calculate file hashes
-
-        Ok(Vec::new())
-    }
-
     /// Detect build system from artifacts
     fn detect_build_system(&self, artifacts: &[JavaArtifact]) -> Option<BuildSystem> {
         // Check for Maven artifacts
@@ -719,18 +726,6 @@ pub struct SbomPackage {
     pub purl: String,
     pub location: String,
     pub layer: String,
-}
-
-/// Helper to extract JAR metadata
-pub fn extract_jar_metadata(_jar_path: &Path) -> Result<Option<MavenCoordinates>> {
-    // NOTE: This is a stub implementation
-    // In a real implementation, this would:
-    // 1. Open the JAR file
-    // 2. Read META-INF/MANIFEST.MF
-    // 3. Extract Maven metadata from pom.properties
-    // 4. Parse groupId, artifactId, version
-
-    Ok(None)
 }
 
 /// Analyze container layers for dependency changes

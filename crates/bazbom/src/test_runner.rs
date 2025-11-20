@@ -58,7 +58,14 @@ pub fn run_tests_for_ecosystem(system: System, project_root: &Path) -> Result<Te
         System::Go => run_go_tests(project_root)?,
         System::Cargo => run_rust_tests(project_root)?,
         System::RubyGems => run_ruby_tests(project_root)?,
-        System::NuGet => run_php_tests(project_root)?, // Placeholder for PHP
+        System::Packagist => run_php_tests(project_root)?,
+        System::Hex => run_ruby_tests(project_root)?,      // Elixir uses mix test
+        System::Pub => run_npm_tests(project_root)?,       // Dart uses dart test
+        System::NuGet => run_maven_tests(project_root)?,   // .NET uses dotnet test
+        // OS packages don't have test runners
+        System::Alpine | System::Debian | System::Rpm => {
+            return Err(anyhow::anyhow!("OS packages don't have test runners"));
+        }
     };
 
     let duration = start.elapsed();

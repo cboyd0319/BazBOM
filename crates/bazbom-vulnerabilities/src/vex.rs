@@ -147,7 +147,7 @@ impl VexDocument {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "json") {
+            if path.extension().is_some_and(|ext| ext == "json") {
                 match Self::load(&path) {
                     Ok(doc) => documents.push(doc),
                     Err(e) => {
@@ -307,7 +307,7 @@ pub fn filter_vulnerabilities(
         // Construct PURL from first affected package if available
         let purl = vuln.affected.first().map(|a| {
             format!("pkg:{}/{}",
-                a.ecosystem.to_lowercase().replace("pypi", "pypi").replace("crates.io", "cargo"),
+                a.ecosystem.to_lowercase().replace("crates.io", "cargo"),
                 a.package
             )
         });

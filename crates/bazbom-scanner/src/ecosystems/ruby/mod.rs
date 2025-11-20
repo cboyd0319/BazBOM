@@ -13,6 +13,12 @@ use std::path::Path;
 /// Ruby scanner
 pub struct RubyScanner;
 
+impl Default for RubyScanner {
+    fn default() -> Self {
+        Self
+    }
+}
+
 impl RubyScanner {
     pub fn new() -> Self {
         Self

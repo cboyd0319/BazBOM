@@ -285,6 +285,7 @@ fn parse_maven_install_json(
 }
 
 /// Query Bazel targets directly using bazel query command (Rust-native, no Python)
+#[allow(clippy::too_many_arguments)]
 pub fn query_bazel_targets(
     workspace_path: &Path,
     query_expr: Option<&str>,
@@ -417,7 +418,7 @@ fn is_target_built(workspace_path: &Path, target: &str) -> bool {
     // Use bazel cquery to check if outputs exist
     let output = Command::new("bazel")
         .arg("cquery")
-        .arg(&format!("outputs({})", target))
+        .arg(format!("outputs({})", target))
         .arg("--output=files")
         .current_dir(workspace_path)
         .output();

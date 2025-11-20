@@ -283,6 +283,10 @@ async fn scan_single_ecosystem(
             let scanner = ecosystems::gradle::GradleScanner::new();
             scanner.scan(&ctx).await?
         }
+        EcosystemType::Bazel => {
+            let scanner = ecosystems::bazel::BazelScanner::new();
+            scanner.scan(&ctx).await?
+        }
     };
 
     // Optionally scan for vulnerabilities

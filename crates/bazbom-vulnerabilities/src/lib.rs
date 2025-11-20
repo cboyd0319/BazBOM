@@ -34,7 +34,10 @@ pub use merge::{
     calculate_priority, merge_vulnerabilities, AffectedPackage, EpssScore, KevEntry, Priority,
     Reference, Severity, SeverityLevel, VersionEvent, VersionRange, Vulnerability,
 };
-pub use osv::{query_batch_vulnerabilities, query_package_vulnerabilities};
+pub use osv::{
+    cvss_to_severity, fetch_osv_severities, fetch_osv_severities_with_hint, parse_cvss_score,
+    query_batch_vulnerabilities, query_package_vulnerabilities,
+};
 pub use parsers::{parse_ghsa_entry, parse_nvd_entry, parse_osv_entry};
 pub use version_match::is_version_affected;
 pub use vex::{

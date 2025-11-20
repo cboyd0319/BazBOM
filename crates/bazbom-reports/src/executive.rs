@@ -414,6 +414,7 @@ mod tests {
                 is_reachable: true,
                 is_kev: true,
                 epss_score: Some(0.975),
+                call_chain: None,
             }],
             high: vec![],
             medium: vec![],

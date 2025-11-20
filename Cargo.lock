@@ -434,6 +434,7 @@ dependencies = [
  "console 0.16.1",
  "criterion",
  "dialoguer",
+ "dirs 6.0.0",
  "flate2",
  "glob",
  "hex",
@@ -461,6 +462,19 @@ dependencies = [
  "walkdir",
  "webbrowser",
  "zip",
+]
+
+[[package]]
+name = "bazbom-alpine"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
 ]
 
 [[package]]
@@ -504,16 +518,25 @@ name = "bazbom-containers"
 version = "6.6.0"
 dependencies = [
  "anyhow",
+ "async-trait",
+ "bazbom-alpine",
+ "bazbom-debian",
+ "bazbom-redhat",
  "flate2",
+ "futures",
  "hex",
  "hyperlocal",
  "log",
+ "rayon",
  "reqwest",
  "serde",
  "serde_json",
  "sha2",
  "tar",
  "tempfile",
+ "tokio",
+ "tracing",
+ "which",
  "zip",
 ]
 
@@ -525,6 +548,7 @@ dependencies = [
  "bazbom-formats",
  "bazbom-graph",
  "criterion",
+ "dirs 6.0.0",
  "hex",
  "serde",
  "serde_json",
@@ -571,6 +595,18 @@ dependencies = [
  "tokio-rustls",
  "tower 0.5.2",
  "tower-http",
+]
+
+[[package]]
+name = "bazbom-debian"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
 ]
 
 [[package]]
@@ -642,6 +678,18 @@ version = "6.6.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "bazbom-hex"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
 ]
 
 [[package]]
@@ -745,6 +793,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bazbom-packagist"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
+ "urlencoding",
+]
+
+[[package]]
 name = "bazbom-policy"
 version = "6.6.0"
 dependencies = [
@@ -755,6 +816,18 @@ dependencies = [
  "serde_json",
  "sha2",
  "tempfile",
+]
+
+[[package]]
+name = "bazbom-pub"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
 ]
 
 [[package]]
@@ -781,6 +854,18 @@ dependencies = [
  "tree-sitter-ruby",
  "tree-sitter-typescript",
  "walkdir",
+]
+
+[[package]]
+name = "bazbom-redhat"
+version = "6.6.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "tracing",
+ "ureq 3.1.4",
 ]
 
 [[package]]
@@ -880,8 +965,15 @@ name = "bazbom-upgrade-analyzer"
 version = "6.6.0"
 dependencies = [
  "anyhow",
+ "bazbom-alpine",
  "bazbom-core",
+ "bazbom-debian",
  "bazbom-depsdev",
+ "bazbom-hex",
+ "bazbom-packagist",
+ "bazbom-pub",
+ "bazbom-redhat",
+ "bazbom-scanner",
  "chrono",
  "dirs 6.0.0",
  "futures",

@@ -8,6 +8,7 @@ pub struct Cli {
 }
 
 #[derive(Subcommand, Debug)]
+#[allow(clippy::large_enum_variant)]
 pub enum Commands {
     /// Scan a project and generate SBOM + findings
     #[command(after_help = "EXAMPLES:
@@ -306,13 +307,29 @@ WHAT IT DOES:
         path: String,
     },
 
+    #[command(after_help = "EXAMPLES:
+  bazbom container-scan nginx:latest
+      Quick scan with all capabilities enabled (default)
+
+  bazbom container-scan myapp:v1 --preset quick
+      Fast CI check without reachability analysis
+
+  bazbom container-scan myapp:v1 --show p0
+      Show only P0 (must-fix-today) vulnerabilities
+
+  bazbom container-scan myapp:v1 --compare nginx:latest
+      Compare vulnerabilities between two images
+")]
     /// Complete container security analysis (SBOM + vulnerability scanning)
     ContainerScan {
         /// Container image to scan (name:tag or path to tar file)
         image: String,
-        /// Output directory for results
-        #[arg(long, value_name = "DIR", default_value = "./container-scan")]
-        output: String,
+        /// Scan preset: quick (fast CI check), standard (default), full (with reachability), compliance (all reports)
+        #[arg(long, value_name = "MODE")]
+        preset: Option<String>,
+        /// Output directory for results (defaults to ~/Documents/container-scans/<image-name>)
+        #[arg(long, value_name = "DIR")]
+        output: Option<String>,
         /// Output format (spdx|cyclonedx)
         #[arg(long, default_value = "spdx")]
         format: String,

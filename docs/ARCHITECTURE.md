@@ -206,11 +206,150 @@ java -jar bazbom-reachability.jar \
 
 ### Advisory Merge Engine
 
-**Sources:** OSV, NVD, GHSA  
-**Enrichment:** CISA KEV, EPSS  
+**Sources:** OSV, NVD, GHSA
+**Enrichment:** CISA KEV, EPSS
 **Priority:** P0 (CRITICAL + KEV) → P4 (LOW)
 
 **Gotcha:** Duplicate CVEs across sources are normalized by CVE ID. GHSA-* IDs are preserved separately.
+
+## Shared Infrastructure
+
+BazBOM uses a layered crate architecture where functionality is pushed down to shared crates to avoid duplication. Each crate has a clear responsibility:
+
+### Core Utilities (`bazbom-core`)
+
+**Location:** `crates/bazbom-core/`
+
+| Function | Description |
+|----------|-------------|
+| `cache_dir()` | Returns `~/.cache/bazbom`, creating if needed |
+| `cache_subdir(name)` | Returns subdirectory within cache (e.g., `advisories`) |
+| `detect_build_system()` | Identifies Maven/Gradle/Bazel/Ant/Sbt/Buildr |
+| `version()` | Returns BazBOM version string |
+
+**Usage:** All crates should use `bazbom_core::cache_dir()` instead of defining their own cache paths.
+
+### Vulnerability Intelligence (`bazbom-vulnerabilities`)
+
+**Location:** `crates/bazbom-vulnerabilities/`
+
+| Function | Description |
+|----------|-------------|
+| `db_sync()` | Downloads/caches EPSS, KEV, OSV, NVD, GHSA databases |
+| `load_epss_scores()` | Loads full EPSS CSV (~3MB, 200K+ CVEs) |
+| `load_kev_catalog()` | Loads CISA KEV JSON catalog |
+| `calculate_priority()` | P0-P4 scoring from Severity/KEV/EPSS |
+| `fetch_osv_severities()` | OSV API fallback for UNKNOWN severity |
+| `query_package_vulnerabilities()` | OSV batch queries |
+
+**Priority Scoring Logic (P0-P4):**
+```rust
+// P0: Critical - KEV with high CVSS, CVSS >= 9.0, or EPSS >= 0.9
+// P1: High - CVSS >= 7.0 AND (KEV OR EPSS >= 0.5)
+// P2: Medium-High - CVSS >= 7.0 OR (CVSS >= 4.0 AND EPSS >= 0.1)
+// P3: Medium - CVSS >= 4.0
+// P4: Low - CVSS < 4.0 or unknown
+```
+
+### Upgrade Intelligence (`bazbom-upgrade-analyzer`)
+
+**Location:** `crates/bazbom-upgrade-analyzer/`
+
+| Function | Description |
+|----------|-------------|
+| `detect_ecosystem_from_package()` | **Canonical** ecosystem detection from package name |
+| `detect_ecosystem_with_confidence()` | Returns (System, confidence 0.0-1.0) |
+| `UpgradeAnalyzer` | Recursive breaking change analysis |
+| `config::detect_config_migrations()` | Spring Boot/Log4j config migrations |
+
+**Ecosystem Detection:** The `detect_ecosystem_from_package()` function is the canonical implementation for all of BazBOM. It returns `bazbom_depsdev::System` for use with the deps.dev API. Container scanning wraps this and adds PHP detection (since deps.dev doesn't support Packagist).
+
+### Output Formats (`bazbom-formats`)
+
+**Location:** `crates/bazbom-formats/`
+
+| Module | Description |
+|--------|-------------|
+| `spdx` | SPDX 2.3 JSON generation |
+| `cyclonedx` | CycloneDX 1.5 JSON generation |
+| `sarif` | SARIF 2.1.0 for vulnerability reporting |
+| `findings` | Tool aggregation for multi-scanner results |
+
+## Container Scanning Architecture
+
+**Location:** `crates/bazbom/src/commands/container_scan/`
+
+Container scanning uses external tools (Trivy, Grype, Syft, Dive) with BazBOM's shared infrastructure for enrichment:
+
+```mermaid
+flowchart TD
+    A[Container Image] --> B[Parallel Tool Scan]
+
+    B --> C1[Trivy]
+    B --> C2[Grype]
+    B --> C3[Syft SBOM]
+    B --> C4[Dive Layers]
+
+    C1 --> D[Parse & Merge]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+
+    D --> E[Vulnerability Dedup]
+    E --> F[Layer Attribution]
+
+    F --> G[Enrichment]
+
+    G -->|bazbom-vulnerabilities| H1[db_sync EPSS/KEV]
+    G -->|bazbom-vulnerabilities| H2[load_epss_scores]
+    G -->|bazbom-vulnerabilities| H3[load_kev_catalog]
+    G -->|bazbom-vulnerabilities| H4[calculate_priority]
+    G -->|bazbom-vulnerabilities| H5[fetch_osv_severities]
+
+    H1 --> I[Results]
+    H2 --> I
+    H3 --> I
+    H4 --> I
+    H5 --> I
+
+    I --> J1[JSON Output]
+    I --> J2[SARIF Output]
+    I --> J3[Terminal Display]
+
+    style G fill:#e1f5ff
+    style H1 fill:#ffe1e1
+    style H2 fill:#ffe1e1
+    style H3 fill:#ffe1e1
+    style H4 fill:#ffe1e1
+    style H5 fill:#ffe1e1
+```
+
+**Title:** Container scanning flow with shared infrastructure
+
+### Module Structure
+
+| Module | Purpose |
+|--------|---------|
+| `handler.rs` | Main scan orchestration, tool invocation |
+| `types.rs` | `ContainerScanResults`, `VulnerabilityInfo`, `LayerInfo` |
+| `enrichment.rs` | EPSS/KEV enrichment via shared crates |
+| `display.rs` | Terminal output, baseline comparison |
+
+### Key Design Decisions
+
+1. **Shared Cache:** Uses `bazbom_core::cache_dir()` for all cached data
+2. **Shared Enrichment:** Uses `bazbom_vulnerabilities::db_sync()` for EPSS/KEV downloads
+3. **Shared Priority:** Uses `bazbom_vulnerabilities::calculate_priority()` for P0-P4 scoring
+4. **SARIF Output:** Uses `bazbom_formats::sarif` for standard vulnerability reporting
+
+### Container-Specific Features
+
+Features that remain in the container-scan module (not shared):
+- Layer attribution (Dive integration)
+- Difficulty scoring (remediation effort estimation)
+- Framework migration guides
+- Quick win detection
+- Image comparison and baseline
 
 ## Decision Records (Mini-ADRs)
 

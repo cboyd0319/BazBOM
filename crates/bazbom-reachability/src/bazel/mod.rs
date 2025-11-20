@@ -410,16 +410,16 @@ mod tests {
         assert!(report.entrypoints.contains(&"//src:test".to_string()),
                 "Should identify test as entrypoint");
 
-        assert!(report.reachable_targets.contains(&"//src:used_lib".to_string()),
+        assert!(report.reachable_targets.contains("//src:used_lib"),
                 "used_lib should be reachable");
-        assert!(report.reachable_targets.contains(&"//src:helper_lib".to_string()),
+        assert!(report.reachable_targets.contains("//src:helper_lib"),
                 "helper_lib should be reachable");
-        assert!(report.reachable_targets.contains(&"//src:reachable_lib".to_string()),
+        assert!(report.reachable_targets.contains("//src:reachable_lib"),
                 "reachable_lib should be reachable");
 
-        assert!(report.unreachable_targets.contains(&"//src:unused_lib".to_string()),
+        assert!(report.unreachable_targets.contains("//src:unused_lib"),
                 "unused_lib should be unreachable");
-        assert!(report.unreachable_targets.contains(&"//src:dead_code_lib".to_string()),
+        assert!(report.unreachable_targets.contains("//src:dead_code_lib"),
                 "dead_code_lib should be unreachable");
     }
 

@@ -120,6 +120,31 @@ pub enum Priority {
     P4,
 }
 
+impl std::fmt::Display for Priority {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Priority::P0 => write!(f, "P0"),
+            Priority::P1 => write!(f, "P1"),
+            Priority::P2 => write!(f, "P2"),
+            Priority::P3 => write!(f, "P3"),
+            Priority::P4 => write!(f, "P4"),
+        }
+    }
+}
+
+impl Priority {
+    /// Get human-readable description of the priority level
+    pub fn description(&self) -> &'static str {
+        match self {
+            Priority::P0 => "Critical - Fix immediately",
+            Priority::P1 => "High - Fix within 24 hours",
+            Priority::P2 => "Medium-High - Fix within 1 week",
+            Priority::P3 => "Medium - Fix within 1 month",
+            Priority::P4 => "Low - Fix when convenient",
+        }
+    }
+}
+
 /// Merge multiple vulnerability sources into a canonical vulnerability
 ///
 /// # Errors

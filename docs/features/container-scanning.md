@@ -2,6 +2,21 @@
 
 BazBOM's container scanning is one of the most sophisticated container security tools available, combining SBOM generation, vulnerability detection, layer attribution, and intelligent analysis.
 
+## Multi-Tool Orchestration
+
+BazBOM runs **6 security tools in parallel** for comprehensive coverage:
+
+| Tool | Purpose | Output |
+|------|---------|--------|
+| **Trivy** | Vulnerability scanning | CVEs, severity, fixes |
+| **Grype** | Vulnerability cross-validation | Additional CVE coverage |
+| **Syft** | SBOM generation | Package inventory |
+| **Dockle** | CIS benchmark checks | Dockerfile best practices |
+| **Dive** | Layer efficiency analysis | Image optimization |
+| **TruffleHog** | Secrets scanning | Exposed credentials |
+
+All tools run concurrently for fast results, with automatic image pre-fetching to avoid network timeouts.
+
 ## What Makes BazBOM Container Scanning Different
 
 ### 1. Layer Attribution (Unique!)
@@ -20,6 +35,7 @@ Every vulnerability gets a **P0-P4 priority score** based on:
 
 ### 3. Actionable Intelligence
 BazBOM doesn't just tell you what's wrong - it tells you **what to do about it**:
+- **Top 5 Fixes by Impact** - Aggregated view showing highest-impact fixes sorted by severity weight (Critical=10, High=5, Medium=2, Low=1)
 - **Quick Wins** - Easy fixes with high impact (non-breaking patches)
 - **Action Plan** - Prioritized roadmap with time estimates
 - **Multi-Language Copy-Paste Fixes** - Ready-to-use dependency updates for:
@@ -38,27 +54,157 @@ BazBOM doesn't just tell you what's wrong - it tells you **what to do about it**
   - Helps estimate remediation effort and prioritize work
 - **Effort Analysis** - Estimated time to remediate each vulnerability
 
-### 4. Full Call Graph Reachability Analysis (Optional)
+### 4. Full Call Graph Reachability Analysis
 Reduce noise by 70-90% using **AST-based static analysis** to determine which vulnerabilities are actually **reachable** in your container's code:
 - 🎯 **REACHABLE** - Vulnerable code is in execution paths (prioritize these!)
 - 🛡️ **unreachable** - Vulnerable dependencies not used (lower priority)
-- **6 languages with full call graph analysis**: JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP
+- **7 languages with full call graph analysis**: JavaScript/TypeScript, Python, Go, Rust, Ruby, PHP, Java
 - Uses language-specific AST parsers (SWC, tree-sitter, syn, RustPython)
 - Analyzes actual execution paths from entrypoints, not heuristics
+- **Always enabled** - runs automatically on every scan
+
+**Call Path Visualization**: For reachable vulnerabilities, BazBOM shows the exact call chain from your code to the vulnerable function:
+
+```
+Call Path: main() → UserController.login() → Logger.debug() → log4j.error()
+```
+
+This tells you exactly HOW your code reaches the vulnerable function, making remediation decisions clearer - you can see if it's in a critical request handler or a rarely-used admin endpoint.
+
+### 5. Supply Chain Threat Intelligence
+Detect supply chain attacks with real-time threat analysis:
+- **Malicious package detection** - Known bad packages
+- **Typosquatting detection** - Lookalike package names
+- **Dependency confusion** - Private/public namespace attacks
+- **Compromised maintainer detection** - Account takeover indicators
+
+### 6. Compliance Reports
+Automatically generates compliance reports for major frameworks:
+- **PCI-DSS v4.0** - Payment card industry requirements
+- **HIPAA** - Healthcare data protection
+- **SOC 2 Type II** - Service organization controls
+
+Reports map scan findings to specific compliance requirements and controls. The HTML report shows **actual failure reasons** based on your scan results:
+- Critical/high vulnerability counts
+- CISA KEV (Known Exploited Vulnerabilities) presence
+- Other security policy violations
+
+Each compliance framework shows Pass/Fail status with specific issues that need remediation.
+
+### 7. PDF Executive Reports
+Generate professional PDF reports for stakeholders:
+- Executive summary with security score
+- Vulnerability breakdown by severity
+- SBOM statistics
+- Policy compliance status
+
+Perfect for board presentations and audit documentation.
+
+### 8. Interactive HTML Reports
+Developer reports include **client-side JavaScript** for enhanced usability:
+- **Filtering** - Filter by severity (Critical/High/Medium/Low) or fixability
+- **Search** - Instant search for CVEs, packages, or descriptions (press `/` to focus)
+- **Expand/Collapse** - Toggle vulnerability details for cleaner initial view
+- **Keyboard shortcuts** - `/` to search, `Escape` to clear
+
+Reports are standalone HTML files with no external dependencies.
+
+### 9. Scan Warnings Summary
+At the end of each scan, BazBOM displays a summary of any warnings or issues encountered:
+- Image pull failures
+- Reachability analysis errors
+- Filesystem extraction issues
+- Tool availability problems
+
+This ensures you're aware of any incomplete analysis while still getting partial results.
+
+### 10. Container Signature & Provenance Verification
+BazBOM verifies container supply chain security:
+- **Cosign signature verification** - Validates image signatures using Sigstore
+- **SLSA provenance verification** - Checks SLSA (Supply-chain Levels for Software Artifacts) provenance attestations
+
+Verification results are shown in scan output and reports. Unsigned or unverified images are flagged but don't block the scan.
+
+### 11. Native OS Package Scanning
+BazBOM includes native scanners for OS packages as a fallback/supplement to Trivy and Grype:
+- **Alpine** - Uses Alpine secdb for vulnerability data
+- **Debian/Ubuntu** - Uses security-tracker.debian.org
+- **RHEL/CentOS/Fedora** - Uses Red Hat Security Data API
+
+These native scanners provide additional vulnerability coverage, especially for packages that external tools might miss. All native scan results are enriched with EPSS/KEV data.
+
+### 12. OS Upgrade Intelligence
+For vulnerable OS packages, BazBOM provides intelligent upgrade recommendations:
+- Queries deps.dev for available versions
+- Identifies which upgrades fix which CVEs
+- Calculates risk level (Low/Medium/High based on version jumps)
+- Groups multiple CVE fixes into single upgrade recommendations
+
+```
+📦 Upgrade Recommendations:
+  1. Update libexpat: 2.6.2-r0 → 2.6.3-r0
+     Fixes: CVE-2024-45491, CVE-2024-45492, CVE-2024-45490
+     Risk: LOW (patch update)
+```
 
 ## Quick Start
 
-### Basic Scan
+### Zero-Config Full Scan
 ```bash
 bazbom container-scan nginx:latest
 ```
 
-Output includes:
+That's it! With zero flags, you get **ALL capabilities enabled**:
+- Reachability analysis
+- Compliance reports (PCI-DSS, HIPAA, SOC2)
+- PDF executive report
+- Jira ticket templates for Critical/High vulns
+- Upgrade intelligence with breaking change detection
+
+Output goes to `~/Documents/container-scans/nginx_latest/`
+
+### Scan Presets
+
+For different use cases:
+```bash
+# Fast CI check (no reachability)
+bazbom container-scan nginx:latest --preset quick
+
+# Standard scan without reachability
+bazbom container-scan nginx:latest --preset standard
+
+# Full analysis (default behavior)
+bazbom container-scan nginx:latest --preset full
+
+# Focus on compliance reports
+bazbom container-scan nginx:latest --preset compliance
+```
+
+### What Gets Generated
+
+Every scan produces:
+- `scan-results.json` - Full enriched results
+- `report.html` - Interactive HTML report with collapsible sections
+- `report.pdf` - Executive PDF report
+- `compliance/` - PCI-DSS, HIPAA, SOC2 reports
+- `jira-tickets/` - Copy-paste markdown files for Critical/High vulns
+- SBOM and tool-specific outputs
+
+### Jira Ticket Templates
+
+For every Critical and High vulnerability, BazBOM generates ready-to-use Jira tickets:
+- `CVE-XXXX-TRIAGE.md` - For security team triage
+- `CVE-XXXX-REMEDIATION.md` - For engineering remediation
+
+Each ticket includes severity, EPSS score, KEV status, fix version, and reachability status.
+
+### Output includes:
 - Total packages and vulnerabilities
 - Layer-by-layer breakdown
 - Severity distribution
 - Top vulnerabilities per layer
 - Security score (0-100)
+- Upgrade recommendations with breaking change analysis
 
 ### Save as Baseline
 ```bash
@@ -123,10 +269,7 @@ Available filters:
 
 ### Reachability Analysis
 
-Analyze which vulnerabilities are actually reachable in your container's code using **full AST-based call graph analysis**:
-```bash
-bazbom container-scan myapp:latest --with-reachability
-```
+Reachability analysis runs automatically on every scan, using **full AST-based call graph analysis** to determine which vulnerabilities are actually exploitable.
 
 How it works:
 1. Extracts container filesystem (docker/podman)
@@ -332,44 +475,143 @@ Score calculation:
 
 ## Requirements
 
-BazBOM's container scanning requires two external tools:
+BazBOM's container scanning uses 6 external tools for comprehensive analysis:
 
-### Syft (SBOM Generation)
+### Install All Tools (macOS)
 ```bash
-# macOS
-brew install syft
+brew install syft trivy grype dockle dive trufflehog
+```
 
-# Linux
+### Install All Tools (Linux)
+```bash
+# Syft - SBOM generation
 curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh
 
-# Or download from: https://github.com/anchore/syft#installation
-```
-
-### Trivy (Vulnerability Scanning)
-```bash
-# macOS
-brew install trivy
-
-# Linux
+# Trivy - Vulnerability scanning
 curl -sSfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
 
-# Or visit: https://trivy.dev/latest/getting-started/installation/
+# Grype - Vulnerability cross-validation
+curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh
+
+# Dockle - CIS benchmark checks
+VERSION=$(curl -s https://api.github.com/repos/goodwithtech/dockle/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/v//')
+curl -L -o dockle.tar.gz https://github.com/goodwithtech/dockle/releases/download/v${VERSION}/dockle_${VERSION}_Linux-64bit.tar.gz
+tar xzf dockle.tar.gz && sudo mv dockle /usr/local/bin/
+
+# Dive - Layer efficiency analysis
+wget https://github.com/wagoodman/dive/releases/latest/download/dive_*_linux_amd64.deb
+sudo dpkg -i dive_*_linux_amd64.deb
+
+# TruffleHog - Secrets scanning
+curl -sSfL https://raw.githubusercontent.com/trufflesecurity/trufflehog/main/scripts/install.sh | sh
 ```
 
-BazBOM automatically checks for these tools and provides installation instructions if missing.
+BazBOM automatically checks for these tools and provides installation instructions if missing. Missing tools are skipped gracefully - the scan continues with available tools.
 
 ## Output Formats
 
-### JSON Output
+### Standard Output
 ```bash
 bazbom container-scan myapp:latest -o ./output
 ```
 
 Generates:
-- `./output/sbom/spdx.json` - SPDX SBOM
-- `./output/sbom/syft-native.json` - Syft native format with layer metadata
-- `./output/findings/trivy.json` - Trivy vulnerability report
-- `./output/scan-results.json` - BazBOM enriched results
+- `./output/scan-results.json` - BazBOM enriched results with all analysis
+- `./output/report.html` - Executive HTML report
+- `./output/report.pdf` - Executive PDF report
+- `./output/compliance/pci-dss.html` - PCI-DSS compliance report
+- `./output/compliance/hipaa.html` - HIPAA compliance report
+- `./output/compliance/soc2.html` - SOC 2 compliance report
+- `./output/syft-sbom.json` - Syft SBOM with layer metadata
+- `./output/trivy-results.json` - Trivy vulnerability report
+- `./output/grype-results.json` - Grype vulnerability report
+- `./output/dockle-results.json` - CIS benchmark results
+- `./output/dive-analysis.json` - Layer efficiency analysis
+- `./output/trufflehog-secrets.json` - Secrets scan results
+
+### scan-results.json Structure
+
+The main `scan-results.json` contains:
+
+```json
+{
+  "image_name": "myapp:latest",
+  "total_packages": 142,
+  "total_vulnerabilities": 23,
+  "critical_count": 2,
+  "high_count": 5,
+  "medium_count": 10,
+  "low_count": 6,
+  "base_image": "alpine:3.19",
+  "layers": [...],
+  "upgrade_recommendations": [...],
+  "reachability_summary": {
+    "total_analyzed": 23,
+    "reachable_count": 8,
+    "unreachable_count": 15,
+    "noise_reduction_percent": 65.2
+  },
+  "compliance_results": {
+    "pci_dss": {
+      "status": "Fail",
+      "issues": [
+        "2 critical vulnerabilities present",
+        "5 high severity vulnerabilities",
+        "1 known exploited vulnerability (CISA KEV)"
+      ]
+    },
+    "hipaa": {
+      "status": "Fail",
+      "issues": [...]
+    },
+    "soc2": {
+      "status": "Pass",
+      "issues": []
+    }
+  }
+}
+```
+
+**Key fields:**
+- `reachability_summary` - Shows noise reduction from reachability analysis
+- `compliance_results` - Shows pass/fail status with specific failure reasons for each framework
+
+### Vulnerability Enrichment
+
+Each vulnerability in `scan-results.json` includes enriched data:
+
+```json
+{
+  "cve_id": "CVE-2024-1234",
+  "package_name": "openssl",
+  "installed_version": "1.1.1k",
+  "fixed_version": "3.0.8",
+  "severity": "CRITICAL",
+  "cvss_score": 9.8,
+  "epss_score": 0.85,
+  "epss_percentile": 0.98,
+  "is_kev": true,
+  "kev_due_date": "2025-01-15",
+  "priority": "P0",
+  "is_reachable": true,
+  "difficulty_score": 55,
+  "breaking_change": true
+}
+```
+
+### Severity Lookup Chain
+
+BazBOM uses a multi-source severity lookup to ensure accurate severity data:
+
+1. **Primary source** - Trivy/Grype vulnerability databases
+2. **OSV fallback** - For vulnerabilities with UNKNOWN severity, queries the Open Source Vulnerabilities database
+3. **NVD API fallback** - If OSV doesn't have severity, falls back to NVD API lookup
+
+For OS packages (Alpine, Debian, Ubuntu, RHEL), native advisory databases are used:
+- Alpine secdb (doesn't include severity - uses OSV/NVD fallback)
+- Debian Security Tracker (includes urgency mapping)
+- Ubuntu CVE Tracker
+- Red Hat Security Data API
 
 ### SARIF Output
 ```bash
@@ -516,16 +758,21 @@ This can happen with some base images. BazBOM will still show all vulnerabilitie
 |---------|--------|-------|------|-------|------|
 | SBOM Generation | ✅ | ✅ | ✅ | ❌ | ✅ |
 | Vulnerability Scanning | ✅ | ✅ | ❌ | ✅ | ✅ |
+| **Multi-Tool Orchestration** | ✅ (6 tools) | ❌ | ❌ | ❌ | ❌ |
 | **Layer Attribution** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **EPSS Enrichment** | ✅ | ❌ | ❌ | ❌ | Paid |
 | **KEV Detection** | ✅ | ❌ | ❌ | ❌ | Paid |
 | **Priority Scoring** | ✅ (P0-P4) | ❌ | ❌ | ❌ | Paid |
+| **Threat Intelligence** | ✅ | ❌ | ❌ | ❌ | Paid |
 | **Quick Wins Analysis** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Breaking Change Detection** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Reachability Analysis** | ✅ | ❌ | ❌ | ❌ | Paid |
 | Baseline Comparison | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Image Comparison | ✅ | ❌ | ❌ | ❌ | Paid |
 | GitHub Integration | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Interactive TUI | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Compliance Reports** | ✅ (PCI/HIPAA/SOC2) | ❌ | ❌ | ❌ | Paid |
+| **PDF Reports** | ✅ | ❌ | ❌ | ❌ | Paid |
 | Executive Reports | ✅ | ❌ | ❌ | ❌ | Paid |
 
 ## CLI Reference
@@ -534,8 +781,9 @@ This can happen with some base images. BazBOM will still show all vulnerabilitie
 bazbom container-scan <image> [OPTIONS]
 
 OPTIONS:
-  -o, --output <DIR>              Output directory (default: .)
-  -f, --format <FORMAT>           Output format: spdx, sarif (default: spdx)
+  --preset <MODE>                 Scan preset: quick, standard, full (default), compliance
+  --output <DIR>                  Output directory (default: ~/Documents/container-scans/<image>)
+  --format <FORMAT>               Output format: spdx, sarif (default: spdx)
   --baseline                      Save as baseline for future comparisons
   --compare-baseline              Compare with saved baseline
   --compare <IMAGE>               Compare with another image
@@ -544,6 +792,7 @@ OPTIONS:
   --report <FILE>                 Generate executive report (HTML)
   --show <FILTER>                 Filter results (p0, p1, p2, critical, high,
                                   medium, low, fixable, quick-wins, kev)
+  --with-reachability             Enable reachability (enabled by default)
   -h, --help                      Print help
 ```
 

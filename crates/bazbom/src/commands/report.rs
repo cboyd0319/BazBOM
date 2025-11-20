@@ -271,6 +271,14 @@ fn extract_vulnerabilities(
                                 .get("epss")
                                 .or_else(|| v.get("epss_score"))
                                 .and_then(|e| e.as_f64()),
+                            call_chain: v
+                                .get("call_chain")
+                                .and_then(|c| c.as_array())
+                                .map(|arr| {
+                                    arr.iter()
+                                        .filter_map(|s| s.as_str().map(String::from))
+                                        .collect()
+                                }),
                         })
                     } else {
                         None
