@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.bazbom.test</groupId>
+    <artifactId>validation-java-maven</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>BazBOM Validation - Java Maven</name>
+    <description>Test project with known vulnerabilities for validation</description>
+
+    <properties>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- VULNERABLE: log4j-core 2.14.1 - CVE-2021-44228 (Log4Shell) -->
+        <!-- Safe version: 2.17.1+ -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>2.14.1</version>
+        </dependency>
+
+        <!-- VULNERABLE: jackson-databind 2.9.8 - Multiple CVEs -->
+        <!-- Safe version: 2.13.0+ -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.8</version>
+        </dependency>
+
+        <!-- VULNERABLE: commons-collections 3.2.1 - CVE-2015-6420 -->
+        <!-- Safe version: 3.2.2+ or 4.0+ -->
+        <!-- This one is NOT used in code - should be marked unreachable -->
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <version>3.2.1</version>
+        </dependency>
+
+        <!-- Safe dependency for comparison -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>32.1.2-jre</version>
+        </dependency>
+    </dependencies>
+</project>

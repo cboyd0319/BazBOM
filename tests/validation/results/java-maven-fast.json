@@ -1,0 +1,49 @@
+⚡ Small repo detected - enabling reachability (fast)
+  → Enabling reachability analysis (repo < 45MB)
+
+[2m2025-11-20T00:27:34.986075Z[0m [32m INFO[0m Using orchestrated scan mode (default)
+[2m2025-11-20T00:27:34.986231Z[0m [32m INFO[0m Running scan orchestrator
+[bazbom] cache miss for key: a575df6d411c03c5
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🔍 Running Security Scan                                   │
+├─────────────────────────────────────────────────────────────────┤
+[bazbom] generating SBOM...
+[bazbom] detected JVM build system: Maven
+[bazbom] skipping polyglot scanning (fast mode enabled)
+[bazbom] no polyglot ecosystems detected (JVM-only project)
+[2m2025-11-20T00:27:34.986708Z[0m [33m WARN[0m No packages detected in any ecosystem
+[bazbom] no packages detected, writing stub SBOM
+[bazbom] running SCA analysis...
+[bazbom] loading polyglot vulnerability data...
+[2m2025-11-20T00:27:35.003026Z[0m [32m INFO[0m Syncing advisory database (EPSS and KEV)...
+[bazbom] syncing advisory database...
+[2m2025-11-20T00:27:36.572425Z[0m [32m INFO[0m Advisory database sync completed successfully
+[bazbom] advisory database synced
+[2m2025-11-20T00:27:36.658570Z[0m [32m INFO[0m Loaded 302588 EPSS scores and 1462 KEV entries for polyglot enrichment
+[bazbom] loaded 302588 EPSS scores and 1462 KEV entries for enrichment
+[bazbom] loaded 763 vulnerabilities from polyglot scanner
+[bazbom] loaded reachability data for 2551 packages
+[bazbom] reachability analysis: 293 reachable, 470 unreachable
+[bazbom] wrote SCA findings to "./findings/sca.sarif"
+[bazbom] running threat intelligence analysis...
+[bazbom] loading SBOM for threat analysis from "./sbom/spdx.json"
+[bazbom] loaded 23994 components for threat analysis
+[bazbom] running threat detection (level: Standard)...
+[bazbom] threat detection complete: 0 threats found
+[bazbom] wrote merged SARIF to "./findings/merged.sarif"
+[bazbom] total runs in merged report: 2
+[bazbom] GitHub upload not configured (use github/codeql-action/upload-sarif@v3)
+[bazbom] cached scan results (key: a575df6d411c03c5)
+├─────────────────────────────────────────────────────────────────┤
+│ ✨ Scan complete! Generated 2 reports  │
+└─────────────────────────────────────────────────────────────────┘
+
+[bazbom] orchestrated scan complete
+[bazbom] outputs in: "."
+[bazbom]
+[bazbom] Next steps:
+[bazbom]   - Review findings in: "./findings"
+[bazbom]   - Upload SARIF: github/codeql-action/upload-sarif@v3
+[bazbom]   - Archive artifacts: actions/upload-artifact@v4
+[2m2025-11-20T00:27:36.936781Z[0m [32m INFO[0m Scan completed successfully

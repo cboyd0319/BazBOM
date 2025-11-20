@@ -1,0 +1,9 @@
+⚡ Small repo detected - enabling reachability (fast)
+
+[2m2025-11-20T00:27:36.950169Z[0m [32m INFO[0m Using orchestrated scan mode (default)
+[2m2025-11-20T00:27:36.950204Z[0m [32m INFO[0m Running scan orchestrator
+[bazbom] cache hit for key: a575df6d411c03c5
+[bazbom] restored cached SBOM and findings
+   ⚡ Using cached scan results (cache hit)
+   ℹ️ Set BAZBOM_DISABLE_CACHE=1 to disable caching
+[2m2025-11-20T00:27:37.001467Z[0m [32m INFO[0m Scan completed successfully
