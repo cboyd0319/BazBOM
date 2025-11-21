@@ -27,7 +27,7 @@ tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 
 # Rate limiting
-governor = "0.7"
+governor = "0.10"
 tower = "0.5"
 
 # Security
