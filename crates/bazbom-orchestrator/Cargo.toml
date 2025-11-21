@@ -14,7 +14,7 @@ bazbom-scanner = { path = "../bazbom-scanner" }
 
 # Error handling
 anyhow = "1"
-thiserror = "1"
+thiserror = "2"
 
 # Progress indicators
 indicatif = "0.17"
