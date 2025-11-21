@@ -208,6 +208,7 @@ struct TrivyCvssScore {
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 struct TrivyLayer {
+    #[serde(alias = "DiffID")]
     digest: String,
 }
 

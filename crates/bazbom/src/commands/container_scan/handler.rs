@@ -45,6 +45,10 @@ use bazbom_containers::os_packages;
 // Types are imported from super::types
 use super::dependency_graph::DependencyGraph;
 
+// Polyglot scanner for JAR files
+use bazbom_orchestrator::{OrchestratorConfig as PolyglotOrchestratorConfig, ParallelOrchestrator};
+use bazbom_scanner::EcosystemScanResult;
+
 /// Main container scan command handler
 pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     println!();
@@ -281,6 +285,13 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                                         recommended_version: r.recommended_version,
                                         fixes_cves: r.fixes_cves,
                                         risk_level: format!("{:?}", r.risk_level),
+                                        // OS package upgrades don't have detailed analysis yet
+                                        effort_hours: None,
+                                        breaking_changes_count: None,
+                                        transitive_upgrades_count: None,
+                                        migration_guide_url: None,
+                                        success_rate: None,
+                                        github_repo: None,
                                     })
                                     .collect();
                             }
@@ -298,6 +309,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                     tracing::debug!("Native OS scan unavailable: {}", e);
                 }
             }
+
 
             match analyze_container_reachability(&mut results, &filesystem_dir).await {
                 Ok(_) => {
@@ -430,7 +442,8 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                         {
                             Ok(analysis) => {
                                 analyzed_count += 1;
-                                // Update the vuln with deep analysis results
+
+                                // Log the analysis results
                                 if !analysis.required_upgrades.is_empty() {
                                     tracing::info!(
                                         "Upgrade {} -> {} requires {} transitive upgrades",
@@ -447,6 +460,21 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                                         analysis.direct_breaking_changes.len()
                                     );
                                 }
+
+                                // Save to upgrade_recommendations array (NEW!)
+                                results.upgrade_recommendations.push(UpgradeRecommendation {
+                                    package: vuln.package_name.clone(),
+                                    installed_version: vuln.installed_version.clone(),
+                                    recommended_version: Some(fix_ver.clone()),
+                                    fixes_cves: vec![vuln.cve_id.clone()],
+                                    risk_level: analysis.overall_risk.label().to_string(),
+                                    effort_hours: Some(analysis.estimated_effort_hours),
+                                    breaking_changes_count: Some(analysis.total_breaking_changes()),
+                                    transitive_upgrades_count: Some(analysis.required_upgrades.len()),
+                                    migration_guide_url: analysis.migration_guide_url.clone(),
+                                    success_rate: analysis.success_rate,
+                                    github_repo: analysis.github_repo.clone(),
+                                });
                             }
                             Err(e) => {
                                 tracing::debug!(
@@ -1381,6 +1409,41 @@ async fn analyze_layer_attribution(
         });
     }
 
+    // Collect all vulnerabilities that were assigned to layers
+    let mut assigned_cve_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    for layer in &layers {
+        for vuln in &layer.vulnerabilities {
+            assigned_cve_ids.insert(vuln.cve_id.clone());
+        }
+    }
+
+    // Find orphaned vulnerabilities (not assigned to any layer)
+    // This happens when Trivy finds JAR vulnerabilities but Syft didn't detect the packages
+    let orphaned_vulns: Vec<VulnerabilityInfo> = all_vulnerabilities
+        .iter()
+        .filter(|v| !assigned_cve_ids.contains(&v.cve_id))
+        .cloned()
+        .collect();
+
+    // If there are orphaned vulnerabilities, create a synthetic "Java Dependencies" layer
+    if !orphaned_vulns.is_empty() {
+        tracing::info!("Found {} orphaned vulnerabilities (likely Java dependencies not in Syft SBOM)", orphaned_vulns.len());
+
+        // Extract unique package names from orphaned vulnerabilities
+        let mut orphaned_packages: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for vuln in &orphaned_vulns {
+            orphaned_packages.insert(vuln.package_name.clone());
+        }
+        let orphaned_packages_vec: Vec<String> = orphaned_packages.into_iter().collect();
+
+        layers.push(LayerInfo {
+            digest: "Java Dependencies (from JAR analysis)".to_string(),
+            size_mb: 0.0,  // Unknown size
+            packages: orphaned_packages_vec,
+            vulnerabilities: orphaned_vulns,
+        });
+    }
+
     // Syft uses "artifacts" not "packages"
     let total_packages = sbom["artifacts"]
         .as_array()
@@ -1509,6 +1572,151 @@ async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Re
 
     Ok(extract_dir)
 }
+
+/// Scan for JAR files in extracted container filesystem
+/// 
+/// This function uses BazBOM's polyglot scanner to detect and scan Java/Maven/Gradle
+/// artifacts in the container filesystem. Results are merged with existing container
+/// scan results with proper layer attribution.
+async fn scan_container_jars(
+    filesystem_dir: &Path,
+    results: &mut ContainerScanResults,
+) -> Result<usize> {
+    tracing::info!("Scanning for JAR files in container filesystem: {:?}", filesystem_dir);
+    
+    // Configure parallel orchestrator for Java ecosystem scanning
+    let orchestrator_config = PolyglotOrchestratorConfig {
+        max_concurrent: num_cpus::get(),
+        show_progress: false,  // Don't show nested progress bars
+        enable_reachability: false,  // Reachability done separately
+        enable_vulnerabilities: true,
+    };
+    
+    let orchestrator = ParallelOrchestrator::with_config(orchestrator_config);
+    
+    // Scan the filesystem directory for all ecosystems
+    let workspace_path = filesystem_dir
+        .to_str()
+        .ok_or_else(|| anyhow::anyhow!("invalid filesystem path"))?;
+    
+    let polyglot_results = match tokio::runtime::Handle::try_current() {
+        Ok(handle) => {
+            tokio::task::block_in_place(|| {
+                handle.block_on(orchestrator.scan_directory(workspace_path))
+            })?
+        }
+        Err(_) => {
+            // Create new runtime if not in async context
+            let rt = tokio::runtime::Runtime::new()?;
+            rt.block_on(orchestrator.scan_directory(workspace_path))?
+        }
+    };
+    
+    // Filter to only Java/Maven/Gradle ecosystems
+    let java_results: Vec<&EcosystemScanResult> = polyglot_results
+        .iter()
+        .filter(|r| {
+            r.ecosystem == "Maven" 
+            || r.ecosystem == "Gradle" 
+            || r.ecosystem == "Maven (Bazel)"
+            || r.ecosystem.contains("Java")
+        })
+        .collect();
+    
+    if java_results.is_empty() {
+        tracing::info!("No Java artifacts found in container");
+        return Ok(0);
+    }
+    
+    let mut total_java_vulns = 0;
+    
+    // Merge Java vulnerabilities into container results
+    for java_result in java_results {
+        tracing::info!(
+            "Found {} packages in {} with {} vulnerabilities",
+            java_result.packages.len(),
+            java_result.ecosystem,
+            java_result.vulnerabilities.len()
+        );
+        
+        for vuln in &java_result.vulnerabilities {
+            // Convert scanner vulnerability to VulnerabilityInfo
+            let vuln_info = VulnerabilityInfo {
+                cve_id: vuln.id.clone(),
+                package_name: vuln.package_name.clone(),
+                installed_version: vuln.package_version.clone(),
+                fixed_version: vuln.fixed_version.clone(),
+                severity: vuln.severity.clone(),
+                title: vuln.title.clone(),
+                description: vuln.description.clone(),
+                layer_digest: "Java Artifacts".to_string(),  // Will be updated below
+                published_date: vuln.published_date.clone(),
+                epss_score: None,  // Will be enriched later
+                epss_percentile: None,
+                is_kev: false,     // Will be enriched later
+                kev_due_date: None,
+                cvss_score: vuln.cvss_score,
+                priority: Some("P2".to_string()),  // Default priority
+                references: vuln.references.clone(),
+                breaking_change: None,
+                upgrade_path: None,
+                is_reachable: false,  // Will be analyzed later
+                difficulty_score: None,
+                call_chain: None,
+                dependency_path: None,
+            };
+            
+            // Determine which layer this JAR belongs to
+            // For now, add to a special "Java Artifacts" layer
+            // TODO: Map to actual Docker layer based on file location
+            let layer_name = format!("Java Artifacts ({})", java_result.ecosystem);
+            
+            // Find or create the Java artifacts layer
+            let layer_idx = results.layers.iter().position(|l| l.digest.starts_with(&layer_name));
+            
+            if let Some(idx) = layer_idx {
+                // Add to existing Java layer
+                results.layers[idx].vulnerabilities.push(vuln_info);
+            } else {
+                // Create new layer for Java artifacts
+                results.layers.push(LayerInfo {
+                    digest: layer_name.clone(),
+                    size_mb: 0.0,  // Size calculated from package list
+                    packages: java_result
+                        .packages
+                        .iter()
+                        .map(|p| format!("{}:{}", p.name, p.version))
+                        .collect(),
+                    vulnerabilities: vec![vuln_info],
+                });
+            }
+            
+            total_java_vulns += 1;
+        }
+    }
+    
+    // Re-calculate vulnerability counts
+    results.critical_count = 0;
+    results.high_count = 0;
+    results.medium_count = 0;
+    results.low_count = 0;
+    
+    for layer in &results.layers {
+        for vuln in &layer.vulnerabilities {
+            match vuln.severity.to_uppercase().as_str() {
+                "CRITICAL" => results.critical_count += 1,
+                "HIGH" => results.high_count += 1,
+                "MEDIUM" => results.medium_count += 1,
+                "LOW" => results.low_count += 1,
+                _ => {}
+            }
+        }
+    }
+    
+    tracing::info!("Added {} Java vulnerabilities to container scan results", total_java_vulns);
+    Ok(total_java_vulns)
+}
+
 
 /// Reachability result with call chain information
 struct ReachabilityResult {
@@ -2557,31 +2765,208 @@ fn format_single_vuln_html(vuln: &VulnerabilityInfo, extra_attrs: &str) -> Strin
 
 /// Generate HTML for upgrade recommendations
 fn generate_upgrades_html(results: &ContainerScanResults) -> String {
+    if results.upgrade_recommendations.is_empty() {
+        return String::new();
+    }
+
     let mut upgrades_html = String::new();
+
+    upgrades_html.push_str(r#"
+        <h2 style="color: #2c3e50; margin-top: 40px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+            🎯 Upgrade Intelligence
+        </h2>
+        <p style="color: #7f8c8d; margin-bottom: 20px;">
+            AI-powered analysis showing upgrade effort, breaking changes, and transitive impact for each vulnerable package
+        </p>
+    "#);
+
     for rec in &results.upgrade_recommendations {
         let risk_class = match rec.risk_level.as_str() {
-            "Low" => "low-risk",
-            "Medium" => "medium-risk",
-            _ => "high-risk",
+            "LOW" => "low-risk",
+            "MEDIUM" => "medium-risk",
+            "HIGH" => "high-risk",
+            "CRITICAL" => "critical-risk",
+            _ => "medium-risk",
         };
+
+        let risk_color = match rec.risk_level.as_str() {
+            "LOW" => "#27ae60",
+            "MEDIUM" => "#f39c12",
+            "HIGH" => "#e67e22",
+            "CRITICAL" => "#e74c3c",
+            _ => "#95a5a6",
+        };
+
+        let effort_display = rec.effort_hours
+            .map(|h| {
+                if h < 1.0 {
+                    format!("{} min", (h * 60.0) as u32)
+                } else if h == 1.0 {
+                    "1 hour".to_string()
+                } else {
+                    format!("{:.1} hours", h)
+                }
+            })
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        let breaking_info = if let Some(count) = rec.breaking_changes_count {
+            if count > 0 {
+                format!(r#"<div style="color: #e74c3c; font-weight: bold; margin-top: 8px;">
+                    ⚠️ {} breaking change{}</div>"#,
+                    count, if count == 1 { "" } else { "s" })
+            } else {
+                r#"<div style="color: #27ae60; margin-top: 8px;">✅ No breaking changes</div>"#.to_string()
+            }
+        } else {
+            String::new()
+        };
+
+        let transitive_info = if let Some(count) = rec.transitive_upgrades_count {
+            if count > 0 {
+                format!(r#"<div style="color: #f39c12; margin-top: 5px;">
+                    🔗 Requires {} transitive upgrade{}</div>"#,
+                    count, if count == 1 { "" } else { "s" })
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+
+        let migration_guide = if let Some(ref url) = rec.migration_guide_url {
+            format!(r#"<div style="margin-top: 8px;">
+                <a href="{}" target="_blank" style="color: #3498db; text-decoration: none;">
+                    📖 Migration Guide
+                </a>
+            </div>"#, url)
+        } else {
+            String::new()
+        };
+
+        let success_rate = if let Some(rate) = rec.success_rate {
+            format!(r#"<div style="margin-top: 5px; color: #7f8c8d; font-size: 12px;">
+                📊 {:.0}% success rate in community
+            </div>"#, rate * 100.0)
+        } else {
+            String::new()
+        };
+
         upgrades_html.push_str(&format!(
-            r#"<div class="upgrade-rec {risk_class}">
-                <div class="upgrade-package">{}</div>
-                <div class="upgrade-version">{} → {}</div>
-                <div class="upgrade-fixes">Fixes: {}</div>
-                <div class="upgrade-risk">Risk: {}</div>
+            r#"<div style="background: white; border-left: 4px solid {risk_color}; padding: 15px; margin-bottom: 15px; border-radius: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="font-weight: bold; font-size: 16px; color: #2c3e50; margin-bottom: 8px;">
+                    {package}
+                </div>
+                <div style="color: #7f8c8d; font-size: 14px; margin-bottom: 8px;">
+                    {installed} → {recommended}
+                </div>
+                <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px;">
+                    <div>
+                        <span style="color: #7f8c8d; font-size: 12px;">EFFORT:</span>
+                        <span style="color: #2c3e50; font-weight: bold; margin-left: 5px;">{effort}</span>
+                    </div>
+                    <div>
+                        <span style="color: #7f8c8d; font-size: 12px;">RISK:</span>
+                        <span style="color: {risk_color}; font-weight: bold; margin-left: 5px;">{risk}</span>
+                    </div>
+                    <div>
+                        <span style="color: #7f8c8d; font-size: 12px;">FIXES:</span>
+                        <span style="color: #2c3e50; margin-left: 5px;">{cve_count} CVE{plural}</span>
+                    </div>
+                </div>
+                {breaking}
+                {transitive}
+                {migration}
+                {success}
             </div>"#,
-            rec.package,
-            rec.installed_version,
-            rec.recommended_version.as_ref().unwrap_or(&"N/A".to_string()),
-            rec.fixes_cves.join(", "),
-            rec.risk_level
+            risk_color = risk_color,
+            package = rec.package,
+            installed = rec.installed_version,
+            recommended = rec.recommended_version.as_ref().unwrap_or(&"N/A".to_string()),
+            effort = effort_display,
+            risk = rec.risk_level,
+            cve_count = rec.fixes_cves.len(),
+            plural = if rec.fixes_cves.len() == 1 { "" } else { "s" },
+            breaking = breaking_info,
+            transitive = transitive_info,
+            migration = migration_guide,
+            success = success_rate
         ));
     }
+
     upgrades_html
 }
 
 /// Generate executive report
+/// Generate HTML for CISA KEV alert banner
+fn generate_kev_alert_html(all_vulns: &[&VulnerabilityInfo]) -> String {
+    let kev_vulns: Vec<&VulnerabilityInfo> = all_vulns.iter()
+        .filter(|v| v.is_kev)
+        .copied()
+        .collect();
+
+    if kev_vulns.is_empty() {
+        return String::new();
+    }
+
+    let mut html = String::from(r#"
+    <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);">
+        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+            <div style="font-size: 48px; margin-right: 20px;">🚨</div>
+            <div>
+                <h2 style="margin: 0; font-size: 24px;">CISA KEV Alert</h2>
+                <p style="margin: 5px 0 0 0; opacity: 0.95; font-size: 14px;">Known Exploited Vulnerabilities - Immediate Action Required</p>
+            </div>
+        </div>
+    "#);
+
+    // Deduplicate by CVE ID
+    let mut seen_cves = std::collections::HashSet::new();
+    for vuln in &kev_vulns {
+        if seen_cves.contains(&vuln.cve_id) {
+            continue;
+        }
+        seen_cves.insert(&vuln.cve_id);
+
+        html.push_str(&format!(
+            r#"
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 6px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div style="flex: 1;">
+                    <div style="font-size: 18px; font-weight: bold; margin-bottom: 8px;">
+                        <a href="https://nvd.nist.gov/vuln/detail/{cve}" target="_blank" style="color: white; text-decoration: none;">{cve}</a>
+                        <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank" style="margin-left: 10px; font-size: 12px; opacity: 0.9; color: #ffe6e6;">→ CISA Catalog</a>
+                    </div>
+                    <div style="font-size: 14px; margin-bottom: 8px;"><strong>Package:</strong> {package}</div>
+                    <div style="font-size: 13px; opacity: 0.95;">{description}</div>
+                </div>
+                <div style="text-align: right; margin-left: 20px;">
+                    <div style="background: rgba(255,255,255,0.25); padding: 8px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; margin-bottom: 8px;">
+                        Due: {due_date}
+                    </div>
+                    <div style="font-size: 12px; opacity: 0.9;">Severity: {severity}</div>
+                </div>
+            </div>
+            {fixed_version}
+        </div>
+        "#,
+            cve = vuln.cve_id,
+            package = vuln.package_name,
+            description = vuln.description.chars().take(200).collect::<String>(),
+            due_date = vuln.kev_due_date.as_deref().unwrap_or("Unknown"),
+            severity = vuln.severity,
+            fixed_version = if let Some(ref fix) = vuln.fixed_version {
+                format!(r#"<div style="margin-top: 10px; padding: 8px 12px; background: rgba(255,255,255,0.2); border-radius: 4px; font-size: 13px;">
+                    <strong>Fix Available:</strong> Upgrade to version {}</div>"#, fix)
+            } else {
+                String::new()
+            }
+        ));
+    }
+
+    html.push_str("    </div>");
+    html
+}
+
 fn generate_executive_report(results: &ContainerScanResults, report_file: &str) -> Result<()> {
     // Calculate security metrics
     let security = calculate_security_score(results);
@@ -2601,10 +2986,11 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
     let kev_count = all_vulns.iter().filter(|v| v.is_kev).count();
 
     // Generate HTML sections
+    let kev_alert_html = generate_kev_alert_html(&all_vulns);
     let layers_html = generate_layers_html(results);
     let quick_wins_html = generate_quick_wins_html(&all_vulns);
     let vulns_html = generate_vulnerabilities_html(&all_vulns);
-    let _upgrades_html = generate_upgrades_html(results);
+    let upgrades_html = generate_upgrades_html(results);
 
     let html = format!(
         r#"<!DOCTYPE html>
@@ -2951,6 +3337,8 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
         </div>
     </div>
 
+    {kev_alert_html}
+
     <div class="section">
         <h2>🎯 Reachability Analysis</h2>
         <p style="color: #7f8c8d; margin-bottom: 15px;">Vulnerabilities analyzed for actual exploitability in your code</p>
@@ -2966,7 +3354,6 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
                 <div style="font-size: 12px; color: #7f8c8d;">Lower priority - not in execution path</div>
             </div>
         </div>
-        {kev_section}
     </div>
 
     <div class="section">
@@ -2977,17 +3364,11 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
     </div>
 
     <div class="section">
-        <h2>⚡ Quick Wins</h2>
-        <p style="color: #7f8c8d; margin-bottom: 15px;">Low-risk updates that fix multiple vulnerabilities</p>
+        <h2>⚡ Quick Wins & Upgrade Intelligence</h2>
+        <p style="color: #7f8c8d; margin-bottom: 15px;">Prioritized upgrades with effort estimates and breaking change analysis</p>
         <div class="quick-wins-grid">
             {quick_wins}
         </div>
-    </div>
-
-    <div class="section">
-        <h2>🔍 All Vulnerabilities</h2>
-        <p style="color: #7f8c8d; margin-bottom: 15px;">Sorted by priority (P0 = most urgent)</p>
-        {vulns_html}
     </div>
 
     <div class="section">
@@ -3030,17 +3411,9 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
         low_count = results.low_count,
         reachable_count = reachable_count,
         unreachable_count = unreachable_count,
-        kev_section = if kev_count > 0 {
-            format!(r#"<div style="background: #fdf2f2; padding: 15px; border-radius: 8px; border-left: 4px solid #e74c3c; margin-top: 15px;">
-                <strong>🚨 {} CISA KEV Vulnerabilities</strong>
-                <p style="margin: 5px 0 0 0; font-size: 14px;">Known exploited vulnerabilities requiring immediate attention. <a href="https://www.cisa.gov/known-exploited-vulnerabilities-catalog" target="_blank">View KEV Catalog</a></p>
-            </div>"#, kev_count)
-        } else {
-            String::new()
-        },
+        kev_alert_html = kev_alert_html,
         layers_html = layers_html,
         quick_wins = quick_wins_html,
-        vulns_html = vulns_html,
         pci_class = if results.compliance_results.as_ref().map(|c| c.pci_dss.status == "Pass").unwrap_or(false) { "pass" } else { "warn" },
         pci_status = if results.compliance_results.as_ref().map(|c| c.pci_dss.status == "Pass").unwrap_or(false) { "✅ Pass" } else { "⚠️ Fail" },
         pci_issues = results.compliance_results.as_ref().map(|c| {

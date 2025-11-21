@@ -117,7 +117,7 @@ pub struct ComplianceStatus {
     pub issues: Vec<String>,
 }
 
-/// Upgrade recommendation for an OS package
+/// Upgrade recommendation for an OS package (enhanced with UpgradeAnalyzer data)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpgradeRecommendation {
     pub package: String,
@@ -125,6 +125,13 @@ pub struct UpgradeRecommendation {
     pub recommended_version: Option<String>,
     pub fixes_cves: Vec<String>,
     pub risk_level: String,
+    // Enhanced fields from UpgradeAnalyzer
+    pub effort_hours: Option<f32>,
+    pub breaking_changes_count: Option<usize>,
+    pub transitive_upgrades_count: Option<usize>,
+    pub migration_guide_url: Option<String>,
+    pub success_rate: Option<f32>,
+    pub github_repo: Option<String>,
 }
 
 /// Quick win - easy fix with high impact
