@@ -76,7 +76,7 @@ jobs:
       id-token: write
       contents: write
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           path: dist
       - uses: sigstore/cosign-installer@7e8b5415ebb2755ddca3522cdd3e06a67cbc813d # v3.10.1
@@ -160,7 +160,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
       
       - name: Download signed artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: signed-dist
           path: dist
