@@ -105,9 +105,8 @@ pub trait Scanner: Send + Sync {
     /// to provide ecosystem-specific license fetching logic.
     fn fetch_license(&self, ctx: &LicenseContext) -> License {
         let key = format!("{}:{}:{}", self.name(), ctx.package, ctx.version);
-        ctx.cache.get_or_insert_with(key, || {
-            self.fetch_license_uncached(ctx)
-        })
+        ctx.cache
+            .get_or_insert_with(key, || self.fetch_license_uncached(ctx))
     }
 
     /// Fetch license without caching (override in implementations)

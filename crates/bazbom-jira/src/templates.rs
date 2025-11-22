@@ -404,7 +404,7 @@ impl Default for TemplateEngine {
     fn default() -> Self {
         Self {
             title_template: "[SECURITY] {cve_id} in {package} {version} ({severity})".to_string(),
-            description_template: r#"h2. 🎯 Summary
+            description_template: r#"h2. TARGET Summary
 **Why Fix This:** {why_fix}
 
 **CVE:** {cve_id}
@@ -428,7 +428,7 @@ h2. 📊 ML Risk Score
 
 {ml_risk_breakdown}
 
-h2. 🔍 Reachability Analysis
+h2. SCAN Reachability Analysis
 **Status:** {reachability_status} ({reachability_confidence}% confidence)
 
 **Call Paths ({call_path_count}):**
@@ -446,7 +446,7 @@ h2. 📏 Difficulty Scoring
 **Why {remediation_level}:**
 {remediation_reasons}
 
-h2. 🔧 Remediation
+h2. TOOL Remediation
 **Fix:** {fix_description}
 
 **Breaking Changes:** {breaking_changes_status}
@@ -464,22 +464,22 @@ h2. 🎓 Framework Guidance
 **Compatible With:**
 {compatibility_info}
 
-h2. 🧪 Testing Strategy
+h2. TEST Testing Strategy
 **Recommended Tests:**
 {test_recommendations}
 
-h2. 📦 Container Impact
+h2. PKG Container Impact
 **Affected Images:** {container_image_count}
 {container_details}
 
-h2. 🛡 Policy Compliance
+h2. SHIELD Policy Compliance
 **Before:** {policy_violations_before}
 **After:** {policy_violations_after}
 
 **Frameworks:**
 {compliance_frameworks}
 
-h2. 🔗 Links
+h2. LINK Links
 • [BazBOM Scan|{bazbom_link}]
 • [CVE Details|{cve_link}]
 • [GitHub PR|{github_pr_link}]
@@ -852,7 +852,10 @@ Final paragraph with `inline code`.
         variables.insert("severity".to_string(), "CRITICAL".to_string());
         variables.insert("cvss_score".to_string(), "9.8".to_string());
         variables.insert("priority".to_string(), "P0".to_string());
-        variables.insert("reachability_status".to_string(), "⚠ REACHABLE".to_string());
+        variables.insert(
+            "reachability_status".to_string(),
+            "WARN REACHABLE".to_string(),
+        );
         variables.insert(
             "why_fix".to_string(),
             "Active exploitation detected".to_string(),
@@ -862,7 +865,7 @@ Final paragraph with `inline code`.
             "Remote Code Execution".to_string(),
         );
         variables.insert("epss_score".to_string(), "0.89".to_string());
-        variables.insert("kev_status".to_string(), "⚠ ACTIVE".to_string());
+        variables.insert("kev_status".to_string(), "WARN ACTIVE".to_string());
         variables.insert("exploit_intel".to_string(), "PoCs available".to_string());
         variables.insert("ml_risk_score".to_string(), "92".to_string());
         variables.insert("ml_risk_level".to_string(), "CRITICAL".to_string());
@@ -897,7 +900,7 @@ Final paragraph with `inline code`.
         );
         variables.insert("container_image_count".to_string(), "3".to_string());
         variables.insert("container_details".to_string(), "myapp:latest".to_string());
-        variables.insert("policy_violations_before".to_string(), "❌ 3".to_string());
+        variables.insert("policy_violations_before".to_string(), "FAIL 3".to_string());
         variables.insert("policy_violations_after".to_string(), "✓ 0".to_string());
         variables.insert("compliance_frameworks".to_string(), "PCI-DSS".to_string());
         variables.insert(

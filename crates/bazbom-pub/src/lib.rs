@@ -185,10 +185,7 @@ pub fn compare_versions(a: &str, b: &str) -> std::cmp::Ordering {
             (v, None)
         };
 
-        let parts: Vec<u64> = version
-            .split('.')
-            .filter_map(|s| s.parse().ok())
-            .collect();
+        let parts: Vec<u64> = version.split('.').filter_map(|s| s.parse().ok()).collect();
 
         (parts, pre)
     };
@@ -237,10 +234,7 @@ mod tests {
             compare_versions("1.0.0", "1.0.0"),
             std::cmp::Ordering::Equal
         );
-        assert_eq!(
-            compare_versions("1.0.0", "2.0.0"),
-            std::cmp::Ordering::Less
-        );
+        assert_eq!(compare_versions("1.0.0", "2.0.0"), std::cmp::Ordering::Less);
         assert_eq!(
             compare_versions("1.0.0-dev.1", "1.0.0"),
             std::cmp::Ordering::Less

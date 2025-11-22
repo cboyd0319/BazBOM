@@ -19,7 +19,10 @@ pub fn fetch_osv_severities(cve_ids: &[String]) -> HashMap<String, String> {
 }
 
 /// Fetch severity with an optional OS hint for faster lookups
-pub fn fetch_osv_severities_with_hint(cve_ids: &[String], os_hint: Option<&str>) -> HashMap<String, String> {
+pub fn fetch_osv_severities_with_hint(
+    cve_ids: &[String],
+    os_hint: Option<&str>,
+) -> HashMap<String, String> {
     #[derive(Deserialize)]
     struct OsvSeverityResponse {
         severity: Option<Vec<OsvSeverityEntry>>,
@@ -40,24 +43,23 @@ pub fn fetch_osv_severities_with_hint(cve_ids: &[String], os_hint: Option<&str>)
         // Build ID variants based on OS hint for faster lookups
         // See: https://osv.dev/vulnerability/CVE-2023-42363 for example of many aliases
         let id_variants: Vec<String> = match os_hint.map(|s| s.to_lowercase()).as_deref() {
-            Some(os) if os.contains("alpine") => vec![
-                format!("ALPINE-{}", cve_id),
-                cve_id.clone(),
-            ],
+            Some(os) if os.contains("alpine") => vec![format!("ALPINE-{}", cve_id), cve_id.clone()],
             Some(os) if os.contains("debian") => vec![
-                format!("DSA-{}", cve_id),       // Debian Security Advisory format
+                format!("DSA-{}", cve_id), // Debian Security Advisory format
                 cve_id.clone(),
             ],
             Some(os) if os.contains("ubuntu") => vec![
-                format!("USN-{}", cve_id),       // Ubuntu Security Notice format
+                format!("USN-{}", cve_id), // Ubuntu Security Notice format
                 cve_id.clone(),
             ],
-            Some(os) if os.contains("rhel") || os.contains("centos") || os.contains("fedora") => vec![
-                format!("RHSA-{}", cve_id),      // Red Hat Security Advisory format
-                cve_id.clone(),
-            ],
+            Some(os) if os.contains("rhel") || os.contains("centos") || os.contains("fedora") => {
+                vec![
+                    format!("RHSA-{}", cve_id), // Red Hat Security Advisory format
+                    cve_id.clone(),
+                ]
+            }
             _ => vec![
-                cve_id.clone(),                  // Plain CVE ID first (most common)
+                cve_id.clone(), // Plain CVE ID first (most common)
             ],
         };
 
@@ -77,7 +79,9 @@ pub fn fetch_osv_severities_with_hint(cve_ids: &[String], os_hint: Option<&str>)
                             // Try to get severity from CVSS score
                             if let Some(severities) = osv_data.severity {
                                 for sev in severities {
-                                    if sev.severity_type == "CVSS_V3" || sev.severity_type == "CVSS_V2" {
+                                    if sev.severity_type == "CVSS_V3"
+                                        || sev.severity_type == "CVSS_V2"
+                                    {
                                         if let Some(score) = parse_cvss_score(&sev.score) {
                                             let severity = cvss_to_severity(score);
                                             severity_map.insert(cve_id.clone(), severity);
@@ -91,8 +95,11 @@ pub fn fetch_osv_severities_with_hint(cve_ids: &[String], os_hint: Option<&str>)
                             // Try database_specific.severity as fallback
                             if !found && !severity_map.contains_key(cve_id) {
                                 if let Some(db_specific) = osv_data.database_specific {
-                                    if let Some(severity) = db_specific.get("severity").and_then(|s| s.as_str()) {
-                                        severity_map.insert(cve_id.clone(), severity.to_uppercase());
+                                    if let Some(severity) =
+                                        db_specific.get("severity").and_then(|s| s.as_str())
+                                    {
+                                        severity_map
+                                            .insert(cve_id.clone(), severity.to_uppercase());
                                         found = true;
                                     }
                                 }
@@ -193,15 +200,23 @@ fn fetch_nvd_severities(cve_ids: &[String]) -> HashMap<String, String> {
                                 if vuln.cve.id == *cve_id {
                                     if let Some(metrics) = vuln.cve.metrics {
                                         // Try CVSS v3.1 first, then v3.0, then v2
-                                        let score = metrics.cvss_v31
+                                        let score = metrics
+                                            .cvss_v31
                                             .and_then(|m| m.first().map(|c| c.cvss_data.base_score))
-                                            .or_else(|| metrics.cvss_v30
-                                                .and_then(|m| m.first().map(|c| c.cvss_data.base_score)))
-                                            .or_else(|| metrics.cvss_v2
-                                                .and_then(|m| m.first().map(|c| c.cvss_data.base_score)));
+                                            .or_else(|| {
+                                                metrics.cvss_v30.and_then(|m| {
+                                                    m.first().map(|c| c.cvss_data.base_score)
+                                                })
+                                            })
+                                            .or_else(|| {
+                                                metrics.cvss_v2.and_then(|m| {
+                                                    m.first().map(|c| c.cvss_data.base_score)
+                                                })
+                                            });
 
                                         if let Some(score) = score {
-                                            severity_map.insert(cve_id.clone(), cvss_to_severity(score));
+                                            severity_map
+                                                .insert(cve_id.clone(), cvss_to_severity(score));
                                         }
                                     }
                                 }
@@ -284,28 +299,28 @@ fn parse_cvss_v3_vector(vector: &str) -> Option<f64> {
 
     // Exploitability weights
     let av = match metrics.get("AV") {
-        Some(&"N") => 0.85,  // Network
-        Some(&"A") => 0.62,  // Adjacent
-        Some(&"L") => 0.55,  // Local
-        Some(&"P") => 0.20,  // Physical
+        Some(&"N") => 0.85, // Network
+        Some(&"A") => 0.62, // Adjacent
+        Some(&"L") => 0.55, // Local
+        Some(&"P") => 0.20, // Physical
         _ => 0.85,
     };
     let ac = match metrics.get("AC") {
-        Some(&"L") => 0.77,  // Low
-        Some(&"H") => 0.44,  // High
+        Some(&"L") => 0.77, // Low
+        Some(&"H") => 0.44, // High
         _ => 0.77,
     };
     let pr = match (metrics.get("PR"), scope_changed) {
-        (Some(&"N"), _) => 0.85,      // None
-        (Some(&"L"), false) => 0.62,  // Low, unchanged
-        (Some(&"L"), true) => 0.68,   // Low, changed
-        (Some(&"H"), false) => 0.27,  // High, unchanged
-        (Some(&"H"), true) => 0.50,   // High, changed
+        (Some(&"N"), _) => 0.85,     // None
+        (Some(&"L"), false) => 0.62, // Low, unchanged
+        (Some(&"L"), true) => 0.68,  // Low, changed
+        (Some(&"H"), false) => 0.27, // High, unchanged
+        (Some(&"H"), true) => 0.50,  // High, changed
         _ => 0.85,
     };
     let ui = match metrics.get("UI") {
-        Some(&"N") => 0.85,  // None
-        Some(&"R") => 0.62,  // Required
+        Some(&"N") => 0.85, // None
+        Some(&"R") => 0.62, // Required
         _ => 0.85,
     };
 
@@ -484,10 +499,7 @@ pub fn get_fixed_versions(vuln_id: &str) -> Result<Vec<(String, String, String)>
 }
 
 /// Get the first fixed version for a specific package from a vulnerability
-pub fn get_fixed_version_for_package(
-    vuln_id: &str,
-    package_name: &str,
-) -> Result<Option<String>> {
+pub fn get_fixed_version_for_package(vuln_id: &str, package_name: &str) -> Result<Option<String>> {
     let fixed = get_fixed_versions(vuln_id)?;
 
     // Find the first fixed version for this package
@@ -528,7 +540,12 @@ pub fn query_batch_vulnerabilities(
             Ok(vulns) => {
                 let key = format!("{}:{}@{}", ecosystem, name, version);
                 if !vulns.is_empty() {
-                    println!("[bazbom]     {} vulnerabilities for {}@{}", vulns.len(), name, version);
+                    println!(
+                        "[bazbom]     {} vulnerabilities for {}@{}",
+                        vulns.len(),
+                        name,
+                        version
+                    );
                     results.insert(key.clone(), vulns.clone());
 
                     // Cache the results
@@ -538,7 +555,10 @@ pub fn query_batch_vulnerabilities(
                 }
             }
             Err(e) => {
-                eprintln!("[bazbom]   warning: failed to query {}@{}: {}", name, version, e);
+                eprintln!(
+                    "[bazbom]   warning: failed to query {}@{}: {}",
+                    name, version, e
+                );
             }
         }
     }

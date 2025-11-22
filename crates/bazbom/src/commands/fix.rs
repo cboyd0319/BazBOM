@@ -149,7 +149,9 @@ fn estimate_effort_hours(
 }
 
 /// Load vulnerabilities from SARIF format
-fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<FixableVulnerability>> {
+fn load_vulnerabilities_from_sarif(
+    sarif_path: &std::path::Path,
+) -> Result<Vec<FixableVulnerability>> {
     use bazbom_formats::sarif::SarifReport;
     use std::fs;
 
@@ -166,23 +168,29 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
             if let Some(props) = result.properties {
                 let cve_id = result.rule_id.clone();
 
-                let package = props.get("component")
+                let package = props
+                    .get("component")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown")
                     .to_string();
 
-                let current_version = props.get("version")
+                let current_version = props
+                    .get("version")
                     .and_then(|v| v.as_str())
                     .unwrap_or("unknown")
                     .to_string();
 
                 // Query OSV for fixed version
-                let fixed_version = match bazbom_vulnerabilities::osv::get_fixed_version_for_package(&cve_id, &package) {
+                let fixed_version = match bazbom_vulnerabilities::osv::get_fixed_version_for_package(
+                    &cve_id, &package,
+                ) {
                     Ok(Some(version)) => version,
                     Ok(None) => {
                         // No fixed version found, try with ecosystem prefix stripped
                         let pkg_name = package.split('/').last().unwrap_or(&package);
-                        match bazbom_vulnerabilities::osv::get_fixed_version_for_package(&cve_id, pkg_name) {
+                        match bazbom_vulnerabilities::osv::get_fixed_version_for_package(
+                            &cve_id, pkg_name,
+                        ) {
                             Ok(Some(v)) => v,
                             _ => "unknown".to_string(),
                         }
@@ -205,10 +213,10 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
                     _ => Severity::Low,
                 };
 
-                let epss_score = props.get("epss_score")
-                    .and_then(|v| v.as_f64());
+                let epss_score = props.get("epss_score").and_then(|v| v.as_f64());
 
-                let in_cisa_kev = props.get("cisa_kev")
+                let in_cisa_kev = props
+                    .get("cisa_kev")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false);
 
@@ -220,7 +228,12 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
                 } else {
                     0
                 };
-                let estimated_effort_hours = estimate_effort_hours(severity_str, &current_version, &fixed_version, breaking_changes);
+                let estimated_effort_hours = estimate_effort_hours(
+                    severity_str,
+                    &current_version,
+                    &fixed_version,
+                    breaking_changes,
+                );
 
                 fixable_vulns.push(FixableVulnerability {
                     cve_id,
@@ -241,7 +254,10 @@ fn load_vulnerabilities_from_sarif(sarif_path: &std::path::Path) -> Result<Vec<F
     if fixable_vulns.is_empty() {
         println!("[bazbom] no vulnerabilities found in SARIF");
     } else {
-        println!("[bazbom] loaded {} vulnerabilities from SARIF", fixable_vulns.len());
+        println!(
+            "[bazbom] loaded {} vulnerabilities from SARIF",
+            fixable_vulns.len()
+        );
     }
 
     Ok(fixable_vulns)
@@ -269,7 +285,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
 
     // Try loading from SARIF first
     if let Some(sarif_path) = sarif_paths.iter().find(|p| p.exists()) {
-        println!("[bazbom] loading vulnerabilities from SARIF: {}", sarif_path.display());
+        println!(
+            "[bazbom] loading vulnerabilities from SARIF: {}",
+            sarif_path.display()
+        );
         return load_vulnerabilities_from_sarif(sarif_path);
     }
 
@@ -289,7 +308,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<FixableVulnerability>> {
         )
     })?;
 
-    println!("[bazbom] loading vulnerabilities from JSON (legacy): {}", findings_path.display());
+    println!(
+        "[bazbom] loading vulnerabilities from JSON (legacy): {}",
+        findings_path.display()
+    );
     let content = fs::read_to_string(findings_path)?;
     let findings: Value = serde_json::from_str(&content)?;
 

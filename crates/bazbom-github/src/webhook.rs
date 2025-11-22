@@ -220,7 +220,8 @@ mod tests {
     fn test_verify_signature_invalid() {
         let secret = "test-secret";
         let body = b"test body";
-        let wrong_signature = "sha256=0000000000000000000000000000000000000000000000000000000000000000";
+        let wrong_signature =
+            "sha256=0000000000000000000000000000000000000000000000000000000000000000";
 
         assert!(!verify_signature(secret, Some(wrong_signature), body));
     }

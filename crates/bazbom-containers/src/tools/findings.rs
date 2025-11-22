@@ -252,6 +252,10 @@ pub struct PackageInfo {
 pub struct AggregatedResults {
     /// Image that was scanned
     pub image_name: String,
+    /// Tools that executed successfully
+    pub executed_tools: Vec<String>,
+    /// Tools that were skipped or unavailable
+    pub skipped_tools: Vec<String>,
 
     /// All vulnerabilities (deduplicated)
     pub vulnerabilities: Vec<VulnerabilityFinding>,
@@ -289,7 +293,6 @@ pub struct ScanSummary {
     pub secrets_count: usize,
     pub misconfigs_count: usize,
 }
-
 
 #[cfg(test)]
 mod tests {

@@ -273,14 +273,24 @@ fn add_executive_summary(
     // Reachability summary (if available)
     if let Some(reachability) = generator.reachability() {
         y_pos -= Mm(3.0);
-        add_text(layer, font_bold, 12.0, "Reachability Analysis:", Mm(20.0), y_pos);
+        add_text(
+            layer,
+            font_bold,
+            12.0,
+            "Reachability Analysis:",
+            Mm(20.0),
+            y_pos,
+        );
         y_pos -= Mm(6.0);
 
         add_text(
             layer,
             font,
             10.0,
-            &format!("• Analyzed: {} vulnerabilities", reachability.total_analyzed),
+            &format!(
+                "• Analyzed: {} vulnerabilities",
+                reachability.total_analyzed
+            ),
             Mm(25.0),
             y_pos,
         );
@@ -303,7 +313,10 @@ fn add_executive_summary(
             layer,
             font,
             10.0,
-            &format!("• Noise reduction: {:.0}%", reachability.noise_reduction_percent),
+            &format!(
+                "• Noise reduction: {:.0}%",
+                reachability.noise_reduction_percent
+            ),
             Mm(25.0),
             y_pos,
         );
@@ -313,18 +326,36 @@ fn add_executive_summary(
     // Compliance summary (if available)
     if let Some(compliance) = generator.compliance() {
         y_pos -= Mm(3.0);
-        add_text(layer, font_bold, 12.0, "Compliance Status:", Mm(20.0), y_pos);
+        add_text(
+            layer,
+            font_bold,
+            12.0,
+            "Compliance Status:",
+            Mm(20.0),
+            y_pos,
+        );
         y_pos -= Mm(6.0);
 
-        let pci_status = if compliance.pci_dss_pass { "Pass" } else { "Fail" };
-        let hipaa_status = if compliance.hipaa_pass { "Pass" } else { "Fail" };
+        let pci_status = if compliance.pci_dss_pass {
+            "Pass"
+        } else {
+            "Fail"
+        };
+        let hipaa_status = if compliance.hipaa_pass {
+            "Pass"
+        } else {
+            "Fail"
+        };
         let soc2_status = if compliance.soc2_pass { "Pass" } else { "Fail" };
 
         add_text(
             layer,
             font,
             10.0,
-            &format!("• PCI-DSS: {} | HIPAA: {} | SOC 2: {}", pci_status, hipaa_status, soc2_status),
+            &format!(
+                "• PCI-DSS: {} | HIPAA: {} | SOC 2: {}",
+                pci_status, hipaa_status, soc2_status
+            ),
             Mm(25.0),
             y_pos,
         );

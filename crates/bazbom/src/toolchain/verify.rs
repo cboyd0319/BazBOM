@@ -119,11 +119,11 @@ mod tests {
 
     #[test]
     fn test_calculate_sha256() {
-        let mut temp_file = NamedTempFile::new().unwrap();
-        write!(temp_file, "test content").unwrap();
-        temp_file.flush().unwrap();
+        let mut temp_file = NamedTempFile::new().expect("temp file");
+        write!(temp_file, "test content").expect("write temp");
+        temp_file.flush().expect("flush temp");
 
-        let checksum = calculate_sha256(temp_file.path()).unwrap();
+        let checksum = calculate_sha256(temp_file.path()).expect("checksum");
         // SHA-256 of "test content"
         assert_eq!(
             checksum,
@@ -150,13 +150,13 @@ mod tests {
     #[test]
     fn test_verify_tool_with_placeholder() {
         let checksums = ToolChecksums::default();
-        let mut temp_file = NamedTempFile::new().unwrap();
-        write!(temp_file, "test").unwrap();
-        temp_file.flush().unwrap();
+        let mut temp_file = NamedTempFile::new().expect("temp file");
+        write!(temp_file, "test").expect("write temp");
+        temp_file.flush().expect("flush temp");
 
         // Should succeed with placeholder (warning printed)
         let result = checksums.verify_tool(temp_file.path(), "syft-linux-x86_64-v1.17.0");
         assert!(result.is_ok());
-        assert!(result.unwrap());
+        assert!(result.expect("command result"));
     }
 }

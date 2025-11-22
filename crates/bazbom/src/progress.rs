@@ -29,7 +29,7 @@ impl ScanProgress {
         println!(
             "{} {} {}",
             "│".bright_blue(),
-            "🔍 Running Security Scan".bold().bright_cyan(),
+            "SCAN Running Security Scan".bold().bright_cyan(),
             "                                  │".bright_blue()
         );
         println!(
@@ -52,7 +52,7 @@ impl ScanProgress {
                     .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
             );
             pb.set_prefix(name.to_string());
-            pb.set_message("⏸️  Queued".dimmed().to_string());
+            pb.set_message("PAUSED  Queued".dimmed().to_string());
             pb.enable_steady_tick(Duration::from_millis(80));
             phases.push(pb);
         }
@@ -82,7 +82,7 @@ impl ScanProgress {
     pub fn complete_phase(&self, index: usize, message: &str) {
         if let Some(pb) = self.phases.get(index) {
             pb.set_position(100);
-            pb.set_message(format!("{} {}", "✅".green(), message));
+            pb.set_message(format!("{} {}", "OK".green(), message));
             pb.finish();
         }
     }
@@ -90,7 +90,7 @@ impl ScanProgress {
     /// Mark a phase as failed
     pub fn fail_phase(&self, index: usize, error: &str) {
         if let Some(pb) = self.phases.get(index) {
-            pb.set_message(format!("{} {}", "❌".red(), error));
+            pb.set_message(format!("{} {}", "FAIL".red(), error));
             pb.finish();
         }
     }
@@ -156,13 +156,13 @@ impl ApiSpinner {
     /// Finish with success message
     pub fn finish_success(&self, message: &str) {
         self.spinner
-            .finish_with_message(format!("{} {}", "✅".green(), message));
+            .finish_with_message(format!("{} {}", "OK".green(), message));
     }
 
     /// Finish with error message
     pub fn finish_error(&self, message: &str) {
         self.spinner
-            .finish_with_message(format!("{} {}", "❌".red(), message));
+            .finish_with_message(format!("{} {}", "FAIL".red(), message));
     }
 
     /// Finish and clear
@@ -183,7 +183,7 @@ impl CountingProgress {
         bar.set_style(
             ProgressStyle::default_bar()
                 .template(&format!(
-                    "📦 {}\n{{bar:50.cyan/blue}} {{pos:>7}}/{{len:7}} | {{elapsed_precise}} | ETA: {{eta}}",
+                    "PKG {}\n{{bar:50.cyan/blue}} {{pos:>7}}/{{len:7}} | {{elapsed_precise}} | ETA: {{eta}}",
                     operation.bold()
                 ))
                 .unwrap()

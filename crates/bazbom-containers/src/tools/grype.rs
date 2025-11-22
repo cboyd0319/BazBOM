@@ -49,13 +49,7 @@ impl ContainerTool for GrypeScanner {
 
         let output = run_command(
             "grype",
-            &[
-                image,
-                "-o",
-                "json",
-                "--file",
-                output_file.to_str().unwrap(),
-            ],
+            &[image, "-o", "json", "--file", output_file.to_str().unwrap()],
         )
         .await
         .context("Failed to run Grype")?;
@@ -106,7 +100,10 @@ impl ContainerTool for GrypeScanner {
             });
         }
 
-        info!("Grype found {} vulnerabilities", tool_output.vulnerabilities.len());
+        info!(
+            "Grype found {} vulnerabilities",
+            tool_output.vulnerabilities.len()
+        );
 
         Ok(tool_output)
     }

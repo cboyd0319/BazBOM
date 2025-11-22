@@ -12,12 +12,12 @@ This crate implements **M-06: External Tool Integrity Verification** from the Ba
 
 ## Features
 
-- ✅ **SHA-256 Checksum Verification** - Verify tool binaries against known-good checksums
-- ✅ **Tool Registry** - Curated database of known-good tool versions
-- ✅ **Compromised Version Detection** - Prevent execution of known-compromised tools
-- ✅ **Platform-Specific Checksums** - Support for Linux, macOS, Windows (x86_64, ARM64)
-- ✅ **Automatic Version Detection** - Extract version from tool `--version` output
-- ✅ **Configurable Enforcement** - Strict or permissive verification modes
+- OK **SHA-256 Checksum Verification** - Verify tool binaries against known-good checksums
+- OK **Tool Registry** - Curated database of known-good tool versions
+- OK **Compromised Version Detection** - Prevent execution of known-compromised tools
+- OK **Platform-Specific Checksums** - Support for Linux, macOS, Windows (x86_64, ARM64)
+- OK **Automatic Version Detection** - Extract version from tool `--version` output
+- OK **Configurable Enforcement** - Strict or permissive verification modes
 - 🚧 **GPG Signature Verification** - Planned
 - 🚧 **Cosign Signature Verification** - Planned
 
@@ -73,20 +73,20 @@ fn main() -> anyhow::Result<()> {
     // Verify a tool before using it
     match verifier.verify_tool("syft")? {
         VerifyStatus::Verified => {
-            println!("✅ Syft verified - safe to execute");
+            println!("OK Syft verified - safe to execute");
             // Execute syft...
         }
         VerifyStatus::Failed(reason) => {
-            eprintln!("❌ Verification failed: {}", reason);
+            eprintln!("FAIL Verification failed: {}", reason);
         }
         VerifyStatus::Compromised => {
             eprintln!("🚨 Tool is known to be compromised!");
         }
         VerifyStatus::Unregistered => {
-            println!("⚠️  Tool not in registry");
+            println!("WARN  Tool not in registry");
         }
         VerifyStatus::Skipped => {
-            println!("⏭️  Verification skipped");
+            println!("SKIP  Verification skipped");
         }
     }
 
@@ -232,15 +232,15 @@ cargo test -p bazbom-tool-verify test_registry_has_common_tools
 ### Threat Model
 
 **Threats Mitigated:**
-- ✅ Supply chain compromise of external tools
-- ✅ Tampered tool binaries
-- ✅ Known-compromised tool versions
-- ✅ TOCTOU (Time-Of-Check-Time-Of-Use) attacks via atomic verification
+- OK Supply chain compromise of external tools
+- OK Tampered tool binaries
+- OK Known-compromised tool versions
+- OK TOCTOU (Time-Of-Check-Time-Of-Use) attacks via atomic verification
 
 **Threats NOT Mitigated (yet):**
-- ⚠️ Malicious registry updates (planned: signed registry)
-- ⚠️ Local privilege escalation (OS responsibility)
-- ⚠️ Memory corruption in verified tools (tool responsibility)
+- WARN Malicious registry updates (planned: signed registry)
+- WARN Local privilege escalation (OS responsibility)
+- WARN Memory corruption in verified tools (tool responsibility)
 
 ### Best Practices
 

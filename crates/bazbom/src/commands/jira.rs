@@ -74,7 +74,7 @@ pub enum JiraCommand {
 
 /// Interactive setup wizard for Jira integration
 async fn handle_jira_init() -> Result<()> {
-    println!("{}", "🎯 BazBOM Jira Integration Setup".bold().cyan());
+    println!("{}", "TARGET BazBOM Jira Integration Setup".bold().cyan());
     println!();
 
     // Get Jira URL
@@ -161,7 +161,7 @@ async fn handle_jira_init() -> Result<()> {
     fs::write(&config_path, yaml).context("Failed to write config file")?;
 
     println!();
-    println!("{}", "✅ Configuration saved!".green().bold());
+    println!("{}", "OK Configuration saved!".green().bold());
     println!();
     println!("Next steps:");
     println!("  1. Set environment variables:");
@@ -261,7 +261,7 @@ async fn handle_jira_create(
     let response = client.create_issue(request).await?;
 
     println!();
-    println!("{}", "✅ Jira ticket created!".green().bold());
+    println!("{}", "OK Jira ticket created!".green().bold());
     println!("  Key: {}", response.key.bold());
     println!("  URL: {}/browse/{}", config.url, response.key);
     println!();
@@ -293,7 +293,7 @@ async fn handle_jira_get(key: String) -> Result<()> {
     let issue = client.get_issue(&key).await?;
 
     println!();
-    println!("{}", format!("📋 {}", issue.key).bold());
+    println!("{}", format!("NOTE {}", issue.key).bold());
     println!("  Summary: {}", issue.fields.summary);
     if let Some(status) = &issue.fields.status {
         println!("  Status: {}", status.name.cyan());
@@ -364,7 +364,7 @@ async fn handle_jira_update(
     client.update_issue(&key, request).await?;
 
     println!();
-    println!("{}", "✅ Ticket updated!".green().bold());
+    println!("{}", "OK Ticket updated!".green().bold());
     println!();
 
     Ok(())
@@ -380,7 +380,7 @@ async fn handle_jira_sync() -> Result<()> {
     // - Update local database
     // - Report changes
 
-    println!("{}", "⚠️  Sync not yet implemented".yellow());
+    println!("{}", "WARN  Sync not yet implemented".yellow());
     println!("This feature will be available in Phase 3.");
     println!();
 

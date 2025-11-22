@@ -6,8 +6,8 @@ Recursive transitive upgrade analysis with breaking change detection for JVM dep
 
 - 🔄 **Recursive Analysis**: Analyzes target package AND all dependencies it pulls in
 - 💥 **Breaking Change Detection**: Parses GitHub release notes for breaking changes
-- 🎯 **Risk Scoring**: LOW/MEDIUM/HIGH/CRITICAL based on multiple factors
-- ⏱️  **Effort Estimation**: ML-based hour estimates for upgrades
+- TARGET **Risk Scoring**: LOW/MEDIUM/HIGH/CRITICAL based on multiple factors
+- TIME  **Effort Estimation**: ML-based hour estimates for upgrades
 - 📚 **Migration Guides**: Auto-discovers MIGRATION.md and UPGRADING.md
 - 🌐 **Multi-Source Intelligence**: Combines deps.dev + GitHub + semver
 - ⚡ **Smart Caching**: Avoids duplicate analysis
@@ -46,15 +46,15 @@ async fn main() -> anyhow::Result<()> {
             upgrade.to_version
         );
         if !upgrade.breaking_changes.is_empty() {
-            println!("    ⚠️  {} breaking changes", upgrade.breaking_changes.len());
+            println!("    WARN  {} breaking changes", upgrade.breaking_changes.len());
         }
     }
 
     // Safety check
     if analysis.is_safe() {
-        println!("\n✅ Safe to upgrade!");
+        println!("\nOK Safe to upgrade!");
     } else {
-        println!("\n⚠️  Review required - {} breaking changes total",
+        println!("\nWARN  Review required - {} breaking changes total",
             analysis.total_breaking_changes());
     }
 
@@ -124,7 +124,7 @@ Searches for common patterns in GitHub releases:
 - Method X removed
 - API Y changed
 
-⚠️  Configuration format changed
+WARN  Configuration format changed
 💥 Major rewrite of module Z
 ```
 

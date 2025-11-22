@@ -63,8 +63,8 @@ struct NpmPackageVersion {
 #[derive(Deserialize)]
 struct NpmDist {
     #[allow(dead_code)]
-    shasum: String,      // SHA-1 (legacy)
-    integrity: Option<String>,  // Subresource Integrity (SHA-256, SHA-384, SHA-512)
+    shasum: String, // SHA-1 (legacy)
+    integrity: Option<String>, // Subresource Integrity (SHA-256, SHA-384, SHA-512)
 }
 
 async fn fetch_npm_checksum(client: &Client, package: &Package) -> Result<Option<String>> {
@@ -80,7 +80,9 @@ async fn fetch_npm_checksum(client: &Client, package: &Package) -> Result<Option
                     // Convert base64 to hex
                     let base64_hash = integrity.strip_prefix("sha256-").unwrap();
                     use base64::Engine;
-                    if let Ok(decoded) = base64::engine::general_purpose::STANDARD.decode(base64_hash) {
+                    if let Ok(decoded) =
+                        base64::engine::general_purpose::STANDARD.decode(base64_hash)
+                    {
                         return Ok(Some(hex::encode(decoded)));
                     }
                 }
@@ -157,7 +159,7 @@ struct CargoVersionDetail {
 
 #[derive(Deserialize)]
 struct CargoVersionInfo {
-    checksum: String,  // This is SHA-256
+    checksum: String, // This is SHA-256
 }
 
 async fn fetch_cargo_checksum(client: &Client, package: &Package) -> Result<Option<String>> {
@@ -194,7 +196,7 @@ struct RubyGemsVersions(Vec<RubyGemVersion>);
 #[derive(Deserialize)]
 struct RubyGemVersion {
     number: String,
-    sha: String,  // SHA-256
+    sha: String, // SHA-256
 }
 
 async fn fetch_rubygems_checksum(client: &Client, package: &Package) -> Result<Option<String>> {
@@ -223,7 +225,8 @@ async fn fetch_rubygems_checksum(client: &Client, package: &Package) -> Result<O
 #[derive(Deserialize)]
 struct PackagistResponse {
     #[allow(dead_code)]
-    packages: std::collections::HashMap<String, std::collections::HashMap<String, PackagistVersion>>,
+    packages:
+        std::collections::HashMap<String, std::collections::HashMap<String, PackagistVersion>>,
 }
 
 #[derive(Deserialize)]
@@ -235,7 +238,7 @@ struct PackagistVersion {
 #[derive(Deserialize)]
 struct PackagistDist {
     #[allow(dead_code)]
-    shasum: Option<String>,  // SHA-1, not SHA-256
+    shasum: Option<String>, // SHA-1, not SHA-256
 }
 
 async fn fetch_composer_checksum(client: &Client, package: &Package) -> Result<Option<String>> {

@@ -39,7 +39,7 @@ impl ScanSummary {
     #[allow(dead_code)]
     fn severity_emoji(count: usize) -> &'static str {
         if count > 0 {
-            "⚠️ "
+            "WARN "
         } else {
             "✓"
         }
@@ -132,7 +132,7 @@ impl ScanSummary {
         let vuln_display = if self.vulnerabilities_found == 0 {
             format!(
                 "{} {}",
-                "✅",
+                "OK",
                 self.vulnerabilities_found.to_string().green().bold()
             )
         } else if self.critical_count > 0 || self.high_count > 5 {
@@ -194,7 +194,7 @@ impl ScanSummary {
                 "License Issues:",
                 &format!(
                     "{} {}",
-                    "⚠️ ",
+                    "WARN ",
                     self.license_issues.to_string().yellow().bold()
                 ),
             );
@@ -205,7 +205,7 @@ impl ScanSummary {
                 "Policy Violations:",
                 &format!(
                     "{} {}",
-                    "❌",
+                    "FAIL",
                     self.policy_violations.to_string().red().bold()
                 ),
             );
@@ -219,21 +219,21 @@ impl ScanSummary {
                 .bold()
         );
         self.print_row(
-            "⏱️  Scan Duration:",
+            "Duration:",
             &format_duration(self.scan_duration)
                 .bright_white()
                 .bold()
                 .to_string(),
         );
         self.print_row(
-            "📁 Reports:",
+            "Reports:",
             &self.reports_dir.bright_blue().underline().to_string(),
         );
 
         if self.uploaded_to_github {
             self.print_row(
                 "📤 GitHub Upload:",
-                &"✅ Complete".green().bold().to_string(),
+                &"OK Complete".green().bold().to_string(),
             );
         }
 

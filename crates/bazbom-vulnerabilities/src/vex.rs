@@ -306,7 +306,8 @@ pub fn filter_vulnerabilities(
 
         // Construct PURL from first affected package if available
         let purl = vuln.affected.first().map(|a| {
-            format!("pkg:{}/{}",
+            format!(
+                "pkg:{}/{}",
                 a.ecosystem.to_lowercase().replace("crates.io", "cargo"),
                 a.package
             )
@@ -342,10 +343,7 @@ mod tests {
 
     #[test]
     fn test_vex_document_creation() {
-        let mut doc = VexDocument::new(
-            "https://example.com/vex/2025-001",
-            "security@example.com",
-        );
+        let mut doc = VexDocument::new("https://example.com/vex/2025-001", "security@example.com");
 
         let statement = VexStatement::new("CVE-2023-12345", VexStatus::NotAffected)
             .with_justification(VexJustification::VulnerableCodeNotInExecutePath)
@@ -369,7 +367,7 @@ mod tests {
         // Package-specific VEX
         doc.add_statement(
             VexStatement::new("CVE-2023-22222", VexStatus::NotAffected)
-                .with_product("pkg:cargo/foo@1.0.0")
+                .with_product("pkg:cargo/foo@1.0.0"),
         );
 
         let filter = VexFilter::from_documents(&[doc]);

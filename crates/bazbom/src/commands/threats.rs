@@ -96,7 +96,10 @@ pub fn handle_threats_scan(
                     ThreatLevel::Low => "[i]",
                     ThreatLevel::None => "[+]",
                 };
-                println!("{} {} v{}", level_icon, threat.package_name, threat.package_version);
+                println!(
+                    "{} {} v{}",
+                    level_icon, threat.package_name, threat.package_version
+                );
                 println!("    Type: {:?}", threat.threat_type);
                 println!("    {}", threat.description);
                 println!("    Recommendation: {}", threat.recommendation);

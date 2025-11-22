@@ -126,38 +126,33 @@ async fn analyze_go_reachability(
         // 1. Exact match (full path)
         // 2. Last segment match (e.g., "bar" matches "github.com/foo/bar")
         // 3. Suffix match (e.g., "foo/bar" matches "github.com/foo/bar")
-        let is_reachable = report
-            .reachable_functions
-            .iter()
-            .any(|func_id| {
-                // Direct contains check (most common case)
-                if func_id.contains(package_name) {
-                    return true;
-                }
+        let is_reachable = report.reachable_functions.iter().any(|func_id| {
+            // Direct contains check (most common case)
+            if func_id.contains(package_name) {
+                return true;
+            }
 
-                // Extract last segment of package name for matching
-                // e.g., "github.com/foo/bar" -> "bar"
-                let last_segment = package_name
-                    .rsplit('/')
-                    .next()
-                    .unwrap_or(package_name);
+            // Extract last segment of package name for matching
+            // e.g., "github.com/foo/bar" -> "bar"
+            let last_segment = package_name.rsplit('/').next().unwrap_or(package_name);
 
-                // Check if function contains the last segment
-                // (handles cases where vuln refs just "bar" but func is "github.com/foo/bar.Func")
-                if last_segment != package_name && func_id.contains(last_segment) {
-                    return true;
-                }
+            // Check if function contains the last segment
+            // (handles cases where vuln refs just "bar" but func is "github.com/foo/bar.Func")
+            if last_segment != package_name && func_id.contains(last_segment) {
+                return true;
+            }
 
-                // Check suffix match for partial paths
-                // e.g., func_id might be "github.com/foo/bar/v2.Func"
-                // and package_name is "github.com/foo/bar"
-                if func_id.contains(&format!("{}/", package_name))
-                    || func_id.contains(&format!("{}..", package_name)) {
-                    return true;
-                }
+            // Check suffix match for partial paths
+            // e.g., func_id might be "github.com/foo/bar/v2.Func"
+            // and package_name is "github.com/foo/bar"
+            if func_id.contains(&format!("{}/", package_name))
+                || func_id.contains(&format!("{}..", package_name))
+            {
+                return true;
+            }
 
-                false
-            });
+            false
+        });
 
         vulnerable_packages_reachable.insert(package_name.clone(), is_reachable);
     }

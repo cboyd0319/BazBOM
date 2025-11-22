@@ -84,7 +84,7 @@ pub enum GitHubCommand {
 
 /// Interactive setup wizard for GitHub integration
 async fn handle_github_init() -> Result<()> {
-    println!("{}", "🎯 BazBOM GitHub Integration Setup".bold().cyan());
+    println!("{}", "TARGET BazBOM GitHub Integration Setup".bold().cyan());
     println!();
 
     // Get default owner/org
@@ -149,7 +149,7 @@ async fn handle_github_init() -> Result<()> {
     fs::write(&config_path, yaml).context("Failed to write config file")?;
 
     println!();
-    println!("{}", "✅ Configuration saved!".green().bold());
+    println!("{}", "OK Configuration saved!".green().bold());
     println!();
     println!("Next steps:");
     println!("  1. Set environment variable:");
@@ -242,7 +242,7 @@ async fn handle_github_pr_create(
     let pr = client.create_pull_request(&owner, &repo, request).await?;
 
     println!();
-    println!("{}", "✅ Pull request created!".green().bold());
+    println!("{}", "OK Pull request created!".green().bold());
     println!("  Number: #{}", pr.number);
     println!("  URL: {}", pr.html_url);
     println!("  Status: {}", pr.state);
@@ -292,7 +292,7 @@ async fn handle_github_pr_list(owner: String, repo: String, state: Option<String
     println!();
 
     // TODO: Implement list_pull_requests in GitHubClient
-    println!("{}", "⚠️  PR listing not yet implemented".yellow());
+    println!("{}", "WARN  PR listing not yet implemented".yellow());
     println!("This feature will be available soon.");
     println!();
 

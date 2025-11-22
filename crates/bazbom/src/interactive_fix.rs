@@ -180,7 +180,7 @@ impl InteractiveFix {
         println!(
             "{} {} {}",
             "║".bright_magenta().bold(),
-            "🛠️  INTERACTIVE FIX MODE - Let's fix these vulnerabilities!"
+            "TOOLS  INTERACTIVE FIX MODE - Let's fix these vulnerabilities!"
                 .bright_cyan()
                 .bold(),
             "║".bright_magenta().bold()
@@ -217,7 +217,7 @@ impl InteractiveFix {
 
         // Package info
         println!(
-            "{} 📦 {:<50} {}",
+            "{} PKG {:<50} {}",
             "│".cyan(),
             format!(
                 "{} {} → {}",
@@ -259,7 +259,7 @@ impl InteractiveFix {
 
         // Effort estimate
         let effort = format!(
-            "⏱️  Estimated effort: {:.1} hrs",
+            "TIME  Estimated effort: {:.1} hrs",
             vuln.estimated_effort_hours
         );
         println!("{} {:<58} {}", "│".cyan(), effort, "│".cyan());
@@ -269,7 +269,7 @@ impl InteractiveFix {
             println!(
                 "{} {} {:<50} {}",
                 "│".cyan(),
-                "⚠️ ".yellow(),
+                "WARN ".yellow(),
                 format!("{} breaking changes detected", vuln.breaking_changes).yellow(),
                 "│".cyan()
             );
@@ -292,18 +292,18 @@ impl InteractiveFix {
             ]
         } else if vuln.severity == Severity::Critical || vuln.severity == Severity::High {
             vec![
-                "✅ Fix now",
+                "OK Fix now",
                 "📖 Explain breaking changes",
                 "⊘ Skip for now",
-                "⏭️  Skip all low priority",
+                "SKIP  Skip all low priority",
                 "🚪 Quit",
             ]
         } else {
             vec![
-                "✅ Fix now",
+                "OK Fix now",
                 "📖 Explain first",
                 "⊘ Skip for now",
-                "⏭️  Skip all low priority",
+                "SKIP  Skip all low priority",
                 "🚪 Quit",
             ]
         };
@@ -361,7 +361,7 @@ impl InteractiveFix {
         println!();
 
         if vuln.breaking_changes > 0 {
-            println!("{}", "⚠️  Breaking Changes:".yellow().bold());
+            println!("{}", "WARN  Breaking Changes:".yellow().bold());
             println!(
                 "  Run {} for detailed analysis",
                 format!("bazbom fix {} --explain", vuln.package)
@@ -465,7 +465,7 @@ impl InteractiveFix {
         // Create why_fix message
         let mut why_fix = vuln.description.clone();
         if vuln.in_cisa_kev {
-            why_fix.push_str("\n\n⚠️  This vulnerability is in the CISA Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.");
+            why_fix.push_str("\n\nWARN  This vulnerability is in the CISA Known Exploited Vulnerabilities catalog, indicating active exploitation in the wild.");
         }
         if let Some(epss) = vuln.epss_score {
             if epss > 0.5 {
@@ -552,7 +552,7 @@ impl InteractiveFix {
             _ => {
                 spinner.finish_with_message(format!(
                     "   {} Ecosystem '{}' not supported for automatic fixes",
-                    "⚠️".yellow(),
+                    "WARN".yellow(),
                     ecosystem
                 ));
                 return Ok(());
@@ -561,13 +561,13 @@ impl InteractiveFix {
 
         match result {
             Ok(()) => {
-                spinner.finish_with_message(format!("   {} Fixed {}!", "✅".green(), vuln.cve_id));
+                spinner.finish_with_message(format!("   {} Fixed {}!", "OK".green(), vuln.cve_id));
                 Ok(())
             }
             Err(e) => {
                 spinner.finish_with_message(format!(
                     "   {} Failed to apply fix: {}",
-                    "❌".red(),
+                    "FAIL".red(),
                     e
                 ));
                 Err(e)

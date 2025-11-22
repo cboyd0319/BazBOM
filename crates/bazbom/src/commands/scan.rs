@@ -54,19 +54,26 @@ pub async fn handle_scan(
     sign_sbom: bool,
 ) -> Result<()> {
     debug!("Starting scan with path: {}", path);
-    debug!("Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
-        reachability, fast, format, incremental);
+    debug!(
+        "Scan options - reachability: {}, fast: {}, format: {}, incremental: {}",
+        reachability, fast, format, incremental
+    );
 
     if let Some(limit_val) = limit {
-        info!("Scan limit enabled: will process maximum {} packages/targets", limit_val);
+        info!(
+            "Scan limit enabled: will process maximum {} packages/targets",
+            limit_val
+        );
         // Store limit in environment for downstream components
         std::env::set_var("BAZBOM_SCAN_LIMIT", limit_val.to_string());
     }
     // Apply smart defaults if no flags were explicitly set
     debug!("Detecting smart defaults for environment");
     let defaults = SmartDefaults::detect();
-    debug!("Smart defaults detected - is_ci: {}, is_pr: {}, enable_reachability: {}",
-        defaults.is_ci, defaults.is_pr, defaults.enable_reachability);
+    debug!(
+        "Smart defaults detected - is_ci: {}, is_pr: {}, enable_reachability: {}",
+        defaults.is_ci, defaults.is_pr, defaults.enable_reachability
+    );
 
     // Show what we detected (if any smart defaults were applied)
     let smart_defaults_enabled = std::env::var("BAZBOM_NO_SMART_DEFAULTS").is_err();
@@ -88,8 +95,10 @@ pub async fn handle_scan(
             "  → Enabling reachability analysis (repo < {}MB)",
             defaults.repo_size / 1_000_000
         );
-        debug!("Auto-enabled reachability analysis (repo size: {} bytes, fast mode: {})",
-            defaults.repo_size, fast);
+        debug!(
+            "Auto-enabled reachability analysis (repo size: {} bytes, fast mode: {})",
+            defaults.repo_size, fast
+        );
         reachability = true;
     }
 
@@ -157,7 +166,10 @@ pub async fn handle_scan(
     let workspace = PathBuf::from(&path);
     let output_dir = PathBuf::from(&out_dir);
 
-    debug!("Creating scan orchestrator for workspace: {:?}, output: {:?}", workspace, output_dir);
+    debug!(
+        "Creating scan orchestrator for workspace: {:?}, output: {:?}",
+        workspace, output_dir
+    );
     let orchestrator = bazbom::scan_orchestrator::ScanOrchestrator::new(
         workspace,
         output_dir,
@@ -193,10 +205,14 @@ pub async fn handle_scan(
     if scan_result.is_ok() && (jira_create || github_pr || auto_remediate) {
         use bazbom::remediation::AutoRemediationConfig;
 
-        info!("Auto-remediation enabled - jira: {}, github_pr: {}, auto: {}",
-            jira_create, github_pr, auto_remediate);
-        debug!("Auto-remediation config - min_severity: {:?}, reachable_only: {}",
-            remediate_min_severity, remediate_reachable_only);
+        info!(
+            "Auto-remediation enabled - jira: {}, github_pr: {}, auto: {}",
+            jira_create, github_pr, auto_remediate
+        );
+        debug!(
+            "Auto-remediation config - min_severity: {:?}, reachable_only: {}",
+            remediate_min_severity, remediate_reachable_only
+        );
 
         let config = AutoRemediationConfig::from_flags(
             jira_create,
@@ -249,7 +265,7 @@ async fn run_auto_remediation(
         .unwrap_or_default();
 
     if vulnerabilities.is_empty() {
-        println!("\n✅ No vulnerabilities found - auto-remediation not needed");
+        println!("\nOK No vulnerabilities found - auto-remediation not needed");
         return Ok(());
     }
 
@@ -365,7 +381,7 @@ fn compare_with_baseline(scan_path: &str, baseline_path: &str, out_dir: &str) ->
     if !new_vulns.is_empty() {
         println!(
             "{} {} new {}",
-            "⚠️".red(),
+            "WARN".red(),
             new_vulns.len(),
             if new_vulns.len() == 1 {
                 "vulnerability"

@@ -13,8 +13,8 @@ pub enum RiskLevel {
 impl RiskLevel {
     pub fn emoji(&self) -> &'static str {
         match self {
-            RiskLevel::Low => "✅",
-            RiskLevel::Medium => "⚠️",
+            RiskLevel::Low => "OK",
+            RiskLevel::Medium => "WARN",
             RiskLevel::High => "🚨",
             RiskLevel::Critical => "💥",
         }

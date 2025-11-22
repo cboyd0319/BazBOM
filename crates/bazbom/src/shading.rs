@@ -84,8 +84,8 @@ pub fn identify_jar(jar_path: &Path, agent: Option<&Agent>) -> Result<Option<Jar
 
 /// Compute SHA-256 checksum of a JAR file
 pub fn compute_jar_checksum(jar_path: &Path) -> Result<String> {
-    let mut file = fs::File::open(jar_path)
-        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+    let mut file =
+        fs::File::open(jar_path).with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
 
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 8192];
@@ -103,10 +103,9 @@ pub fn compute_jar_checksum(jar_path: &Path) -> Result<String> {
 
 /// Extract identity from META-INF/maven/<groupId>/<artifactId>/pom.properties
 pub fn extract_pom_properties(jar_path: &Path) -> Result<Option<JarIdentity>> {
-    let file = fs::File::open(jar_path)
-        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
-    let mut archive = ZipArchive::new(file)
-        .context("failed to read JAR as ZIP archive")?;
+    let file =
+        fs::File::open(jar_path).with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+    let mut archive = ZipArchive::new(file).context("failed to read JAR as ZIP archive")?;
 
     // Look for pom.properties files
     for i in 0..archive.len() {
@@ -155,10 +154,9 @@ pub fn extract_pom_properties(jar_path: &Path) -> Result<Option<JarIdentity>> {
 
 /// Extract identity from META-INF/MANIFEST.MF
 pub fn extract_manifest_identity(jar_path: &Path) -> Result<Option<JarIdentity>> {
-    let file = fs::File::open(jar_path)
-        .with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
-    let mut archive = ZipArchive::new(file)
-        .context("failed to read JAR as ZIP archive")?;
+    let file =
+        fs::File::open(jar_path).with_context(|| format!("failed to open JAR: {:?}", jar_path))?;
+    let mut archive = ZipArchive::new(file).context("failed to read JAR as ZIP archive")?;
 
     // Find MANIFEST.MF
     let manifest_entry = archive.by_name("META-INF/MANIFEST.MF");
@@ -188,15 +186,29 @@ pub fn extract_manifest_identity(jar_path: &Path) -> Result<Option<JarIdentity>>
 
         // Process previous line
         if !current_line.is_empty() {
-            parse_manifest_line(&current_line, &mut impl_title, &mut impl_version,
-                &mut impl_vendor_id, &mut bundle_name, &mut bundle_version, &mut bundle_symbolic_name);
+            parse_manifest_line(
+                &current_line,
+                &mut impl_title,
+                &mut impl_version,
+                &mut impl_vendor_id,
+                &mut bundle_name,
+                &mut bundle_version,
+                &mut bundle_symbolic_name,
+            );
         }
         current_line = line.to_string();
     }
     // Process last line
     if !current_line.is_empty() {
-        parse_manifest_line(&current_line, &mut impl_title, &mut impl_version,
-            &mut impl_vendor_id, &mut bundle_name, &mut bundle_version, &mut bundle_symbolic_name);
+        parse_manifest_line(
+            &current_line,
+            &mut impl_title,
+            &mut impl_version,
+            &mut impl_vendor_id,
+            &mut bundle_name,
+            &mut bundle_version,
+            &mut bundle_symbolic_name,
+        );
     }
 
     // Try to construct identity from manifest attributes
@@ -205,7 +217,10 @@ pub fn extract_manifest_identity(jar_path: &Path) -> Result<Option<JarIdentity>>
     if let (Some(name), Some(version)) = (&bundle_symbolic_name, &bundle_version) {
         // OSGi bundle - symbolic name often has groupId.artifactId format
         let (group_id, artifact_id) = if let Some(last_dot) = name.rfind('.') {
-            (name[..last_dot].to_string(), name[last_dot + 1..].to_string())
+            (
+                name[..last_dot].to_string(),
+                name[last_dot + 1..].to_string(),
+            )
         } else {
             ("unknown".to_string(), name.clone())
         };
@@ -279,9 +294,9 @@ struct MavenSearchDocs {
 #[derive(Deserialize)]
 #[allow(dead_code)]
 struct MavenSearchDoc {
-    g: String,  // groupId
-    a: String,  // artifactId
-    v: String,  // version
+    g: String, // groupId
+    a: String, // artifactId
+    v: String, // version
 }
 
 /// Look up a JAR in Maven Central by its SHA-256 checksum
@@ -307,8 +322,8 @@ pub fn lookup_jar_by_checksum(agent: &Agent, sha256: &str) -> Result<Option<JarI
         .read_to_string()
         .context("failed to read Maven Central response")?;
 
-    let search_result: MavenSearchResponse = serde_json::from_str(&body)
-        .context("failed to parse Maven Central response")?;
+    let search_result: MavenSearchResponse =
+        serde_json::from_str(&body).context("failed to parse Maven Central response")?;
 
     if let Some(doc) = search_result.response.docs.first() {
         return Ok(Some(JarIdentity {
@@ -386,7 +401,10 @@ pub fn extract_and_identify_jars(
         return Ok(Vec::new());
     }
 
-    info!("Found {} nested JARs, identifying...", extracted_names.len());
+    info!(
+        "Found {} nested JARs, identifying...",
+        extracted_names.len()
+    );
 
     // Identify each extracted JAR
     let mut results = Vec::with_capacity(extracted_names.len());
@@ -434,10 +452,7 @@ pub fn extract_and_identify_jars(
 ///
 /// Useful for scanning lib/ directories or extracted container layers.
 #[allow(dead_code)]
-pub fn scan_and_identify_jars(
-    dir: &Path,
-    agent: Option<&Agent>,
-) -> Result<Vec<IdentifiedJar>> {
+pub fn scan_and_identify_jars(dir: &Path, agent: Option<&Agent>) -> Result<Vec<IdentifiedJar>> {
     use glob::glob;
     use tracing::{debug, info};
 
@@ -1812,8 +1827,13 @@ mod tests {
         let mut zip = ZipWriter::new(file);
 
         let options = SimpleFileOptions::default();
-        zip.start_file("META-INF/maven/com.example/my-artifact/pom.properties", options).unwrap();
-        zip.write_all(b"groupId=com.example\nartifactId=my-artifact\nversion=1.0.0\n").unwrap();
+        zip.start_file(
+            "META-INF/maven/com.example/my-artifact/pom.properties",
+            options,
+        )
+        .unwrap();
+        zip.write_all(b"groupId=com.example\nartifactId=my-artifact\nversion=1.0.0\n")
+            .unwrap();
         zip.finish().unwrap();
 
         let identity = extract_pom_properties(temp_file.path()).unwrap().unwrap();
@@ -1861,7 +1881,9 @@ mod tests {
         zip.write_all(b"Manifest-Version: 1.0\nImplementation-Title: my-artifact\nImplementation-Version: 2.0.0\nImplementation-Vendor-Id: org.example\n").unwrap();
         zip.finish().unwrap();
 
-        let identity = extract_manifest_identity(temp_file.path()).unwrap().unwrap();
+        let identity = extract_manifest_identity(temp_file.path())
+            .unwrap()
+            .unwrap();
         assert_eq!(identity.group_id, "org.example");
         assert_eq!(identity.artifact_id, "my-artifact");
         assert_eq!(identity.version, "2.0.0");
@@ -1882,10 +1904,15 @@ mod tests {
 
         let options = SimpleFileOptions::default();
         zip.start_file("META-INF/MANIFEST.MF", options).unwrap();
-        zip.write_all(b"Manifest-Version: 1.0\nBundle-SymbolicName: org.osgi.bundle\nBundle-Version: 3.0.0\n").unwrap();
+        zip.write_all(
+            b"Manifest-Version: 1.0\nBundle-SymbolicName: org.osgi.bundle\nBundle-Version: 3.0.0\n",
+        )
+        .unwrap();
         zip.finish().unwrap();
 
-        let identity = extract_manifest_identity(temp_file.path()).unwrap().unwrap();
+        let identity = extract_manifest_identity(temp_file.path())
+            .unwrap()
+            .unwrap();
         assert_eq!(identity.group_id, "org.osgi");
         assert_eq!(identity.artifact_id, "bundle");
         assert_eq!(identity.version, "3.0.0");
@@ -1907,8 +1934,13 @@ mod tests {
         let options = SimpleFileOptions::default();
 
         // Add pom.properties
-        zip.start_file("META-INF/maven/com.pom/pom-artifact/pom.properties", options).unwrap();
-        zip.write_all(b"groupId=com.pom\nartifactId=pom-artifact\nversion=1.0.0\n").unwrap();
+        zip.start_file(
+            "META-INF/maven/com.pom/pom-artifact/pom.properties",
+            options,
+        )
+        .unwrap();
+        zip.write_all(b"groupId=com.pom\nartifactId=pom-artifact\nversion=1.0.0\n")
+            .unwrap();
 
         // Add MANIFEST.MF with different values
         zip.start_file("META-INF/MANIFEST.MF", options).unwrap();

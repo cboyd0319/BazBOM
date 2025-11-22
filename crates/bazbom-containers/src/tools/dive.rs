@@ -64,8 +64,12 @@ impl ContainerTool for DiveScanner {
             .await
             .context("Failed to read Dive output")?;
 
-        let dive_output: DiveOutput = serde_json::from_str(&json_content)
-            .with_context(|| format!("Failed to parse Dive JSON: {}", &json_content[..500.min(json_content.len())]))?;
+        let dive_output: DiveOutput = serde_json::from_str(&json_content).with_context(|| {
+            format!(
+                "Failed to parse Dive JSON: {}",
+                &json_content[..500.min(json_content.len())]
+            )
+        })?;
 
         let mut tool_output = ToolOutput::empty("dive");
         tool_output.raw_output_path = Some(output_file);

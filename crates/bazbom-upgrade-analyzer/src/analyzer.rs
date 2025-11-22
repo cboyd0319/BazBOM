@@ -89,10 +89,7 @@ impl UpgradeAnalyzer {
                 .await?
         } else if self.project_root.is_some() {
             // Use native lockfile-based analysis for non-deps.dev ecosystems
-            info!(
-                "Using native lockfile analysis for {:?} ecosystem",
-                system
-            );
+            info!("Using native lockfile analysis for {:?} ecosystem", system);
 
             let _from_deps = native_deps::get_native_dependencies(
                 system,
@@ -468,7 +465,7 @@ impl UpgradeAnalyzer {
 
         if removed_count > 0 {
             notes.push(format!(
-                "⚠️  {} dependencies will be removed",
+                "WARN  {} dependencies will be removed",
                 removed_count
             ));
         }

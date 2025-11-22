@@ -36,8 +36,7 @@ impl Scanner for GoScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result =
-            EcosystemScanResult::new("Go".to_string(), ctx.root.display().to_string());
+        let mut result = EcosystemScanResult::new("Go".to_string(), ctx.root.display().to_string());
 
         // Parse go.mod if available
         if let Some(ref manifest_path) = ctx.manifest {
@@ -259,8 +258,8 @@ fn apply_replacements(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
     use crate::cache::LicenseCache;
+    use std::sync::Arc;
     use tempfile::TempDir;
 
     #[test]
@@ -320,8 +319,7 @@ require github.com/gorilla/mux v1.8.0 // indirect
 
         let scanner = GoScanner::new();
         let cache = Arc::new(LicenseCache::new());
-        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
-            .with_manifest(go_mod);
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_manifest(go_mod);
 
         let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 3);

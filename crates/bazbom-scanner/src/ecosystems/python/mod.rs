@@ -41,10 +41,8 @@ impl Scanner for PythonScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result = EcosystemScanResult::new(
-            "Python".to_string(),
-            ctx.root.display().to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Python".to_string(), ctx.root.display().to_string());
 
         // Try to parse lockfiles first (most accurate)
         if let Some(ref lockfile_path) = ctx.lockfile {
@@ -215,23 +213,33 @@ fn read_python_license(root_path: &Path, package_name: &str) -> Option<String> {
         if let Ok(entries) = fs::read_dir(&base_path) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.is_dir() && path.file_name().and_then(|n| n.to_str()).is_some_and(|n| n.starts_with("python")) {
+                if path.is_dir()
+                    && path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .is_some_and(|n| n.starts_with("python"))
+                {
                     let site_packages = path.join("site-packages");
                     if site_packages.exists() {
                         // Try .dist-info directory
                         if let Ok(pkg_entries) = fs::read_dir(&site_packages) {
                             for pkg_entry in pkg_entries.flatten() {
                                 let pkg_path = pkg_entry.path();
-                                let dir_name = pkg_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                                let dir_name =
+                                    pkg_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
 
                                 // Match package-version.dist-info
-                                if dir_name.starts_with(&normalized_name) && dir_name.ends_with(".dist-info") {
+                                if dir_name.starts_with(&normalized_name)
+                                    && dir_name.ends_with(".dist-info")
+                                {
                                     let metadata_file = pkg_path.join("METADATA");
                                     if let Ok(content) = fs::read_to_string(&metadata_file) {
                                         // Parse METADATA file for License: field
                                         for line in content.lines() {
                                             if line.starts_with("License:") {
-                                                if let Some(license) = line.strip_prefix("License:").map(|s| s.trim()) {
+                                                if let Some(license) =
+                                                    line.strip_prefix("License:").map(|s| s.trim())
+                                                {
                                                     if !license.is_empty() && license != "UNKNOWN" {
                                                         return Some(license.to_string());
                                                     }
@@ -436,10 +444,7 @@ fn parse_pipfile_lock(
 }
 
 /// Parse pyproject.toml (PEP 621 or Poetry format)
-fn parse_pyproject_toml(
-    file_path: &Path,
-    result: &mut EcosystemScanResult,
-) -> Result<()> {
+fn parse_pyproject_toml(file_path: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     let content = fs::read_to_string(file_path).context("Failed to read pyproject.toml")?;
     let pyproject: PyProjectToml =
         toml::from_str(&content).context("Failed to parse pyproject.toml")?;
@@ -498,12 +503,11 @@ fn parse_pyproject_toml(
                 // - Complex: package = { version = "^1.2.3", ... }
                 let version = match version_spec {
                     serde_json::Value::String(v) => extract_poetry_version(v),
-                    serde_json::Value::Object(obj) => {
-                        obj.get("version")
-                            .and_then(|v| v.as_str())
-                            .map(extract_poetry_version)
-                            .unwrap_or_else(|| "latest".to_string())
-                    }
+                    serde_json::Value::Object(obj) => obj
+                        .get("version")
+                        .and_then(|v| v.as_str())
+                        .map(extract_poetry_version)
+                        .unwrap_or_else(|| "latest".to_string()),
                     _ => "latest".to_string(),
                 };
 
@@ -524,12 +528,11 @@ fn parse_pyproject_toml(
             for (name, version_spec) in &poetry.dev_dependencies {
                 let version = match version_spec {
                     serde_json::Value::String(v) => extract_poetry_version(v),
-                    serde_json::Value::Object(obj) => {
-                        obj.get("version")
-                            .and_then(|v| v.as_str())
-                            .map(extract_poetry_version)
-                            .unwrap_or_else(|| "latest".to_string())
-                    }
+                    serde_json::Value::Object(obj) => obj
+                        .get("version")
+                        .and_then(|v| v.as_str())
+                        .map(extract_poetry_version)
+                        .unwrap_or_else(|| "latest".to_string()),
                     _ => "latest".to_string(),
                 };
 
@@ -665,8 +668,7 @@ six==1.16.0 ; python_version >= "3.6"
 
         let scanner = PythonScanner::new();
         let cache = Arc::new(LicenseCache::new());
-        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
-            .with_manifest(requirements);
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_manifest(requirements);
 
         let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 4);

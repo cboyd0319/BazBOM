@@ -16,18 +16,25 @@ impl DependencyUpdater for MavenUpdater {
         // Parse groupId:artifactId format
         let parts: Vec<&str> = package.split(':').collect();
         if parts.len() != 2 {
-            anyhow::bail!("Invalid Maven package format. Expected groupId:artifactId, got: {}", package);
+            anyhow::bail!(
+                "Invalid Maven package format. Expected groupId:artifactId, got: {}",
+                package
+            );
         }
         let group_id = parts[0];
         let artifact_id = parts[1];
 
         // Use regex to find and update the dependency
-        let updated = self.update_dependency_version(&content, group_id, artifact_id, new_version)?;
+        let updated =
+            self.update_dependency_version(&content, group_id, artifact_id, new_version)?;
 
         fs::write(file_path, updated)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {}:{} in pom.xml: {}", group_id, artifact_id, new_version);
+        println!(
+            "  [+] Updated {}:{} in pom.xml: {}",
+            group_id, artifact_id, new_version
+        );
         Ok(())
     }
 
@@ -156,7 +163,9 @@ mod tests {
         fs::write(&pom_path, pom_content).unwrap();
 
         let updater = MavenUpdater;
-        updater.update_version(&pom_path, "com.google.guava:guava", "32.0-jre").unwrap();
+        updater
+            .update_version(&pom_path, "com.google.guava:guava", "32.0-jre")
+            .unwrap();
 
         let updated = fs::read_to_string(&pom_path).unwrap();
         assert!(updated.contains("<version>32.0-jre</version>"));

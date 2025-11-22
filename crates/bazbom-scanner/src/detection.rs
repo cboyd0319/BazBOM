@@ -48,15 +48,15 @@ impl EcosystemType {
 
     pub fn icon(&self) -> &'static str {
         match self {
-            EcosystemType::Npm => "📦",
-            EcosystemType::Python => "🐍",
+            EcosystemType::Npm => "PKG",
+            EcosystemType::Python => "PY",
             EcosystemType::Go => "🐹",
-            EcosystemType::Rust => "🦀",
+            EcosystemType::Rust => "RUST",
             EcosystemType::Ruby => "💎",
             EcosystemType::Php => "🐘",
             EcosystemType::Maven => "☕",
             EcosystemType::Gradle => "🐘",
-            EcosystemType::Bazel => "🏗️",
+            EcosystemType::Bazel => "BUILD",
         }
     }
 }
@@ -224,7 +224,8 @@ pub fn detect_ecosystems<P: AsRef<Path>>(path: P) -> Result<Vec<Ecosystem>> {
                 // Bazel
                 "BUILD" | "BUILD.bazel" | "WORKSPACE" | "WORKSPACE.bazel" | "MODULE.bazel" => {
                     // Bazel lockfiles vary by version
-                    let lockfile = find_lockfile(&dir_path, &["MODULE.bazel.lock", "maven_install.json"]);
+                    let lockfile =
+                        find_lockfile(&dir_path, &["MODULE.bazel.lock", "maven_install.json"]);
                     ecosystems.push(Ecosystem::new(
                         EcosystemType::Bazel,
                         dir_path.clone(),

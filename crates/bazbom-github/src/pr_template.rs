@@ -55,9 +55,9 @@ impl PrTemplateEngine {
 
         // Reachability
         let reachability_status = if metadata.reachable {
-            "⚠️ REACHABLE"
+            "WARN REACHABLE"
         } else {
-            "✅ UNREACHABLE"
+            "OK UNREACHABLE"
         };
         vars.insert(
             "reachability_status".to_string(),
@@ -66,7 +66,7 @@ impl PrTemplateEngine {
 
         // Auto-merge
         let auto_merge_eligible = if metadata.auto_merge_eligible {
-            "✅ Yes"
+            "OK Yes"
         } else {
             "No"
         };
@@ -76,9 +76,9 @@ impl PrTemplateEngine {
         );
 
         let auto_merge_status = if metadata.auto_merge_eligible {
-            "✅ ENABLED - Will merge after tests pass and approval"
+            "OK ENABLED - Will merge after tests pass and approval"
         } else {
-            "❌ DISABLED - Requires manual review"
+            "FAIL DISABLED - Requires manual review"
         };
         vars.insert(
             "auto_merge_status".to_string(),
@@ -104,11 +104,7 @@ impl PrTemplateEngine {
         } else {
             "LOW"
         };
-        let confidence_badge = if confidence_score >= 90 {
-            "✅"
-        } else {
-            "⚠️"
-        };
+        let confidence_badge = if confidence_score >= 90 { "OK" } else { "WARN" };
 
         vars.insert("confidence_score".to_string(), confidence_score.to_string());
         vars.insert("confidence_level".to_string(), confidence_level.to_string());
@@ -117,7 +113,7 @@ impl PrTemplateEngine {
         // Why fix this (severity-based)
         let why_fix = match metadata.severity.as_str() {
             "CRITICAL" => "🚨 **Hackers are using this right now!** This vulnerability is being actively exploited in the wild. Patching immediately prevents attackers from exploiting your system.",
-            "HIGH" => "⚠️ This vulnerability poses a significant security risk and should be patched as soon as possible.",
+            "HIGH" => "WARN This vulnerability poses a significant security risk and should be patched as soon as possible.",
             "MEDIUM" => "This vulnerability should be addressed in your next security update cycle.",
             "LOW" => "This vulnerability has minimal impact but should be included in routine maintenance.",
             _ => "This vulnerability should be reviewed and addressed according to your security policy.",
@@ -249,7 +245,7 @@ mod tests {
         };
 
         let result = engine.render(&metadata_reachable).unwrap();
-        assert_eq!(result, "Reachable: ⚠️ REACHABLE");
+        assert_eq!(result, "Reachable: WARN REACHABLE");
 
         // Test unreachable
         let metadata_unreachable = BazBomPrMetadata {
@@ -258,7 +254,7 @@ mod tests {
         };
 
         let result = engine.render(&metadata_unreachable).unwrap();
-        assert_eq!(result, "Reachable: ✅ UNREACHABLE");
+        assert_eq!(result, "Reachable: OK UNREACHABLE");
     }
 
     #[test]

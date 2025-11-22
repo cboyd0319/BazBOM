@@ -357,6 +357,15 @@ WHAT IT DOES:
         /// Enable reachability analysis (extracts container filesystem and analyzes code)
         #[arg(long)]
         with_reachability: bool,
+        /// Skip pulling the image (assumes it is already present locally)
+        #[arg(long)]
+        skip_pull: bool,
+        /// Allow unsigned/unknown-provenance images without failing the scan
+        #[arg(long)]
+        allow_unsigned: bool,
+        /// Offline mode: skip networked steps such as docker pull and signature verification
+        #[arg(long)]
+        offline: bool,
     },
     /// Apply policy checks and output SARIF/JSON verdicts
     Policy {
@@ -1228,7 +1237,12 @@ pub enum AnomalyCmd {
         #[arg(long, value_name = "DIR")]
         from_dir: String,
         /// Output model file
-        #[arg(long, short = 'o', value_name = "FILE", default_value = ".bazbom/anomaly-model.json")]
+        #[arg(
+            long,
+            short = 'o',
+            value_name = "FILE",
+            default_value = ".bazbom/anomaly-model.json"
+        )]
         output: String,
     },
     /// Generate anomaly detection report

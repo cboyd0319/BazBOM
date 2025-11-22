@@ -54,7 +54,7 @@ jobs:
           # Optional: fail build if critical vulns found
           # Parse JSON output and check severity
           if jq -e '.runs[].results[] | select(.level == "error")' ./scan-results/sca_findings.sarif > /dev/null; then
-            echo "❌ Critical vulnerabilities found!"
+            echo "FAIL Critical vulnerabilities found!"
             exit 1
           fi
 "#;
@@ -212,7 +212,7 @@ script:
   - bazbom ci -o ./scan-results
 
 after_success:
-  - echo "✅ Security scan complete"
+  - echo "OK Security scan complete"
 
 after_failure:
   - cat ./scan-results/scan_summary.json  # If available
@@ -237,8 +237,8 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
             fs::write(&file_path, GITHUB_ACTIONS_TEMPLATE)
                 .context("Failed to write GitHub Actions workflow")?;
 
-            println!("✅ Created GitHub Actions workflow: .github/workflows/bazbom.yml");
-            println!("\n📋 Next steps:");
+            println!("OK Created GitHub Actions workflow: .github/workflows/bazbom.yml");
+            println!("\nNOTE Next steps:");
             println!("  1. Commit the workflow file: git add .github/workflows/bazbom.yml");
             println!("  2. Push to trigger the workflow");
             println!("  3. View results in GitHub Security tab");
@@ -256,8 +256,8 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
 
             fs::write(file_path, content).context("Failed to write GitLab CI configuration")?;
 
-            println!("✅ Updated .gitlab-ci.yml with BazBOM job");
-            println!("\n📋 Next steps:");
+            println!("OK Updated .gitlab-ci.yml with BazBOM job");
+            println!("\nNOTE Next steps:");
             println!("  1. Review changes: cat .gitlab-ci.yml");
             println!("  2. Commit and push");
             println!("  3. View results in GitLab Security Dashboard");
@@ -277,15 +277,15 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
 
             fs::write(&file_path, content).context("Failed to write CircleCI configuration")?;
 
-            println!("✅ Updated .circleci/config.yml with BazBOM job");
+            println!("OK Updated .circleci/config.yml with BazBOM job");
         }
 
         "jenkins" => {
             let file_path = Path::new("Jenkinsfile.bazbom");
             fs::write(file_path, JENKINS_TEMPLATE).context("Failed to write Jenkinsfile")?;
 
-            println!("✅ Created Jenkinsfile.bazbom");
-            println!("\n📋 Next steps:");
+            println!("OK Created Jenkinsfile.bazbom");
+            println!("\nNOTE Next steps:");
             println!("  1. Review the file: cat Jenkinsfile.bazbom");
             println!("  2. Integrate into your main Jenkinsfile or use directly");
             println!("  3. Configure Jenkins pipeline to use this file");
@@ -302,7 +302,7 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
 
             fs::write(file_path, content).context("Failed to write Travis CI configuration")?;
 
-            println!("✅ Updated .travis.yml with BazBOM job");
+            println!("OK Updated .travis.yml with BazBOM job");
         }
 
         _ => {
@@ -315,7 +315,7 @@ pub fn install_ci_template(provider: &str) -> Result<()> {
 
 /// List available CI templates
 pub fn list_templates() {
-    println!("📦 Available CI templates:\n");
+    println!("PKG Available CI templates:\n");
     println!("  • github       → GitHub Actions (.github/workflows/bazbom.yml)");
     println!("  • gitlab       → GitLab CI (.gitlab-ci.yml)");
     println!("  • circleci     → CircleCI (.circleci/config.yml)");

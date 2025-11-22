@@ -127,7 +127,19 @@ fn scan_creates_sarif_output() {
 
 #[test]
 fn policy_check_command() {
+    let tmp = tempdir().expect("tempdir");
+    let workdir = tmp.path();
+
+    // Create minimal findings directory with an empty SARIF so policy check can run
+    let findings_dir = workdir.join("findings");
+    fs::create_dir_all(&findings_dir).expect("findings dir");
+    fs::write(
+        findings_dir.join("sca.sarif"),
+        r#"{"version": "2.1.0", "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json", "runs": [{"tool": {"driver": {"name": "bazbom"}}, "results": []}]}"#
+    ).expect("write sarif");
+
     let mut cmd = Command::new(assert_cmd::cargo::cargo_bin!("bazbom"));
+    cmd.current_dir(workdir);
     cmd.arg("policy").arg("check");
     cmd.assert()
         .success()

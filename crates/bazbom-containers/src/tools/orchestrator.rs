@@ -3,8 +3,8 @@
 //! Runs multiple container scanning tools concurrently and aggregates results.
 
 use crate::tools::{
-    dockle::DockleScanner,
     dive::DiveScanner,
+    dockle::DockleScanner,
     findings::{AggregatedResults, ScanSummary, Severity},
     grype::GrypeScanner,
     syft::SyftScanner,
@@ -14,7 +14,7 @@ use crate::tools::{
 };
 use anyhow::Result;
 use futures::future::join_all;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tracing::{error, info, warn};
@@ -82,7 +82,10 @@ impl ToolOrchestrator {
             (self.config.enable_syft, Box::new(SyftScanner::new())),
             (self.config.enable_dockle, Box::new(DockleScanner::new())),
             (self.config.enable_dive, Box::new(DiveScanner::new())),
-            (self.config.enable_trufflehog, Box::new(TruffleHogScanner::new())),
+            (
+                self.config.enable_trufflehog,
+                Box::new(TruffleHogScanner::new()),
+            ),
         ];
 
         for (enabled, tool) in tools {
@@ -103,12 +106,16 @@ impl ToolOrchestrator {
 
         // Build list of tools to run
         let mut tasks = Vec::new();
+        let mut executed_tools: Vec<String> = Vec::new();
+        let mut skipped_tools: Vec<String> = Vec::new();
 
         if self.config.enable_trivy {
             let tool: Arc<dyn ContainerTool> = Arc::new(TrivyScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("Trivy not available, skipping");
             }
         }
@@ -116,8 +123,10 @@ impl ToolOrchestrator {
         if self.config.enable_grype {
             let tool: Arc<dyn ContainerTool> = Arc::new(GrypeScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("Grype not available, skipping");
             }
         }
@@ -125,8 +134,10 @@ impl ToolOrchestrator {
         if self.config.enable_syft {
             let tool: Arc<dyn ContainerTool> = Arc::new(SyftScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("Syft not available, skipping");
             }
         }
@@ -134,8 +145,10 @@ impl ToolOrchestrator {
         if self.config.enable_dockle {
             let tool: Arc<dyn ContainerTool> = Arc::new(DockleScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("Dockle not available, skipping");
             }
         }
@@ -143,8 +156,10 @@ impl ToolOrchestrator {
         if self.config.enable_dive {
             let tool: Arc<dyn ContainerTool> = Arc::new(DiveScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("Dive not available, skipping");
             }
         }
@@ -152,8 +167,10 @@ impl ToolOrchestrator {
         if self.config.enable_trufflehog {
             let tool: Arc<dyn ContainerTool> = Arc::new(TruffleHogScanner::new());
             if tool.is_available() {
+                executed_tools.push(tool.name().to_string());
                 tasks.push(self.run_tool(tool, image));
             } else {
+                skipped_tools.push(tool.name().to_string());
                 warn!("TruffleHog not available, skipping");
             }
         }
@@ -164,6 +181,8 @@ impl ToolOrchestrator {
         // Aggregate results
         let mut aggregated = AggregatedResults {
             image_name: image.to_string(),
+            executed_tools,
+            skipped_tools,
             vulnerabilities: Vec::new(),
             secrets: Vec::new(),
             misconfigs: Vec::new(),
@@ -207,11 +226,7 @@ impl ToolOrchestrator {
         Ok(aggregated)
     }
 
-    async fn run_tool(
-        &self,
-        tool: Arc<dyn ContainerTool>,
-        image: &str,
-    ) -> Result<ToolOutput> {
+    async fn run_tool(&self, tool: Arc<dyn ContainerTool>, image: &str) -> Result<ToolOutput> {
         let output_dir = self.output_dir.clone();
         tool.scan(image, &output_dir).await
     }
@@ -219,21 +234,48 @@ impl ToolOrchestrator {
 
 /// Deduplicate vulnerabilities by CVE ID, preferring entries with more info
 fn deduplicate_vulns(
-    mut vulns: Vec<crate::tools::findings::VulnerabilityFinding>,
+    vulns: Vec<crate::tools::findings::VulnerabilityFinding>,
 ) -> Vec<crate::tools::findings::VulnerabilityFinding> {
-    let mut seen: HashSet<String> = HashSet::new();
-    let mut result = Vec::new();
-
-    // Sort by CVE ID for stable ordering
-    vulns.sort_by(|a, b| a.cve_id.cmp(&b.cve_id));
+    let mut merged: HashMap<String, crate::tools::findings::VulnerabilityFinding> = HashMap::new();
 
     for vuln in vulns {
-        if !seen.contains(&vuln.cve_id) {
-            seen.insert(vuln.cve_id.clone());
-            result.push(vuln);
-        }
+        merged
+            .entry(vuln.cve_id.clone())
+            .and_modify(|existing| {
+                // Prefer higher severity
+                if vuln.severity > existing.severity {
+                    existing.severity = vuln.severity;
+                }
+                // Prefer highest CVSS
+                if vuln
+                    .cvss_score
+                    .map_or(false, |s| existing.cvss_score.map_or(true, |e| s > e))
+                {
+                    existing.cvss_score = vuln.cvss_score;
+                }
+                // Keep a fixed version if missing
+                if existing.fixed_version.is_none() {
+                    existing.fixed_version = vuln.fixed_version.clone();
+                }
+                // Merge references
+                let mut refs: HashSet<String> = existing.references.iter().cloned().collect();
+                refs.extend(vuln.references.iter().cloned());
+                existing.references = refs.into_iter().collect();
+                // Prefer layer info when absent
+                if existing.layer_digest.is_none() {
+                    existing.layer_digest = vuln.layer_digest.clone();
+                }
+                // Preserve enriched flags if present
+                existing.epss_score = existing.epss_score.or(vuln.epss_score);
+                existing.epss_percentile = existing.epss_percentile.or(vuln.epss_percentile);
+                existing.is_kev = existing.is_kev || vuln.is_kev;
+                existing.kev_due_date = existing.kev_due_date.clone().or(vuln.kev_due_date.clone());
+            })
+            .or_insert(vuln);
     }
 
+    let mut result: Vec<_> = merged.into_values().collect();
+    result.sort_by(|a, b| a.cve_id.cmp(&b.cve_id));
     result
 }
 

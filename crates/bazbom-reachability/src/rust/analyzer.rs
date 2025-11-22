@@ -133,11 +133,7 @@ impl RustReachabilityAnalyzer {
             Ok(ast) => ast,
             Err(e) => {
                 // Log parse error but continue processing other files
-                tracing::warn!(
-                    "Skipping {} due to parse error: {}",
-                    file_path.display(),
-                    e
-                );
+                tracing::warn!("Skipping {} due to parse error: {}", file_path.display(), e);
                 return Ok(()); // Return Ok to continue processing other files
             }
         };
@@ -211,12 +207,9 @@ impl RustReachabilityAnalyzer {
         // Build map of crate name -> source path
         for dep in &self.dependencies {
             if let Some(ref source_path) = dep.source_path {
-                self.crate_sources.insert(dep.name.clone(), source_path.clone());
-                tracing::debug!(
-                    "Mapped crate {} to source {:?}",
-                    dep.name,
-                    source_path
-                );
+                self.crate_sources
+                    .insert(dep.name.clone(), source_path.clone());
+                tracing::debug!("Mapped crate {} to source {:?}", dep.name, source_path);
             }
         }
 

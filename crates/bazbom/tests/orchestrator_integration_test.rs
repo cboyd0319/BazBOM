@@ -36,7 +36,7 @@ fn test_orchestrator_basic_scan() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
-                sign_sbom: false,
+            sign_sbom: false,
         },
     )?;
 
@@ -105,7 +105,7 @@ github_code_scanning = false
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
-                sign_sbom: false,
+            sign_sbom: false,
         },
     )?;
 
@@ -142,7 +142,7 @@ fn test_orchestrator_creates_all_directories() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
-                sign_sbom: false,
+            sign_sbom: false,
         },
     )?;
 
@@ -190,7 +190,7 @@ fn test_orchestrator_no_upload_flag() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
-                sign_sbom: false,
+            sign_sbom: false,
         },
     )?;
 
@@ -225,7 +225,7 @@ fn test_orchestrator_merged_sarif_structure() -> Result<()> {
             reachability: false,
             include_cicd: false,
             fetch_checksums: false,
-                sign_sbom: false,
+            sign_sbom: false,
         },
     )?;
 

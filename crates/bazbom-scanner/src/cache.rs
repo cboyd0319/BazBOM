@@ -80,7 +80,10 @@ mod tests {
         assert_eq!(cache.len(), 0);
         assert!(cache.is_empty());
 
-        cache.insert("test:package:1.0.0".to_string(), License::Spdx("MIT".to_string()));
+        cache.insert(
+            "test:package:1.0.0".to_string(),
+            License::Spdx("MIT".to_string()),
+        );
         assert_eq!(cache.len(), 1);
         assert!(!cache.is_empty());
 

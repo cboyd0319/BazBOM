@@ -72,22 +72,23 @@ struct ProtestwareEntry {
 }
 
 /// Check if a package is known protestware
-pub fn check_protestware(
-    package_name: &str,
-    package_version: &str,
-) -> Option<ThreatIndicator> {
+pub fn check_protestware(package_name: &str, package_version: &str) -> Option<ThreatIndicator> {
     // Normalize package name
     let normalized_name = package_name.to_lowercase();
 
     if let Some(entry) = PROTESTWARE_DB.get(normalized_name.as_str()) {
         // Check if the version is affected
-        let is_affected = entry.affected_versions.iter().any(|v| {
-            version_matches(package_version, v)
-        });
+        let is_affected = entry
+            .affected_versions
+            .iter()
+            .any(|v| version_matches(package_version, v));
 
         if is_affected {
             let mut evidence = vec![
-                format!("Package '{}' version '{}' is known protestware", package_name, package_version),
+                format!(
+                    "Package '{}' version '{}' is known protestware",
+                    package_name, package_version
+                ),
                 format!("Impact: {}", entry.description),
             ];
 

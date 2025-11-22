@@ -47,7 +47,10 @@ pub struct OsScanResult {
 pub fn scan_os_packages(root: &Path) -> Result<OsScanResult> {
     // 1. Detect OS type
     let os_info = detect_os(root).context("Failed to detect OS")?;
-    info!("Detected OS: {} {}", os_info.pretty_name, os_info.version_id);
+    info!(
+        "Detected OS: {} {}",
+        os_info.pretty_name, os_info.version_id
+    );
 
     // 2. Parse installed packages based on OS type
     let packages = match os_info.os_type {
@@ -100,8 +103,8 @@ fn scan_alpine_packages(
     let mut vulnerabilities = Vec::new();
 
     // Determine Alpine branch from version (e.g., "3.19.1" -> "v3.19")
-    let branch = bazbom_alpine::detect_branch(&os_info.version_id)
-        .unwrap_or_else(|| "edge".to_string());
+    let branch =
+        bazbom_alpine::detect_branch(&os_info.version_id).unwrap_or_else(|| "edge".to_string());
 
     debug!("Fetching Alpine advisories for branch: {}", branch);
 

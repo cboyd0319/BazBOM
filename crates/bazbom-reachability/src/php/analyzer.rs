@@ -133,7 +133,11 @@ impl PhpReachabilityAnalyzer {
         for file_path in package_files {
             if let Err(e) = self.process_file(&file_path) {
                 // Dependencies might have parse errors, log and continue
-                tracing::debug!("Failed to parse package file {}: {}", file_path.display(), e);
+                tracing::debug!(
+                    "Failed to parse package file {}: {}",
+                    file_path.display(),
+                    e
+                );
             }
         }
 
@@ -152,11 +156,16 @@ impl PhpReachabilityAnalyzer {
     }
 
     fn should_skip_dependency(entry: &walkdir::DirEntry) -> bool {
-        let skip_patterns = ["test", "tests", "Test", "Tests", "example", "examples", "doc", "docs", "composer", "bin"];
+        let skip_patterns = [
+            "test", "tests", "Test", "Tests", "example", "examples", "doc", "docs", "composer",
+            "bin",
+        ];
 
         if entry.file_type().is_dir() {
             let dir_name = entry.file_name().to_str().unwrap_or("");
-            skip_patterns.iter().any(|pattern| dir_name.contains(pattern))
+            skip_patterns
+                .iter()
+                .any(|pattern| dir_name.contains(pattern))
         } else {
             false
         }
@@ -295,7 +304,6 @@ impl PhpReachabilityAnalyzer {
             })
             .collect()
     }
-
 
     fn is_php_file(path: &Path) -> bool {
         if let Some(ext) = path.extension() {

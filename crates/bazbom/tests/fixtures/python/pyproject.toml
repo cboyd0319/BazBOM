@@ -1,0 +1,11 @@
+[project]
+name = "bazbom-fixture-python"
+version = "0.1.0"
+description = "Python fixture for BazBOM tests"
+authors = [{name = "BazBOM", email = "fixture@example.com"}]
+dependencies = [
+  "Django==2.2.0",
+  "Flask==1.1.1",
+  "requests==2.22.0",
+  "urllib3==1.25.8"
+]

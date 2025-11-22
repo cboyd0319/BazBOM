@@ -353,9 +353,7 @@ pub fn query_bazel_targets(
         cmd.arg(format!("--bazelrc={}", rc_path));
     }
 
-    cmd.arg("query")
-        .arg(&query)
-        .arg("--output=label");
+    cmd.arg("query").arg(&query).arg("--output=label");
 
     // Add additional bazel flags if specified
     if let Some(flags) = bazel_flags {
@@ -451,7 +449,10 @@ pub fn build_bazel_targets(
     let mut built_targets = Vec::new();
     let mut failed_targets = Vec::new();
 
-    println!("[bazbom] checking build status for {} targets", targets.len());
+    println!(
+        "[bazbom] checking build status for {} targets",
+        targets.len()
+    );
 
     for target in targets {
         // Check if already built
@@ -589,8 +590,16 @@ impl BazelQueryOptimizer {
         self.metrics.cache_misses += 1;
 
         // Execute query
-        let result =
-            query_bazel_targets(&self.workspace_path, Some(query_expr), None, None, "//...", None, None, None)?;
+        let result = query_bazel_targets(
+            &self.workspace_path,
+            Some(query_expr),
+            None,
+            None,
+            "//...",
+            None,
+            None,
+            None,
+        )?;
 
         // Update metrics
         self.metrics.query_time_ms += start.elapsed().as_millis() as u64;
@@ -760,7 +769,16 @@ pub fn query_all_jvm_targets(workspace_path: &Path) -> Result<Vec<String>> {
     let query = get_jvm_rule_query("//...");
     println!("[bazbom] querying all JVM targets (Java, Kotlin, Scala)");
 
-    query_bazel_targets(workspace_path, Some(&query), None, None, "//...", None, None, None)
+    query_bazel_targets(
+        workspace_path,
+        Some(&query),
+        None,
+        None,
+        "//...",
+        None,
+        None,
+        None,
+    )
 }
 
 #[cfg(test)]

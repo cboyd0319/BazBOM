@@ -13,7 +13,7 @@ pub fn handle_status(verbose: bool, findings: Option<String>) -> Result<()> {
     };
 
     if !findings_path.exists() {
-        println!("{}", "⚠️  No scan results found".yellow().bold());
+        println!("{}", "WARN  No scan results found".yellow().bold());
         println!();
         println!("Run a scan first:");
         println!("  {}", "bazbom scan".green());
@@ -167,7 +167,7 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
     println!(
         "{} {} {}",
         "┃".bright_blue(),
-        "🛡️  SECURITY STATUS".bold().bright_cyan(),
+        "SHIELD  SECURITY STATUS".bold().bright_cyan(),
         "                        ┃".bright_blue()
     );
     println!(
@@ -185,9 +185,9 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
     };
 
     let score_emoji = if score >= 80 {
-        "✅"
+        "OK"
     } else if score >= 60 {
-        "⚠️"
+        "WARN"
     } else {
         "🚨"
     };
@@ -220,7 +220,7 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
         }
         if stats.high > 0 {
             println!(
-                "┃    ⚠️  High:      {:<27} ┃",
+                "┃    WARN  High:      {:<27} ┃",
                 stats.high.to_string().yellow().bold()
             );
         }
@@ -232,7 +232,7 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
         }
         if stats.low > 0 {
             println!(
-                "┃    ℹ️  Low:       {:<27} ┃",
+                "┃    INFO  Low:       {:<27} ┃",
                 stats.low.to_string().white()
             );
         }
@@ -242,7 +242,7 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
         if stats.reachable > 0 {
             println!(
                 "┃  {} Reachable: {:<25} ┃",
-                "🎯".red(),
+                "TARGET".red(),
                 format!(
                     "{} ({}%)",
                     stats.reachable,
@@ -264,17 +264,20 @@ fn display_status(score: u8, stats: &VulnerabilityStats, last_scan: &str, verbos
 
     // Recommendations
     if stats.critical > 0 {
-        println!("💡 {} Immediate Action Required:", "CRITICAL:".red().bold());
+        println!(
+            "HINT {} Immediate Action Required:",
+            "CRITICAL:".red().bold()
+        );
         println!("   Fix {} critical vulnerabilities ASAP", stats.critical);
         println!("   Run: {}", "bazbom fix --suggest".green());
         println!();
     } else if stats.high > 0 {
-        println!("💡 {} High Priority Issues:", "WARNING:".yellow().bold());
+        println!("HINT {} High Priority Issues:", "WARNING:".yellow().bold());
         println!("   Address {} high-severity vulnerabilities", stats.high);
         println!("   Run: {}", "bazbom fix --suggest".green());
         println!();
     } else if stats.total == 0 {
-        println!("💡 {} Your project is secure!", "SUCCESS:".green().bold());
+        println!("HINT {} Your project is secure!", "SUCCESS:".green().bold());
         println!("   Run periodic scans to stay protected");
         println!("   Next: {}", "bazbom watch".green());
         println!();

@@ -74,7 +74,10 @@ pub fn get_advisories(branch: &str, repository: &str) -> Result<Vec<AlpineAdviso
 
     let response: SecdbFile = ureq::get(&url)
         .call()
-        .context(format!("Failed to fetch Alpine secdb for {}/{}", branch, repository))?
+        .context(format!(
+            "Failed to fetch Alpine secdb for {}/{}",
+            branch, repository
+        ))?
         .body_mut()
         .read_json()
         .context("Failed to parse Alpine secdb response")?;
@@ -166,14 +169,7 @@ fn compare_alpine_versions(a: &str, b: &str) -> std::cmp::Ordering {
 
 /// Get the list of supported Alpine branches
 pub fn get_supported_branches() -> Vec<&'static str> {
-    vec![
-        "edge",
-        "v3.20",
-        "v3.19",
-        "v3.18",
-        "v3.17",
-        "v3.16",
-    ]
+    vec!["edge", "v3.20", "v3.19", "v3.18", "v3.17", "v3.16"]
 }
 
 /// Detect Alpine branch from /etc/alpine-release content

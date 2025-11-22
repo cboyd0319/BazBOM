@@ -53,12 +53,18 @@ pub fn handle_legacy_scan(
         match tokio::runtime::Handle::try_current() {
             Ok(handle) => {
                 polyglot_results = tokio::task::block_in_place(|| {
-                    handle.block_on(bazbom_scanner::scan_directory_sbom_only(&path, include_cicd))
+                    handle.block_on(bazbom_scanner::scan_directory_sbom_only(
+                        &path,
+                        include_cicd,
+                    ))
                 })?;
             }
             Err(_) => {
                 let rt = tokio::runtime::Runtime::new()?;
-                polyglot_results = rt.block_on(bazbom_scanner::scan_directory_sbom_only(&path, include_cicd))?;
+                polyglot_results = rt.block_on(bazbom_scanner::scan_directory_sbom_only(
+                    &path,
+                    include_cicd,
+                ))?;
             }
         }
 
@@ -71,39 +77,69 @@ pub fn handle_legacy_scan(
                 langs.iter().any(|lang| {
                     let lang_lower = lang.to_lowercase();
                     match lang_lower.as_str() {
-                        "java" | "jvm" => ecosystem_lower.contains("maven") || ecosystem_lower.contains("gradle"),
-                        "javascript" | "js" | "typescript" | "ts" | "node" => ecosystem_lower.contains("npm") || ecosystem_lower.contains("yarn") || ecosystem_lower.contains("pnpm"),
-                        "python" | "py" | "pip" => ecosystem_lower.contains("python") || ecosystem_lower.contains("pip"),
+                        "java" | "jvm" => {
+                            ecosystem_lower.contains("maven") || ecosystem_lower.contains("gradle")
+                        }
+                        "javascript" | "js" | "typescript" | "ts" | "node" => {
+                            ecosystem_lower.contains("npm")
+                                || ecosystem_lower.contains("yarn")
+                                || ecosystem_lower.contains("pnpm")
+                        }
+                        "python" | "py" | "pip" => {
+                            ecosystem_lower.contains("python") || ecosystem_lower.contains("pip")
+                        }
                         "go" | "golang" => ecosystem_lower.contains("go"),
-                        "rust" | "cargo" => ecosystem_lower.contains("rust") || ecosystem_lower.contains("cargo"),
-                        "ruby" | "rb" | "gem" => ecosystem_lower.contains("ruby") || ecosystem_lower.contains("bundler"),
-                        "php" | "composer" => ecosystem_lower.contains("php") || ecosystem_lower.contains("composer"),
+                        "rust" | "cargo" => {
+                            ecosystem_lower.contains("rust") || ecosystem_lower.contains("cargo")
+                        }
+                        "ruby" | "rb" | "gem" => {
+                            ecosystem_lower.contains("ruby") || ecosystem_lower.contains("bundler")
+                        }
+                        "php" | "composer" => {
+                            ecosystem_lower.contains("php") || ecosystem_lower.contains("composer")
+                        }
                         _ => ecosystem_lower.contains(&lang_lower),
                     }
                 })
             });
             let filtered_count = before_count - polyglot_results.len();
             if filtered_count > 0 {
-                tracing::info!("Language filtering: excluded {} ecosystems (keeping only: {})",
-                    filtered_count, langs.join(", "));
-                println!("[bazbom] language filter: excluded {} ecosystems, keeping only: {}",
-                    filtered_count, langs.join(", "));
+                tracing::info!(
+                    "Language filtering: excluded {} ecosystems (keeping only: {})",
+                    filtered_count,
+                    langs.join(", ")
+                );
+                println!(
+                    "[bazbom] language filter: excluded {} ecosystems, keeping only: {}",
+                    filtered_count,
+                    langs.join(", ")
+                );
             }
         }
 
         if !polyglot_results.is_empty() {
             let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
-            tracing::info!("Found {} packages across {} polyglot ecosystems",
-                total_packages, polyglot_results.len());
-            println!("[bazbom] found {} packages across {} polyglot ecosystems",
-                total_packages, polyglot_results.len());
+            tracing::info!(
+                "Found {} packages across {} polyglot ecosystems",
+                total_packages,
+                polyglot_results.len()
+            );
+            println!(
+                "[bazbom] found {} packages across {} polyglot ecosystems",
+                total_packages,
+                polyglot_results.len()
+            );
         }
     } else {
         tracing::debug!("Skipping polyglot scanning (fast mode enabled)");
     }
 
     // Handle Bazel projects - extract Maven dependencies and merge with polyglot
-    tracing::debug!("Build system check: {:?}, is_bazel={}", system, system == bazbom_core::BuildSystem::Bazel);
+    tracing::debug!(
+        "Build system check: {:?}, is_bazel={}",
+        system,
+        system == bazbom_core::BuildSystem::Bazel
+    );
     if system == bazbom_core::BuildSystem::Bazel {
         tracing::debug!("Detected Bazel project, checking for maven_install.json");
         let maven_install_json = root_path.join("maven_install.json");
@@ -195,7 +231,9 @@ pub fn handle_legacy_scan(
                 };
 
                 if targets.is_empty() {
-                    tracing::warn!("No targets matched query/filters - falling back to full extraction");
+                    tracing::warn!(
+                        "No targets matched query/filters - falling back to full extraction"
+                    );
                     crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path)
                 } else {
                     // Auto-build targets if needed (enabled by default for targeted scans)
@@ -208,10 +246,16 @@ pub fn handle_legacy_scan(
                     )?;
 
                     if built_targets.is_empty() {
-                        tracing::warn!("No targets successfully built - falling back to full extraction");
+                        tracing::warn!(
+                            "No targets successfully built - falling back to full extraction"
+                        );
                         crate::bazel::extract_bazel_dependencies(root_path, &deps_json_path)
                     } else {
-                        crate::bazel::extract_bazel_dependencies_for_targets(&workspace, &built_targets, &deps_json_path)
+                        crate::bazel::extract_bazel_dependencies_for_targets(
+                            &workspace,
+                            &built_targets,
+                            &deps_json_path,
+                        )
                     }
                 }
             } else {
@@ -226,11 +270,16 @@ pub fn handle_legacy_scan(
                         "Successfully extracted {} Maven packages from maven_install.json",
                         graph.components.len()
                     );
-                    println!("[bazbom] found {} Maven packages from maven_install.json", graph.components.len());
+                    println!(
+                        "[bazbom] found {} Maven packages from maven_install.json",
+                        graph.components.len()
+                    );
 
                     // Convert Bazel Maven components to polyglot Package format
-                    let maven_packages: Vec<bazbom_scanner::Package> = graph.components.iter().map(|component| {
-                        bazbom_scanner::Package {
+                    let maven_packages: Vec<bazbom_scanner::Package> = graph
+                        .components
+                        .iter()
+                        .map(|component| bazbom_scanner::Package {
                             name: component.name.clone(),
                             version: component.version.clone(),
                             ecosystem: "Maven".to_string(),
@@ -244,8 +293,8 @@ pub fn handle_legacy_scan(
                             } else {
                                 Some(component.repository.clone())
                             },
-                        }
-                    }).collect();
+                        })
+                        .collect();
 
                     // Merge Maven packages into polyglot results
                     if !maven_packages.is_empty() {
@@ -259,12 +308,18 @@ pub fn handle_legacy_scan(
                             reachability: None,
                         };
                         polyglot_results.push(maven_result);
-                        tracing::info!("Merged {} Maven packages into unified results", graph.components.len());
+                        tracing::info!(
+                            "Merged {} Maven packages into unified results",
+                            graph.components.len()
+                        );
                     }
                 }
                 Err(e) => {
                     tracing::warn!("Failed to extract Bazel dependencies: {}", e);
-                    eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
+                    eprintln!(
+                        "[bazbom] warning: failed to extract Bazel dependencies: {}",
+                        e
+                    );
                 }
             }
         } else {
@@ -281,7 +336,10 @@ pub fn handle_legacy_scan(
                 Ok(cicd_result) => {
                     if !cicd_result.packages.is_empty() {
                         tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
-                        println!("[bazbom] found {} CI/CD packages", cicd_result.packages.len());
+                        println!(
+                            "[bazbom] found {} CI/CD packages",
+                            cicd_result.packages.len()
+                        );
                         polyglot_results.push(cicd_result);
                     }
                 }
@@ -296,10 +354,16 @@ pub fn handle_legacy_scan(
     // Generate unified SBOM from all detected ecosystems
     if !polyglot_results.is_empty() {
         let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
-        tracing::info!("Generating unified SBOM with {} packages across {} ecosystems",
-            total_packages, polyglot_results.len());
-        println!("[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
-            total_packages, polyglot_results.len());
+        tracing::info!(
+            "Generating unified SBOM with {} packages across {} ecosystems",
+            total_packages,
+            polyglot_results.len()
+        );
+        println!(
+            "[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
+            total_packages,
+            polyglot_results.len()
+        );
 
         std::fs::create_dir_all(&out)?;
 
@@ -309,18 +373,16 @@ pub fn handle_legacy_scan(
                 // Generate CycloneDX 1.5 XML
                 let mut cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new(
                     "bazbom",
-                    env!("CARGO_PKG_VERSION")
+                    env!("CARGO_PKG_VERSION"),
                 );
 
                 // Convert all packages from polyglot results to CycloneDX components
                 for ecosystem_result in &polyglot_results {
                     for package in &ecosystem_result.packages {
-                        let mut component = bazbom_formats::cyclonedx::Component::new(
-                            &package.name,
-                            "library"
-                        )
-                        .with_version(&package.version)
-                        .with_purl(package.purl());
+                        let mut component =
+                            bazbom_formats::cyclonedx::Component::new(&package.name, "library")
+                                .with_version(&package.version)
+                                .with_purl(package.purl());
 
                         if let Some(ref license) = package.license {
                             component = component.with_license(license);
@@ -345,18 +407,16 @@ pub fn handle_legacy_scan(
                 // Generate CycloneDX 1.5 JSON
                 let mut cdx_doc = bazbom_formats::cyclonedx::CycloneDxBom::new(
                     "bazbom",
-                    env!("CARGO_PKG_VERSION")
+                    env!("CARGO_PKG_VERSION"),
                 );
 
                 // Convert all packages from polyglot results to CycloneDX components
                 for ecosystem_result in &polyglot_results {
                     for package in &ecosystem_result.packages {
-                        let mut component = bazbom_formats::cyclonedx::Component::new(
-                            &package.name,
-                            "library"
-                        )
-                        .with_version(&package.version)
-                        .with_purl(package.purl());
+                        let mut component =
+                            bazbom_formats::cyclonedx::Component::new(&package.name, "library")
+                                .with_version(&package.version)
+                                .with_purl(package.purl());
 
                         if let Some(ref license) = package.license {
                             component = component.with_license(license);
@@ -372,10 +432,7 @@ pub fn handle_legacy_scan(
                 }
 
                 let cdx_path = out.join("sbom.cyclonedx.json");
-                std::fs::write(
-                    &cdx_path,
-                    serde_json::to_string_pretty(&cdx_doc)?,
-                )?;
+                std::fs::write(&cdx_path, serde_json::to_string_pretty(&cdx_doc)?)?;
                 tracing::info!("Wrote CycloneDX 1.5 SBOM to {:?}", cdx_path);
                 println!("[bazbom] wrote CycloneDX 1.5 SBOM to {:?}", cdx_path);
             }
@@ -388,7 +445,9 @@ pub fn handle_legacy_scan(
                     .ok()
                     .and_then(|output| {
                         if output.status.success() {
-                            String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+                            String::from_utf8(output.stdout)
+                                .ok()
+                                .map(|s| s.trim().to_string())
                         } else {
                             None
                         }
@@ -401,21 +460,24 @@ pub fn handle_legacy_scan(
                     .ok()
                     .and_then(|output| {
                         if output.status.success() {
-                            String::from_utf8(output.stdout).ok().map(|s| s.trim().to_string())
+                            String::from_utf8(output.stdout)
+                                .ok()
+                                .map(|s| s.trim().to_string())
                         } else {
                             None
                         }
                     })
                     .unwrap_or_else(|| "refs/heads/main".to_string());
 
-                let snapshot = bazbom_scanner::generate_github_snapshot(&polyglot_results, &sha, &ref_name)?;
+                let snapshot =
+                    bazbom_scanner::generate_github_snapshot(&polyglot_results, &sha, &ref_name)?;
                 let snapshot_path = out.join("github-snapshot.json");
-                std::fs::write(
-                    &snapshot_path,
-                    serde_json::to_string_pretty(&snapshot)?,
-                )?;
+                std::fs::write(&snapshot_path, serde_json::to_string_pretty(&snapshot)?)?;
                 tracing::info!("Wrote GitHub dependency snapshot to {:?}", snapshot_path);
-                println!("[bazbom] wrote GitHub dependency snapshot to {:?}", snapshot_path);
+                println!(
+                    "[bazbom] wrote GitHub dependency snapshot to {:?}",
+                    snapshot_path
+                );
             }
             "spdx-tagvalue" => {
                 // Generate SPDX 2.3 tag-value format
@@ -426,14 +488,18 @@ pub fn handle_legacy_scan(
 
                 // Generate JSON first
                 let unified_sbom = match tokio::runtime::Handle::try_current() {
-                    Ok(handle) => {
-                        tokio::task::block_in_place(|| {
-                            handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
-                        })?
-                    }
+                    Ok(handle) => tokio::task::block_in_place(|| {
+                        handle.block_on(bazbom_scanner::generate_polyglot_sbom(
+                            &polyglot_results,
+                            fetch_checksums,
+                        ))
+                    })?,
                     Err(_) => {
                         let rt = tokio::runtime::Runtime::new()?;
-                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(
+                            &polyglot_results,
+                            fetch_checksums,
+                        ))?
                     }
                 };
 
@@ -452,23 +518,24 @@ pub fn handle_legacy_scan(
                 }
 
                 let unified_sbom = match tokio::runtime::Handle::try_current() {
-                    Ok(handle) => {
-                        tokio::task::block_in_place(|| {
-                            handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))
-                        })?
-                    }
+                    Ok(handle) => tokio::task::block_in_place(|| {
+                        handle.block_on(bazbom_scanner::generate_polyglot_sbom(
+                            &polyglot_results,
+                            fetch_checksums,
+                        ))
+                    })?,
                     Err(_) => {
                         // Create new runtime if not already in one
                         let rt = tokio::runtime::Runtime::new()?;
-                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, fetch_checksums))?
+                        rt.block_on(bazbom_scanner::generate_polyglot_sbom(
+                            &polyglot_results,
+                            fetch_checksums,
+                        ))?
                     }
                 };
 
                 let spdx_path = out.join("sbom.spdx.json");
-                std::fs::write(
-                    &spdx_path,
-                    serde_json::to_string_pretty(&unified_sbom)?,
-                )?;
+                std::fs::write(&spdx_path, serde_json::to_string_pretty(&unified_sbom)?)?;
                 tracing::info!("Wrote SPDX 2.3 SBOM to {:?}", spdx_path);
                 println!("[bazbom] wrote SPDX 2.3 SBOM to {:?}", spdx_path);
             }

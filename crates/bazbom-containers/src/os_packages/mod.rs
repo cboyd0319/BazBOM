@@ -9,4 +9,4 @@ mod scanner;
 
 pub use detection::{detect_os, OsInfo, OsType};
 pub use parsers::{parse_apk_installed, parse_dpkg_status, parse_rpm_database, InstalledPackage};
-pub use scanner::{scan_os_packages, OsVulnerability, OsScanResult};
+pub use scanner::{scan_os_packages, OsScanResult, OsVulnerability};

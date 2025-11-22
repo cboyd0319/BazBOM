@@ -1,10 +1,10 @@
-## 🔒 Security Fix: {cve_id} in {package} {current_version}
+## LOCK Security Fix: {cve_id} in {package} {current_version}
 
 **Automated by BazBOM v6.8**{jira_link}
 
 ---
 
-### 🎯 Summary
+### TARGET Summary
 
 This PR upgrades `{package}` from **{current_version}** to **{fix_version}** to fix **{cve_id}** ({severity}).
 
@@ -30,7 +30,7 @@ This PR upgrades `{package}` from **{current_version}** to **{fix_version}** to 
 
 ---
 
-### 🔧 Remediation Details
+### TOOL Remediation Details
 
 **Fix:** Upgrade {package} to **{fix_version}**
 
@@ -38,7 +38,7 @@ This PR upgrades `{package}` from **{current_version}** to **{fix_version}** to 
 
 ---
 
-### 🔗 Additional Resources
+### LINK Additional Resources
 
 {jira_ticket_link}
 {bazbom_scan_link}

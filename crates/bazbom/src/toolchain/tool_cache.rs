@@ -262,7 +262,7 @@ mod tests {
 
     #[test]
     fn test_binary_name() {
-        let temp = tempdir().unwrap();
+        let temp = tempdir().expect("tempdir");
         let cache = ToolCache::new(temp.path().to_path_buf());
 
         #[cfg(windows)]
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_get_tool_path() {
-        let temp = tempdir().unwrap();
+        let temp = tempdir().expect("tempdir");
         let cache = ToolCache::new(temp.path().to_path_buf());
         let path = cache.get_tool_path("semgrep", "1.78.0");
 

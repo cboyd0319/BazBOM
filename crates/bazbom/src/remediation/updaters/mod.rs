@@ -40,8 +40,8 @@ pub fn get_updater(system: System) -> Box<dyn DependencyUpdater> {
         System::Maven => Box::new(maven::MavenUpdater),
         System::NuGet => Box::new(maven::MavenUpdater), // NuGet uses similar XML format
         System::Packagist => Box::new(php::PhpUpdater),
-        System::Hex => Box::new(ruby::RubyUpdater),     // Elixir uses mix.exs (similar to Ruby)
-        System::Pub => Box::new(npm::NpmUpdater),       // Dart pubspec.yaml similar to package.json
+        System::Hex => Box::new(ruby::RubyUpdater), // Elixir uses mix.exs (similar to Ruby)
+        System::Pub => Box::new(npm::NpmUpdater),   // Dart pubspec.yaml similar to package.json
         // OS packages don't have updaters - use system package manager
         System::Alpine | System::Debian | System::Rpm => Box::new(maven::MavenUpdater), // Placeholder
     }

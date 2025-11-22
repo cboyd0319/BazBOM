@@ -1,6 +1,6 @@
 use anyhow::Result;
 use bazbom::cli::LicenseCmd;
-use bazbom_formats::{spdx::SpdxDocument, cyclonedx::CycloneDxBom};
+use bazbom_formats::{cyclonedx::CycloneDxBom, spdx::SpdxDocument};
 use std::fs;
 use std::path::Path;
 
@@ -20,19 +20,22 @@ fn handle_obligations(sbom_file: Option<String>) -> Result<()> {
     println!("[bazbom] generating license obligations report");
 
     // Default to common SBOM locations
-    let sbom_path = sbom_file.as_deref().or_else(|| {
-        if Path::new("sbom/spdx.json").exists() {
-            Some("sbom/spdx.json")
-        } else if Path::new("sbom.spdx.json").exists() {
-            Some("sbom.spdx.json")
-        } else if Path::new("sbom/cyclonedx.json").exists() {
-            Some("sbom/cyclonedx.json")
-        } else {
-            None
-        }
-    }).ok_or_else(|| anyhow::anyhow!(
-        "No SBOM file found. Run 'bazbom scan' first or specify --sbom-file"
-    ))?;
+    let sbom_path = sbom_file
+        .as_deref()
+        .or_else(|| {
+            if Path::new("sbom/spdx.json").exists() {
+                Some("sbom/spdx.json")
+            } else if Path::new("sbom.spdx.json").exists() {
+                Some("sbom.spdx.json")
+            } else if Path::new("sbom/cyclonedx.json").exists() {
+                Some("sbom/cyclonedx.json")
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| {
+            anyhow::anyhow!("No SBOM file found. Run 'bazbom scan' first or specify --sbom-file")
+        })?;
 
     println!("[bazbom] reading SBOM from: {}", sbom_path);
 
@@ -40,7 +43,7 @@ fn handle_obligations(sbom_file: Option<String>) -> Result<()> {
     let packages = parse_sbom(sbom_path)?;
 
     if packages.is_empty() {
-        println!("⚠️  No packages found in SBOM");
+        println!("WARN  No packages found in SBOM");
         return Ok(());
     }
 
@@ -58,7 +61,8 @@ fn handle_obligations(sbom_file: Option<String>) -> Result<()> {
 
     for pkg in &packages {
         if let Some(license) = &pkg.license {
-            license_counts.entry(license.clone())
+            license_counts
+                .entry(license.clone())
                 .or_insert_with(Vec::new)
                 .push(format!("{}@{}", pkg.name, pkg.version));
         }
@@ -85,18 +89,22 @@ fn handle_obligations(sbom_file: Option<String>) -> Result<()> {
                 println!("  ... and {} more", components.len() - 5);
             }
         } else {
-            println!("⚠️  No obligation data available for license: {}", license);
+            println!(
+                "WARN  No obligation data available for license: {}",
+                license
+            );
         }
         println!();
     }
 
     // Show packages without licenses
-    let no_license: Vec<_> = packages.iter()
-        .filter(|p| p.license.is_none())
-        .collect();
+    let no_license: Vec<_> = packages.iter().filter(|p| p.license.is_none()).collect();
 
     if !no_license.is_empty() {
-        println!("## ⚠️  Packages Without License Information ({} packages)\n", no_license.len());
+        println!(
+            "## WARN  Packages Without License Information ({} packages)\n",
+            no_license.len()
+        );
         for (i, pkg) in no_license.iter().take(10).enumerate() {
             println!("  {}. {}@{}", i + 1, pkg.name, pkg.version);
         }
@@ -114,19 +122,22 @@ fn handle_compatibility(project_license: String, sbom_file: Option<String>) -> R
     println!("Project license: {}", project_license);
 
     // Default to common SBOM locations
-    let sbom_path = sbom_file.as_deref().or_else(|| {
-        if Path::new("sbom/spdx.json").exists() {
-            Some("sbom/spdx.json")
-        } else if Path::new("sbom.spdx.json").exists() {
-            Some("sbom.spdx.json")
-        } else if Path::new("sbom/cyclonedx.json").exists() {
-            Some("sbom/cyclonedx.json")
-        } else {
-            None
-        }
-    }).ok_or_else(|| anyhow::anyhow!(
-        "No SBOM file found. Run 'bazbom scan' first or specify --sbom-file"
-    ))?;
+    let sbom_path = sbom_file
+        .as_deref()
+        .or_else(|| {
+            if Path::new("sbom/spdx.json").exists() {
+                Some("sbom/spdx.json")
+            } else if Path::new("sbom.spdx.json").exists() {
+                Some("sbom.spdx.json")
+            } else if Path::new("sbom/cyclonedx.json").exists() {
+                Some("sbom/cyclonedx.json")
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| {
+            anyhow::anyhow!("No SBOM file found. Run 'bazbom scan' first or specify --sbom-file")
+        })?;
 
     println!("[bazbom] reading SBOM from: {}", sbom_path);
 
@@ -134,7 +145,7 @@ fn handle_compatibility(project_license: String, sbom_file: Option<String>) -> R
     let packages = parse_sbom(sbom_path)?;
 
     if packages.is_empty() {
-        println!("⚠️  No packages found in SBOM");
+        println!("WARN  No packages found in SBOM");
         return Ok(());
     }
 
@@ -159,19 +170,19 @@ fn handle_compatibility(project_license: String, sbom_file: Option<String>) -> R
             let (indicator, color) = match risk {
                 bazbom_formats::licenses::LicenseRisk::Safe => {
                     safe_count += 1;
-                    ("✅", "Safe")
+                    ("OK", "Safe")
                 }
                 bazbom_formats::licenses::LicenseRisk::Low => {
                     low_count += 1;
-                    ("⚠️ ", "Low")
+                    ("WARN ", "Low")
                 }
                 bazbom_formats::licenses::LicenseRisk::Medium => {
                     medium_count += 1;
-                    ("⚠️ ", "Medium")
+                    ("WARN ", "Medium")
                 }
                 bazbom_formats::licenses::LicenseRisk::High => {
                     high_count += 1;
-                    ("❌", "High")
+                    ("FAIL", "High")
                 }
                 bazbom_formats::licenses::LicenseRisk::Critical => {
                     critical_count += 1;
@@ -180,10 +191,11 @@ fn handle_compatibility(project_license: String, sbom_file: Option<String>) -> R
             };
 
             // Only show problematic licenses (Medium and above)
-            if matches!(risk,
+            if matches!(
+                risk,
                 bazbom_formats::licenses::LicenseRisk::Medium
-                | bazbom_formats::licenses::LicenseRisk::High
-                | bazbom_formats::licenses::LicenseRisk::Critical
+                    | bazbom_formats::licenses::LicenseRisk::High
+                    | bazbom_formats::licenses::LicenseRisk::Critical
             ) {
                 println!(
                     "{} {}@{} ({}) - Risk: {}",
@@ -196,27 +208,27 @@ fn handle_compatibility(project_license: String, sbom_file: Option<String>) -> R
     // Summary
     println!("\n## Summary\n");
     println!("Total packages analyzed: {}", packages.len());
-    println!("  ✅ Safe: {}", safe_count);
+    println!("  OK Safe: {}", safe_count);
     if low_count > 0 {
-        println!("  ⚠️  Low risk: {}", low_count);
+        println!("  WARN  Low risk: {}", low_count);
     }
     if medium_count > 0 {
-        println!("  ⚠️  Medium risk: {}", medium_count);
+        println!("  WARN  Medium risk: {}", medium_count);
     }
     if high_count > 0 {
-        println!("  ❌ High risk: {}", high_count);
+        println!("  FAIL High risk: {}", high_count);
     }
     if critical_count > 0 {
         println!("  🔥 Critical risk: {}", critical_count);
     }
 
     if critical_count > 0 || high_count > 0 {
-        println!("\n❌ License compatibility issues found!");
+        println!("\nFAIL License compatibility issues found!");
         std::process::exit(1);
     } else if medium_count > 0 {
-        println!("\n⚠️  Some license compatibility warnings present");
+        println!("\nWARN  Some license compatibility warnings present");
     } else {
-        println!("\n✅ All licenses compatible!");
+        println!("\nOK All licenses compatible!");
     }
 
     Ok(())
@@ -226,19 +238,22 @@ fn handle_contamination(sbom_file: Option<String>) -> Result<()> {
     println!("[bazbom] detecting copyleft contamination");
 
     // Default to common SBOM locations
-    let sbom_path = sbom_file.as_deref().or_else(|| {
-        if Path::new("sbom/spdx.json").exists() {
-            Some("sbom/spdx.json")
-        } else if Path::new("sbom.spdx.json").exists() {
-            Some("sbom.spdx.json")
-        } else if Path::new("sbom/cyclonedx.json").exists() {
-            Some("sbom/cyclonedx.json")
-        } else {
-            None
-        }
-    }).ok_or_else(|| anyhow::anyhow!(
-        "No SBOM file found. Run 'bazbom scan' first or specify --sbom-file"
-    ))?;
+    let sbom_path = sbom_file
+        .as_deref()
+        .or_else(|| {
+            if Path::new("sbom/spdx.json").exists() {
+                Some("sbom/spdx.json")
+            } else if Path::new("sbom.spdx.json").exists() {
+                Some("sbom.spdx.json")
+            } else if Path::new("sbom/cyclonedx.json").exists() {
+                Some("sbom/cyclonedx.json")
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| {
+            anyhow::anyhow!("No SBOM file found. Run 'bazbom scan' first or specify --sbom-file")
+        })?;
 
     println!("[bazbom] reading SBOM from: {}", sbom_path);
 
@@ -246,7 +261,7 @@ fn handle_contamination(sbom_file: Option<String>) -> Result<()> {
     let packages = parse_sbom(sbom_path)?;
 
     if packages.is_empty() {
-        println!("⚠️  No packages found in SBOM");
+        println!("WARN  No packages found in SBOM");
         return Ok(());
     }
 
@@ -256,17 +271,17 @@ fn handle_contamination(sbom_file: Option<String>) -> Result<()> {
     let dependencies: Vec<bazbom_formats::licenses::Dependency> = packages
         .iter()
         .filter_map(|pkg| {
-            pkg.license.as_ref().map(|license| {
-                bazbom_formats::licenses::Dependency {
+            pkg.license
+                .as_ref()
+                .map(|license| bazbom_formats::licenses::Dependency {
                     name: format!("{}:{}", pkg.name, pkg.version),
                     license: license.clone(),
-                }
-            })
+                })
         })
         .collect();
 
     if dependencies.is_empty() {
-        println!("⚠️  No packages with license information found");
+        println!("WARN  No packages with license information found");
         return Ok(());
     }
 
@@ -278,7 +293,7 @@ fn handle_contamination(sbom_file: Option<String>) -> Result<()> {
     println!("Total packages analyzed: {}\n", dependencies.len());
 
     if warnings.is_empty() {
-        println!("✅ No copyleft contamination detected");
+        println!("OK No copyleft contamination detected");
     } else {
         for warning in &warnings {
             let risk_indicator = match warning.risk {
@@ -341,12 +356,15 @@ fn parse_sbom(sbom_path: &str) -> Result<Vec<PackageInfo>> {
 fn parse_spdx_sbom(content: &str) -> Result<Vec<PackageInfo>> {
     let doc: SpdxDocument = serde_json::from_str(content)?;
 
-    let packages = doc.packages.into_iter()
+    let packages = doc
+        .packages
+        .into_iter()
         .map(|pkg| PackageInfo {
             name: pkg.name.clone(),
             version: pkg.version_info.unwrap_or_else(|| "unknown".to_string()),
             // Prefer license_concluded over license_declared
-            license: pkg.license_concluded
+            license: pkg
+                .license_concluded
                 .or(pkg.license_declared)
                 .and_then(|l| {
                     // Filter out NOASSERTION and NONE
@@ -366,10 +384,13 @@ fn parse_spdx_sbom(content: &str) -> Result<Vec<PackageInfo>> {
 fn parse_cyclonedx_sbom(content: &str) -> Result<Vec<PackageInfo>> {
     let bom: CycloneDxBom = serde_json::from_str(content)?;
 
-    let packages = bom.components.into_iter()
+    let packages = bom
+        .components
+        .into_iter()
         .map(|component| {
             // Extract first license if available
-            let license = component.licenses
+            let license = component
+                .licenses
                 .and_then(|licenses| licenses.first().cloned())
                 .map(|lic| match lic.license {
                     bazbom_formats::cyclonedx::LicenseChoice::Id { id } => id,

@@ -4,7 +4,9 @@
 //! for ecosystems not supported by deps.dev (Packagist, Hex, Pub).
 
 use anyhow::{Context, Result};
-use bazbom_depsdev::{DependencyEdge, DependencyGraph, DependencyNode, Relation, System, VersionKey};
+use bazbom_depsdev::{
+    DependencyEdge, DependencyGraph, DependencyNode, Relation, System, VersionKey,
+};
 use bazbom_scanner::cache::LicenseCache;
 use bazbom_scanner::scanner::ScanContext;
 use std::collections::HashMap;
@@ -308,10 +310,9 @@ fn get_composer_dependencies(root: &Path) -> Result<HashMap<String, String>> {
         return Ok(HashMap::new());
     }
 
-    let content = std::fs::read_to_string(&lockfile)
-        .context("Failed to read composer.lock")?;
-    let json: serde_json::Value = serde_json::from_str(&content)
-        .context("Failed to parse composer.lock")?;
+    let content = std::fs::read_to_string(&lockfile).context("Failed to read composer.lock")?;
+    let json: serde_json::Value =
+        serde_json::from_str(&content).context("Failed to parse composer.lock")?;
 
     let mut deps = HashMap::new();
 

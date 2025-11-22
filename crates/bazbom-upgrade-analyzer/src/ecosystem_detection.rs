@@ -80,9 +80,25 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         || package.ends_with("-rb")
         || matches!(
             package,
-            "rails" | "rake" | "bundler" | "sinatra" | "puma" | "rspec" | "sidekiq"
-            | "devise" | "pundit" | "redis" | "pg" | "mysql2" | "nokogiri" | "capybara"
-            | "factory_bot" | "rubocop" | "activerecord" | "activesupport" | "actionpack"
+            "rails"
+                | "rake"
+                | "bundler"
+                | "sinatra"
+                | "puma"
+                | "rspec"
+                | "sidekiq"
+                | "devise"
+                | "pundit"
+                | "redis"
+                | "pg"
+                | "mysql2"
+                | "nokogiri"
+                | "capybara"
+                | "factory_bot"
+                | "rubocop"
+                | "activerecord"
+                | "activesupport"
+                | "actionpack"
         )
     {
         return System::RubyGems;
@@ -99,10 +115,29 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
             // Common PHP package vendors
             if matches!(
                 parts[0],
-                "symfony" | "laravel" | "phpunit" | "doctrine" | "guzzlehttp" | "monolog"
-                | "psr" | "composer" | "league" | "illuminate" | "nesbot" | "ramsey"
-                | "vlucas" | "fzaninotto" | "nikic" | "swiftmailer" | "twig" | "sensio"
-                | "egulias" | "webmozart" | "friendsofphp" | "phpseclib" | "paragonie"
+                "symfony"
+                    | "laravel"
+                    | "phpunit"
+                    | "doctrine"
+                    | "guzzlehttp"
+                    | "monolog"
+                    | "psr"
+                    | "composer"
+                    | "league"
+                    | "illuminate"
+                    | "nesbot"
+                    | "ramsey"
+                    | "vlucas"
+                    | "fzaninotto"
+                    | "nikic"
+                    | "swiftmailer"
+                    | "twig"
+                    | "sensio"
+                    | "egulias"
+                    | "webmozart"
+                    | "friendsofphp"
+                    | "phpseclib"
+                    | "paragonie"
             ) {
                 return System::Packagist;
             }
@@ -272,10 +307,25 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         // Elixir/Hex packages (common ones)
         if matches!(
             package,
-            "phoenix" | "ecto" | "plug" | "cowboy" | "jason" | "poison"
-                | "httpoison" | "timex" | "ex_machina" | "bamboo" | "oban"
-                | "absinthe" | "guardian" | "comeonin" | "bcrypt_elixir"
-                | "ex_doc" | "credo" | "dialyxir" | "mix_test_watch"
+            "phoenix"
+                | "ecto"
+                | "plug"
+                | "cowboy"
+                | "jason"
+                | "poison"
+                | "httpoison"
+                | "timex"
+                | "ex_machina"
+                | "bamboo"
+                | "oban"
+                | "absinthe"
+                | "guardian"
+                | "comeonin"
+                | "bcrypt_elixir"
+                | "ex_doc"
+                | "credo"
+                | "dialyxir"
+                | "mix_test_watch"
         ) {
             return System::Hex;
         }
@@ -283,10 +333,25 @@ pub fn detect_ecosystem_from_package(package: &str) -> System {
         // Dart/Pub packages (common ones)
         if matches!(
             package,
-            "flutter" | "provider" | "bloc" | "riverpod" | "dio" | "http"
-                | "path_provider" | "shared_preferences" | "sqflite" | "hive"
-                | "get" | "mobx" | "freezed" | "json_serializable" | "equatable"
-                | "dartz" | "rxdart" | "flutter_bloc" | "go_router"
+            "flutter"
+                | "provider"
+                | "bloc"
+                | "riverpod"
+                | "dio"
+                | "http"
+                | "path_provider"
+                | "shared_preferences"
+                | "sqflite"
+                | "hive"
+                | "get"
+                | "mobx"
+                | "freezed"
+                | "json_serializable"
+                | "equatable"
+                | "dartz"
+                | "rxdart"
+                | "flutter_bloc"
+                | "go_router"
         ) {
             return System::Pub;
         }

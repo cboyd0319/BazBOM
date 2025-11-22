@@ -2,13 +2,13 @@ use crate::config::Config;
 use crate::context::Context;
 use crate::pipeline::Analyzer;
 use anyhow::{Context as _, Result};
-use bazbom_vulnerabilities::{
-    db_sync, is_version_affected, load_epss_scores, load_kev_catalog, Priority, VersionEvent,
-    VersionRange,
-};
 use bazbom_formats::sarif::{
     ArtifactLocation, Configuration, Location, Message, MessageString, PhysicalLocation,
     Result as SarifResult, Rule, SarifReport,
+};
+use bazbom_vulnerabilities::{
+    db_sync, is_version_affected, load_epss_scores, load_kev_catalog, Priority, VersionEvent,
+    VersionRange,
 };
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -40,7 +40,11 @@ impl ScaAnalyzer {
             let age = std::time::SystemTime::now()
                 .duration_since(modified)
                 .unwrap_or(std::time::Duration::from_secs(86400 * 2));
-            debug!("Manifest age: {} seconds ({} hours)", age.as_secs(), age.as_secs() / 3600);
+            debug!(
+                "Manifest age: {} seconds ({} hours)",
+                age.as_secs(),
+                age.as_secs() / 3600
+            );
             age.as_secs() > 86400 // More than 24 hours old
         } else {
             debug!("Manifest file does not exist, needs initial sync");
@@ -143,7 +147,10 @@ impl ScaAnalyzer {
         components: &[Component],
         advisory_dir: &PathBuf,
     ) -> Result<Vec<VulnerabilityMatch>> {
-        debug!("Starting vulnerability matching for {} components", components.len());
+        debug!(
+            "Starting vulnerability matching for {} components",
+            components.len()
+        );
 
         // Load EPSS scores
         debug!("Loading EPSS scores from {:?}", advisory_dir);
@@ -161,7 +168,11 @@ impl ScaAnalyzer {
             HashMap::new()
         });
 
-        info!("Loaded {} EPSS scores and {} KEV entries", epss_scores.len(), kev_entries.len());
+        info!(
+            "Loaded {} EPSS scores and {} KEV entries",
+            epss_scores.len(),
+            kev_entries.len()
+        );
         println!(
             "[bazbom] loaded {} EPSS scores and {} KEV entries",
             epss_scores.len(),
@@ -192,10 +203,15 @@ impl ScaAnalyzer {
                 }
             }
         } else {
-            warn!("OSV database not found at {:?} - consider implementing OSV API integration", osv_dir);
+            warn!(
+                "OSV database not found at {:?} - consider implementing OSV API integration",
+                osv_dir
+            );
             println!("[bazbom] OSV database not found at {:?}", osv_dir);
             println!("[bazbom] NOTE: OSV database is too large to cache locally");
-            println!("[bazbom] TODO: Implement OSV API integration (https://api.osv.dev/v1/querybatch)");
+            println!(
+                "[bazbom] TODO: Implement OSV API integration (https://api.osv.dev/v1/querybatch)"
+            );
         }
 
         info!("Total vulnerability matches: {}", matches.len());
@@ -457,9 +473,7 @@ impl ScaAnalyzer {
         if !polyglot_sbom_path.exists() {
             // No reachability data available, skip enrichment
             // This is normal for legacy scans or when reachability analysis is disabled
-            tracing::debug!(
-                "polyglot-sbom.json not found, skipping reachability enrichment"
-            );
+            tracing::debug!("polyglot-sbom.json not found, skipping reachability enrichment");
             return Ok(());
         }
 
@@ -701,10 +715,16 @@ impl Analyzer for ScaAnalyzer {
                 HashMap::new()
             });
 
-            info!("Loaded {} EPSS scores and {} KEV entries for polyglot enrichment",
-                  epss_scores.len(), kev_entries.len());
-            println!("[bazbom] loaded {} EPSS scores and {} KEV entries for enrichment",
-                     epss_scores.len(), kev_entries.len());
+            info!(
+                "Loaded {} EPSS scores and {} KEV entries for polyglot enrichment",
+                epss_scores.len(),
+                kev_entries.len()
+            );
+            println!(
+                "[bazbom] loaded {} EPSS scores and {} KEV entries for enrichment",
+                epss_scores.len(),
+                kev_entries.len()
+            );
 
             // Convert polyglot vulnerabilities to our VulnerabilityMatch format with enrichment
             let mut vuln_matches = Vec::new();
@@ -717,11 +737,8 @@ impl Analyzer for ScaAnalyzer {
                     let in_kev = kev_entries.contains_key(&vuln.id);
 
                     // Calculate priority using CVSS score from polyglot scanner
-                    let priority = self.calculate_priority_from_cvss(
-                        vuln.cvss_score,
-                        epss_score,
-                        in_kev
-                    );
+                    let priority =
+                        self.calculate_priority_from_cvss(vuln.cvss_score, epss_score, in_kev);
 
                     vuln_matches.push(VulnerabilityMatch {
                         vulnerability_id: vuln.id.clone(),
@@ -732,16 +749,21 @@ impl Analyzer for ScaAnalyzer {
                         in_kev,
                         priority,
                         location: format!("{}@{}", vuln.package_name, vuln.package_version),
-                        reachable: None,   // Will be enriched if reachability data exists
+                        reachable: None, // Will be enriched if reachability data exists
                     });
                 }
             }
 
-            println!("[bazbom] loaded {} vulnerabilities from polyglot scanner", vuln_matches.len());
+            println!(
+                "[bazbom] loaded {} vulnerabilities from polyglot scanner",
+                vuln_matches.len()
+            );
             vuln_matches
         } else {
             // Fallback to traditional SBOM-based vulnerability matching
-            println!("[bazbom] no polyglot vulnerability data found, using traditional matching...");
+            println!(
+                "[bazbom] no polyglot vulnerability data found, using traditional matching..."
+            );
 
             // Ensure we have advisory database
             let advisory_dir = match self.ensure_advisory_database(ctx) {
@@ -765,7 +787,10 @@ impl Analyzer for ScaAnalyzer {
                 .match_vulnerabilities(&components, &advisory_dir)
                 .context("failed to match vulnerabilities")?;
 
-            println!("[bazbom] found {} vulnerability matches", vuln_matches.len());
+            println!(
+                "[bazbom] found {} vulnerability matches",
+                vuln_matches.len()
+            );
             vuln_matches
         };
 

@@ -18,8 +18,8 @@ use std::collections::HashMap;
 // Use existing BazBOM shared infrastructure
 use bazbom_core::cache_dir;
 use bazbom_vulnerabilities::{
-    calculate_priority, db_sync, fetch_osv_severities_with_hint, load_epss_scores, load_kev_catalog,
-    EpssScore, KevEntry, Severity, SeverityLevel,
+    calculate_priority, db_sync, fetch_osv_severities_with_hint, load_epss_scores,
+    load_kev_catalog, EpssScore, KevEntry, Severity, SeverityLevel,
 };
 
 /// Enrich vulnerabilities with EPSS, KEV data, and OSV severity fallback
@@ -28,7 +28,10 @@ pub(crate) async fn enrich_vulnerabilities(vulns: &mut [VulnerabilityInfo]) -> R
 }
 
 /// Enrich vulnerabilities with optional OS hint for faster OSV lookups
-pub(crate) async fn enrich_vulnerabilities_with_os(vulns: &mut [VulnerabilityInfo], os_hint: Option<&str>) -> Result<()> {
+pub(crate) async fn enrich_vulnerabilities_with_os(
+    vulns: &mut [VulnerabilityInfo],
+    os_hint: Option<&str>,
+) -> Result<()> {
     // Use BazBOM's shared cache directory
     let cache = cache_dir();
 
@@ -88,7 +91,10 @@ pub(crate) async fn enrich_vulnerabilities_with_os(vulns: &mut [VulnerabilityInf
 
     // Query OSV for severity of UNKNOWN vulns (using shared function)
     if !unknown_severity_cves.is_empty() {
-        tracing::info!("Looking up severity for {} UNKNOWN vulnerabilities via OSV...", unknown_severity_cves.len());
+        tracing::info!(
+            "Looking up severity for {} UNKNOWN vulnerabilities via OSV...",
+            unknown_severity_cves.len()
+        );
         let osv_severities = fetch_osv_severities_with_hint(&unknown_severity_cves, os_hint);
 
         for vuln in vulns.iter_mut() {
@@ -227,8 +233,8 @@ pub(crate) fn format_difficulty_label(score: u8) -> ColoredString {
         21..=40 => ("🟡", "Easy", |s| s.yellow()),
         41..=60 => ("🟠", "Moderate", |s| s.bright_yellow()),
         61..=80 => ("🔴", "Hard", |s| s.red()),
-        81..=99 => ("⚠️", "Very Hard", |s| s.bright_red().bold()),
-        100 => ("🚫", "No Fix Available", |s| s.bright_red().bold()),
+        81..=99 => ("WARN", "Very Hard", |s| s.bright_red().bold()),
+        100 => ("NO", "No Fix Available", |s| s.bright_red().bold()),
         _ => ("❓", "Unknown", |s| s.dimmed()),
     };
 

@@ -76,7 +76,8 @@ pub fn get_alpine_upgrade_recommendations(
 
                     // Track the highest fixed version needed
                     if let Some(ref current_max) = max_fixed_version {
-                        if bazbom_alpine::is_version_affected(current_max, &advisory.fixed_version) {
+                        if bazbom_alpine::is_version_affected(current_max, &advisory.fixed_version)
+                        {
                             max_fixed_version = Some(advisory.fixed_version.clone());
                         }
                     } else {
@@ -86,7 +87,8 @@ pub fn get_alpine_upgrade_recommendations(
             }
 
             if !cves_to_fix.is_empty() {
-                let risk_level = calculate_version_risk(installed_version, max_fixed_version.as_deref());
+                let risk_level =
+                    calculate_version_risk(installed_version, max_fixed_version.as_deref());
 
                 recommendations.push(OsUpgradeRecommendation {
                     package: pkg_name.clone(),
@@ -222,7 +224,8 @@ pub fn get_redhat_upgrade_recommendations(
         }
 
         if !cves_to_fix.is_empty() {
-            let risk_level = calculate_version_risk(installed_version, max_fixed_version.as_deref());
+            let risk_level =
+                calculate_version_risk(installed_version, max_fixed_version.as_deref());
 
             recommendations.push(OsUpgradeRecommendation {
                 package: pkg_name.clone(),
@@ -340,10 +343,7 @@ mod tests {
         );
 
         // No fix
-        assert_eq!(
-            calculate_version_risk("1.2.3", None),
-            OsUpgradeRisk::NoFix
-        );
+        assert_eq!(calculate_version_risk("1.2.3", None), OsUpgradeRisk::NoFix);
     }
 
     #[test]

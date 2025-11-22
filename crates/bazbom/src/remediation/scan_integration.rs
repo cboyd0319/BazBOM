@@ -102,7 +102,7 @@ impl AutoRemediationResult {
         if !self.errors.is_empty() {
             println!("\n{}", "Errors:".bold().red());
             for error in &self.errors {
-                println!("  ❌ {}", error);
+                println!("  FAIL {}", error);
             }
         }
 
@@ -123,7 +123,7 @@ pub async fn process_auto_remediation(
         return Ok(AutoRemediationResult::default());
     }
 
-    println!("\n{}", "🔧 Starting auto-remediation...".bold().cyan());
+    println!("\n{}", "TOOL Starting auto-remediation...".bold().cyan());
 
     // Initialize database
     let db = RemediationDatabase::new().context("Failed to initialize remediation database")?;
@@ -175,7 +175,7 @@ pub async fn process_auto_remediation(
         }
 
         result.github_created = filtered_vulns.len();
-        println!("  ⚠️  GitHub PR creation not yet fully implemented");
+        println!("  WARN  GitHub PR creation not yet fully implemented");
     }
 
     Ok(result)
@@ -312,7 +312,7 @@ async fn process_jira_tickets(
         // Check for duplicates
         if let Some(existing_key) = db.jira_issue_exists(&vuln.id, package, version)? {
             println!(
-                "  ⏭  Skipping {} (ticket {} already exists)",
+                "  SKIP  Skipping {} (ticket {} already exists)",
                 vuln.id.yellow(),
                 existing_key.cyan()
             );
@@ -377,7 +377,7 @@ async fn process_jira_tickets(
             Ok(response) => {
                 let jira_url = format!("{}/browse/{}", jira_config.url, response.key);
                 println!(
-                    "  ✅ Created {} → {}",
+                    "  OK Created {} → {}",
                     vuln.id.yellow(),
                     response.key.cyan()
                 );
@@ -391,13 +391,13 @@ async fn process_jira_tickets(
                     &jira_url,
                     "Open",
                 ) {
-                    eprintln!("  ⚠️  Failed to record in database: {}", e);
+                    eprintln!("  WARN  Failed to record in database: {}", e);
                 }
 
                 created += 1;
             }
             Err(e) => {
-                eprintln!("  ❌ Failed to create ticket for {}: {}", vuln.id, e);
+                eprintln!("  FAIL Failed to create ticket for {}: {}", vuln.id, e);
             }
         }
     }

@@ -43,10 +43,8 @@ impl Scanner for GradleScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result = EcosystemScanResult::new(
-            "Gradle".to_string(),
-            ctx.root.display().to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Gradle".to_string(), ctx.root.display().to_string());
 
         // Parse build.gradle or build.gradle.kts if available
         if let Some(ref manifest_path) = ctx.manifest {

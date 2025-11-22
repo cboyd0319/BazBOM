@@ -1,7 +1,7 @@
+use crate::types::{EcosystemScanResult, Package};
 use anyhow::Result;
-use std::path::Path;
 use serde_yaml;
-use crate::types::{Package, EcosystemScanResult};
+use std::path::Path;
 
 pub fn detect_github_actions(workspace: &Path) -> Result<EcosystemScanResult> {
     let workflows_dir = workspace.join(".github/workflows");
@@ -25,8 +25,8 @@ pub fn detect_github_actions(workspace: &Path) -> Result<EcosystemScanResult> {
         let path = entry.path();
 
         if path.extension().and_then(|s| s.to_str()) == Some("yml")
-            || path.extension().and_then(|s| s.to_str()) == Some("yaml") {
-
+            || path.extension().and_then(|s| s.to_str()) == Some("yaml")
+        {
             let content = std::fs::read_to_string(&path)?;
             let workflow: serde_yaml::Value = serde_yaml::from_str(&content)?;
 

@@ -7,12 +7,15 @@ use std::path::PathBuf;
 use std::process::Command;
 
 use super::{
-    ActionItem, ContainerScanOptions, ContainerScanResults, PackageEcosystem, QuickWin,
-    VulnerabilityInfo, detect_ecosystem, format_difficulty_label,
+    detect_ecosystem, format_difficulty_label, ActionItem, ContainerScanOptions,
+    ContainerScanResults, PackageEcosystem, QuickWin, VulnerabilityInfo,
 };
 
 /// Apply filter to scan results
-pub(crate) fn apply_filter(results: &ContainerScanResults, filter: &str) -> Result<ContainerScanResults> {
+pub(crate) fn apply_filter(
+    results: &ContainerScanResults,
+    filter: &str,
+) -> Result<ContainerScanResults> {
     let mut filtered = results.clone();
 
     for layer in &mut filtered.layers {
@@ -62,7 +65,10 @@ pub(crate) fn apply_filter(results: &ContainerScanResults, filter: &str) -> Resu
 }
 
 /// Display results with beautiful UX
-pub(crate) fn display_results(results: &ContainerScanResults, opts: &ContainerScanOptions) -> Result<()> {
+pub(crate) fn display_results(
+    results: &ContainerScanResults,
+    opts: &ContainerScanOptions,
+) -> Result<()> {
     use bazbom::container_ux::ContainerSummary;
     use std::time::Duration;
 
@@ -76,10 +82,7 @@ pub(crate) fn display_results(results: &ContainerScanResults, opts: &ContainerSc
     // Show filter status if active
     if let Some(ref filter) = opts.filter {
         println!();
-        println!(
-            "{}",
-            format!("Filter: {}", filter).bright_yellow().bold()
-        );
+        println!("{}", format!("Filter: {}", filter).bright_yellow().bold());
         println!(
             "   Showing {} of {} total vulnerabilities",
             filtered_results.total_vulnerabilities, results.total_vulnerabilities
@@ -389,7 +392,10 @@ pub(crate) fn display_results(results: &ContainerScanResults, opts: &ContainerSc
 #[allow(clippy::type_complexity)]
 pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
     // Aggregate all fixes by package
-    let mut package_fixes: HashMap<String, (String, String, Vec<String>, usize, usize, usize, usize)> = HashMap::new();
+    let mut package_fixes: HashMap<
+        String,
+        (String, String, Vec<String>, usize, usize, usize, usize),
+    > = HashMap::new();
 
     for layer in &results.layers {
         for vuln in &layer.vulnerabilities {
@@ -397,7 +403,15 @@ pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
                 let entry = package_fixes
                     .entry(vuln.package_name.clone())
                     .or_insert_with(|| {
-                        (vuln.installed_version.clone(), fixed.clone(), Vec::new(), 0, 0, 0, 0)
+                        (
+                            vuln.installed_version.clone(),
+                            fixed.clone(),
+                            Vec::new(),
+                            0,
+                            0,
+                            0,
+                            0,
+                        )
                     });
                 entry.2.push(vuln.cve_id.clone());
                 match vuln.severity.as_str() {
@@ -418,8 +432,8 @@ pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
     // Convert to vec and sort by total impact (weighted: critical=10, high=5, medium=2, low=1)
     let mut fixes: Vec<_> = package_fixes.into_iter().collect();
     fixes.sort_by(|a, b| {
-        let score_a = a.1.3 * 10 + a.1.4 * 5 + a.1.5 * 2 + a.1.6;
-        let score_b = b.1.3 * 10 + b.1.4 * 5 + b.1.5 * 2 + b.1.6;
+        let score_a = a.1 .3 * 10 + a.1 .4 * 5 + a.1 .5 * 2 + a.1 .6;
+        let score_b = b.1 .3 * 10 + b.1 .4 * 5 + b.1 .5 * 2 + b.1 .6;
         score_b.cmp(&score_a)
     });
 
@@ -429,12 +443,11 @@ pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
     println!("{}", "━".repeat(67).bright_white());
     println!();
 
-    for (idx, (package, (current, fixed, cves, crit, high, med, low))) in fixes.iter().take(5).enumerate() {
+    for (idx, (package, (current, fixed, cves, crit, high, med, low))) in
+        fixes.iter().take(5).enumerate()
+    {
         let total = cves.len();
-        let severity_breakdown = format!(
-            "{}C/{}H/{}M/{}L",
-            crit, high, med, low
-        );
+        let severity_breakdown = format!("{}C/{}H/{}M/{}L", crit, high, med, low);
 
         println!(
             "  {}. {} {} → {}",
@@ -452,7 +465,11 @@ pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
         // Show first 3 CVEs
         let show_cves: Vec<_> = cves.iter().take(3).collect();
         if !show_cves.is_empty() {
-            let cve_str = show_cves.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(", ");
+            let cve_str = show_cves
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ");
             if cves.len() > 3 {
                 println!("     CVEs: {} +{} more", cve_str.dimmed(), cves.len() - 3);
             } else {
@@ -463,7 +480,11 @@ pub(crate) fn display_top_fixes(results: &ContainerScanResults) -> Result<()> {
     }
 
     if fixes.len() > 5 {
-        let remaining: usize = fixes.iter().skip(5).map(|(_, (_, _, cves, _, _, _, _))| cves.len()).sum();
+        let remaining: usize = fixes
+            .iter()
+            .skip(5)
+            .map(|(_, (_, _, cves, _, _, _, _))| cves.len())
+            .sum();
         println!(
             "  {} {} more fixes address {} additional vulnerabilities",
             "...".dimmed(),
@@ -1330,7 +1351,9 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
     }
 
     // KEV or secrets = reputation damage
-    let kev_count = results.layers.iter()
+    let kev_count = results
+        .layers
+        .iter()
         .flat_map(|l| &l.vulnerabilities)
         .filter(|v| v.is_kev)
         .count();
@@ -1365,7 +1388,9 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
     probability_rationales.push("Internet-facing attack surface (10pts)");
 
     // Active exploitation (KEV or high EPSS)
-    let max_epss = results.layers.iter()
+    let max_epss = results
+        .layers
+        .iter()
         .flat_map(|l| &l.vulnerabilities)
         .filter_map(|v| v.epss_score)
         .fold(0.0, f64::max);
@@ -1415,7 +1440,9 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
     let mut exploitability_rationales = Vec::new();
 
     // Reachability analysis
-    let reachable_count = results.layers.iter()
+    let reachable_count = results
+        .layers
+        .iter()
         .flat_map(|l| &l.vulnerabilities)
         .filter(|v| v.is_reachable)
         .count();
@@ -1464,7 +1491,10 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
         priority_level.green()
     };
 
-    println!("  Overall Priority: {} ({} pts)", priority_color, total_score);
+    println!(
+        "  Overall Priority: {} ({} pts)",
+        priority_color, total_score
+    );
     println!("  Ticket Type: {}", ticket_type.dimmed());
     println!();
 
@@ -1473,12 +1503,16 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
     println!(
         "    Impact:        {}/42 {}",
         impact_score.to_string().bright_white().bold(),
-        "(data sensitivity, disruption, reputation)".to_string().dimmed()
+        "(data sensitivity, disruption, reputation)"
+            .to_string()
+            .dimmed()
     );
     println!(
         "    Probability:   {}/31 {}",
         probability_score.to_string().bright_white().bold(),
-        "(exposure, exploitation, availability)".to_string().dimmed()
+        "(exposure, exploitation, availability)"
+            .to_string()
+            .dimmed()
     );
     println!(
         "    Complexity:    {}/13 {}",
@@ -1497,9 +1531,24 @@ pub(crate) fn display_priority_scoring(results: &ContainerScanResults) -> Result
 
     // Show most impactful rationales
     let mut all_rationales: Vec<&str> = Vec::new();
-    all_rationales.extend(impact_rationales.iter().filter(|r| r.contains("10pts") || r.contains("9pts")).copied());
-    all_rationales.extend(probability_rationales.iter().filter(|r| r.contains("10pts") || r.contains("9pts")).copied());
-    all_rationales.extend(exploitability_rationales.iter().filter(|r| r.contains("14pts") || r.contains("9pts")).copied());
+    all_rationales.extend(
+        impact_rationales
+            .iter()
+            .filter(|r| r.contains("10pts") || r.contains("9pts"))
+            .copied(),
+    );
+    all_rationales.extend(
+        probability_rationales
+            .iter()
+            .filter(|r| r.contains("10pts") || r.contains("9pts"))
+            .copied(),
+    );
+    all_rationales.extend(
+        exploitability_rationales
+            .iter()
+            .filter(|r| r.contains("14pts") || r.contains("9pts"))
+            .copied(),
+    );
 
     for rationale in all_rationales.iter().take(5) {
         println!("    • {}", rationale.dimmed());
@@ -1723,16 +1772,10 @@ pub(crate) fn display_image_comparison(
     let crit2 = image2.critical_count;
 
     if total1 < total2 || (total1 == total2 && crit1 < crit2) {
-        println!(
-            "  Recommendation: Use {}",
-            image1.image_name.green().bold()
-        );
+        println!("  Recommendation: Use {}", image1.image_name.green().bold());
         println!("     Fewer vulnerabilities and lower severity");
     } else if total2 < total1 || (total1 == total2 && crit2 < crit1) {
-        println!(
-            "  Recommendation: Use {}",
-            image2.image_name.green().bold()
-        );
+        println!("  Recommendation: Use {}", image2.image_name.green().bold());
         println!("     Fewer vulnerabilities and lower severity");
     } else {
         println!("  Both images have similar security profiles");
@@ -1817,15 +1860,7 @@ pub(crate) fn create_github_issues(results: &ContainerScanResults, repo: &str) -
 
         let output = Command::new("gh")
             .args([
-                "issue",
-                "create",
-                "--repo",
-                repo,
-                "--title",
-                &title,
-                "--body",
-                &body,
-                "--label",
+                "issue", "create", "--repo", repo, "--title", &title, "--body", &body, "--label",
                 "security",
             ])
             .output()?;
@@ -1835,7 +1870,11 @@ pub(crate) fn create_github_issues(results: &ContainerScanResults, repo: &str) -
             println!("   Created: {}", url.trim().bright_green());
         } else {
             let err = String::from_utf8_lossy(&output.stderr);
-            println!("   Failed to create issue for {}: {}", vuln.cve_id, err.red());
+            println!(
+                "   Failed to create issue for {}: {}",
+                vuln.cve_id,
+                err.red()
+            );
         }
     }
 
@@ -1933,7 +1972,7 @@ mod tests {
             make_test_vuln("CVE-3", "MEDIUM", None, None, false, None),
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "critical").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 1);
         assert_eq!(filtered.critical_count, 1);
@@ -1948,7 +1987,7 @@ mod tests {
             make_test_vuln("CVE-3", "LOW", None, None, false, None),
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "high").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 2);
         assert_eq!(filtered.high_count, 2);
@@ -1962,7 +2001,7 @@ mod tests {
             make_test_vuln("CVE-3", "MEDIUM", Some("P2"), None, false, None),
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "p0").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 1);
     }
@@ -1974,7 +2013,7 @@ mod tests {
             make_test_vuln("CVE-2", "HIGH", None, None, false, None),
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "fixable").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 1);
     }
@@ -1987,7 +2026,7 @@ mod tests {
             make_test_vuln("CVE-3", "HIGH", None, None, false, None),                 // No fix
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "quick-wins").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 1);
     }
@@ -1995,11 +2034,11 @@ mod tests {
     #[test]
     fn test_apply_filter_kev() {
         let vulns = vec![
-            make_test_vuln("CVE-1", "CRITICAL", None, None, true, None),  // KEV
-            make_test_vuln("CVE-2", "HIGH", None, None, false, None),     // Not KEV
+            make_test_vuln("CVE-1", "CRITICAL", None, None, true, None), // KEV
+            make_test_vuln("CVE-2", "HIGH", None, None, false, None),    // Not KEV
         ];
         let results = make_test_results(vulns);
-        
+
         let filtered = apply_filter(&results, "kev").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 1);
     }
@@ -2011,7 +2050,7 @@ mod tests {
             make_test_vuln("CVE-2", "LOW", None, None, false, None),
         ];
         let results = make_test_results(vulns);
-        
+
         // Unknown filter should return all
         let filtered = apply_filter(&results, "unknown-filter").unwrap();
         assert_eq!(filtered.total_vulnerabilities, 2);

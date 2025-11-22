@@ -1,8 +1,6 @@
 //! Syft SBOM generator integration
 
-use crate::tools::{
-    findings::PackageInfo, run_command, tool_exists, ContainerTool, ToolOutput,
-};
+use crate::tools::{findings::PackageInfo, run_command, tool_exists, ContainerTool, ToolOutput};
 use anyhow::{Context, Result};
 use async_trait::async_trait;
 use serde::Deserialize;
@@ -89,14 +87,8 @@ impl ContainerTool for SyftScanner {
                     .into_iter()
                     .map(|l| l.value)
                     .collect(),
-                layer_digest: artifact
-                    .metadata
-                    .and_then(|m| m.layer_digest),
-                locations: artifact
-                    .locations
-                    .into_iter()
-                    .map(|l| l.path)
-                    .collect(),
+                layer_digest: artifact.metadata.and_then(|m| m.layer_digest),
+                locations: artifact.locations.into_iter().map(|l| l.path).collect(),
             });
         }
 

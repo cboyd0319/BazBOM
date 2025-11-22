@@ -1,8 +1,8 @@
 use anyhow::{Context, Result};
-use bazbom_vulnerabilities::Vulnerability as AdvisoryVuln;
 use bazbom_policy::{
     PolicyConfig, PolicyResult, Priority, SeverityLevel, Vulnerability as PolicyVuln,
 };
+use bazbom_vulnerabilities::Vulnerability as AdvisoryVuln;
 use std::fs;
 use std::path::Path;
 

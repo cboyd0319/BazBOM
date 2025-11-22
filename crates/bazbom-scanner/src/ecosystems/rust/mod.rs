@@ -37,10 +37,8 @@ impl Scanner for RustScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result = EcosystemScanResult::new(
-            "Rust".to_string(),
-            ctx.root.display().to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Rust".to_string(), ctx.root.display().to_string());
 
         // Parse Cargo.lock if available (most accurate)
         if let Some(ref lockfile_path) = ctx.lockfile {
@@ -74,8 +72,7 @@ impl Scanner for RustScanner {
 fn analyze_reachability(root: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     use bazbom_reachability::rust::analyze_rust_project;
 
-    let report = analyze_rust_project(root)
-        .context("Failed to run Rust reachability analysis")?;
+    let report = analyze_rust_project(root).context("Failed to run Rust reachability analysis")?;
 
     let mut vulnerable_packages_reachable = HashMap::new();
 
@@ -96,10 +93,7 @@ fn analyze_reachability(root: &Path, result: &mut EcosystemScanResult) -> Result
 }
 
 /// Parse Cargo.lock using the cargo-lock crate
-fn parse_cargo_lock(
-    lockfile_path: &Path,
-    result: &mut EcosystemScanResult,
-) -> Result<()> {
+fn parse_cargo_lock(lockfile_path: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     let lockfile = Lockfile::load(lockfile_path).context("Failed to parse Cargo.lock")?;
 
     for package in &lockfile.packages {
@@ -144,10 +138,7 @@ fn parse_cargo_lock(
 }
 
 /// Parse Cargo.toml (basic fallback, less accurate)
-fn parse_cargo_toml(
-    manifest_path: &Path,
-    result: &mut EcosystemScanResult,
-) -> Result<()> {
+fn parse_cargo_toml(manifest_path: &Path, result: &mut EcosystemScanResult) -> Result<()> {
     let content = fs::read_to_string(manifest_path).context("Failed to read Cargo.toml")?;
 
     let toml_value: toml::Value = toml::from_str(&content).context("Failed to parse Cargo.toml")?;
@@ -212,8 +203,8 @@ fn extract_version_from_toml(value: &toml::Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::Arc;
     use crate::cache::LicenseCache;
+    use std::sync::Arc;
     use tempfile::TempDir;
 
     #[test]
@@ -258,8 +249,7 @@ tempfile = "3.0"
 
         let scanner = RustScanner::new();
         let cache = Arc::new(LicenseCache::new());
-        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
-            .with_manifest(cargo_toml);
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_manifest(cargo_toml);
 
         let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 3);

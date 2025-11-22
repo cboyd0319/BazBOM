@@ -73,8 +73,7 @@ fn analyze_reachability(root: &Path, result: &mut EcosystemScanResult) -> Result
         let key = format!("{}@{}", package.name, package.version);
         // Check if package appears in any reachable target
         let is_reachable = report.reachable_targets.iter().any(|target| {
-            target.contains(&package.name)
-                || target.contains(&package.name.replace("-", "_"))
+            target.contains(&package.name) || target.contains(&package.name.replace("-", "_"))
         });
         vulnerable_packages_reachable.insert(key, is_reachable);
     }

@@ -21,21 +21,23 @@
 //!
 //! The `ToolOrchestrator` runs multiple tools in parallel and aggregates results.
 
-pub mod findings;
-pub mod trivy;
-pub mod grype;
-pub mod syft;
-pub mod dockle;
 pub mod dive;
-pub mod trufflehog;
+pub mod dockle;
+pub mod findings;
+pub mod grype;
 pub mod orchestrator;
+pub mod syft;
+pub mod trivy;
+pub mod trufflehog;
 
 pub use findings::*;
-pub use orchestrator::{ToolOrchestrator, OrchestratorConfig};
+pub use orchestrator::{OrchestratorConfig, ToolOrchestrator};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use std::path::Path;
+use std::time::Duration;
+use tokio::time::timeout;
 
 /// Trait for container security scanning tools
 #[async_trait]
@@ -107,17 +109,16 @@ pub fn tool_exists(tool_name: &str) -> bool {
 }
 
 /// Run a command and capture output
-pub async fn run_command(
-    program: &str,
-    args: &[&str],
-) -> Result<std::process::Output> {
+pub async fn run_command(program: &str, args: &[&str]) -> Result<std::process::Output> {
     use tokio::process::Command;
 
-    let output = Command::new(program)
-        .args(args)
-        .output()
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to run {}: {}", program, e))?;
+    let output = timeout(
+        Duration::from_secs(300),
+        Command::new(program).args(args).output(),
+    )
+    .await
+    .map_err(|_| anyhow::anyhow!("Timed out running {}", program))?
+    .map_err(|e| anyhow::anyhow!("Failed to run {}: {}", program, e))?;
 
     Ok(output)
 }

@@ -37,8 +37,8 @@ pub use version::parse_semantic_version;
 
 use anyhow::Context;
 use anyhow::Result;
-use bazbom_vulnerabilities::Vulnerability;
 use bazbom_formats::sarif::SarifReport;
+use bazbom_vulnerabilities::Vulnerability;
 use std::path::PathBuf;
 
 /// Handle the fix command
@@ -61,12 +61,12 @@ pub fn handle_fix_command(
     let vulnerabilities = load_vulnerabilities_from_scan()?;
 
     if vulnerabilities.is_empty() {
-        println!("✅ No vulnerabilities found to fix. Your project is secure!");
+        println!("OK No vulnerabilities found to fix. Your project is secure!");
         return Ok(());
     }
 
     println!(
-        "🔍 Found {} vulnerabilities to analyze\n",
+        "SCAN Found {} vulnerabilities to analyze\n",
         vulnerabilities.len()
     );
 
@@ -74,19 +74,19 @@ pub fn handle_fix_command(
     let project_root = Path::new(".");
     let build_system = bazbom_core::detect_build_system(project_root);
 
-    println!("📦 Detected build system: {:?}\n", build_system);
+    println!("PKG Detected build system: {:?}\n", build_system);
 
     // 3. Generate remediation suggestions
     let report = generate_suggestions(&vulnerabilities, build_system);
     let suggestions = &report.suggestions;
 
     if ml_prioritize {
-        println!("⚠️  ML prioritization not yet available\n");
+        println!("WARN  ML prioritization not yet available\n");
     }
 
     if llm {
         println!(
-            "⚠️  LLM analysis (provider: {}, model: {:?}) not yet available\n",
+            "WARN  LLM analysis (provider: {}, model: {:?}) not yet available\n",
             llm_provider, llm_model
         );
     }
@@ -114,10 +114,10 @@ pub fn handle_fix_command(
             if let Some(ref fixed) = suggestion.fixed_version {
                 println!("   Fix: Update to {}", fixed);
                 if let Some(ref changes) = suggestion.breaking_changes {
-                    println!("   ⚠️  Breaking changes: {}", changes);
+                    println!("   WARN  Breaking changes: {}", changes);
                 }
             } else {
-                println!("   ⚠️  No fix available yet");
+                println!("   WARN  No fix available yet");
             }
             println!();
         }
@@ -139,12 +139,12 @@ pub fn handle_fix_command(
             .collect();
 
         if fixable.is_empty() {
-            println!("❌ No fixable vulnerabilities found");
+            println!("FAIL No fixable vulnerabilities found");
             return Ok(());
         }
 
         if interactive {
-            println!("🔧 Interactive mode - prompting for each fix\n");
+            println!("TOOL Interactive mode - prompting for each fix\n");
 
             let mut confirmed_fixes = Vec::new();
 
@@ -169,35 +169,35 @@ pub fn handle_fix_command(
             let result =
                 apply_fixes_with_testing(&confirmed_fixes, build_system, project_root, false)?;
 
-            println!("\n✅ Applied {} fixes successfully", result.applied.len());
+            println!("\nOK Applied {} fixes successfully", result.applied.len());
             if !result.failed.is_empty() {
-                println!("❌ {} fixes failed:", result.failed.len());
+                println!("FAIL {} fixes failed:", result.failed.len());
                 for (vuln_id, error) in &result.failed {
                     println!("   - {}: {}", vuln_id, error);
                 }
             }
             if result.tests_passed {
-                println!("✅ All tests passed!");
+                println!("OK All tests passed!");
             }
         } else {
-            println!("🔧 Automatic mode - applying all fixes\n");
+            println!("TOOL Automatic mode - applying all fixes\n");
 
             let fixable_cloned: Vec<RemediationSuggestion> = fixable.into_iter().cloned().collect();
             let result =
                 apply_fixes_with_testing(&fixable_cloned, build_system, project_root, false)?;
 
-            println!("\n✅ Applied {} fixes successfully", result.applied.len());
+            println!("\nOK Applied {} fixes successfully", result.applied.len());
             if !result.failed.is_empty() {
-                println!("❌ {} fixes failed:", result.failed.len());
+                println!("FAIL {} fixes failed:", result.failed.len());
                 for (vuln_id, error) in &result.failed {
                     println!("   - {}: {}", vuln_id, error);
                 }
             }
 
             if result.tests_passed {
-                println!("✅ All tests passed!");
+                println!("OK All tests passed!");
             } else if result.rollback_performed {
-                println!("⚠️  Tests failed - changes were rolled back");
+                println!("WARN  Tests failed - changes were rolled back");
             }
         }
     }
@@ -214,7 +214,7 @@ pub fn handle_fix_command(
             .collect();
 
         if fixable.is_empty() {
-            println!("❌ No fixable vulnerabilities to create PR for");
+            println!("FAIL No fixable vulnerabilities to create PR for");
             return Ok(());
         }
 
@@ -267,10 +267,10 @@ pub fn handle_fix_command(
 
         match generate_pr(&fixable, build_system, project_root, config) {
             Ok(pr_url) => {
-                println!("✅ Pull request created: {}", pr_url);
+                println!("OK Pull request created: {}", pr_url);
             }
             Err(e) => {
-                println!("❌ Failed to create PR: {}", e);
+                println!("FAIL Failed to create PR: {}", e);
                 println!("\nMake sure you have:");
                 println!("1. Set GITHUB_TOKEN or GH_TOKEN environment variable");
                 println!("2. Pushed your changes to a remote repository");
@@ -284,7 +284,7 @@ pub fn handle_fix_command(
 
 /// Load vulnerabilities from scan results (SARIF or JSON)
 fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
-    use bazbom_vulnerabilities::{EpssScore, KevEntry, Severity, SeverityLevel, Priority};
+    use bazbom_vulnerabilities::{EpssScore, KevEntry, Priority, Severity, SeverityLevel};
     use std::fs;
 
     // Try SARIF files first (new format), then fall back to JSON (legacy)
@@ -303,7 +303,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
 
     // Try loading from SARIF first
     if let Some(sarif_path) = sarif_paths.iter().find(|p| p.exists()) {
-        println!("[bazbom] loading vulnerabilities from SARIF: {}", sarif_path.display());
+        println!(
+            "[bazbom] loading vulnerabilities from SARIF: {}",
+            sarif_path.display()
+        );
 
         let content = fs::read_to_string(sarif_path)?;
         let sarif: SarifReport = serde_json::from_str(&content)?;
@@ -318,12 +321,14 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
                 if let Some(props) = result.properties {
                     let id = result.rule_id.clone();
 
-                    let component = props.get("component")
+                    let component = props
+                        .get("component")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
 
-                    let _version = props.get("version")
+                    let _version = props
+                        .get("version")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
@@ -337,7 +342,8 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
                     };
 
                     // Parse priority from properties
-                    let priority = props.get("priority")
+                    let priority = props
+                        .get("priority")
                         .and_then(|v| v.as_str())
                         .and_then(|s| match s {
                             "P0" => Some(Priority::P0),
@@ -348,14 +354,16 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
                             _ => None,
                         });
 
-                    let epss = props.get("epss_score")
+                    let epss = props
+                        .get("epss_score")
                         .and_then(|v| v.as_f64())
                         .map(|score| EpssScore {
                             score,
                             percentile: 0.0, // Not available in SARIF
                         });
 
-                    let kev = props.get("cisa_kev")
+                    let kev = props
+                        .get("cisa_kev")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(false)
                         .then(|| KevEntry {
@@ -392,7 +400,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
             }
         }
 
-        println!("[bazbom] loaded {} vulnerabilities from SARIF", vulnerabilities.len());
+        println!(
+            "[bazbom] loaded {} vulnerabilities from SARIF",
+            vulnerabilities.len()
+        );
         return Ok(vulnerabilities);
     }
 
@@ -412,7 +423,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<Vulnerability>> {
         )
     })?;
 
-    println!("[bazbom] loading vulnerabilities from JSON (legacy): {}", findings_path.display());
+    println!(
+        "[bazbom] loading vulnerabilities from JSON (legacy): {}",
+        findings_path.display()
+    );
     let content = fs::read_to_string(findings_path)?;
     let findings: serde_json::Value = serde_json::from_str(&content)?;
 

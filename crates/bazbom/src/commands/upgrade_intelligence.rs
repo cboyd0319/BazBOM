@@ -135,7 +135,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
     );
     println!(
         "  ┃  {} {:43} ┃",
-        "🔍 OVERALL RISK:".bold(),
+        "SCAN OVERALL RISK:".bold(),
         format_risk_level(analysis.overall_risk).to_string(),
     );
     println!(
@@ -148,7 +148,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
 
     // Direct changes section
     println!(
-        "  📦 {}",
+        "  PKG {}",
         format!("Direct Changes: {}", analysis.target_package)
             .bright_white()
             .bold()
@@ -157,23 +157,23 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
 
     if analysis.direct_breaking_changes.is_empty() {
         println!(
-            "  {}  ✅ Breaking changes: {}",
+            "  {}  OK Breaking changes: {}",
             "│".bright_black(),
             "0".green().bold()
         );
         println!(
-            "  {}  ✅ API compatibility: {}",
+            "  {}  OK API compatibility: {}",
             "│".bright_black(),
             "100%".green().bold()
         );
         println!(
-            "  {}  ✅ Risk level: {}",
+            "  {}  OK Risk level: {}",
             "│".bright_black(),
             format_risk_level(RiskLevel::Low)
         );
     } else {
         println!(
-            "  {}  ⚠️  Breaking changes: {}",
+            "  {}  WARN  Breaking changes: {}",
             "│".bright_black(),
             analysis
                 .direct_breaking_changes
@@ -199,7 +199,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                 println!(
                     "  {}     {} {}",
                     "│".bright_black(),
-                    "💡".bright_blue(),
+                    "HINT".bright_blue(),
                     hint.dimmed()
                 );
             }
@@ -210,7 +210,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
     // Required dependency upgrades
     if !analysis.required_upgrades.is_empty() {
         println!(
-            "  ⚙️  {}",
+            "  CONFIG  {}",
             format!(
                 "Transitive Dependencies: {} upgrades required",
                 analysis.required_upgrades.len()
@@ -226,7 +226,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
             let tree_ext = if is_last { " " } else { "│" };
 
             let status_icon = if upgrade.breaking_changes.is_empty() {
-                "✅"
+                "OK"
             } else {
                 upgrade.risk_level.emoji()
             };
@@ -255,7 +255,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                     "  {} {}   {} {} breaking changes:",
                     "│".bright_black(),
                     tree_ext.cyan(),
-                    "⚠️ ".red(),
+                    "WARN ".red(),
                     upgrade.breaking_changes.len()
                 );
 
@@ -286,7 +286,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
     if !analysis.compatibility_notes.is_empty() {
         println!("{}", "━".repeat(60).bright_black());
         println!();
-        println!("{} Compatibility Notes:", "ℹ️ ".bold());
+        println!("{} Compatibility Notes:", "INFO ".bold());
         for note in &analysis.compatibility_notes {
             println!("   {} {}", "•".cyan(), note);
         }
@@ -302,7 +302,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
 
     // GitHub repo
     if let Some(ref repo_url) = analysis.github_repo {
-        println!("{} Repository:", "🔗".bold());
+        println!("{} Repository:", "LINK".bold());
         println!("   {}", repo_url.bright_blue().underline());
         println!();
     }
@@ -421,7 +421,7 @@ fn print_upgrade_analysis(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
     );
     println!(
         "  ┃  {} {}                                ┃",
-        "⏱️  ESTIMATED EFFORT:".bold(),
+        "TIME  ESTIMATED EFFORT:".bold(),
         effort_hours_display
     );
     println!(
@@ -483,7 +483,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
         println!(
             "  {} {:^61} {}",
             "║".bright_green().bold(),
-            "🎯 RECOMMENDATION: SAFE TO APPLY",
+            "TARGET RECOMMENDATION: SAFE TO APPLY",
             "║".bright_green().bold()
         );
         println!(
@@ -492,7 +492,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                 .bright_green()
                 .bold()
         );
-        println!("  {} ✅ This is a low-risk upgrade with no breaking changes.                                                   {}",
+        println!("  {} OK This is a low-risk upgrade with no breaking changes.                                                   {}",
             "║".bright_green().bold(),
             "║".bright_green().bold()
         );
@@ -507,7 +507,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                 .bold()
         );
         println!(
-            "  {} 💡 {}                                              {}",
+            "  {} HINT {}                                              {}",
             "║".bright_green().bold(),
             "NEXT STEPS:".bold(),
             "║".bright_green().bold()
@@ -549,7 +549,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                 println!(
                     "  {} {:^61} {}",
                     "║".bright_yellow().bold(),
-                    "🎯 RECOMMENDATION: REVIEW BEFORE APPLYING",
+                    "TARGET RECOMMENDATION: REVIEW BEFORE APPLYING",
                     "║".bright_yellow().bold()
                 );
                 println!(
@@ -558,7 +558,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                         .bright_yellow()
                         .bold()
                 );
-                println!("  {} ⚠️  This upgrade has some breaking changes but is manageable.                                                   {}",
+                println!("  {} WARN  This upgrade has some breaking changes but is manageable.                                                   {}",
                     "║".bright_yellow().bold(),
                     "║".bright_yellow().bold()
                 );
@@ -569,7 +569,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                         .bold()
                 );
                 println!(
-                    "  {} 💡 {}                                              {}",
+                    "  {} HINT {}                                              {}",
                     "║".bright_yellow().bold(),
                     "RECOMMENDED APPROACH:".bold(),
                     "║".bright_yellow().bold()
@@ -652,7 +652,7 @@ fn print_recommendation(analysis: &bazbom_upgrade_analyzer::UpgradeAnalysis) {
                         .bold()
                 );
                 println!(
-                    "  {} 💡 {}                                              {}",
+                    "  {} HINT {}                                              {}",
                     "║".bright_red().bold(),
                     "RECOMMENDED APPROACH:".bold(),
                     "║".bright_red().bold()

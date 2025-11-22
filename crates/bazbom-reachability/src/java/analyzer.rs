@@ -115,7 +115,12 @@ impl JavaReachabilityAnalyzer {
 
         // Gradle cache
         let gradle_cache = dirs::home_dir()
-            .map(|h| h.join(".gradle").join("caches").join("modules-2").join("files-2.1"))
+            .map(|h| {
+                h.join(".gradle")
+                    .join("caches")
+                    .join("modules-2")
+                    .join("files-2.1")
+            })
             .filter(|p| p.exists());
 
         if let Some(_gradle_cache) = gradle_cache {

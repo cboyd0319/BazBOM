@@ -46,17 +46,9 @@ impl GoReachabilityAnalyzer {
         let mut report: ReachabilityReport = serde_json::from_str(&report_json)?;
 
         // Convert Vec to HashSet for reachable/unreachable functions
-        report.reachable_functions = report
-            .reachable_functions
-            .iter()
-            .cloned()
-            .collect();
-        
-        report.unreachable_functions = report
-            .unreachable_functions
-            .iter()
-            .cloned()
-            .collect();
+        report.reachable_functions = report.reachable_functions.iter().cloned().collect();
+
+        report.unreachable_functions = report.unreachable_functions.iter().cloned().collect();
 
         info!(
             "Go analysis complete: {}/{} functions reachable",
@@ -73,7 +65,10 @@ impl GoReachabilityAnalyzer {
         if let Ok(path) = std::env::var("BAZBOM_GO_ANALYZER_PATH") {
             let analyzer_path = std::path::PathBuf::from(path);
             if analyzer_path.exists() {
-                info!("Using go-analyzer from BAZBOM_GO_ANALYZER_PATH: {:?}", analyzer_path);
+                info!(
+                    "Using go-analyzer from BAZBOM_GO_ANALYZER_PATH: {:?}",
+                    analyzer_path
+                );
                 return Ok(analyzer_path);
             }
         }
@@ -84,14 +79,20 @@ impl GoReachabilityAnalyzer {
                 // Look for tools/go-analyzer relative to binary (e.g., target/release/tools/go-analyzer)
                 let binary_relative = exe_dir.join("../../tools/go-analyzer/go-analyzer");
                 if binary_relative.exists() {
-                    info!("Found go-analyzer relative to binary: {:?}", binary_relative);
+                    info!(
+                        "Found go-analyzer relative to binary: {:?}",
+                        binary_relative
+                    );
                     return Ok(binary_relative);
                 }
 
                 // Also try one level up (for installed binaries)
                 let installed_path = exe_dir.join("../tools/go-analyzer/go-analyzer");
                 if installed_path.exists() {
-                    info!("Found go-analyzer in installed location: {:?}", installed_path);
+                    info!(
+                        "Found go-analyzer in installed location: {:?}",
+                        installed_path
+                    );
                     return Ok(installed_path);
                 }
             }

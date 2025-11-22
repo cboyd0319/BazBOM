@@ -48,7 +48,7 @@ impl SmartDefaults {
             println!("🤖 CI environment detected");
         }
         if self.is_pr {
-            println!("📋 Pull request detected");
+            println!("NOTE Pull request detected");
         }
         if self.enable_reachability {
             println!("⚡ Small repo detected - enabling reachability (fast)");

@@ -21,8 +21,8 @@ pub fn parse_apk_installed(root: &Path) -> Result<Vec<InstalledPackage>> {
         return Ok(vec![]);
     }
 
-    let content = std::fs::read_to_string(&db_path)
-        .context("Failed to read apk installed database")?;
+    let content =
+        std::fs::read_to_string(&db_path).context("Failed to read apk installed database")?;
 
     let mut packages = Vec::new();
     let mut current_name = String::new();
@@ -77,8 +77,7 @@ pub fn parse_dpkg_status(root: &Path) -> Result<Vec<InstalledPackage>> {
         return Ok(vec![]);
     }
 
-    let content = std::fs::read_to_string(&status_path)
-        .context("Failed to read dpkg status")?;
+    let content = std::fs::read_to_string(&status_path).context("Failed to read dpkg status")?;
 
     let mut packages = Vec::new();
     let mut current_name = String::new();

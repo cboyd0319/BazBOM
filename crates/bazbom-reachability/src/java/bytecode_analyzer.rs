@@ -53,7 +53,8 @@ fn analyze_class_file(class_path: &Path, call_graph: &mut CallGraph) -> Result<(
     };
 
     // Get class name from constant pool
-    let class_name = class.const_pool
+    let class_name = class
+        .const_pool
         .get((class.this_class - 1) as usize)
         .and_then(|cp| {
             if let classfile_parser::constant_info::ConstantInfo::Class(c) = cp {
@@ -74,7 +75,8 @@ fn analyze_class_file(class_path: &Path, call_graph: &mut CallGraph) -> Result<(
     // Extract all methods
     for method in &class.methods {
         // Get method name
-        let method_name = class.const_pool
+        let method_name = class
+            .const_pool
             .get((method.name_index - 1) as usize)
             .and_then(|cp| {
                 if let classfile_parser::constant_info::ConstantInfo::Utf8(s) = cp {
@@ -86,7 +88,8 @@ fn analyze_class_file(class_path: &Path, call_graph: &mut CallGraph) -> Result<(
             .unwrap_or_else(|| "unknown".to_string());
 
         // Get method descriptor
-        let descriptor = class.const_pool
+        let descriptor = class
+            .const_pool
             .get((method.descriptor_index - 1) as usize)
             .and_then(|cp| {
                 if let classfile_parser::constant_info::ConstantInfo::Utf8(s) = cp {
@@ -107,8 +110,12 @@ fn analyze_class_file(class_path: &Path, call_graph: &mut CallGraph) -> Result<(
         );
 
         // Check access flags (classfile-parser provides a proper type)
-        method_node.is_public = method.access_flags.contains(classfile_parser::method_info::MethodAccessFlags::PUBLIC);
-        method_node.is_static = method.access_flags.contains(classfile_parser::method_info::MethodAccessFlags::STATIC);
+        method_node.is_public = method
+            .access_flags
+            .contains(classfile_parser::method_info::MethodAccessFlags::PUBLIC);
+        method_node.is_static = method
+            .access_flags
+            .contains(classfile_parser::method_info::MethodAccessFlags::STATIC);
 
         // Check if it's an entrypoint (main method, servlet methods, etc.)
         method_node.is_entrypoint = is_entrypoint(&method_node);
@@ -136,7 +143,8 @@ fn extract_method_calls(
     // Find the Code attribute
     for attr in &method.attributes {
         // Check if this is a Code attribute by looking up the name
-        let attr_name = class.const_pool
+        let attr_name = class
+            .const_pool
             .get((attr.attribute_name_index - 1) as usize)
             .and_then(|cp| {
                 if let ConstantInfo::Utf8(s) = cp {
@@ -266,9 +274,7 @@ fn resolve_method_ref(class: &classfile_parser::ClassFile, index: u16) -> Option
         })?;
 
     // Get method name and descriptor
-    let name_and_type = class
-        .const_pool
-        .get((name_and_type_index - 1) as usize)?;
+    let name_and_type = class.const_pool.get((name_and_type_index - 1) as usize)?;
 
     if let ConstantInfo::NameAndType(nat) = name_and_type {
         let method_name = class
@@ -473,8 +479,10 @@ mod tests {
 
         for (method_id, method) in &call_graph.methods {
             println!("\n{}", method_id);
-            println!("  Public: {}, Static: {}, Entrypoint: {}",
-                     method.is_public, method.is_static, method.is_entrypoint);
+            println!(
+                "  Public: {}, Static: {}, Entrypoint: {}",
+                method.is_public, method.is_static, method.is_entrypoint
+            );
             println!("  Calls {} methods:", method.calls.len());
             for call in &method.calls {
                 println!("    -> {}", call);
@@ -482,13 +490,21 @@ mod tests {
         }
 
         // Verify we found the main method
-        let main_method = call_graph.methods.values()
+        let main_method = call_graph
+            .methods
+            .values()
             .find(|m| m.name == "main" && m.is_entrypoint);
-        assert!(main_method.is_some(), "Should find main method as entrypoint");
+        assert!(
+            main_method.is_some(),
+            "Should find main method as entrypoint"
+        );
 
         // Verify main calls used()
         let main = main_method.unwrap();
-        assert!(main.calls.iter().any(|c| c.contains("used")),
-                "main() should call used(), calls: {:?}", main.calls);
+        assert!(
+            main.calls.iter().any(|c| c.contains("used")),
+            "main() should call used(), calls: {:?}",
+            main.calls
+        );
     }
 }

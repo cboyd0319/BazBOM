@@ -12,11 +12,11 @@ use crate::publish::GitHubPublisher;
 use crate::scan_cache::{ScanCache, ScanParameters, ScanResult as CachedScanResult};
 use crate::shading::{scan_and_identify_jars, IdentifiedJar};
 use anyhow::{Context as _, Result};
-use tracing::info;
 use bazbom_cache::incremental::IncrementalAnalyzer;
 use bazbom_orchestrator::{OrchestratorConfig, ParallelOrchestrator};
 use colored::Colorize;
 use std::path::PathBuf;
+use tracing::info;
 
 pub struct ScanOrchestratorOptions {
     pub cyclonedx: bool,
@@ -104,11 +104,14 @@ impl ScanOrchestrator {
         };
 
         if self.cyclonedx {
-            println!("   {} CycloneDX output enabled", "ℹ️".to_string().dimmed());
+            println!(
+                "   {} CycloneDX output enabled",
+                "INFO".to_string().dimmed()
+            );
         }
 
         if let Some(ref target) = self.target {
-            println!("   🎯 Targeting specific module: {}", target);
+            println!("   TARGET Targeting specific module: {}", target);
         }
 
         // Step 0: Check if incremental scan is possible
@@ -117,7 +120,7 @@ impl ScanOrchestrator {
                 if skip_scan {
                     println!(
                         "   {} No significant changes detected, using cached results",
-                        "✅".green()
+                        "OK".green()
                     );
                     return Ok(());
                 }
@@ -132,7 +135,7 @@ impl ScanOrchestrator {
                     println!("   {} Using cached scan results (cache hit)", "⚡".yellow());
                     println!(
                         "   {} Set BAZBOM_DISABLE_CACHE=1 to disable caching",
-                        "ℹ️".to_string().dimmed()
+                        "INFO".to_string().dimmed()
                     );
                     return Ok(());
                 }
@@ -783,7 +786,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
-            checksums: None,
+                    checksums: None,
                     external_refs: None,
                 }
             } else {
@@ -795,7 +798,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
-            checksums: None,
+                    checksums: None,
                     external_refs: None,
                 }
             };
@@ -857,7 +860,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
-            checksums: None,
+                    checksums: None,
                     external_refs: None,
                 }
             } else {
@@ -869,7 +872,7 @@ impl ScanOrchestrator {
                     files_analyzed: false,
                     license_concluded: None,
                     license_declared: None,
-            checksums: None,
+                    checksums: None,
                     external_refs: None,
                 }
             };
@@ -1128,7 +1131,12 @@ impl ScanOrchestrator {
                     Ok(identified) => {
                         let count = identified.iter().filter(|j| j.identity.is_some()).count();
                         if !identified.is_empty() {
-                            info!("Identified {}/{} JARs in {:?}", count, identified.len(), dir);
+                            info!(
+                                "Identified {}/{} JARs in {:?}",
+                                count,
+                                identified.len(),
+                                dir
+                            );
                             all_identified.extend(identified);
                         }
                     }
@@ -1140,17 +1148,27 @@ impl ScanOrchestrator {
         }
 
         // Log summary
-        let total_identified = all_identified.iter().filter(|j| j.identity.is_some()).count();
+        let total_identified = all_identified
+            .iter()
+            .filter(|j| j.identity.is_some())
+            .count();
         if !all_identified.is_empty() {
             println!(
                 "[bazbom] identified {}/{} JAR artifacts",
-                total_identified, all_identified.len()
+                total_identified,
+                all_identified.len()
             );
 
             // Print identified artifacts
             for jar in &all_identified {
                 if let Some(ref identity) = jar.identity {
-                    println!("   {} {}:{}:{}", "→".dimmed(), identity.group_id, identity.artifact_id, identity.version);
+                    println!(
+                        "   {} {}:{}:{}",
+                        "→".dimmed(),
+                        identity.group_id,
+                        identity.artifact_id,
+                        identity.version
+                    );
                 }
             }
         }
@@ -1180,9 +1198,9 @@ impl ScanOrchestrator {
             // Configure parallel orchestrator
             let orchestrator_config = OrchestratorConfig {
                 max_concurrent: num_cpus::get(),
-                show_progress: true,  // Show progress bars
+                show_progress: true, // Show progress bars
                 enable_reachability: self.reachability,
-                enable_vulnerabilities: true,  // Always scan for vulnerabilities
+                enable_vulnerabilities: true, // Always scan for vulnerabilities
             };
 
             let orchestrator = ParallelOrchestrator::with_config(orchestrator_config);
@@ -1206,7 +1224,10 @@ impl ScanOrchestrator {
         // Enforce scan limit if BAZBOM_SCAN_LIMIT is set
         if let Ok(limit_str) = std::env::var("BAZBOM_SCAN_LIMIT") {
             if let Ok(limit) = limit_str.parse::<usize>() {
-                tracing::info!("Enforcing scan limit of {} packages in polyglot results", limit);
+                tracing::info!(
+                    "Enforcing scan limit of {} packages in polyglot results",
+                    limit
+                );
                 let mut total_packages = 0;
                 let mut limited_results = Vec::new();
 
@@ -1241,18 +1262,18 @@ impl ScanOrchestrator {
         // Display detected ecosystems
         if !polyglot_results.is_empty() {
             println!(
-                "\n📦 Detected {} polyglot ecosystems:",
+                "\nPKG Detected {} polyglot ecosystems:",
                 polyglot_results.len()
             );
             for result in &polyglot_results {
                 let icon = match result.ecosystem.as_str() {
-                    "Node.js/npm" => "📦",
-                    "Python" => "🐍",
+                    "Node.js/npm" => "PKG",
+                    "Python" => "PY",
                     "Go" => "🐹",
-                    "Rust" => "🦀",
+                    "Rust" => "RUST",
                     "Ruby" => "💎",
                     "PHP" => "🐘",
-                    _ => "📦",
+                    _ => "PKG",
                 };
                 println!(
                     "  {} {} - {} packages, {} vulnerabilities",
@@ -1305,32 +1326,42 @@ impl ScanOrchestrator {
                 tracing::debug!("Found maven_install.json at {:?}", maven_install_json);
                 let deps_json_path = self.context.sbom_dir.join("bazel-deps.json");
 
-                match crate::bazel::extract_bazel_dependencies(&self.context.workspace, &deps_json_path) {
+                match crate::bazel::extract_bazel_dependencies(
+                    &self.context.workspace,
+                    &deps_json_path,
+                ) {
                     Ok(graph) => {
                         tracing::info!(
                             "Successfully extracted {} Maven packages from maven_install.json",
                             graph.components.len()
                         );
-                        println!("[bazbom] found {} Maven packages from maven_install.json", graph.components.len());
+                        println!(
+                            "[bazbom] found {} Maven packages from maven_install.json",
+                            graph.components.len()
+                        );
 
                         // Convert Bazel Maven components to polyglot Package format
-                        let maven_packages: Vec<bazbom_scanner::Package> = graph.components.iter().map(|component| {
-                            bazbom_scanner::Package {
-                                name: component.name.clone(),
-                                version: component.version.clone(),
-                                ecosystem: "Maven".to_string(),
-                                namespace: Some(component.group.clone()),
-                                dependencies: vec![],  // Dependency relationships are in edges
-                                license: None,
-                                description: None,
-                                homepage: None,
-                                repository: if component.repository.is_empty() {
-                                    None
-                                } else {
-                                    Some(component.repository.clone())
-                                },
-                            }
-                        }).collect();
+                        let maven_packages: Vec<bazbom_scanner::Package> = graph
+                            .components
+                            .iter()
+                            .map(|component| {
+                                bazbom_scanner::Package {
+                                    name: component.name.clone(),
+                                    version: component.version.clone(),
+                                    ecosystem: "Maven".to_string(),
+                                    namespace: Some(component.group.clone()),
+                                    dependencies: vec![], // Dependency relationships are in edges
+                                    license: None,
+                                    description: None,
+                                    homepage: None,
+                                    repository: if component.repository.is_empty() {
+                                        None
+                                    } else {
+                                        Some(component.repository.clone())
+                                    },
+                                }
+                            })
+                            .collect();
 
                         // Merge Maven packages into polyglot results
                         if !maven_packages.is_empty() {
@@ -1344,18 +1375,26 @@ impl ScanOrchestrator {
                                 reachability: None,
                             };
                             polyglot_results.push(maven_result);
-                            tracing::info!("Merged {} Maven packages into polyglot results", graph.components.len());
+                            tracing::info!(
+                                "Merged {} Maven packages into polyglot results",
+                                graph.components.len()
+                            );
                         }
                     }
                     Err(e) => {
                         tracing::warn!("Failed to extract Bazel dependencies: {}", e);
-                        eprintln!("[bazbom] warning: failed to extract Bazel dependencies: {}", e);
+                        eprintln!(
+                            "[bazbom] warning: failed to extract Bazel dependencies: {}",
+                            e
+                        );
                     }
                 }
             } else {
                 tracing::info!("No maven_install.json found in Bazel workspace");
                 println!("[bazbom] no maven_install.json found");
-                println!("[bazbom] hint: run 'bazel run @maven//:pin' to generate maven_install.json");
+                println!(
+                    "[bazbom] hint: run 'bazel run @maven//:pin' to generate maven_install.json"
+                );
             }
 
             // Detect CI/CD tooling for Bazel projects (if requested)
@@ -1366,7 +1405,10 @@ impl ScanOrchestrator {
                     Ok(cicd_result) => {
                         if !cicd_result.packages.is_empty() {
                             tracing::info!("Found {} CI/CD packages", cicd_result.packages.len());
-                            println!("[bazbom] found {} CI/CD packages", cicd_result.packages.len());
+                            println!(
+                                "[bazbom] found {} CI/CD packages",
+                                cicd_result.packages.len()
+                            );
                             polyglot_results.push(cicd_result);
                         }
                     }
@@ -1381,10 +1423,16 @@ impl ScanOrchestrator {
         // Generate unified SBOM combining Bazel Maven + all polyglot ecosystems
         let _spdx_path = if !polyglot_results.is_empty() {
             let total_packages: usize = polyglot_results.iter().map(|r| r.packages.len()).sum();
-            tracing::info!("Generating unified SBOM with {} packages across {} ecosystems",
-                total_packages, polyglot_results.len());
-            println!("[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
-                total_packages, polyglot_results.len());
+            tracing::info!(
+                "Generating unified SBOM with {} packages across {} ecosystems",
+                total_packages,
+                polyglot_results.len()
+            );
+            println!(
+                "[bazbom] generating unified SBOM ({} packages from {} ecosystems)",
+                total_packages,
+                polyglot_results.len()
+            );
 
             if self.fetch_checksums {
                 println!("[bazbom] fetching SHA256 checksums from package registries (this may take a moment)...");
@@ -1392,23 +1440,24 @@ impl ScanOrchestrator {
             }
 
             let unified_sbom = match tokio::runtime::Handle::try_current() {
-                Ok(handle) => {
-                    tokio::task::block_in_place(|| {
-                        handle.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))
-                    })?
-                }
+                Ok(handle) => tokio::task::block_in_place(|| {
+                    handle.block_on(bazbom_scanner::generate_polyglot_sbom(
+                        &polyglot_results,
+                        self.fetch_checksums,
+                    ))
+                })?,
                 Err(_) => {
                     // Create new runtime if not already in one
                     let rt = tokio::runtime::Runtime::new()?;
-                    rt.block_on(bazbom_scanner::generate_polyglot_sbom(&polyglot_results, self.fetch_checksums))?
+                    rt.block_on(bazbom_scanner::generate_polyglot_sbom(
+                        &polyglot_results,
+                        self.fetch_checksums,
+                    ))?
                 }
             };
             let spdx_path = self.context.sbom_dir.join("spdx.json");
             std::fs::create_dir_all(&self.context.sbom_dir)?;
-            std::fs::write(
-                &spdx_path,
-                serde_json::to_string_pretty(&unified_sbom)?,
-            )?;
+            std::fs::write(&spdx_path, serde_json::to_string_pretty(&unified_sbom)?)?;
             tracing::debug!("Wrote unified SPDX SBOM to {:?}", spdx_path);
             println!("[bazbom] wrote unified SPDX SBOM to {:?}", spdx_path);
             spdx_path
@@ -1429,12 +1478,10 @@ impl ScanOrchestrator {
             let mut component_count = 0;
             for ecosystem_result in &polyglot_results {
                 for package in &ecosystem_result.packages {
-                    let mut component = bazbom_formats::cyclonedx::Component::new(
-                        &package.name,
-                        "library"
-                    )
-                    .with_version(&package.version)
-                    .with_purl(package.purl());
+                    let mut component =
+                        bazbom_formats::cyclonedx::Component::new(&package.name, "library")
+                            .with_version(&package.version)
+                            .with_purl(package.purl());
 
                     if let Some(ref license) = package.license {
                         component = component.with_license(license);
@@ -1447,8 +1494,15 @@ impl ScanOrchestrator {
 
             let json = serde_json::to_string_pretty(&cdx_doc)?;
             std::fs::write(&cyclonedx_path, json)?;
-            tracing::info!("Wrote CycloneDX SBOM with {} components to {:?}", component_count, cyclonedx_path);
-            println!("[bazbom] wrote CycloneDX SBOM ({} components) to {:?}", component_count, cyclonedx_path);
+            tracing::info!(
+                "Wrote CycloneDX SBOM with {} components to {:?}",
+                component_count,
+                cyclonedx_path
+            );
+            println!(
+                "[bazbom] wrote CycloneDX SBOM ({} components) to {:?}",
+                component_count, cyclonedx_path
+            );
         }
 
         // Save polyglot vulnerability data for SCA analyzer
@@ -1458,7 +1512,10 @@ impl ScanOrchestrator {
             let polyglot_vulns_path = self.context.findings_dir.join("polyglot-vulns.json");
             let json = serde_json::to_string_pretty(&polyglot_results)?;
             std::fs::write(&polyglot_vulns_path, json)?;
-            tracing::debug!("Saved polyglot vulnerability data to {:?}", polyglot_vulns_path);
+            tracing::debug!(
+                "Saved polyglot vulnerability data to {:?}",
+                polyglot_vulns_path
+            );
 
             // Also save polyglot SBOM with reachability data for enrichment
             let polyglot_sbom_path = self.context.sbom_dir.join("polyglot-sbom.json");
@@ -1467,7 +1524,10 @@ impl ScanOrchestrator {
             });
             let sbom_json = serde_json::to_string_pretty(&sbom_data)?;
             std::fs::write(&polyglot_sbom_path, sbom_json)?;
-            tracing::debug!("Saved polyglot SBOM with reachability data to {:?}", polyglot_sbom_path);
+            tracing::debug!(
+                "Saved polyglot SBOM with reachability data to {:?}",
+                polyglot_sbom_path
+            );
 
             // Sign SBOM if requested
             if self.sign_sbom {
@@ -1495,13 +1555,13 @@ impl ScanOrchestrator {
         if cosign_check.is_err() {
             println!(
                 "   {} Cosign not found, skipping SBOM signing",
-                "⚠️".yellow()
+                "WARN".yellow()
             );
             return Ok(());
         }
 
         println!(
-            "   🔐 Signing SBOM: {}",
+            "   SECURE Signing SBOM: {}",
             sbom_path.display().to_string().dimmed()
         );
 
@@ -1510,7 +1570,7 @@ impl ScanOrchestrator {
         let output = Command::new("cosign")
             .args([
                 "sign-blob",
-                "--yes",  // Non-interactive
+                "--yes", // Non-interactive
                 sbom_path.to_str().unwrap(),
                 "--output-signature",
                 &format!("{}.sig", sbom_path.display()),
@@ -1519,15 +1579,12 @@ impl ScanOrchestrator {
             .context("failed to run cosign")?;
 
         if output.status.success() {
-            println!(
-                "   ✅ Signature saved: {}.sig",
-                sbom_path.display()
-            );
+            println!("   OK Signature saved: {}.sig", sbom_path.display());
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             println!(
                 "   {} Signing failed: {}",
-                "⚠️".yellow(),
+                "WARN".yellow(),
                 stderr.lines().next().unwrap_or("unknown error")
             );
         }

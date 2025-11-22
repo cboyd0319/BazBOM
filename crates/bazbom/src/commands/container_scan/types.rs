@@ -19,6 +19,9 @@ pub struct ContainerScanOptions {
     pub report_file: Option<String>,
     pub filter: Option<String>,
     pub with_reachability: bool,
+    pub skip_pull: bool,
+    pub allow_unsigned: bool,
+    pub offline: bool,
 }
 
 /// Layer information with vulnerability attribution
@@ -213,9 +216,9 @@ pub(crate) fn detect_ecosystem(package_name: &str) -> PackageEcosystem {
         System::Cargo => PackageEcosystem::Rust,
         System::RubyGems => PackageEcosystem::Ruby,
         System::Packagist => PackageEcosystem::Php,
-        System::Hex => PackageEcosystem::Other,    // Elixir
-        System::Pub => PackageEcosystem::Other,    // Dart
-        System::NuGet => PackageEcosystem::Other,  // .NET
+        System::Hex => PackageEcosystem::Other,   // Elixir
+        System::Pub => PackageEcosystem::Other,   // Dart
+        System::NuGet => PackageEcosystem::Other, // .NET
         // OS packages map to Other for now
         System::Alpine | System::Debian | System::Rpm => PackageEcosystem::Other,
     }

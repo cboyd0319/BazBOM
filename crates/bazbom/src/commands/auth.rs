@@ -59,7 +59,10 @@ pub fn handle_auth_user(cmd: AuthUserCmd) -> Result<()> {
             let mut users = load_users(&users_path)?;
 
             // Check if user exists
-            if users.iter().any(|u: &serde_json::Value| u["email"] == email) {
+            if users
+                .iter()
+                .any(|u: &serde_json::Value| u["email"] == email)
+            {
                 anyhow::bail!("User already exists: {}", email);
             }
 
@@ -155,9 +158,7 @@ pub fn handle_auth_token(cmd: AuthTokenCmd) -> Result<()> {
             let token_value = generate_token_value();
 
             let expiry = if expires > 0 {
-                Some(
-                    (chrono::Utc::now() + chrono::Duration::days(expires as i64)).to_rfc3339(),
-                )
+                Some((chrono::Utc::now() + chrono::Duration::days(expires as i64)).to_rfc3339())
             } else {
                 None
             };
@@ -190,7 +191,9 @@ pub fn handle_auth_token(cmd: AuthTokenCmd) -> Result<()> {
 
             if tokens.is_empty() {
                 println!("No tokens configured.");
-                println!("Create a token with: bazbom auth token create --name <name> --scope <scope>");
+                println!(
+                    "Create a token with: bazbom auth token create --name <name> --scope <scope>"
+                );
                 return Ok(());
             }
 
@@ -205,9 +208,7 @@ pub fn handle_auth_token(cmd: AuthTokenCmd) -> Result<()> {
                 let id = token["id"].as_str().unwrap_or("?");
                 let name = token["name"].as_str().unwrap_or("?");
                 let scope = token["scope"].as_str().unwrap_or("?");
-                let expires = token["expires"]
-                    .as_str()
-                    .unwrap_or("never");
+                let expires = token["expires"].as_str().unwrap_or("never");
                 println!("{:<12} {:<20} {:<10} {:<20}", id, name, scope, expires);
             }
         }
@@ -236,8 +237,7 @@ pub fn handle_auth_audit_log(limit: usize, event_type: Option<String>) -> Result
 
     ensure_initialized(&auth_dir)?;
 
-    let content = std::fs::read_to_string(&audit_path)
-        .context("Failed to read audit log")?;
+    let content = std::fs::read_to_string(&audit_path).context("Failed to read audit log")?;
     let events: Vec<serde_json::Value> = serde_json::from_str(&content)?;
 
     let filtered: Vec<_> = events
@@ -276,7 +276,10 @@ pub fn handle_auth_audit_log(limit: usize, event_type: Option<String>) -> Result
         let user = event["user"].as_str().unwrap_or("system");
         let details = event["details"].as_str().unwrap_or("");
 
-        println!("{:<20} {:<15} {:<15} {}", timestamp, event_type, user, details);
+        println!(
+            "{:<20} {:<15} {:<15} {}",
+            timestamp, event_type, user, details
+        );
     }
 
     Ok(())
@@ -295,9 +298,7 @@ fn get_auth_dir() -> Result<PathBuf> {
 
 fn ensure_initialized(auth_dir: &PathBuf) -> Result<()> {
     if !auth_dir.exists() {
-        anyhow::bail!(
-            "Authentication system not initialized. Run: bazbom auth init"
-        );
+        anyhow::bail!("Authentication system not initialized. Run: bazbom auth init");
     }
     Ok(())
 }

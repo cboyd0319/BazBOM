@@ -159,7 +159,10 @@ struct AdvisoriesResponse {
 /// # Returns
 /// Package information including versions, maintainers, and metadata
 pub fn get_package_info(vendor: &str, package: &str) -> Result<PackageInfo> {
-    let url = format!("{}/packages/{}/{}.json", PACKAGIST_API_BASE, vendor, package);
+    let url = format!(
+        "{}/packages/{}/{}.json",
+        PACKAGIST_API_BASE, vendor, package
+    );
     debug!("Fetching package info from: {}", url);
 
     let response: PackageResponse = ureq::get(&url)
@@ -189,7 +192,10 @@ pub fn get_package_metadata(vendor: &str, package: &str) -> Result<serde_json::V
 
     let response: serde_json::Value = ureq::get(&url)
         .call()
-        .context(format!("Failed to fetch metadata for {}/{}", vendor, package))?
+        .context(format!(
+            "Failed to fetch metadata for {}/{}",
+            vendor, package
+        ))?
         .body_mut()
         .read_json()
         .context("Failed to parse metadata response")?;
@@ -227,11 +233,7 @@ pub fn get_security_advisories(packages: &[&str]) -> Result<Vec<SecurityAdvisory
         .context("Failed to parse advisories response")?;
 
     // Flatten the HashMap into a Vec
-    let advisories: Vec<SecurityAdvisory> = response
-        .advisories
-        .into_values()
-        .flatten()
-        .collect();
+    let advisories: Vec<SecurityAdvisory> = response.advisories.into_values().flatten().collect();
 
     Ok(advisories)
 }
@@ -329,7 +331,13 @@ fn compare_versions(a: &str, b: &str) -> Option<std::cmp::Ordering> {
     let parse_parts = |v: &str| -> Vec<u64> {
         v.trim_start_matches('v')
             .split(['.', '-'])
-            .filter_map(|s| s.chars().take_while(|c| c.is_ascii_digit()).collect::<String>().parse().ok())
+            .filter_map(|s| {
+                s.chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect::<String>()
+                    .parse()
+                    .ok()
+            })
             .collect()
     };
 
@@ -368,11 +376,26 @@ mod tests {
 
     #[test]
     fn test_version_comparison() {
-        assert_eq!(compare_versions("1.0.0", "1.0.0"), Some(std::cmp::Ordering::Equal));
-        assert_eq!(compare_versions("2.0.0", "1.0.0"), Some(std::cmp::Ordering::Greater));
-        assert_eq!(compare_versions("1.0.0", "2.0.0"), Some(std::cmp::Ordering::Less));
-        assert_eq!(compare_versions("1.2.3", "1.2.4"), Some(std::cmp::Ordering::Less));
-        assert_eq!(compare_versions("v1.0.0", "1.0.0"), Some(std::cmp::Ordering::Equal));
+        assert_eq!(
+            compare_versions("1.0.0", "1.0.0"),
+            Some(std::cmp::Ordering::Equal)
+        );
+        assert_eq!(
+            compare_versions("2.0.0", "1.0.0"),
+            Some(std::cmp::Ordering::Greater)
+        );
+        assert_eq!(
+            compare_versions("1.0.0", "2.0.0"),
+            Some(std::cmp::Ordering::Less)
+        );
+        assert_eq!(
+            compare_versions("1.2.3", "1.2.4"),
+            Some(std::cmp::Ordering::Less)
+        );
+        assert_eq!(
+            compare_versions("v1.0.0", "1.0.0"),
+            Some(std::cmp::Ordering::Equal)
+        );
     }
 
     #[test]

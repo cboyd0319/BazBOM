@@ -45,22 +45,25 @@ pub mod registry;
 pub mod sbom;
 pub mod scanner;
 pub mod types;
-pub mod vulnerabilities;
 pub mod utils;
+pub mod vulnerabilities;
 
 pub use cache::LicenseCache;
 pub use detection::{detect_ecosystems, Ecosystem, EcosystemType};
+pub use reachability_integration::analyze_reachability;
 pub use registry::ScannerRegistry;
+pub use sbom::{generate_github_snapshot, generate_polyglot_sbom, spdx_json_to_tag_value};
 pub use scanner::{License, LicenseContext, ScanContext, Scanner};
 pub use types::{EcosystemScanResult, Package, ReachabilityData, Vulnerability};
-pub use reachability_integration::analyze_reachability;
-pub use sbom::{generate_github_snapshot, generate_polyglot_sbom, spdx_json_to_tag_value};
 
 use anyhow::Result;
 use std::sync::Arc;
 
 /// Scan a directory for packages only (fast SBOM generation without vulnerabilities or reachability)
-pub async fn scan_directory_sbom_only(path: &str, include_cicd: bool) -> Result<Vec<EcosystemScanResult>> {
+pub async fn scan_directory_sbom_only(
+    path: &str,
+    include_cicd: bool,
+) -> Result<Vec<EcosystemScanResult>> {
     let ecosystems = detect_ecosystems(path)?;
     let mut results = Vec::new();
 

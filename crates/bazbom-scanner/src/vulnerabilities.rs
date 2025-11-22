@@ -110,10 +110,15 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
         return Ok(Vec::new());
     }
 
-    eprintln!("DEBUG: scan_vulnerabilities called with {} packages", packages.len());
+    eprintln!(
+        "DEBUG: scan_vulnerabilities called with {} packages",
+        packages.len()
+    );
     if !packages.is_empty() {
-        eprintln!("DEBUG: First package: {}@{} (ecosystem: {})",
-            packages[0].name, packages[0].version, packages[0].ecosystem);
+        eprintln!(
+            "DEBUG: First package: {}@{} (ecosystem: {})",
+            packages[0].name, packages[0].version, packages[0].ecosystem
+        );
     }
 
     let client = reqwest::Client::new();
@@ -172,7 +177,10 @@ pub async fn scan_vulnerabilities(packages: &[Package]) -> Result<Vec<Vulnerabil
             Ok(vulnerabilities)
         }
         Err(e) => {
-            eprintln!("Warning: Batch OSV query failed, falling back to individual queries: {}", e);
+            eprintln!(
+                "Warning: Batch OSV query failed, falling back to individual queries: {}",
+                e
+            );
             // Fallback to individual queries
             scan_vulnerabilities_fallback(&client, packages).await
         }

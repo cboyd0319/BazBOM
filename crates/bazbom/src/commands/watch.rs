@@ -11,7 +11,7 @@ pub fn handle_watch(path: String, interval: u64, critical_only: bool) -> Result<
     println!();
     println!(
         "{}",
-        "🔍 Starting continuous security monitoring..."
+        "SCAN Starting continuous security monitoring..."
             .bold()
             .green()
     );
@@ -194,14 +194,14 @@ fn run_scan(project_path: &Path, critical_only: bool) -> Result<()> {
             println!(
                 "[{}] {} Scan complete - no critical issues",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
-                "✅".green()
+                "OK".green()
             );
         }
         Ok(_) => {
             println!(
                 "[{}] {} Vulnerabilities detected!",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
-                "⚠️".yellow()
+                "WARN".yellow()
             );
 
             // Show quick summary
@@ -215,7 +215,7 @@ fn run_scan(project_path: &Path, critical_only: bool) -> Result<()> {
             println!(
                 "[{}] {} Scan failed: {}",
                 chrono::Local::now().format("%H:%M:%S").to_string().dimmed(),
-                "❌".red(),
+                "FAIL".red(),
                 e
             );
         }
@@ -261,7 +261,7 @@ fn show_quick_summary(sarif: &serde_json::Value, critical_only: bool) {
     if !critical_only && high_count > 0 {
         println!(
             "  {} {} high-severity {}",
-            "⚠️".yellow(),
+            "WARN".yellow(),
             high_count,
             if high_count == 1 { "issue" } else { "issues" }
         );

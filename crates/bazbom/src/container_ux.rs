@@ -23,21 +23,21 @@ impl ContainerScanProgress {
         println!();
         println!(
             "{}",
-            "╔═══════════════════════════════════════════════════════════════════╗"
+            "====================================================================="
                 .bright_blue()
                 .bold()
         );
         println!(
             "{} {} {}",
-            "║".bright_blue().bold(),
-            format!("🐳 CONTAINER SCAN: {}", image_name)
+            "|".bright_blue().bold(),
+            format!("CONTAINER SCAN: {}", image_name)
                 .bright_cyan()
                 .bold(),
-            " ║".bright_blue().bold()
+            "|".bright_blue().bold()
         );
         println!(
             "{}",
-            "╚═══════════════════════════════════════════════════════════════════╝"
+            "====================================================================="
                 .bright_blue()
                 .bold()
         );
@@ -73,11 +73,11 @@ impl ContainerScanProgress {
     /// Complete a layer with findings count
     pub fn complete_layer(&mut self, artifacts_found: usize, vulnerabilities: usize) {
         let status = if vulnerabilities > 0 {
-            format!("⚠️  {} vulns", vulnerabilities).yellow()
+            format!("WARN {} vulns", vulnerabilities).yellow()
         } else if artifacts_found > 0 {
-            format!("✓ {} artifacts", artifacts_found).green()
+            format!("OK {} artifacts", artifacts_found).green()
         } else {
-            "✓ clean".dimmed()
+            "OK clean".dimmed()
         };
 
         self.spinner.set_message(format!(
@@ -116,19 +116,19 @@ impl ContainerSummary {
     pub fn print(&self) {
         println!(
             "{}",
-            "╔═══════════════════════════════════════════════════════════════════╗"
+            "====================================================================="
                 .bright_cyan()
                 .bold()
         );
         println!(
             "{} {:^67} {}",
-            "║".bright_cyan().bold(),
-            "🐳 CONTAINER SCAN SUMMARY",
-            "║".bright_cyan().bold()
+            "|".bright_cyan().bold(),
+            "CONTAINER SCAN SUMMARY",
+            "|".bright_cyan().bold()
         );
         println!(
             "{}",
-            "╠═══════════════════════════════════════════════════════════════════╣"
+            "====================================================================="
                 .bright_cyan()
                 .bold()
         );
@@ -190,7 +190,7 @@ impl ContainerSummary {
         );
 
         let vuln_display = if self.vulnerabilities == 0 {
-            format!("{} {}", "✅", "0".green().bold())
+            format!("{} {}", "OK", "0".green().bold())
         } else if self.critical_vulns > 0 {
             format!("{} {}", "🔴", self.vulnerabilities.to_string().red().bold())
         } else if self.high_vulns > 0 {
@@ -274,7 +274,7 @@ impl ContainerSummary {
         if self.vulnerabilities > 0 {
             println!(
                 "  {} Vulnerabilities found in container image",
-                "⚠️ ".yellow()
+                "WARN ".yellow()
             );
             println!(
                 "    Run {} to analyze Java dependencies",
@@ -320,7 +320,7 @@ pub fn print_layer_breakdown(layers: &[(String, f64, usize, usize)]) {
         let bar = "█".repeat(bar_width);
 
         let status = if *vulns > 0 {
-            format!("⚠️  {} vulns", vulns).red()
+            format!("WARN  {} vulns", vulns).red()
         } else if *artifacts > 0 {
             format!("✓ {} artifacts", artifacts).green()
         } else {

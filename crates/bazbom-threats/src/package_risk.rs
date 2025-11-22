@@ -129,13 +129,15 @@ fn check_abandonment_risk(metadata: &PackageMetadata) -> Option<ThreatIndicator>
         let age = Utc::now() - last_publish;
         let days = age.num_days();
 
-        if days > 730 { // 2 years
+        if days > 730 {
+            // 2 years
             let mut evidence = vec![
                 format!("Last update: {} days ago", days),
                 "May not receive security updates".to_string(),
             ];
 
-            if days > 1095 { // 3 years
+            if days > 1095 {
+                // 3 years
                 evidence.push("Package appears abandoned".to_string());
             }
 
@@ -175,10 +177,15 @@ fn check_bus_factor(metadata: &PackageMetadata) -> Option<ThreatIndicator> {
                 description: "Single maintainer for popular package".to_string(),
                 evidence: vec![
                     "Only 1 maintainer".to_string(),
-                    format!("Weekly downloads: {}", metadata.weekly_downloads.unwrap_or(0)),
-                    "Bus factor risk: maintainer unavailability could impact security updates".to_string(),
+                    format!(
+                        "Weekly downloads: {}",
+                        metadata.weekly_downloads.unwrap_or(0)
+                    ),
+                    "Bus factor risk: maintainer unavailability could impact security updates"
+                        .to_string(),
                 ],
-                recommendation: "Monitor for maintainer activity and have contingency plans".to_string(),
+                recommendation: "Monitor for maintainer activity and have contingency plans"
+                    .to_string(),
             });
         }
     }
@@ -249,7 +256,10 @@ fn check_release_velocity(metadata: &PackageMetadata) -> Option<ThreatIndicator>
                     threat_type: ThreatType::SuspiciousBehavior,
                     description: "Suspicious version number".to_string(),
                     evidence: vec![
-                        format!("Version {} with only {} total releases", metadata.version, metadata.total_versions),
+                        format!(
+                            "Version {} with only {} total releases",
+                            metadata.version, metadata.total_versions
+                        ),
                         "May indicate package takeover or manipulation".to_string(),
                     ],
                     recommendation: "Verify package history and maintainer identity".to_string(),
@@ -268,8 +278,8 @@ pub fn check_binary_blobs(
     file_list: &[String],
 ) -> Option<ThreatIndicator> {
     let suspicious_extensions = [
-        ".exe", ".dll", ".so", ".dylib", ".bin", ".com", ".bat", ".cmd",
-        ".msi", ".app", ".dmg", ".deb", ".rpm", ".apk",
+        ".exe", ".dll", ".so", ".dylib", ".bin", ".com", ".bat", ".cmd", ".msi", ".app", ".dmg",
+        ".deb", ".rpm", ".apk",
     ];
 
     let mut suspicious_files = Vec::new();
@@ -295,7 +305,8 @@ pub fn check_binary_blobs(
                 .iter()
                 .map(|f| format!("Binary: {}", f))
                 .collect(),
-            recommendation: "Binary files in npm/pip packages are suspicious. Review necessity.".to_string(),
+            recommendation: "Binary files in npm/pip packages are suspicious. Review necessity."
+                .to_string(),
         })
     } else {
         None
@@ -303,24 +314,18 @@ pub fn check_binary_blobs(
 }
 
 /// Check for obfuscation patterns in source code
-pub fn check_obfuscation(
-    package_name: &str,
-    source_content: &str,
-) -> Option<ThreatIndicator> {
+pub fn check_obfuscation(package_name: &str, source_content: &str) -> Option<ThreatIndicator> {
     let mut evidence = Vec::new();
 
     // Long lines (minified code)
-    let long_lines = source_content
-        .lines()
-        .filter(|l| l.len() > 500)
-        .count();
+    let long_lines = source_content.lines().filter(|l| l.len() > 500).count();
     if long_lines > 5 {
         evidence.push(format!("{} very long lines (likely minified)", long_lines));
     }
 
     // Heavy eval/Function usage
-    let eval_count = source_content.matches("eval(").count()
-        + source_content.matches("Function(").count();
+    let eval_count =
+        source_content.matches("eval(").count() + source_content.matches("Function(").count();
     if eval_count > 3 {
         evidence.push(format!("{} eval/Function calls", eval_count));
     }
@@ -349,7 +354,8 @@ pub fn check_obfuscation(
             threat_type: ThreatType::SuspiciousBehavior,
             description: "Code obfuscation patterns detected".to_string(),
             evidence,
-            recommendation: "Review source code manually or find alternative with readable source".to_string(),
+            recommendation: "Review source code manually or find alternative with readable source"
+                .to_string(),
         })
     } else {
         None

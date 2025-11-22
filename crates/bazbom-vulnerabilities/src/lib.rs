@@ -155,7 +155,10 @@ pub fn db_sync<P: AsRef<Path>>(cache_dir: P, offline: bool) -> Result<Manifest> 
         match decoder.read_to_end(&mut decompressed) {
             Ok(_) => decompressed,
             Err(e) => {
-                eprintln!("Warning: Failed to decompress EPSS data: {}. Using placeholder.", e);
+                eprintln!(
+                    "Warning: Failed to decompress EPSS data: {}. Using placeholder.",
+                    e
+                );
                 placeholder_csv.to_vec()
             }
         }

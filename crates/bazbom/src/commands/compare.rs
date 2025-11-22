@@ -106,7 +106,7 @@ fn scan_git_ref(git_ref: &str, output_dir: &str) -> Result<()> {
         .output();
 
     if !status.success() {
-        println!("{} Scan failed for {}", "⚠️".yellow(), git_ref);
+        println!("{} Scan failed for {}", "WARN".yellow(), git_ref);
     }
 
     Ok(())
@@ -145,7 +145,7 @@ fn compare_scan_results(baseline_path: &str, target_path: &str, verbose: bool) -
     if !new_vulns.is_empty() {
         println!(
             "{} {} new {}",
-            "⚠️".red(),
+            "WARN".red(),
             new_vulns.len(),
             if new_vulns.len() == 1 {
                 "vulnerability"

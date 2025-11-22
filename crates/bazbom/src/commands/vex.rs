@@ -1,9 +1,7 @@
 //! VEX (Vulnerability Exploitability eXchange) command handlers
 
 use anyhow::{Context, Result};
-use bazbom_vulnerabilities::{
-    VexDocument, VexFilter, VexJustification, VexStatement, VexStatus,
-};
+use bazbom_vulnerabilities::{VexDocument, VexFilter, VexJustification, VexStatement, VexStatus};
 use colored::Colorize;
 use std::path::Path;
 
@@ -94,7 +92,7 @@ pub fn handle_vex_create(
     doc.save(path)?;
 
     println!();
-    println!("{}", "✅ VEX statement created".green().bold());
+    println!("{}", "OK VEX statement created".green().bold());
     println!();
     println!("  CVE:           {}", cve.cyan());
     println!("  Status:        {}", format!("{}", vex_status).yellow());
@@ -108,11 +106,7 @@ pub fn handle_vex_create(
 }
 
 /// Handle VEX apply command
-pub fn handle_vex_apply(
-    vex_dir: String,
-    findings: String,
-    output: Option<String>,
-) -> Result<()> {
+pub fn handle_vex_apply(vex_dir: String, findings: String, output: Option<String>) -> Result<()> {
     let vex_path = Path::new(&vex_dir);
     let findings_path = Path::new(&findings);
 
@@ -159,7 +153,10 @@ pub fn handle_vex_apply(
         });
 
         println!("  Original findings:  {}", original_count);
-        println!("  Suppressed by VEX:  {}", suppressed_count.to_string().green());
+        println!(
+            "  Suppressed by VEX:  {}",
+            suppressed_count.to_string().green()
+        );
         println!("  Remaining:          {}", kept_count);
     }
 
@@ -226,7 +223,7 @@ pub fn handle_vex_list(vex_dir: String) -> Result<()> {
     }
 
     println!();
-    println!("{}", "📋 VEX Statements".bold());
+    println!("{}", "NOTE VEX Statements".bold());
     println!();
 
     let mut total_statements = 0;

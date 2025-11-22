@@ -61,8 +61,8 @@ impl DependencyResolver {
             return Ok(Vec::new());
         }
 
-        let cargo_lock_content = fs::read_to_string(&cargo_lock_path)
-            .map_err(RustReachabilityError::IoError)?;
+        let cargo_lock_content =
+            fs::read_to_string(&cargo_lock_path).map_err(RustReachabilityError::IoError)?;
 
         let cargo_lock: CargoLock = toml::from_str(&cargo_lock_content)
             .map_err(|e| RustReachabilityError::ParseError(e.to_string()))?;
@@ -101,7 +101,12 @@ impl DependencyResolver {
             // In vendor/, crates are stored as "crate-name/" (version comes from Cargo.toml)
             let crate_path = vendor_dir.join(name);
             if crate_path.exists() && crate_path.is_dir() {
-                tracing::debug!("Found vendored source for {}@{} at {:?}", name, version, crate_path);
+                tracing::debug!(
+                    "Found vendored source for {}@{} at {:?}",
+                    name,
+                    version,
+                    crate_path
+                );
                 return Some(crate_path);
             }
         }
@@ -120,7 +125,12 @@ impl DependencyResolver {
                     let crate_path = registry_dir.join(&crate_dir_name);
 
                     if crate_path.exists() && crate_path.is_dir() {
-                        tracing::debug!("Found source for {}@{} at {:?}", name, version, crate_path);
+                        tracing::debug!(
+                            "Found source for {}@{} at {:?}",
+                            name,
+                            version,
+                            crate_path
+                        );
                         return Some(crate_path);
                     }
                 }

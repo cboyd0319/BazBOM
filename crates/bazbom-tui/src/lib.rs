@@ -676,7 +676,7 @@ fn render_graph(f: &mut Frame, area: Rect, app: &App) {
                     } else if high > 0 {
                         format!(" [🟠 {} HIGH]", high)
                     } else {
-                        format!(" [⚠️  {} vulns]", dep.vulnerabilities.len())
+                        format!(" [WARN  {} vulns]", dep.vulnerabilities.len())
                     }
                 } else {
                     String::new()

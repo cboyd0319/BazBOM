@@ -131,7 +131,9 @@ impl ParallelOrchestrator {
         };
 
         // Scan ecosystems in parallel
-        let results = self.scan_ecosystems_parallel(ecosystems, &multi_progress).await;
+        let results = self
+            .scan_ecosystems_parallel(ecosystems, &multi_progress)
+            .await;
 
         let elapsed = start_time.elapsed();
         info!(
@@ -208,7 +210,9 @@ impl ParallelOrchestrator {
         .collect::<Vec<_>>()
         .await
         .into_iter()
-        .map(|join_result| join_result.unwrap_or_else(|e| Err(anyhow::anyhow!("Task panicked: {}", e))))
+        .map(|join_result| {
+            join_result.unwrap_or_else(|e| Err(anyhow::anyhow!("Task panicked: {}", e)))
+        })
         .collect();
 
         // Filter out errors and log them
@@ -334,10 +338,7 @@ mod tests {
         let temp = TempDir::new().unwrap();
         let orchestrator = ParallelOrchestrator::new();
 
-        let results = orchestrator
-            .scan_directory(temp.path())
-            .await
-            .unwrap();
+        let results = orchestrator.scan_directory(temp.path()).await.unwrap();
 
         assert_eq!(results.len(), 0);
     }

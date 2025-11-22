@@ -1,4 +1,3 @@
-
 use std::collections::{HashMap, VecDeque};
 
 /// Dependency graph for analyzing transitive dependencies
@@ -25,7 +24,8 @@ impl DependencyGraph {
         // Parse artifacts
         if let Some(artifact_list) = sbom["artifacts"].as_array() {
             for artifact in artifact_list {
-                if let (Some(id), Some(name)) = (artifact["id"].as_str(), artifact["name"].as_str()) {
+                if let (Some(id), Some(name)) = (artifact["id"].as_str(), artifact["name"].as_str())
+                {
                     artifacts.insert(id.to_string(), name.to_string());
                     name_to_ids
                         .entry(name.to_string())
@@ -39,8 +39,9 @@ impl DependencyGraph {
         if let Some(relationships) = sbom["relationships"].as_array() {
             for rel in relationships {
                 let type_ = rel["type"].as_str().unwrap_or("");
-                
-                if let (Some(parent), Some(child)) = (rel["parent"].as_str(), rel["child"].as_str()) {
+
+                if let (Some(parent), Some(child)) = (rel["parent"].as_str(), rel["child"].as_str())
+                {
                     if type_ == "dependency-of" {
                         // child depends on parent? No, "dependency-of" means 'child' is a dependency OF 'parent'
                         // So parent is the consumer, child is the dependency.
@@ -50,7 +51,7 @@ impl DependencyGraph {
                             .entry(parent.to_string())
                             .or_default()
                             .push(child.to_string());
-                        
+
                         parents
                             .entry(child.to_string())
                             .or_default()
@@ -61,7 +62,7 @@ impl DependencyGraph {
                             .entry(parent.to_string())
                             .or_default()
                             .push(child.to_string());
-                            
+
                         parents
                             .entry(child.to_string())
                             .or_default()
@@ -106,12 +107,13 @@ impl DependencyGraph {
 
         while let Some(path) = queue.pop_front() {
             let current = path.last().unwrap();
-            
+
             // Check if this is a root (no parents)
             if !self.parents.contains_key(current) || self.parents[current].is_empty() {
                 // Found a path to root!
                 // Convert IDs to names
-                let named_path: Vec<String> = path.iter()
+                let named_path: Vec<String> = path
+                    .iter()
                     .rev() // Reverse because we went child -> parent
                     .filter_map(|id| self.artifacts.get(id).cloned())
                     .collect();
@@ -158,12 +160,15 @@ mod tests {
         });
 
         let graph = DependencyGraph::new(&sbom);
-        
+
         // Test path to vulnerable package
         let path = graph.find_path("vulnerable-package");
         assert!(path.is_some());
         let path = path.unwrap();
-        assert_eq!(path, vec!["my-app", "library-a", "library-b", "vulnerable-package"]);
+        assert_eq!(
+            path,
+            vec!["my-app", "library-a", "library-b", "vulnerable-package"]
+        );
 
         // Test path to direct dependency
         let path = graph.find_path("library-a");

@@ -60,8 +60,7 @@ pub fn detect_os(root: &Path) -> Result<OsInfo> {
 }
 
 fn parse_os_release(path: &Path) -> Result<OsInfo> {
-    let content = std::fs::read_to_string(path)
-        .context("Failed to read os-release")?;
+    let content = std::fs::read_to_string(path).context("Failed to read os-release")?;
 
     let mut id = String::new();
     let mut version_id = String::new();

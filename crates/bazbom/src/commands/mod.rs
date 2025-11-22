@@ -46,5 +46,6 @@ pub use report::handle_report;
 pub use scan::handle_scan;
 pub use status::handle_status;
 pub use team::handle_team;
+#[allow(unused_imports)]
 pub use vex::{handle_vex_apply, handle_vex_create, handle_vex_list};
 pub use watch::handle_watch;

@@ -36,10 +36,8 @@ impl Scanner for RubyScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result = EcosystemScanResult::new(
-            "Ruby".to_string(),
-            ctx.root.display().to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Ruby".to_string(), ctx.root.display().to_string());
 
         // Parse Gemfile.lock if available (most accurate)
         if let Some(ref lockfile_path) = ctx.lockfile {
@@ -245,7 +243,11 @@ fn parse_gemfile_line(line: &str) -> Option<(&str, &str)> {
         // Check if it's a version string (not a hash key like "require:")
         if !version_part.contains(':') {
             // Remove comments (everything after #)
-            let version_clean = version_part.split('#').next().unwrap_or(version_part).trim();
+            let version_clean = version_part
+                .split('#')
+                .next()
+                .unwrap_or(version_part)
+                .trim();
             // Remove quotes
             let version_no_quotes = version_clean.trim_matches('\'').trim_matches('"').trim();
             // Remove version operators

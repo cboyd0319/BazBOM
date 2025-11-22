@@ -212,7 +212,7 @@ pub fn generate_github_snapshot(
                     "relationship": "direct",  // We don't have dependency graph info
                     "scope": "runtime",
                     "dependencies": []  // Empty for now
-                })
+                }),
             );
         }
 
@@ -225,7 +225,7 @@ pub fn generate_github_snapshot(
                 },
                 "metadata": {},
                 "resolved": resolved
-            })
+            }),
         );
     }
 
@@ -255,11 +255,26 @@ pub fn spdx_json_to_tag_value(spdx_json: &serde_json::Value) -> Result<String> {
     let mut output = String::new();
 
     // Document header
-    output.push_str(&format!("SPDXVersion: {}\n", spdx_json["spdxVersion"].as_str().unwrap_or("SPDX-2.3")));
-    output.push_str(&format!("DataLicense: {}\n", spdx_json["dataLicense"].as_str().unwrap_or("CC0-1.0")));
-    output.push_str(&format!("SPDXID: {}\n", spdx_json["SPDXID"].as_str().unwrap_or("SPDXRef-DOCUMENT")));
-    output.push_str(&format!("DocumentName: {}\n", spdx_json["name"].as_str().unwrap_or("SBOM")));
-    output.push_str(&format!("DocumentNamespace: {}\n", spdx_json["documentNamespace"].as_str().unwrap_or("")));
+    output.push_str(&format!(
+        "SPDXVersion: {}\n",
+        spdx_json["spdxVersion"].as_str().unwrap_or("SPDX-2.3")
+    ));
+    output.push_str(&format!(
+        "DataLicense: {}\n",
+        spdx_json["dataLicense"].as_str().unwrap_or("CC0-1.0")
+    ));
+    output.push_str(&format!(
+        "SPDXID: {}\n",
+        spdx_json["SPDXID"].as_str().unwrap_or("SPDXRef-DOCUMENT")
+    ));
+    output.push_str(&format!(
+        "DocumentName: {}\n",
+        spdx_json["name"].as_str().unwrap_or("SBOM")
+    ));
+    output.push_str(&format!(
+        "DocumentNamespace: {}\n",
+        spdx_json["documentNamespace"].as_str().unwrap_or("")
+    ));
 
     // Creation info
     if let Some(creation_info) = spdx_json["creationInfo"].as_object() {
@@ -288,8 +303,14 @@ pub fn spdx_json_to_tag_value(spdx_json: &serde_json::Value) -> Result<String> {
     // Packages
     if let Some(packages) = spdx_json["packages"].as_array() {
         for package in packages {
-            output.push_str(&format!("PackageName: {}\n", package["name"].as_str().unwrap_or("")));
-            output.push_str(&format!("SPDXID: {}\n", package["SPDXID"].as_str().unwrap_or("")));
+            output.push_str(&format!(
+                "PackageName: {}\n",
+                package["name"].as_str().unwrap_or("")
+            ));
+            output.push_str(&format!(
+                "SPDXID: {}\n",
+                package["SPDXID"].as_str().unwrap_or("")
+            ));
 
             if let Some(version) = package["versionInfo"].as_str() {
                 output.push_str(&format!("PackageVersion: {}\n", version));
@@ -299,13 +320,22 @@ pub fn spdx_json_to_tag_value(spdx_json: &serde_json::Value) -> Result<String> {
                 output.push_str(&format!("PackageDownloadLocation: {}\n", download_location));
             }
 
-            output.push_str(&format!("FilesAnalyzed: {}\n",
-                if package["filesAnalyzed"].as_bool().unwrap_or(false) { "true" } else { "false" }));
+            output.push_str(&format!(
+                "FilesAnalyzed: {}\n",
+                if package["filesAnalyzed"].as_bool().unwrap_or(false) {
+                    "true"
+                } else {
+                    "false"
+                }
+            ));
 
             // Checksums
             if let Some(checksums) = package["checksums"].as_array() {
                 for checksum in checksums {
-                    if let (Some(alg), Some(value)) = (checksum["algorithm"].as_str(), checksum["checksumValue"].as_str()) {
+                    if let (Some(alg), Some(value)) = (
+                        checksum["algorithm"].as_str(),
+                        checksum["checksumValue"].as_str(),
+                    ) {
                         output.push_str(&format!("PackageChecksum: {}: {}\n", alg, value));
                     }
                 }
@@ -330,7 +360,7 @@ pub fn spdx_json_to_tag_value(spdx_json: &serde_json::Value) -> Result<String> {
                     if let (Some(cat), Some(typ), Some(loc)) = (
                         ext_ref["referenceCategory"].as_str(),
                         ext_ref["referenceType"].as_str(),
-                        ext_ref["referenceLocator"].as_str()
+                        ext_ref["referenceLocator"].as_str(),
                     ) {
                         output.push_str(&format!("ExternalRef: {} {} {}\n", cat, typ, loc));
                     }
@@ -366,9 +396,12 @@ pub fn spdx_json_to_tag_value(spdx_json: &serde_json::Value) -> Result<String> {
             if let (Some(element_id), Some(rel_type), Some(related_element)) = (
                 relationship["spdxElementId"].as_str(),
                 relationship["relationshipType"].as_str(),
-                relationship["relatedSpdxElement"].as_str()
+                relationship["relatedSpdxElement"].as_str(),
             ) {
-                output.push_str(&format!("Relationship: {} {} {}\n", element_id, rel_type, related_element));
+                output.push_str(&format!(
+                    "Relationship: {} {} {}\n",
+                    element_id, rel_type, related_element
+                ));
             }
         }
     }

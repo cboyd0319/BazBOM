@@ -130,7 +130,7 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info"))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .with_target(false)
         .with_thread_ids(false)
@@ -281,7 +281,7 @@ async fn main() -> Result<()> {
 
         // ========== QUICK COMMAND HANDLERS ==========
         Commands::Check { path } => {
-            println!("🚀 Running quick local check (fast mode)...\n");
+            println!("FAST Running quick local check (fast mode)...\n");
 
             // Auto-detect main module if scanning current directory
             let scan_path = if path == "." {
@@ -291,7 +291,7 @@ async fn main() -> Result<()> {
                         detected
                     }
                     None => {
-                        println!("ℹ️  Scanning entire workspace (no main module detected)\n");
+                        println!("INFO  Scanning entire workspace (no main module detected)\n");
                         path
                     }
                 }
@@ -402,7 +402,7 @@ async fn main() -> Result<()> {
             base,
             baseline,
         } => {
-            println!("📋 Running PR-optimized scan (incremental + diff)...\n");
+            println!("NOTE Running PR-optimized scan (incremental + diff)...\n");
             handle_scan(
                 path,
                 None,           // profile
@@ -451,10 +451,14 @@ async fn main() -> Result<()> {
             .await
         }
 
-        Commands::Full { path, out_dir, limit } => {
+        Commands::Full {
+            path,
+            out_dir,
+            limit,
+        } => {
             println!("💪 Running FULL scan with ALL features enabled...\n");
             if let Some(n) = limit {
-                println!("   ℹ️  Limiting scan to {} packages/targets\n", n);
+                println!("   INFO  Limiting scan to {} packages/targets\n", n);
             }
             handle_scan(
                 path,
@@ -567,16 +571,16 @@ async fn main() -> Result<()> {
             report,
             show,
             with_reachability,
+            skip_pull,
+            allow_unsigned,
+            offline,
         } => {
             use commands::container_scan::ContainerScanOptions;
             use std::path::PathBuf;
 
             // Smart output directory default: ~/Documents/container-scans/<image-name>
             let output_dir = output.unwrap_or_else(|| {
-                let safe_name = image
-                    .replace(':', "_")
-                    .replace('/', "_")
-                    .replace('@', "_");
+                let safe_name = image.replace(':', "_").replace('/', "_").replace('@', "_");
                 let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
                 format!("{}/Documents/container-scans/{}", home, safe_name)
             });
@@ -584,32 +588,32 @@ async fn main() -> Result<()> {
             // Apply preset settings (default = full capabilities)
             let (enable_reachability, show_preset_info) = match preset.as_deref() {
                 Some("quick") => {
-                    println!("🚀 Quick scan mode: fast CI check, no reachability");
+                    println!("FAST Quick scan mode: fast CI check, no reachability");
                     (false, true)
                 }
                 Some("standard") => {
-                    println!("📋 Standard scan mode: vulnerability analysis");
+                    println!("NOTE Standard scan mode: vulnerability analysis");
                     (false, true)
                 }
                 Some("full") | None => {
                     // Default: full capabilities
                     if preset.is_none() {
-                        println!("🔍 Full scan mode: all capabilities enabled (reachability, compliance, Jira tickets)");
+                        println!("SCAN Full scan mode: all capabilities enabled (reachability, compliance, Jira tickets)");
                     }
                     (true, preset.is_some())
                 }
                 Some("compliance") => {
-                    println!("📜 Compliance scan mode: focus on compliance reports");
+                    println!("DOC Compliance scan mode: focus on compliance reports");
                     (true, true)
                 }
                 Some(other) => {
-                    eprintln!("⚠️  Unknown preset '{}', using full scan", other);
+                    eprintln!("WARN  Unknown preset '{}', using full scan", other);
                     (true, false)
                 }
             };
 
             if show_preset_info || preset.is_none() {
-                println!("📁 Output: {}\n", output_dir);
+                println!("OUTPUT Output: {}\n", output_dir);
             }
 
             let opts = ContainerScanOptions {
@@ -624,6 +628,9 @@ async fn main() -> Result<()> {
                 report_file: report,
                 filter: show,
                 with_reachability: with_reachability || enable_reachability,
+                skip_pull,
+                allow_unsigned,
+                offline,
             };
 
             commands::container_scan::handle_container_scan(opts).await?;
@@ -667,7 +674,7 @@ async fn main() -> Result<()> {
             } else if let Some(provider) = provider {
                 ci_templates::install_ci_template(&provider)
             } else {
-                println!("❌ Error: Specify a provider or use --list to see options\n");
+                println!("FAIL Error: Specify a provider or use --list to see options\n");
                 ci_templates::list_templates();
                 Ok(())
             }
@@ -838,7 +845,9 @@ async fn main() -> Result<()> {
 
         Commands::Notify { action } => {
             use bazbom::cli::NotifyCmd;
-            use commands::notify::{handle_notify_configure, handle_notify_history, handle_notify_test};
+            use commands::notify::{
+                handle_notify_configure, handle_notify_history, handle_notify_test,
+            };
 
             match action {
                 NotifyCmd::Configure {
@@ -870,7 +879,9 @@ async fn main() -> Result<()> {
 
         Commands::Anomaly { action } => {
             use bazbom::cli::AnomalyCmd;
-            use commands::anomaly::{handle_anomaly_report, handle_anomaly_scan, handle_anomaly_train};
+            use commands::anomaly::{
+                handle_anomaly_report, handle_anomaly_scan, handle_anomaly_train,
+            };
 
             match action {
                 AnomalyCmd::Scan { path, json, output } => {

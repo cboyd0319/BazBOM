@@ -6,7 +6,6 @@ use std::path::Path;
 /// Handle anomaly detection scan
 pub fn handle_anomaly_scan(path: String, json: bool, output: Option<String>) -> Result<()> {
     use bazbom_ml::anomaly::AnomalyDetector;
-    use bazbom_ml::features::DependencyFeatures;
 
     let path = Path::new(&path);
     println!("Running anomaly detection on {}...\n", path.display());
@@ -65,7 +64,6 @@ pub fn handle_anomaly_scan(path: String, json: bool, output: Option<String>) -> 
 /// Handle anomaly model training
 pub fn handle_anomaly_train(from_dir: String, output: String) -> Result<()> {
     use bazbom_ml::anomaly::AnomalyDetector;
-    use bazbom_ml::features::DependencyFeatures;
 
     let from_path = Path::new(&from_dir);
     let output_path = Path::new(&output);
@@ -77,13 +75,19 @@ pub fn handle_anomaly_train(from_dir: String, output: String) -> Result<()> {
     let historical_features = load_historical_features(from_path)?;
 
     if historical_features.is_empty() {
-        anyhow::bail!("No historical data found in {}. Run scans to build history.", from_dir);
+        anyhow::bail!(
+            "No historical data found in {}. Run scans to build history.",
+            from_dir
+        );
     }
 
-    println!("Found {} historical dependency records", historical_features.len());
+    println!(
+        "Found {} historical dependency records",
+        historical_features.len()
+    );
 
     // Train detector
-    let detector = AnomalyDetector::train(&historical_features)?;
+    let _detector = AnomalyDetector::train(&historical_features)?;
 
     // Save model (in production, would serialize the thresholds)
     let model_data = serde_json::json!({
@@ -111,7 +115,10 @@ pub fn handle_anomaly_report(path: String, output: Option<String>) -> Result<()>
     use bazbom_ml::anomaly::AnomalyDetector;
 
     let path = Path::new(&path);
-    println!("Generating anomaly detection report for {}...\n", path.display());
+    println!(
+        "Generating anomaly detection report for {}...\n",
+        path.display()
+    );
 
     // Create detector
     let detector = AnomalyDetector::new();

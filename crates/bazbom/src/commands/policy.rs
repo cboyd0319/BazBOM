@@ -31,7 +31,10 @@ fn handle_policy_check() -> Result<()> {
 
     // Load vulnerabilities from scan results (SARIF or JSON)
     let vulnerabilities = load_vulnerabilities_from_scan()?;
-    println!("[bazbom] loaded {} vulnerabilities from scan", vulnerabilities.len());
+    println!(
+        "[bazbom] loaded {} vulnerabilities from scan",
+        vulnerabilities.len()
+    );
 
     // Check vulnerabilities against policy
     let result = policy_integration::check_policy(&vulnerabilities, &policy);
@@ -49,7 +52,9 @@ fn handle_policy_check() -> Result<()> {
 /// Load vulnerabilities from scan results (SARIF or JSON)
 fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulnerability>> {
     use bazbom_formats::sarif::SarifReport;
-    use bazbom_vulnerabilities::{Vulnerability, Severity, SeverityLevel, Priority, EpssScore, KevEntry};
+    use bazbom_vulnerabilities::{
+        EpssScore, KevEntry, Priority, Severity, SeverityLevel, Vulnerability,
+    };
 
     // Try SARIF files first (new format), then fall back to JSON (legacy)
     let sarif_paths = [
@@ -61,7 +66,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulner
 
     // Try loading from SARIF first
     if let Some(sarif_path) = sarif_paths.iter().find(|p| p.exists()) {
-        println!("[bazbom] loading vulnerabilities from SARIF: {}", sarif_path.display());
+        println!(
+            "[bazbom] loading vulnerabilities from SARIF: {}",
+            sarif_path.display()
+        );
 
         let content = fs::read_to_string(sarif_path)?;
         let sarif: SarifReport = serde_json::from_str(&content)?;
@@ -76,12 +84,14 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulner
                 if let Some(props) = result.properties {
                     let id = result.rule_id.clone();
 
-                    let component = props.get("component")
+                    let component = props
+                        .get("component")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
 
-                    let _version = props.get("version")
+                    let _version = props
+                        .get("version")
                         .and_then(|v| v.as_str())
                         .unwrap_or("unknown")
                         .to_string();
@@ -95,7 +105,8 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulner
                     };
 
                     // Parse priority from properties
-                    let priority = props.get("priority")
+                    let priority = props
+                        .get("priority")
                         .and_then(|v| v.as_str())
                         .and_then(|s| match s {
                             "P0" => Some(Priority::P0),
@@ -106,14 +117,16 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulner
                             _ => None,
                         });
 
-                    let epss = props.get("epss_score")
+                    let epss = props
+                        .get("epss_score")
                         .and_then(|v| v.as_f64())
                         .map(|score| EpssScore {
                             score,
                             percentile: 0.0, // Not available in SARIF
                         });
 
-                    let kev = props.get("cisa_kev")
+                    let kev = props
+                        .get("cisa_kev")
                         .and_then(|v| v.as_bool())
                         .unwrap_or(false)
                         .then(|| KevEntry {
@@ -150,7 +163,10 @@ fn load_vulnerabilities_from_scan() -> Result<Vec<bazbom_vulnerabilities::Vulner
             }
         }
 
-        println!("[bazbom] loaded {} vulnerabilities from SARIF", vulnerabilities.len());
+        println!(
+            "[bazbom] loaded {} vulnerabilities from SARIF",
+            vulnerabilities.len()
+        );
         return Ok(vulnerabilities);
     }
 

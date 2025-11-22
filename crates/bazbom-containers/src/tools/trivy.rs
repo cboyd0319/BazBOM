@@ -105,7 +105,9 @@ impl ContainerTool for TrivyScanner {
                     installed_version: vuln.installed_version,
                     fixed_version: vuln.fixed_version,
                     severity: Severity::from_str_loose(&vuln.severity),
-                    cvss_score: vuln.cvss.and_then(|c| c.nvd.and_then(|n| n.v3_score.or(n.v2_score))),
+                    cvss_score: vuln
+                        .cvss
+                        .and_then(|c| c.nvd.and_then(|n| n.v3_score.or(n.v2_score))),
                     title: vuln.title.unwrap_or_default(),
                     description: vuln.description.unwrap_or_default(),
                     layer_digest: vuln.layer.map(|l| l.digest),

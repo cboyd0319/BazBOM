@@ -39,14 +39,13 @@ impl Scanner for NpmScanner {
     }
 
     async fn scan(&self, ctx: &ScanContext) -> Result<EcosystemScanResult> {
-        let mut result = EcosystemScanResult::new(
-            "Node.js/npm".to_string(),
-            ctx.root.display().to_string(),
-        );
+        let mut result =
+            EcosystemScanResult::new("Node.js/npm".to_string(), ctx.root.display().to_string());
 
         // Parse package.json if provided
         if let Some(ref manifest_path) = ctx.manifest {
-            let content = fs::read_to_string(manifest_path).context("Failed to read package.json")?;
+            let content =
+                fs::read_to_string(manifest_path).context("Failed to read package.json")?;
             let package_json: PackageJson =
                 serde_json::from_str(&content).context("Failed to parse package.json")?;
 
@@ -100,7 +99,9 @@ impl Scanner for NpmScanner {
         };
 
         // Try to read license from node_modules/{package}/package.json
-        if let Some(license_str) = read_license_from_node_modules(ctx.root, package_name, &namespace) {
+        if let Some(license_str) =
+            read_license_from_node_modules(ctx.root, package_name, &namespace)
+        {
             License::Spdx(license_str)
         } else {
             License::Unknown
@@ -187,9 +188,16 @@ fn read_license_from_node_modules(
 ) -> Option<String> {
     // Build path to package.json
     let pkg_path = if let Some(ns) = namespace {
-        root_path.join("node_modules").join(ns).join(package_name).join("package.json")
+        root_path
+            .join("node_modules")
+            .join(ns)
+            .join(package_name)
+            .join("package.json")
     } else {
-        root_path.join("node_modules").join(package_name).join("package.json")
+        root_path
+            .join("node_modules")
+            .join(package_name)
+            .join("package.json")
     };
 
     // Try to read and parse package.json
@@ -275,7 +283,13 @@ fn parse_package_lock(
         }
     } else if !lock.dependencies.is_empty() {
         // npm v6 uses "dependencies" field
-        parse_v6_dependencies(&lock.dependencies, root_path, result, cache, &mut Vec::new());
+        parse_v6_dependencies(
+            &lock.dependencies,
+            root_path,
+            result,
+            cache,
+            &mut Vec::new(),
+        );
     }
 
     Ok(())
@@ -739,8 +753,7 @@ mod tests {
 
         let scanner = NpmScanner::new();
         let cache = Arc::new(LicenseCache::new());
-        let ctx = ScanContext::new(temp.path().to_path_buf(), cache)
-            .with_manifest(package_json);
+        let ctx = ScanContext::new(temp.path().to_path_buf(), cache).with_manifest(package_json);
 
         let result = scanner.scan(&ctx).await.unwrap();
         assert_eq!(result.total_packages, 2);

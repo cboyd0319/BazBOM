@@ -5,12 +5,12 @@ Rust client for the [deps.dev API](https://deps.dev), providing package metadata
 ## Features
 
 - 🌐 Async API client using `reqwest`
-- 📦 Support for Maven, npm, PyPI, Cargo, Go, NuGet, RubyGems
-- 🔍 Package version metadata with licenses and advisories
-- 🕸️  Resolved dependency graphs
-- 🔗 GitHub repository discovery
+- PKG Support for Maven, npm, PyPI, Cargo, Go, NuGet, RubyGems
+- SEARCH Package version metadata with licenses and advisories
+- WEB  Resolved dependency graphs
+- LINK GitHub repository discovery
 - ⚡ Fast and reliable with automatic error handling
-- 🧪 Well-tested with comprehensive test suite
+- TEST Well-tested with comprehensive test suite
 
 ## Usage
 

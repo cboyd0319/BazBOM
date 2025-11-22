@@ -1,9 +1,11 @@
 use anyhow::{Context, Result};
+use bazbom_graph::Component;
 use bazbom_vulnerabilities::parsers::{
     parse_ghsa_entry, parse_nvd_entry, parse_osv_entry, GhsaEntry, NvdEntry, OsvEntry,
 };
-use bazbom_vulnerabilities::{calculate_priority, load_epss_scores, load_kev_catalog, Vulnerability};
-use bazbom_graph::Component;
+use bazbom_vulnerabilities::{
+    calculate_priority, load_epss_scores, load_kev_catalog, Vulnerability,
+};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -173,8 +175,8 @@ pub fn match_vulnerabilities(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use bazbom_vulnerabilities::{AffectedPackage, Severity, SeverityLevel};
     use bazbom_graph::ComponentId;
+    use bazbom_vulnerabilities::{AffectedPackage, Severity, SeverityLevel};
 
     #[test]
     fn test_load_advisories_empty_directory() {
@@ -276,7 +278,10 @@ mod tests {
         // Verify priority calculation
         assert!(vulns[0].priority.is_some());
         // CVSS 10.0 should be P0
-        assert_eq!(vulns[0].priority.unwrap(), bazbom_vulnerabilities::Priority::P0);
+        assert_eq!(
+            vulns[0].priority.unwrap(),
+            bazbom_vulnerabilities::Priority::P0
+        );
     }
 
     #[test]

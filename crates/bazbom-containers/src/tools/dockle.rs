@@ -45,13 +45,7 @@ impl ContainerTool for DockleScanner {
 
         let output = run_command(
             "dockle",
-            &[
-                "-f",
-                "json",
-                "-o",
-                output_file.to_str().unwrap(),
-                image,
-            ],
+            &["-f", "json", "-o", output_file.to_str().unwrap(), image],
         )
         .await
         .context("Failed to run Dockle")?;

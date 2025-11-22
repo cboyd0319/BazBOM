@@ -15,8 +15,9 @@ use bazbom_upgrade_analyzer::UpgradeAnalyzer;
 
 // Reports
 use bazbom_reports::{
-    ComplianceFramework, ContainerCompliance, PolicyStatus, ReachabilitySummary as ReportReachability,
-    ReportGenerator, ReportType, SbomData, VulnerabilityDetail, VulnerabilityFindings,
+    ComplianceFramework, ContainerCompliance, PolicyStatus,
+    ReachabilitySummary as ReportReachability, ReportGenerator, ReportType, SbomData,
+    VulnerabilityDetail, VulnerabilityFindings,
 };
 
 // SARIF format
@@ -24,20 +25,32 @@ use bazbom_formats::sarif::{Result as SarifResult, Rule, SarifReport};
 
 // Import from parent module (types.rs, enrichment.rs, display.rs)
 use super::{
-    ComplianceResults, ComplianceStatus, ContainerScanOptions, ContainerScanResults,
-    DockerLayerMetadata, LayerInfo, ProvenanceStatus, ReachabilitySummary,
-    SignatureStatus, UpgradeRecommendation, VulnerabilityInfo,
-    analyze_upgrade_impact, enrich_vulnerabilities, enrich_vulnerabilities_with_os,
+    analyze_upgrade_impact,
     // Display functions
-    apply_filter, create_github_issues, display_baseline_comparison, display_image_comparison,
-    display_results, load_baseline, save_baseline,
+    apply_filter,
+    create_github_issues,
+    display_baseline_comparison,
+    display_image_comparison,
+    display_results,
+    enrich_vulnerabilities,
+    enrich_vulnerabilities_with_os,
+    load_baseline,
+    save_baseline,
+    ComplianceResults,
+    ComplianceStatus,
+    ContainerScanOptions,
+    ContainerScanResults,
+    DockerLayerMetadata,
+    LayerInfo,
+    ProvenanceStatus,
+    ReachabilitySummary,
+    SignatureStatus,
+    UpgradeRecommendation,
+    VulnerabilityInfo,
 };
 
 // Tool orchestrator integration
-use bazbom_containers::tools::{
-    findings::AggregatedResults,
-    OrchestratorConfig, ToolOrchestrator,
-};
+use bazbom_containers::tools::{findings::AggregatedResults, OrchestratorConfig, ToolOrchestrator};
 
 // Native OS package scanning (fallback when external tools unavailable)
 use bazbom_containers::os_packages;
@@ -54,26 +67,26 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     println!();
     println!(
         "{}",
-        "╔═══════════════════════════════════════════════════════════════════╗"
+        "====================================================================="
             .bright_magenta()
             .bold()
     );
     println!(
         "{} {:^67} {}",
-        "║".bright_magenta().bold(),
-        "🐳 BAZBOM CONTAINER SECURITY ANALYSIS",
-        "║".bright_magenta().bold()
+        "|".bright_magenta().bold(),
+        "BAZBOM CONTAINER SECURITY ANALYSIS",
+        "|".bright_magenta().bold()
     );
     println!(
         "{}",
-        "╚═══════════════════════════════════════════════════════════════════╝"
+        "====================================================================="
             .bright_magenta()
             .bold()
     );
     println!();
-    println!("   📦 Image:  {}", opts.image_name.bright_white().bold());
+    println!("   Image:  {}", opts.image_name.bright_white().bold());
     println!(
-        "   📁 Output: {}",
+        "   Output: {}",
         opts.output_dir.display().to_string().dimmed()
     );
     println!();
@@ -87,115 +100,257 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     let mut scan_warnings: Vec<String> = Vec::new();
 
     // Step 1: Check for required tools
-    println!("🔧 {} Checking for required tools...", "Step 1/8:".bold());
-    check_tools()?;
-    println!("   ✅ All tools available");
+    println!("TOOL {} Checking for required tools...", "Step 1/8:".bold());
+    let preflight = check_tools(&opts)?;
+    if !preflight.docker_available {
+        let msg = "Docker is not available or the daemon is unreachable.";
+        if opts.offline {
+            println!("   WARN  {} {}", "Warning:".yellow(), msg);
+            scan_warnings.push(format!("{} (offline mode)", msg));
+        } else {
+            anyhow::bail!("{} Please start Docker or install it before scanning.", msg);
+        }
+    }
+
+    let mut fatal_tools: Vec<String> = Vec::new();
+    for (name, hint) in &preflight.missing_tools {
+        match name.as_str() {
+            "syft" | "trivy" => fatal_tools.push(format!("{} ({})", name, hint)),
+            _ => {
+                println!("   WARN  {} {} - {}", "Warning:".yellow(), name, hint);
+                scan_warnings.push(format!("Missing tool {} - {}", name, hint));
+            }
+        }
+    }
+
+    if !fatal_tools.is_empty() {
+        anyhow::bail!(format!(
+            "Required tools missing: {}",
+            fatal_tools.join(", ")
+        ));
+    }
+
+    if !preflight.missing_tools.is_empty() {
+        println!(
+            "   WARN  {} Some optional tools are missing; results may be partial.",
+            "Warning:".yellow()
+        );
+    } else {
+        println!("   OK All tools available");
+    }
     println!();
 
     // Step 2: Pull container image (ensures local cache before tools run)
-    println!("📥 {} Pulling container image...", "Step 2/8:".bold());
-    let pull_output = Command::new("docker")
-        .args(["pull", &opts.image_name])
-        .output()
-        .context("Failed to run docker pull")?;
-
-    if pull_output.status.success() {
-        println!("   ✅ Image pulled successfully");
-    } else {
-        let stderr = String::from_utf8_lossy(&pull_output.stderr);
-        if stderr.contains("up to date") || stderr.contains("Already exists") {
-            println!("   ✅ Image already cached locally");
+    if opts.offline || opts.skip_pull {
+        let reason = if opts.offline {
+            "offline mode"
         } else {
-            // Non-fatal - tools may still work if image exists
-            let msg = format!("Image pull failed: {}", stderr.lines().next().unwrap_or("unknown error"));
-            println!("   ⚠️  {} {}", "Warning:".yellow(), msg);
-            scan_warnings.push(msg);
+            "skip-pull requested"
+        };
+        println!(
+            "PULL {} Skipping image pull ({})",
+            "Step 2/8:".bold(),
+            reason
+        );
+        scan_warnings.push(format!("Image pull skipped ({})", reason));
+    } else {
+        println!("PULL {} Pulling container image...", "Step 2/8:".bold());
+        let pull_output = Command::new("docker")
+            .args(["pull", &opts.image_name])
+            .output()
+            .context("Failed to run docker pull")?;
+
+        if pull_output.status.success() {
+            println!("   OK Image pulled successfully");
+        } else {
+            let stderr = String::from_utf8_lossy(&pull_output.stderr);
+            if stderr.contains("up to date") || stderr.contains("Already exists") {
+                println!("   OK Image already cached locally");
+            } else {
+                // Non-fatal - tools may still work if image exists
+                let msg = format!(
+                    "Image pull failed: {}",
+                    stderr.lines().next().unwrap_or("unknown error")
+                );
+                println!("   WARN  {} {}", "Warning:".yellow(), msg);
+                scan_warnings.push(msg);
+            }
         }
+        println!();
     }
-    println!();
 
     // Step 3: Verify container signature and provenance
-    println!("🔐 {} Verifying container signature and provenance...", "Step 3/8:".bold());
+    println!(
+        "SECURE {} Verifying container signature and provenance...",
+        "Step 3/8:".bold()
+    );
+    if opts.offline {
+        println!(
+            "   SKIP  {} Offline mode - skipping signature and provenance verification",
+            "Skipped:".dimmed()
+        );
+        scan_warnings.push("Skipped signature/provenance checks (offline mode)".to_string());
+    } else {
+        let signature_status = verify_container_signature(&opts.image_name).await?;
+        match &signature_status {
+            SignatureStatus::Verified => {
+                println!("   OK Container signature verified (cosign)");
+            }
+            SignatureStatus::NotSigned => {
+                let msg = "Container is not signed";
+                println!("   WARN  {} {}", "Warning:".yellow(), msg);
+                scan_warnings.push(msg.to_string());
+            }
+            SignatureStatus::ToolNotAvailable => {
+                let msg = "cosign not installed; signature check skipped";
+                println!("   SKIP  {} {}", "Skipped:".dimmed(), msg);
+                scan_warnings.push(msg.to_string());
+            }
+            SignatureStatus::Invalid(err) => {
+                let first = err.lines().next().unwrap_or("unknown");
+                let msg = format!("Invalid signature: {}", first);
+                println!("   FAIL {} {}", "Error:".red(), msg);
+                if !opts.allow_unsigned {
+                    anyhow::bail!(msg);
+                }
+                scan_warnings.push(format!(
+                    "Proceeding despite invalid signature (allow-unsigned): {}",
+                    first
+                ));
+            }
+        }
 
-    let signature_status = verify_container_signature(&opts.image_name).await?;
-    match &signature_status {
-        SignatureStatus::Verified => {
-            println!("   ✅ Container signature verified (cosign)");
-        }
-        SignatureStatus::NotSigned => {
-            println!("   ⚠️  {} Container is not signed", "Warning:".yellow());
-        }
-        SignatureStatus::ToolNotAvailable => {
-            println!("   ⏭️  {} cosign not installed", "Skipped:".dimmed());
-        }
-        SignatureStatus::Invalid(err) => {
-            println!("   ❌ {} Invalid signature: {}", "Error:".red(), err.lines().next().unwrap_or("unknown"));
-        }
-    }
-
-    let provenance_status = verify_slsa_provenance(&opts.image_name).await?;
-    match &provenance_status {
-        ProvenanceStatus::Verified => {
-            println!("   ✅ SLSA provenance attestation verified");
-        }
-        ProvenanceStatus::NotAvailable => {
-            println!("   ⚠️  {} No SLSA provenance attestation", "Warning:".yellow());
-        }
-        ProvenanceStatus::ToolNotAvailable => {
-            // Already reported for signature check
-        }
-        ProvenanceStatus::Invalid(err) => {
-            println!("   ❌ {} Invalid provenance: {}", "Error:".red(), err.lines().next().unwrap_or("unknown"));
+        let provenance_status = verify_slsa_provenance(&opts.image_name).await?;
+        match &provenance_status {
+            ProvenanceStatus::Verified => {
+                println!("   OK SLSA provenance attestation verified");
+            }
+            ProvenanceStatus::NotAvailable => {
+                let msg = "No SLSA provenance attestation";
+                println!("   WARN  {} {}", "Warning:".yellow(), msg);
+                scan_warnings.push(msg.to_string());
+            }
+            ProvenanceStatus::ToolNotAvailable => {
+                // Already reported for signature check
+            }
+            ProvenanceStatus::Invalid(err) => {
+                let first = err.lines().next().unwrap_or("unknown");
+                let msg = format!("Invalid provenance: {}", first);
+                println!("   FAIL {} {}", "Error:".red(), msg);
+                if !opts.allow_unsigned {
+                    anyhow::bail!(msg);
+                }
+                scan_warnings.push(format!(
+                    "Proceeding despite invalid provenance (allow-unsigned): {}",
+                    first
+                ));
+            }
         }
     }
     println!();
 
     // Step 4: Run comprehensive security scan (all tools in parallel)
-    println!("🔍 {} Running comprehensive security scan...", "Step 4/8:".bold());
-    println!("   {} Trivy, Grype, Syft, Dockle, Dive, TruffleHog", "Tools:".dimmed());
+    println!(
+        "SCAN {} Running comprehensive security scan...",
+        "Step 4/8:".bold()
+    );
+    println!(
+        "   {} Trivy, Grype, Syft, Dockle, Dive, TruffleHog",
+        "Tools:".dimmed()
+    );
 
     let aggregated_results = run_orchestrated_scan(&opts).await?;
 
     println!(
-        "   ✅ Found {} packages",
-        aggregated_results.summary.total_packages.to_string().bright_green().bold()
+        "   OK Found {} packages",
+        aggregated_results
+            .summary
+            .total_packages
+            .to_string()
+            .bright_green()
+            .bold()
     );
     println!(
-        "   ✅ Found {} vulnerabilities ({} critical, {} high)",
-        aggregated_results.summary.total_vulnerabilities.to_string().yellow().bold(),
-        aggregated_results.summary.critical_count.to_string().red().bold(),
-        aggregated_results.summary.high_count.to_string().bright_red()
+        "   OK Found {} vulnerabilities ({} critical, {} high)",
+        aggregated_results
+            .summary
+            .total_vulnerabilities
+            .to_string()
+            .yellow()
+            .bold(),
+        aggregated_results
+            .summary
+            .critical_count
+            .to_string()
+            .red()
+            .bold(),
+        aggregated_results
+            .summary
+            .high_count
+            .to_string()
+            .bright_red()
     );
     if aggregated_results.summary.secrets_count > 0 {
         println!(
-            "   ⚠️  Found {} secrets",
-            aggregated_results.summary.secrets_count.to_string().red().bold()
+            "   WARN  Found {} secrets",
+            aggregated_results
+                .summary
+                .secrets_count
+                .to_string()
+                .red()
+                .bold()
         );
     }
     if aggregated_results.summary.misconfigs_count > 0 {
         println!(
-            "   ⚠️  Found {} misconfigurations",
-            aggregated_results.summary.misconfigs_count.to_string().yellow().bold()
+            "   WARN  Found {} misconfigurations",
+            aggregated_results
+                .summary
+                .misconfigs_count
+                .to_string()
+                .yellow()
+                .bold()
         );
+    }
+    if !aggregated_results.skipped_tools.is_empty() {
+        let skipped_list = aggregated_results.skipped_tools.join(", ");
+        let msg = format!("Skipped tools: {}", skipped_list);
+        println!("   WARN  {} {}", "Warning:".yellow(), msg);
+        scan_warnings.push(msg);
+    }
+    if aggregated_results.executed_tools.is_empty() {
+        anyhow::bail!("No container scanning tools executed; cannot proceed.");
     }
     println!();
 
     // Use the orchestrator output files for layer attribution
     let sbom_path = opts.output_dir.join("syft-sbom.json");
     let vuln_path = opts.output_dir.join("trivy-results.json");
+    if !sbom_path.exists() {
+        anyhow::bail!(
+            "Syft SBOM not found at {}. Ensure syft is installed and succeeded.",
+            sbom_path.display()
+        );
+    }
+    if !vuln_path.exists() {
+        anyhow::bail!(
+            "Trivy results not found at {}. Ensure trivy is installed and succeeded.",
+            vuln_path.display()
+        );
+    }
 
     // Step 5: Analyze layers and attribute vulnerabilities
-    println!("🔍 {} Analyzing layer attribution...", "Step 5/8:".bold());
+    println!("SCAN {} Analyzing layer attribution...", "Step 5/8:".bold());
     let mut results = analyze_layer_attribution(&opts.image_name, &sbom_path, &vuln_path).await?;
     println!(
-        "   ✅ Mapped vulnerabilities to {} layers",
+        "   OK Mapped vulnerabilities to {} layers",
         results.layers.len().to_string().bright_cyan().bold()
     );
     println!();
 
     // Step 5.5: Native OS scanning and reachability analysis
     println!(
-        "🎯 {} Running native OS scanning...",
+        "TARGET {} Running native OS scanning...",
         "Step 5.5/8:".bold()
     );
     match extract_container_filesystem(&opts.image_name, &opts.output_dir).await {
@@ -204,7 +359,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             match os_packages::scan_os_packages(&filesystem_dir) {
                 Ok(os_results) => {
                     println!(
-                        "   ✅ Native scan: {} {} packages, {} vulnerabilities",
+                        "   OK Native scan: {} {} packages, {} vulnerabilities",
                         os_results.os_info.pretty_name,
                         os_results.packages.len().to_string().bright_cyan(),
                         os_results.vulnerabilities.len().to_string().yellow()
@@ -224,11 +379,18 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                         tracing::warn!("Failed to enrich native scan vulnerabilities: {}", e);
                     } else {
                         // Update results with enriched vulnerabilities
-                        let mut vuln_map: std::collections::HashMap<(String, String), VulnerabilityInfo> =
-                            all_vulns.into_iter().map(|v| ((v.cve_id.clone(), v.package_name.clone()), v)).collect();
+                        let mut vuln_map: std::collections::HashMap<
+                            (String, String),
+                            VulnerabilityInfo,
+                        > = all_vulns
+                            .into_iter()
+                            .map(|v| ((v.cve_id.clone(), v.package_name.clone()), v))
+                            .collect();
                         for layer in &mut results.layers {
                             for vuln in &mut layer.vulnerabilities {
-                                if let Some(enriched) = vuln_map.remove(&(vuln.cve_id.clone(), vuln.package_name.clone())) {
+                                if let Some(enriched) = vuln_map
+                                    .remove(&(vuln.cve_id.clone(), vuln.package_name.clone()))
+                                {
                                     *vuln = enriched;
                                 }
                             }
@@ -255,7 +417,8 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                         let release = match os_results.os_info.os_type {
                             os_packages::OsType::Alpine => {
                                 // Extract branch like "3.18" from version
-                                let parts: Vec<&str> = os_results.os_info.version_id.split('.').collect();
+                                let parts: Vec<&str> =
+                                    os_results.os_info.version_id.split('.').collect();
                                 if parts.len() >= 2 {
                                     Some(format!("v{}.{}", parts[0], parts[1]))
                                 } else {
@@ -272,7 +435,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                         ) {
                             Ok(recommendations) if !recommendations.is_empty() => {
                                 println!(
-                                    "   📦 {} upgrade recommendations available",
+                                    "   PKG {} upgrade recommendations available",
                                     recommendations.len().to_string().bright_cyan()
                                 );
 
@@ -310,7 +473,6 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                 }
             }
 
-
             match analyze_container_reachability(&mut results, &filesystem_dir).await {
                 Ok(_) => {
                     let total_vulns = results
@@ -340,14 +502,14 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                     });
 
                     println!(
-                        "   ✅ Found {} reachable vulnerabilities",
+                        "   OK Found {} reachable vulnerabilities",
                         reachable_count.to_string().red().bold()
                     );
                 }
                 Err(e) => {
                     let msg = format!("Reachability analysis error: {}", e);
                     tracing::warn!("{}", msg);
-                    eprintln!("   ⚠️  {}", msg);
+                    eprintln!("   WARN  {}", msg);
                     scan_warnings.push(msg);
                 }
             }
@@ -355,7 +517,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         Err(e) => {
             let msg = format!("Filesystem extraction failed: {}", e);
             tracing::warn!("{}", msg);
-            eprintln!("   ⚠️  {}", msg);
+            eprintln!("   WARN  {}", msg);
             scan_warnings.push(msg);
         }
     }
@@ -374,13 +536,28 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     let mut soc2_issues = vec![];
 
     if results.critical_count > 0 {
-        pci_issues.push(format!("{} critical vulnerabilities present", results.critical_count));
-        hipaa_issues.push(format!("{} critical vulnerabilities present", results.critical_count));
-        soc2_issues.push(format!("{} critical vulnerabilities present", results.critical_count));
+        pci_issues.push(format!(
+            "{} critical vulnerabilities present",
+            results.critical_count
+        ));
+        hipaa_issues.push(format!(
+            "{} critical vulnerabilities present",
+            results.critical_count
+        ));
+        soc2_issues.push(format!(
+            "{} critical vulnerabilities present",
+            results.critical_count
+        ));
     }
     if results.high_count > 0 {
-        pci_issues.push(format!("{} high severity vulnerabilities", results.high_count));
-        hipaa_issues.push(format!("{} high severity vulnerabilities", results.high_count));
+        pci_issues.push(format!(
+            "{} high severity vulnerabilities",
+            results.high_count
+        ));
+        hipaa_issues.push(format!(
+            "{} high severity vulnerabilities",
+            results.high_count
+        ));
     }
 
     // Count KEV vulns
@@ -391,22 +568,43 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         .filter(|v| v.is_kev)
         .count();
     if kev_count > 0 {
-        pci_issues.push(format!("{} known exploited vulnerabilities (CISA KEV)", kev_count));
-        hipaa_issues.push(format!("{} known exploited vulnerabilities (CISA KEV)", kev_count));
-        soc2_issues.push(format!("{} known exploited vulnerabilities (CISA KEV)", kev_count));
+        pci_issues.push(format!(
+            "{} known exploited vulnerabilities (CISA KEV)",
+            kev_count
+        ));
+        hipaa_issues.push(format!(
+            "{} known exploited vulnerabilities (CISA KEV)",
+            kev_count
+        ));
+        soc2_issues.push(format!(
+            "{} known exploited vulnerabilities (CISA KEV)",
+            kev_count
+        ));
     }
 
     results.compliance_results = Some(ComplianceResults {
         pci_dss: ComplianceStatus {
-            status: if pci_issues.is_empty() { "Pass".to_string() } else { "Fail".to_string() },
+            status: if pci_issues.is_empty() {
+                "Pass".to_string()
+            } else {
+                "Fail".to_string()
+            },
             issues: pci_issues,
         },
         hipaa: ComplianceStatus {
-            status: if hipaa_issues.is_empty() { "Pass".to_string() } else { "Fail".to_string() },
+            status: if hipaa_issues.is_empty() {
+                "Pass".to_string()
+            } else {
+                "Fail".to_string()
+            },
             issues: hipaa_issues,
         },
         soc2: ComplianceStatus {
-            status: if soc2_issues.is_empty() { "Pass".to_string() } else { "Fail".to_string() },
+            status: if soc2_issues.is_empty() {
+                "Pass".to_string()
+            } else {
+                "Fail".to_string()
+            },
             issues: soc2_issues,
         },
     });
@@ -423,10 +621,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         .layers
         .iter()
         .flat_map(|l| &l.vulnerabilities)
-        .filter(|v| {
-            v.fixed_version.is_some()
-                && (v.severity == "CRITICAL" || v.severity == "HIGH")
-        })
+        .filter(|v| v.fixed_version.is_some() && (v.severity == "CRITICAL" || v.severity == "HIGH"))
         .take(5)
         .collect();
 
@@ -470,7 +665,9 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                                     risk_level: analysis.overall_risk.label().to_string(),
                                     effort_hours: Some(analysis.estimated_effort_hours),
                                     breaking_changes_count: Some(analysis.total_breaking_changes()),
-                                    transitive_upgrades_count: Some(analysis.required_upgrades.len()),
+                                    transitive_upgrades_count: Some(
+                                        analysis.required_upgrades.len(),
+                                    ),
                                     migration_guide_url: analysis.migration_guide_url.clone(),
                                     success_rate: analysis.success_rate,
                                     github_repo: analysis.github_repo.clone(),
@@ -488,7 +685,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
                 }
                 if analyzed_count > 0 {
                     println!(
-                        "   ✅ Analyzed {} package upgrades for breaking changes",
+                        "   OK Analyzed {} package upgrades for breaking changes",
                         analyzed_count.to_string().bright_cyan()
                     );
                 }
@@ -498,7 +695,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             }
         }
     } else {
-        println!("   ℹ️  No critical/high vulnerabilities with fixes to analyze");
+        println!("   INFO  No critical/high vulnerabilities with fixes to analyze");
     }
 
     println!();
@@ -510,7 +707,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     // Apply filter if specified
     let filtered_results;
     let display_results_data = if let Some(ref filter) = opts.filter {
-        println!("   🔍 Filtering results by: {}", filter.bright_cyan());
+        println!("   SCAN Filtering results by: {}", filter.bright_cyan());
         filtered_results = apply_filter(&results, filter)?;
         &filtered_results
     } else {
@@ -531,7 +728,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         let sarif_json = serde_json::to_string_pretty(&sarif)?;
         std::fs::write(&sarif_path, sarif_json)?;
         println!(
-            "   📋 SARIF report saved to: {}",
+            "   NOTE SARIF report saved to: {}",
             sarif_path.display().to_string().dimmed()
         );
     }
@@ -552,7 +749,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
 
     // Step 7: Enhanced reporting (threat intel, compliance, PDF)
     println!();
-    println!("📋 {} Generating enhanced reports...", "Step 7/8:".bold());
+    println!("NOTE {} Generating enhanced reports...", "Step 7/8:".bold());
 
     // Threat intel analysis
     let packages: Vec<(String, String)> = results
@@ -564,12 +761,15 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     let threat_analyzer = ThreatAnalyzer::new();
     let threats = threat_analyzer.analyze_packages(&packages)?;
     if !threats.is_empty() {
-        println!("   ⚠️  Found {} supply chain threats", threats.len().to_string().red().bold());
+        println!(
+            "   WARN  Found {} supply chain threats",
+            threats.len().to_string().red().bold()
+        );
         for threat in threats.iter().take(3) {
             println!("      • {} ({:?})", threat.package_name, threat.threat_type);
         }
     } else {
-        println!("   ✅ No supply chain threats detected");
+        println!("   OK No supply chain threats detected");
     }
 
     // Convert results to ReportGenerator format
@@ -590,21 +790,29 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     };
 
     // Build container-specific data for PDF report
-    let report_reachability = results.reachability_summary.as_ref().map(|r| ReportReachability {
-        total_analyzed: r.total_analyzed,
-        reachable_count: r.reachable_count,
-        unreachable_count: r.unreachable_count,
-        noise_reduction_percent: r.noise_reduction_percent,
-    }).unwrap_or_default();
+    let report_reachability = results
+        .reachability_summary
+        .as_ref()
+        .map(|r| ReportReachability {
+            total_analyzed: r.total_analyzed,
+            reachable_count: r.reachable_count,
+            unreachable_count: r.unreachable_count,
+            noise_reduction_percent: r.noise_reduction_percent,
+        })
+        .unwrap_or_default();
 
-    let report_compliance = results.compliance_results.as_ref().map(|c| ContainerCompliance {
-        pci_dss_pass: c.pci_dss.status == "Pass",
-        hipaa_pass: c.hipaa.status == "Pass",
-        soc2_pass: c.soc2.status == "Pass",
-        pci_issues: c.pci_dss.issues.clone(),
-        hipaa_issues: c.hipaa.issues.clone(),
-        soc2_issues: c.soc2.issues.clone(),
-    }).unwrap_or_default();
+    let report_compliance = results
+        .compliance_results
+        .as_ref()
+        .map(|c| ContainerCompliance {
+            pci_dss_pass: c.pci_dss.status == "Pass",
+            hipaa_pass: c.hipaa.status == "Pass",
+            soc2_pass: c.soc2.status == "Pass",
+            pci_issues: c.pci_dss.issues.clone(),
+            hipaa_issues: c.hipaa.issues.clone(),
+            soc2_issues: c.soc2.issues.clone(),
+        })
+        .unwrap_or_default();
 
     let report_gen = ReportGenerator::with_container_data(
         sbom_data,
@@ -632,7 +840,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         let path = compliance_dir.join(filename);
         report_gen.generate(ReportType::Compliance(framework), &path)?;
     }
-    println!("   ✅ Compliance reports: PCI-DSS, HIPAA, SOC2");
+    println!("   OK Compliance reports: PCI-DSS, HIPAA, SOC2");
 
     // Generate PDF report
     let pdf_path = opts.output_dir.join("report.pdf");
@@ -649,11 +857,13 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         .flat_map(|l| &l.vulnerabilities)
         .collect();
 
-    let critical_vulns: Vec<_> = all_vulns.iter()
+    let critical_vulns: Vec<_> = all_vulns
+        .iter()
         .filter(|v| v.severity == "CRITICAL")
         .take(10)
         .collect();
-    let high_vulns: Vec<_> = all_vulns.iter()
+    let high_vulns: Vec<_> = all_vulns
+        .iter()
         .filter(|v| v.severity == "HIGH")
         .take(10)
         .collect();
@@ -668,7 +878,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         }
 
         println!(
-            "   📋 Jira tickets: {} files in {}",
+            "   NOTE Jira tickets: {} files in {}",
             jira_count * 2,
             jira_dir.display().to_string().dimmed()
         );
@@ -685,14 +895,14 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         if let Ok(baseline) = load_baseline(&opts.image_name) {
             display_baseline_comparison(&baseline, &results)?;
         } else {
-            println!("   ⚠️  No baseline found. Run with --baseline first to create one.");
+            println!("   WARN  No baseline found. Run with --baseline first to create one.");
         }
     }
 
     // Handle image comparison
     if let Some(ref compare_image) = opts.compare_image {
         println!();
-        println!("🔍 {} Scanning comparison image...", "Step 8/8:".bold());
+        println!("SCAN {} Scanning comparison image...", "Step 8/8:".bold());
 
         let compare_output_dir = opts.output_dir.join("comparison");
         std::fs::create_dir_all(&compare_output_dir)?;
@@ -712,6 +922,9 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             report_file: None,
             filter: None,
             with_reachability: false,
+            skip_pull: opts.skip_pull,
+            allow_unsigned: opts.allow_unsigned,
+            offline: opts.offline,
         })
         .await?;
 
@@ -727,6 +940,9 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
             report_file: None,
             filter: None,
             with_reachability: false,
+            skip_pull: opts.skip_pull,
+            allow_unsigned: opts.allow_unsigned,
+            offline: opts.offline,
         })
         .await?;
 
@@ -754,7 +970,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         println!("📊 Generating executive report...");
         generate_executive_report(&results, report_file)?;
         println!(
-            "   ✅ Report saved to: {}",
+            "   OK Report saved to: {}",
             report_file.bright_white().bold()
         );
     }
@@ -763,7 +979,7 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     if opts.interactive {
         println!();
         println!(
-            "🚀 {} Launching interactive explorer...",
+            "FAST {} Launching interactive explorer...",
             "Press any key".dimmed()
         );
         println!(
@@ -779,19 +995,20 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
         println!();
         println!(
             "{}",
-            "╔═══════════════════════════════════════════════════════════════════╗"
-                .yellow()
+            "╔═══════════════════════════════════════════════════════════════════╗".yellow()
         );
         println!(
             "{} {:^67} {}",
             "║".yellow(),
-            format!("⚠️  SCAN COMPLETED WITH {} WARNING(S)", scan_warnings.len()),
+            format!(
+                "WARN  SCAN COMPLETED WITH {} WARNING(S)",
+                scan_warnings.len()
+            ),
             "║".yellow()
         );
         println!(
             "{}",
-            "╚═══════════════════════════════════════════════════════════════════╝"
-                .yellow()
+            "╚═══════════════════════════════════════════════════════════════════╝".yellow()
         );
         for (i, warning) in scan_warnings.iter().enumerate() {
             println!("   {}. {}", i + 1, warning.dimmed());
@@ -803,11 +1020,23 @@ pub async fn handle_container_scan(opts: ContainerScanOptions) -> Result<()> {
     Ok(())
 }
 
+#[derive(Debug)]
+struct PreflightStatus {
+    docker_available: bool,
+    missing_tools: Vec<(String, String)>,
+}
+
 /// Check if required tools are installed
-fn check_tools() -> Result<()> {
+fn check_tools(opts: &ContainerScanOptions) -> Result<PreflightStatus> {
+    // Docker availability (binary + daemon)
+    let docker_available = Command::new("docker")
+        .args(["version", "--format", "{{.Server.Version}}"])
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false);
+
     // Check for Syft
     let syft_check = Command::new("syft").arg("version").output();
-
     if syft_check.is_err() {
         anyhow::bail!(
             "Syft not found. Install with: brew install syft\n   \
@@ -817,7 +1046,6 @@ fn check_tools() -> Result<()> {
 
     // Check for Trivy
     let trivy_check = Command::new("trivy").arg("--version").output();
-
     if trivy_check.is_err() {
         anyhow::bail!(
             "Trivy not found. Install with: brew install trivy\n   \
@@ -825,7 +1053,15 @@ fn check_tools() -> Result<()> {
         );
     }
 
-    Ok(())
+    // Use orchestrator tool list to flag other optional tools early
+    let orchestrator =
+        ToolOrchestrator::with_config(&opts.output_dir, OrchestratorConfig::default());
+    let missing_tools = orchestrator.check_tools();
+
+    Ok(PreflightStatus {
+        docker_available,
+        missing_tools,
+    })
 }
 
 /// Verify container image signature using cosign
@@ -864,11 +1100,7 @@ async fn verify_slsa_provenance(image: &str) -> Result<ProvenanceStatus> {
 
     // Try to verify SLSA provenance attestation
     let output = Command::new("cosign")
-        .args([
-            "verify-attestation",
-            "--type", "slsaprovenance",
-            image,
-        ])
+        .args(["verify-attestation", "--type", "slsaprovenance", image])
         .output()
         .context("failed to run cosign verify-attestation")?;
 
@@ -1044,8 +1276,7 @@ fn detect_base_image(image_name: &str) -> Option<String> {
         return None;
     }
 
-    let labels_json: serde_json::Value =
-        serde_json::from_slice(&inspect_output.stdout).ok()?;
+    let labels_json: serde_json::Value = serde_json::from_slice(&inspect_output.stdout).ok()?;
 
     // Check common base image labels
     let label_keys = [
@@ -1064,7 +1295,13 @@ fn detect_base_image(image_name: &str) -> Option<String> {
 
     // Try to detect from history - first layer often indicates base
     let history_output = Command::new("docker")
-        .args(["history", "--no-trunc", "--format", "{{.CreatedBy}}", image_name])
+        .args([
+            "history",
+            "--no-trunc",
+            "--format",
+            "{{.CreatedBy}}",
+            image_name,
+        ])
         .output()
         .ok()?;
 
@@ -1101,8 +1338,12 @@ fn extract_layer_package_mapping(output_dir: &Path) -> Result<HashMap<String, Ve
     } else {
         // Fallback for comparison scans which use generate_sbom
         let alt_path = output_dir.join("syft-native.json");
-        std::fs::read_to_string(&alt_path)
-            .with_context(|| format!("Could not find syft-sbom.json or syft-native.json in {:?}", output_dir))?
+        std::fs::read_to_string(&alt_path).with_context(|| {
+            format!(
+                "Could not find syft-sbom.json or syft-native.json in {:?}",
+                output_dir
+            )
+        })?
     };
     let doc: serde_json::Value = serde_json::from_str(&content)?;
 
@@ -1115,9 +1356,7 @@ fn extract_layer_package_mapping(output_dir: &Path) -> Result<HashMap<String, Ve
             if let Some(locations) = artifact["locations"].as_array() {
                 for location in locations {
                     if let Some(layer_id) = location["layerID"].as_str() {
-                        let packages = layer_packages
-                            .entry(layer_id.to_string())
-                            .or_default();
+                        let packages = layer_packages.entry(layer_id.to_string()).or_default();
                         // Avoid duplicates within the same layer
                         if !packages.contains(&package_name) {
                             packages.push(package_name.clone());
@@ -1145,16 +1384,15 @@ async fn analyze_layer_attribution(
     let dep_graph = DependencyGraph::new(&sbom);
 
     // Load Syft native JSON to get distro info for faster OSV lookups
-    let syft_path = sbom_path.parent()
+    let syft_path = sbom_path
+        .parent()
         .map(|p| p.join("syft-sbom.json"))
         .unwrap_or_default();
     let os_hint: Option<String> = if syft_path.exists() {
         let syft_content = std::fs::read_to_string(&syft_path).ok();
-        syft_content.and_then(|content| {
-            serde_json::from_str::<serde_json::Value>(&content).ok()
-        }).and_then(|doc| {
-            doc["distro"]["id"].as_str().map(String::from)
-        })
+        syft_content
+            .and_then(|content| serde_json::from_str::<serde_json::Value>(&content).ok())
+            .and_then(|doc| doc["distro"]["id"].as_str().map(String::from))
     } else {
         None
     };
@@ -1239,7 +1477,7 @@ async fn analyze_layer_attribution(
                         upgrade_path,
                         is_reachable: false, // Will be analyzed if --with-reachability is enabled
                         difficulty_score: None, // Will be calculated later
-                        call_chain: None, // Will be populated if reachable
+                        call_chain: None,    // Will be populated if reachable
                         dependency_path: dep_graph.find_path(package_name), // Populated from SBOM graph
                     });
                 }
@@ -1251,7 +1489,8 @@ async fn analyze_layer_attribution(
     enrich_vulnerabilities_with_os(&mut all_vulnerabilities, os_hint.as_deref()).await?;
 
     // Merge Grype results for cross-validation (additional vulnerabilities only)
-    let grype_path = sbom_path.parent()
+    let grype_path = sbom_path
+        .parent()
         .map(|p| p.join("grype-results.json"))
         .unwrap_or_else(|| PathBuf::from("grype-results.json"));
     if grype_path.exists() {
@@ -1271,7 +1510,10 @@ async fn analyze_layer_attribution(
                         if !seen_vulns.contains(&dedup_key) && !cve_id.is_empty() {
                             seen_vulns.insert(dedup_key);
 
-                            let severity = vuln["severity"].as_str().unwrap_or("UNKNOWN").to_uppercase();
+                            let severity = vuln["severity"]
+                                .as_str()
+                                .unwrap_or("UNKNOWN")
+                                .to_uppercase();
                             let fixed_version = vuln["fix"]["versions"]
                                 .as_array()
                                 .and_then(|v| v.first())
@@ -1285,7 +1527,10 @@ async fn analyze_layer_attribution(
                             all_vulnerabilities.push(VulnerabilityInfo {
                                 cve_id: cve_id.clone(),
                                 package_name: package_name.clone(),
-                                installed_version: artifact["version"].as_str().unwrap_or("").to_string(),
+                                installed_version: artifact["version"]
+                                    .as_str()
+                                    .unwrap_or("")
+                                    .to_string(),
                                 fixed_version,
                                 severity,
                                 title: format!("{} in {}", cve_id, package_name),
@@ -1300,7 +1545,11 @@ async fn analyze_layer_attribution(
                                 priority: None,
                                 references: vuln["urls"]
                                     .as_array()
-                                    .map(|urls| urls.iter().filter_map(|u| u.as_str().map(String::from)).collect())
+                                    .map(|urls| {
+                                        urls.iter()
+                                            .filter_map(|u| u.as_str().map(String::from))
+                                            .collect()
+                                    })
                                     .unwrap_or_default(),
                                 breaking_change: None,
                                 upgrade_path: None,
@@ -1314,9 +1563,13 @@ async fn analyze_layer_attribution(
                     }
                 }
                 if grype_added > 0 {
-                    tracing::info!("Merged {} additional vulnerabilities from Grype", grype_added);
+                    tracing::info!(
+                        "Merged {} additional vulnerabilities from Grype",
+                        grype_added
+                    );
                     // Re-enrich the new vulnerabilities
-                    enrich_vulnerabilities_with_os(&mut all_vulnerabilities, os_hint.as_deref()).await?;
+                    enrich_vulnerabilities_with_os(&mut all_vulnerabilities, os_hint.as_deref())
+                        .await?;
                 }
             }
         }
@@ -1326,9 +1579,7 @@ async fn analyze_layer_attribution(
     let docker_layers = get_docker_layer_info(image_name)?;
 
     // Get output directory from sbom_path
-    let output_dir = sbom_path
-        .parent()
-        .context("Invalid SBOM path")?;
+    let output_dir = sbom_path.parent().context("Invalid SBOM path")?;
 
     // Extract layer-to-package mapping from Syft native JSON
     let layer_package_map = extract_layer_package_mapping(output_dir)?;
@@ -1427,10 +1678,14 @@ async fn analyze_layer_attribution(
 
     // If there are orphaned vulnerabilities, create a synthetic "Java Dependencies" layer
     if !orphaned_vulns.is_empty() {
-        tracing::info!("Found {} orphaned vulnerabilities (likely Java dependencies not in Syft SBOM)", orphaned_vulns.len());
+        tracing::info!(
+            "Found {} orphaned vulnerabilities (likely Java dependencies not in Syft SBOM)",
+            orphaned_vulns.len()
+        );
 
         // Extract unique package names from orphaned vulnerabilities
-        let mut orphaned_packages: std::collections::HashSet<String> = std::collections::HashSet::new();
+        let mut orphaned_packages: std::collections::HashSet<String> =
+            std::collections::HashSet::new();
         for vuln in &orphaned_vulns {
             orphaned_packages.insert(vuln.package_name.clone());
         }
@@ -1438,7 +1693,7 @@ async fn analyze_layer_attribution(
 
         layers.push(LayerInfo {
             digest: "Java Dependencies (from JAR analysis)".to_string(),
-            size_mb: 0.0,  // Unknown size
+            size_mb: 0.0, // Unknown size
             packages: orphaned_packages_vec,
             vulnerabilities: orphaned_vulns,
         });
@@ -1504,7 +1759,10 @@ async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Re
 
     let (container_id, use_podman) = if let Ok(output) = docker_export {
         if output.status.success() {
-            (String::from_utf8_lossy(&output.stdout).trim().to_string(), false)
+            (
+                String::from_utf8_lossy(&output.stdout).trim().to_string(),
+                false,
+            )
         } else {
             // Try podman as fallback
             let podman_create = Command::new("podman")
@@ -1513,12 +1771,17 @@ async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Re
                 .context("Failed to create container with docker or podman")?;
 
             if !podman_create.status.success() {
-                anyhow::bail!("Failed to create container for filesystem extraction: {}",
-                    String::from_utf8_lossy(&podman_create.stderr));
+                anyhow::bail!(
+                    "Failed to create container for filesystem extraction: {}",
+                    String::from_utf8_lossy(&podman_create.stderr)
+                );
             }
-            (String::from_utf8_lossy(&podman_create.stdout)
-                .trim()
-                .to_string(), true)
+            (
+                String::from_utf8_lossy(&podman_create.stdout)
+                    .trim()
+                    .to_string(),
+                true,
+            )
         }
     } else {
         anyhow::bail!("Docker/Podman not available for filesystem extraction");
@@ -1539,9 +1802,13 @@ async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Re
 
     // Clean up the container using the correct tool
     if use_podman {
-        let _ = Command::new("podman").args(["rm", "-f", &container_id]).output();
+        let _ = Command::new("podman")
+            .args(["rm", "-f", &container_id])
+            .output();
     } else {
-        let _ = Command::new("docker").args(["rm", "-f", &container_id]).output();
+        let _ = Command::new("docker")
+            .args(["rm", "-f", &container_id])
+            .output();
     }
 
     // Check export result
@@ -1574,62 +1841,64 @@ async fn extract_container_filesystem(image_name: &str, output_dir: &Path) -> Re
 }
 
 /// Scan for JAR files in extracted container filesystem
-/// 
+///
 /// This function uses BazBOM's polyglot scanner to detect and scan Java/Maven/Gradle
 /// artifacts in the container filesystem. Results are merged with existing container
 /// scan results with proper layer attribution.
+#[allow(dead_code)]
 async fn scan_container_jars(
     filesystem_dir: &Path,
     results: &mut ContainerScanResults,
 ) -> Result<usize> {
-    tracing::info!("Scanning for JAR files in container filesystem: {:?}", filesystem_dir);
-    
+    tracing::info!(
+        "Scanning for JAR files in container filesystem: {:?}",
+        filesystem_dir
+    );
+
     // Configure parallel orchestrator for Java ecosystem scanning
     let orchestrator_config = PolyglotOrchestratorConfig {
         max_concurrent: num_cpus::get(),
-        show_progress: false,  // Don't show nested progress bars
-        enable_reachability: false,  // Reachability done separately
+        show_progress: false,       // Don't show nested progress bars
+        enable_reachability: false, // Reachability done separately
         enable_vulnerabilities: true,
     };
-    
+
     let orchestrator = ParallelOrchestrator::with_config(orchestrator_config);
-    
+
     // Scan the filesystem directory for all ecosystems
     let workspace_path = filesystem_dir
         .to_str()
         .ok_or_else(|| anyhow::anyhow!("invalid filesystem path"))?;
-    
+
     let polyglot_results = match tokio::runtime::Handle::try_current() {
-        Ok(handle) => {
-            tokio::task::block_in_place(|| {
-                handle.block_on(orchestrator.scan_directory(workspace_path))
-            })?
-        }
+        Ok(handle) => tokio::task::block_in_place(|| {
+            handle.block_on(orchestrator.scan_directory(workspace_path))
+        })?,
         Err(_) => {
             // Create new runtime if not in async context
             let rt = tokio::runtime::Runtime::new()?;
             rt.block_on(orchestrator.scan_directory(workspace_path))?
         }
     };
-    
+
     // Filter to only Java/Maven/Gradle ecosystems
     let java_results: Vec<&EcosystemScanResult> = polyglot_results
         .iter()
         .filter(|r| {
-            r.ecosystem == "Maven" 
-            || r.ecosystem == "Gradle" 
-            || r.ecosystem == "Maven (Bazel)"
-            || r.ecosystem.contains("Java")
+            r.ecosystem == "Maven"
+                || r.ecosystem == "Gradle"
+                || r.ecosystem == "Maven (Bazel)"
+                || r.ecosystem.contains("Java")
         })
         .collect();
-    
+
     if java_results.is_empty() {
         tracing::info!("No Java artifacts found in container");
         return Ok(0);
     }
-    
+
     let mut total_java_vulns = 0;
-    
+
     // Merge Java vulnerabilities into container results
     for java_result in java_results {
         tracing::info!(
@@ -1638,7 +1907,7 @@ async fn scan_container_jars(
             java_result.ecosystem,
             java_result.vulnerabilities.len()
         );
-        
+
         for vuln in &java_result.vulnerabilities {
             // Convert scanner vulnerability to VulnerabilityInfo
             let vuln_info = VulnerabilityInfo {
@@ -1649,31 +1918,34 @@ async fn scan_container_jars(
                 severity: vuln.severity.clone(),
                 title: vuln.title.clone(),
                 description: vuln.description.clone(),
-                layer_digest: "Java Artifacts".to_string(),  // Will be updated below
+                layer_digest: "Java Artifacts".to_string(), // Will be updated below
                 published_date: vuln.published_date.clone(),
-                epss_score: None,  // Will be enriched later
+                epss_score: None, // Will be enriched later
                 epss_percentile: None,
-                is_kev: false,     // Will be enriched later
+                is_kev: false, // Will be enriched later
                 kev_due_date: None,
                 cvss_score: vuln.cvss_score,
-                priority: Some("P2".to_string()),  // Default priority
+                priority: Some("P2".to_string()), // Default priority
                 references: vuln.references.clone(),
                 breaking_change: None,
                 upgrade_path: None,
-                is_reachable: false,  // Will be analyzed later
+                is_reachable: false, // Will be analyzed later
                 difficulty_score: None,
                 call_chain: None,
                 dependency_path: None,
             };
-            
+
             // Determine which layer this JAR belongs to
             // For now, add to a special "Java Artifacts" layer
             // TODO: Map to actual Docker layer based on file location
             let layer_name = format!("Java Artifacts ({})", java_result.ecosystem);
-            
+
             // Find or create the Java artifacts layer
-            let layer_idx = results.layers.iter().position(|l| l.digest.starts_with(&layer_name));
-            
+            let layer_idx = results
+                .layers
+                .iter()
+                .position(|l| l.digest.starts_with(&layer_name));
+
             if let Some(idx) = layer_idx {
                 // Add to existing Java layer
                 results.layers[idx].vulnerabilities.push(vuln_info);
@@ -1681,7 +1953,7 @@ async fn scan_container_jars(
                 // Create new layer for Java artifacts
                 results.layers.push(LayerInfo {
                     digest: layer_name.clone(),
-                    size_mb: 0.0,  // Size calculated from package list
+                    size_mb: 0.0, // Size calculated from package list
                     packages: java_result
                         .packages
                         .iter()
@@ -1690,17 +1962,17 @@ async fn scan_container_jars(
                     vulnerabilities: vec![vuln_info],
                 });
             }
-            
+
             total_java_vulns += 1;
         }
     }
-    
+
     // Re-calculate vulnerability counts
     results.critical_count = 0;
     results.high_count = 0;
     results.medium_count = 0;
     results.low_count = 0;
-    
+
     for layer in &results.layers {
         for vuln in &layer.vulnerabilities {
             match vuln.severity.to_uppercase().as_str() {
@@ -1712,11 +1984,13 @@ async fn scan_container_jars(
             }
         }
     }
-    
-    tracing::info!("Added {} Java vulnerabilities to container scan results", total_java_vulns);
+
+    tracing::info!(
+        "Added {} Java vulnerabilities to container scan results",
+        total_java_vulns
+    );
     Ok(total_java_vulns)
 }
-
 
 /// Reachability result with call chain information
 struct ReachabilityResult {
@@ -1825,7 +2099,7 @@ async fn run_polyglot_reachability(
             Err(e) => {
                 tracing::warn!("Call graph analysis failed for {}: {}", ecosystem.name, e);
                 eprintln!(
-                    "   ⚠️  Call graph analysis failed for {}: {}",
+                    "   WARN  Call graph analysis failed for {}: {}",
                     ecosystem.name, e
                 );
             }
@@ -1874,10 +2148,13 @@ async fn analyze_npm_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -1915,10 +2192,13 @@ async fn analyze_python_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -1953,21 +2233,30 @@ async fn analyze_go_reachability(
         // Direct match
         if reachable_packages.contains(package) {
             is_reachable = true;
-            matching_func = report.reachable_functions.iter()
+            matching_func = report
+                .reachable_functions
+                .iter()
                 .find(|f| f.starts_with(package))
                 .cloned();
         }
         // Check if package is a prefix of any reachable package (sub-packages)
         else if let Some(rp) = reachable_packages.iter().find(|rp| rp.starts_with(package)) {
             is_reachable = true;
-            matching_func = report.reachable_functions.iter()
+            matching_func = report
+                .reachable_functions
+                .iter()
                 .find(|f| f.starts_with(rp))
                 .cloned();
         }
         // Check if any reachable package is a prefix (parent packages)
-        else if let Some(rp) = reachable_packages.iter().find(|rp| package.starts_with(*rp)) {
+        else if let Some(rp) = reachable_packages
+            .iter()
+            .find(|rp| package.starts_with(*rp))
+        {
             is_reachable = true;
-            matching_func = report.reachable_functions.iter()
+            matching_func = report
+                .reachable_functions
+                .iter()
                 .find(|f| f.starts_with(rp))
                 .cloned();
         }
@@ -1983,15 +2272,22 @@ async fn analyze_go_reachability(
                     chain.push(func);
                 }
             }
-            if chain.is_empty() { None } else { Some(chain) }
+            if chain.is_empty() {
+                None
+            } else {
+                Some(chain)
+            }
         } else {
             None
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2029,10 +2325,13 @@ async fn analyze_rust_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2067,10 +2366,13 @@ async fn analyze_ruby_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2105,10 +2407,13 @@ async fn analyze_php_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2151,10 +2456,13 @@ async fn analyze_java_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2173,16 +2481,13 @@ async fn analyze_bazel_reachability(
     for package in packages.keys() {
         // Bazel packages can be from any language
         // Check if any targets containing this package are reachable
-        let matching_target = report
-            .reachable_targets
-            .iter()
-            .find(|target| {
-                // Try various matching strategies for polyglot support
-                // Bazel targets look like //path/to:target or @repo//path:target
-                target.contains(package)
-                    || target.contains(&package.replace("-", "_"))
-                    || target.contains(&package.replace('.', "/"))
-            });
+        let matching_target = report.reachable_targets.iter().find(|target| {
+            // Try various matching strategies for polyglot support
+            // Bazel targets look like //path/to:target or @repo//path:target
+            target.contains(package)
+                || target.contains(&package.replace("-", "_"))
+                || target.contains(&package.replace('.', "/"))
+        });
 
         let (is_reachable, call_chain) = if let Some(target) = matching_target {
             // Build call chain from entrypoints to the matched target
@@ -2195,10 +2500,13 @@ async fn analyze_bazel_reachability(
             (false, None)
         };
 
-        results.insert(package.clone(), ReachabilityResult {
-            reachable: is_reachable,
-            call_chain,
-        });
+        results.insert(
+            package.clone(),
+            ReachabilityResult {
+                reachable: is_reachable,
+                call_chain,
+            },
+        );
     }
 
     Ok(results)
@@ -2228,7 +2536,12 @@ fn calculate_security_score(results: &ContainerScanResults) -> SecurityScore {
         _ => ("F", "#e74c3c", "Critical - immediate action required"),
     };
 
-    SecurityScore { score, grade, grade_color, grade_desc }
+    SecurityScore {
+        score,
+        grade,
+        grade_color,
+        grade_desc,
+    }
 }
 
 /// Generate HTML for layer attribution section
@@ -2236,12 +2549,36 @@ fn generate_layers_html(results: &ContainerScanResults) -> String {
     let mut layers_html = String::new();
     for (i, layer) in results.layers.iter().enumerate() {
         let vuln_count = layer.vulnerabilities.len();
-        let critical = layer.vulnerabilities.iter().filter(|v| v.severity == "CRITICAL").count();
-        let high = layer.vulnerabilities.iter().filter(|v| v.severity == "HIGH").count();
-        let medium = layer.vulnerabilities.iter().filter(|v| v.severity == "MEDIUM").count();
-        let low = layer.vulnerabilities.iter().filter(|v| v.severity == "LOW").count();
+        let critical = layer
+            .vulnerabilities
+            .iter()
+            .filter(|v| v.severity == "CRITICAL")
+            .count();
+        let high = layer
+            .vulnerabilities
+            .iter()
+            .filter(|v| v.severity == "HIGH")
+            .count();
+        let medium = layer
+            .vulnerabilities
+            .iter()
+            .filter(|v| v.severity == "MEDIUM")
+            .count();
+        let low = layer
+            .vulnerabilities
+            .iter()
+            .filter(|v| v.severity == "LOW")
+            .count();
 
-        let status_class = if critical > 0 { "critical" } else if high > 0 { "high" } else if vuln_count > 0 { "medium" } else { "clean" };
+        let status_class = if critical > 0 {
+            "critical"
+        } else if high > 0 {
+            "high"
+        } else if vuln_count > 0 {
+            "medium"
+        } else {
+            "clean"
+        };
 
         layers_html.push_str(&format!(
             r#"<div class="layer {status_class}">
@@ -2261,9 +2598,12 @@ fn generate_layers_html(results: &ContainerScanResults) -> String {
             layer.packages.len(),
             vuln_count,
             if vuln_count > 0 {
-                format!("<div class='layer-vulns'>{}C / {}H / {}M / {}L</div>", critical, high, medium, low)
+                format!(
+                    "<div class='layer-vulns'>{}C / {}H / {}M / {}L</div>",
+                    critical, high, medium, low
+                )
             } else {
-                "<div class='layer-clean'>✅ Clean</div>".to_string()
+                "<div class='layer-clean'>OK Clean</div>".to_string()
             }
         ));
     }
@@ -2275,14 +2615,18 @@ fn generate_quick_wins_html(all_vulns: &[&VulnerabilityInfo]) -> String {
     let mut quick_wins_html = String::new();
     let mut seen_packages: std::collections::HashSet<String> = std::collections::HashSet::new();
 
-    for vuln in all_vulns.iter().filter(|v| v.fixed_version.is_some() && v.breaking_change != Some(true)) {
+    for vuln in all_vulns
+        .iter()
+        .filter(|v| v.fixed_version.is_some() && v.breaking_change != Some(true))
+    {
         if seen_packages.contains(&vuln.package_name) {
             continue;
         }
         seen_packages.insert(vuln.package_name.clone());
 
         // Count how many vulns this fix addresses
-        let fixes_count = all_vulns.iter()
+        let fixes_count = all_vulns
+            .iter()
             .filter(|v| v.package_name == vuln.package_name && v.fixed_version.is_some())
             .count();
 
@@ -2322,10 +2666,22 @@ fn generate_vulnerabilities_html(all_vulns: &[&VulnerabilityInfo]) -> String {
     });
 
     // Group by severity for collapsible sections
-    let critical: Vec<_> = all_vulns_sorted.iter().filter(|v| v.severity == "CRITICAL").collect();
-    let high: Vec<_> = all_vulns_sorted.iter().filter(|v| v.severity == "HIGH").collect();
-    let medium: Vec<_> = all_vulns_sorted.iter().filter(|v| v.severity == "MEDIUM").collect();
-    let low: Vec<_> = all_vulns_sorted.iter().filter(|v| v.severity == "LOW").collect();
+    let critical: Vec<_> = all_vulns_sorted
+        .iter()
+        .filter(|v| v.severity == "CRITICAL")
+        .collect();
+    let high: Vec<_> = all_vulns_sorted
+        .iter()
+        .filter(|v| v.severity == "HIGH")
+        .collect();
+    let medium: Vec<_> = all_vulns_sorted
+        .iter()
+        .filter(|v| v.severity == "MEDIUM")
+        .collect();
+    let low: Vec<_> = all_vulns_sorted
+        .iter()
+        .filter(|v| v.severity == "LOW")
+        .collect();
 
     // Add summary table
     vulns_html.push_str(r#"
@@ -2376,7 +2732,11 @@ fn generate_vulnerabilities_html(all_vulns: &[&VulnerabilityInfo]) -> String {
         }
 
         let total = vulns.len();
-        let collapsed_class = if severity_class == "critical" || severity_class == "high" { "" } else { "collapsed" };
+        let collapsed_class = if severity_class == "critical" || severity_class == "high" {
+            ""
+        } else {
+            "collapsed"
+        };
 
         vulns_html.push_str(&format!(
             r#"<details class="severity-section {}" {}><summary style="cursor: pointer; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px; font-weight: bold;">
@@ -2391,7 +2751,11 @@ fn generate_vulnerabilities_html(all_vulns: &[&VulnerabilityInfo]) -> String {
 
         // Show limited vulns with "show more" capability
         for (i, vuln) in vulns.iter().enumerate() {
-            let hidden = if i >= max_shown { r#"style="display:none" class="hidden-vuln""# } else { "" };
+            let hidden = if i >= max_shown {
+                r#"style="display:none" class="hidden-vuln""#
+            } else {
+                ""
+            };
             vulns_html.push_str(&format_single_vuln_html(vuln, hidden));
         }
 
@@ -2429,7 +2793,7 @@ fn generate_jira_templates_html(vulns: &[&&VulnerabilityInfo]) -> String {
     html.push_str(r#"
         <details class="jira-templates-section" style="margin-top: 30px;">
             <summary style="cursor: pointer; padding: 15px; background: #2c3e50; color: white; border-radius: 8px; margin-bottom: 10px; font-weight: bold;">
-                📋 Jira Ticket Templates (Copy & Paste)
+                NOTE Jira Ticket Templates (Copy & Paste)
             </summary>
             <div style="padding: 10px;">
     "#);
@@ -2441,12 +2805,22 @@ fn generate_jira_templates_html(vulns: &[&&VulnerabilityInfo]) -> String {
             _ => "P3 - Major",
         };
 
-        let epss_note = vuln.epss_score
-            .map(|s| if s >= 0.2 { format!("EPSS: {:.1}% (HIGH)", s * 100.0) } else { format!("EPSS: {:.1}%", s * 100.0) })
+        let epss_note = vuln
+            .epss_score
+            .map(|s| {
+                if s >= 0.2 {
+                    format!("EPSS: {:.1}% (HIGH)", s * 100.0)
+                } else {
+                    format!("EPSS: {:.1}%", s * 100.0)
+                }
+            })
             .unwrap_or_else(|| "No EPSS data".to_string());
 
         let kev_note = if vuln.is_kev {
-            format!("⚠️ CISA KEV - Due: {}", vuln.kev_due_date.as_ref().unwrap_or(&"TBD".to_string()))
+            format!(
+                "WARN CISA KEV - Due: {}",
+                vuln.kev_due_date.as_ref().unwrap_or(&"TBD".to_string())
+            )
         } else {
             "Not in KEV".to_string()
         };
@@ -2454,7 +2828,7 @@ fn generate_jira_templates_html(vulns: &[&&VulnerabilityInfo]) -> String {
         // Triage Ticket
         html.push_str(&format!(r#"
             <div style="background: #fff3cd; border-left: 4px solid #f39c12; padding: 15px; margin-bottom: 15px; border-radius: 4px;">
-                <h4 style="margin: 0 0 10px 0; color: #856404;">🔍 Triage Ticket: {}</h4>
+                <h4 style="margin: 0 0 10px 0; color: #856404;">SCAN Triage Ticket: {}</h4>
                 <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px; white-space: pre-wrap;">
 <strong>Title:</strong> [TRIAGE] {} - {}
 <strong>Type:</strong> Task
@@ -2507,7 +2881,7 @@ Mitigation / Remediation Notes:
         // Remediation Ticket
         html.push_str(&format!(r#"
             <div style="background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
-                <h4 style="margin: 0 0 10px 0; color: #0c5460;">🔧 Remediation Ticket: {}</h4>
+                <h4 style="margin: 0 0 10px 0; color: #0c5460;">TOOL Remediation Ticket: {}</h4>
                 <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 11px; white-space: pre-wrap;">
 <strong>Title:</strong> {} - {} upgrade required
 <strong>Type:</strong> Bug
@@ -2577,18 +2951,29 @@ fn generate_jira_ticket_files(
         _ => "P3 - Major",
     };
 
-    let epss_note = vuln.epss_score
-        .map(|s| if s >= 0.2 { format!("EPSS: {:.1}% (HIGH)", s * 100.0) } else { format!("EPSS: {:.1}%", s * 100.0) })
+    let epss_note = vuln
+        .epss_score
+        .map(|s| {
+            if s >= 0.2 {
+                format!("EPSS: {:.1}% (HIGH)", s * 100.0)
+            } else {
+                format!("EPSS: {:.1}%", s * 100.0)
+            }
+        })
         .unwrap_or_else(|| "No EPSS data".to_string());
 
     let kev_note = if vuln.is_kev {
-        format!("⚠️ CISA KEV - Due: {}", vuln.kev_due_date.as_ref().unwrap_or(&"TBD".to_string()))
+        format!(
+            "WARN CISA KEV - Due: {}",
+            vuln.kev_due_date.as_ref().unwrap_or(&"TBD".to_string())
+        )
     } else {
         "Not in KEV".to_string()
     };
 
     // Triage ticket
-    let triage_content = format!(r#"# [TRIAGE] {} - {}
+    let triage_content = format!(
+        r#"# [TRIAGE] {} - {}
 
 **Type:** Task
 **Team:** Security
@@ -2627,17 +3012,26 @@ fn generate_jira_ticket_files(
         &vuln.description.chars().take(200).collect::<String>(),
         kev_note,
         epss_note,
-        vuln.fixed_version.as_ref().unwrap_or(&"No fix available".to_string()),
-        if vuln.is_reachable { "REACHABLE - Exploitable path exists" } else { "Unreachable - No call path detected" },
+        vuln.fixed_version
+            .as_ref()
+            .unwrap_or(&"No fix available".to_string()),
+        if vuln.is_reachable {
+            "REACHABLE - Exploitable path exists"
+        } else {
+            "Unreachable - No call path detected"
+        },
         vuln.package_name,
-        vuln.fixed_version.as_ref().unwrap_or(&"latest stable".to_string())
+        vuln.fixed_version
+            .as_ref()
+            .unwrap_or(&"latest stable".to_string())
     );
 
     let triage_path = output_dir.join(format!("{}-TRIAGE.md", safe_cve));
     std::fs::write(&triage_path, triage_content)?;
 
     // Remediation ticket
-    let remediation_content = format!(r#"# {} - {} upgrade required
+    let remediation_content = format!(
+        r#"# {} - {} upgrade required
 
 **Type:** Bug
 **Priority:** {}
@@ -2669,14 +3063,22 @@ Address {} in {} package
         vuln.package_name,
         vuln.severity,
         priority,
-        vuln.cvss_score.map(|s| format!("{:.1}", s)).unwrap_or_else(|| "N/A".to_string()),
+        vuln.cvss_score
+            .map(|s| format!("{:.1}", s))
+            .unwrap_or_else(|| "N/A".to_string()),
         epss_note,
         kev_note,
         vuln.package_name,
         vuln.installed_version,
-        vuln.fixed_version.as_ref().unwrap_or(&"latest stable".to_string()),
+        vuln.fixed_version
+            .as_ref()
+            .unwrap_or(&"latest stable".to_string()),
         vuln.severity,
-        if vuln.is_kev { "KEV-listed" } else { "High-severity" }
+        if vuln.is_kev {
+            "KEV-listed"
+        } else {
+            "High-severity"
+        }
     );
 
     let remediation_path = output_dir.join(format!("{}-REMEDIATION.md", safe_cve));
@@ -2689,11 +3091,14 @@ Address {} in {} package
 fn format_single_vuln_html(vuln: &VulnerabilityInfo, extra_attrs: &str) -> String {
     let severity_class = vuln.severity.to_lowercase();
     let nvd_link = format!("https://nvd.nist.gov/vuln/detail/{}", vuln.cve_id);
-    let epss_info = vuln.epss_score.map(|s| format!("EPSS: {:.1}%", s * 100.0)).unwrap_or_default();
+    let epss_info = vuln
+        .epss_score
+        .map(|s| format!("EPSS: {:.1}%", s * 100.0))
+        .unwrap_or_default();
     let reachable_badge = if vuln.is_reachable {
-        r#"<span class="reachable-badge">🎯 REACHABLE</span>"#
+        r#"<span class="reachable-badge">TARGET REACHABLE</span>"#
     } else {
-        r#"<span class="unreachable-badge">🛡️ Unreachable</span>"#
+        r#"<span class="unreachable-badge">SHIELD Unreachable</span>"#
     };
 
     let mut html = format!(
@@ -2721,16 +3126,37 @@ fn format_single_vuln_html(vuln: &VulnerabilityInfo, extra_attrs: &str) -> Strin
         vuln.installed_version,
         vuln.fixed_version.as_ref().unwrap_or(&"No fix".to_string()),
         vuln.description.chars().take(200).collect::<String>(),
-        if !epss_info.is_empty() { format!("<span class='epss-score'>{}</span>", epss_info) } else { String::new() },
-        vuln.cvss_score.map(|s| format!("<span class='cvss-score'>CVSS: {:.1}</span>", s)).unwrap_or_default(),
+        if !epss_info.is_empty() {
+            format!("<span class='epss-score'>{}</span>", epss_info)
+        } else {
+            String::new()
+        },
+        vuln.cvss_score
+            .map(|s| format!("<span class='cvss-score'>CVSS: {:.1}</span>", s))
+            .unwrap_or_default(),
         if vuln.is_kev {
             format!("<a href='https://www.cisa.gov/known-exploited-vulnerabilities-catalog' target='_blank' class='kev-badge'>🚨 CISA KEV{}</a>",
                 vuln.kev_due_date.as_ref().map(|d| format!(" (due: {})", d)).unwrap_or_default())
-        } else { String::new() },
-        vuln.difficulty_score.map(|d| {
-            let label = if d <= 20 { "Trivial" } else if d <= 40 { "Easy" } else if d <= 60 { "Moderate" } else { "Hard" };
-            format!("<div class='difficulty'>Difficulty: {}/100 ({})</div>", d, label)
-        }).unwrap_or_default()
+        } else {
+            String::new()
+        },
+        vuln.difficulty_score
+            .map(|d| {
+                let label = if d <= 20 {
+                    "Trivial"
+                } else if d <= 40 {
+                    "Easy"
+                } else if d <= 60 {
+                    "Moderate"
+                } else {
+                    "Hard"
+                };
+                format!(
+                    "<div class='difficulty'>Difficulty: {}/100 ({})</div>",
+                    d, label
+                )
+            })
+            .unwrap_or_default()
     );
 
     // Add call chain if reachable (limit to 5 items for readability)
@@ -2738,7 +3164,8 @@ fn format_single_vuln_html(vuln: &VulnerabilityInfo, extra_attrs: &str) -> Strin
         if let Some(chain) = &vuln.call_chain {
             if !chain.is_empty() {
                 let limited_chain: Vec<_> = chain.iter().take(5).collect();
-                let chain_html = limited_chain.iter()
+                let chain_html = limited_chain
+                    .iter()
                     .map(|f| {
                         // Shorten long paths
                         let short = f.split('/').last().unwrap_or(f);
@@ -2747,7 +3174,10 @@ fn format_single_vuln_html(vuln: &VulnerabilityInfo, extra_attrs: &str) -> Strin
                     .collect::<Vec<_>>()
                     .join(" → ");
                 let more_indicator = if chain.len() > 5 {
-                    format!(" <span style='color:#7f8c8d'>+{} more</span>", chain.len() - 5)
+                    format!(
+                        " <span style='color:#7f8c8d'>+{} more</span>",
+                        chain.len() - 5
+                    )
                 } else {
                     String::new()
                 };
@@ -2773,7 +3203,7 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
 
     upgrades_html.push_str(r#"
         <h2 style="color: #2c3e50; margin-top: 40px; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
-            🎯 Upgrade Intelligence
+            TARGET Upgrade Intelligence
         </h2>
         <p style="color: #7f8c8d; margin-bottom: 20px;">
             AI-powered analysis showing upgrade effort, breaking changes, and transitive impact for each vulnerable package
@@ -2781,7 +3211,7 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
     "#);
 
     for rec in &results.upgrade_recommendations {
-        let risk_class = match rec.risk_level.as_str() {
+        let _risk_class = match rec.risk_level.as_str() {
             "LOW" => "low-risk",
             "MEDIUM" => "medium-risk",
             "HIGH" => "high-risk",
@@ -2797,7 +3227,8 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
             _ => "#95a5a6",
         };
 
-        let effort_display = rec.effort_hours
+        let effort_display = rec
+            .effort_hours
             .map(|h| {
                 if h < 1.0 {
                     format!("{} min", (h * 60.0) as u32)
@@ -2811,11 +3242,15 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
 
         let breaking_info = if let Some(count) = rec.breaking_changes_count {
             if count > 0 {
-                format!(r#"<div style="color: #e74c3c; font-weight: bold; margin-top: 8px;">
-                    ⚠️ {} breaking change{}</div>"#,
-                    count, if count == 1 { "" } else { "s" })
+                format!(
+                    r#"<div style="color: #e74c3c; font-weight: bold; margin-top: 8px;">
+                    WARN {} breaking change{}</div>"#,
+                    count,
+                    if count == 1 { "" } else { "s" }
+                )
             } else {
-                r#"<div style="color: #27ae60; margin-top: 8px;">✅ No breaking changes</div>"#.to_string()
+                r#"<div style="color: #27ae60; margin-top: 8px;">OK No breaking changes</div>"#
+                    .to_string()
             }
         } else {
             String::new()
@@ -2823,9 +3258,12 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
 
         let transitive_info = if let Some(count) = rec.transitive_upgrades_count {
             if count > 0 {
-                format!(r#"<div style="color: #f39c12; margin-top: 5px;">
-                    🔗 Requires {} transitive upgrade{}</div>"#,
-                    count, if count == 1 { "" } else { "s" })
+                format!(
+                    r#"<div style="color: #f39c12; margin-top: 5px;">
+                    LINK Requires {} transitive upgrade{}</div>"#,
+                    count,
+                    if count == 1 { "" } else { "s" }
+                )
             } else {
                 String::new()
             }
@@ -2834,19 +3272,25 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
         };
 
         let migration_guide = if let Some(ref url) = rec.migration_guide_url {
-            format!(r#"<div style="margin-top: 8px;">
+            format!(
+                r#"<div style="margin-top: 8px;">
                 <a href="{}" target="_blank" style="color: #3498db; text-decoration: none;">
                     📖 Migration Guide
                 </a>
-            </div>"#, url)
+            </div>"#,
+                url
+            )
         } else {
             String::new()
         };
 
         let success_rate = if let Some(rate) = rec.success_rate {
-            format!(r#"<div style="margin-top: 5px; color: #7f8c8d; font-size: 12px;">
+            format!(
+                r#"<div style="margin-top: 5px; color: #7f8c8d; font-size: 12px;">
                 📊 {:.0}% success rate in community
-            </div>"#, rate * 100.0)
+            </div>"#,
+                rate * 100.0
+            )
         } else {
             String::new()
         };
@@ -2899,16 +3343,15 @@ fn generate_upgrades_html(results: &ContainerScanResults) -> String {
 /// Generate executive report
 /// Generate HTML for CISA KEV alert banner
 fn generate_kev_alert_html(all_vulns: &[&VulnerabilityInfo]) -> String {
-    let kev_vulns: Vec<&VulnerabilityInfo> = all_vulns.iter()
-        .filter(|v| v.is_kev)
-        .copied()
-        .collect();
+    let kev_vulns: Vec<&VulnerabilityInfo> =
+        all_vulns.iter().filter(|v| v.is_kev).copied().collect();
 
     if kev_vulns.is_empty() {
         return String::new();
     }
 
-    let mut html = String::from(r#"
+    let mut html = String::from(
+        r#"
     <div style="background: linear-gradient(135deg, #c0392b 0%, #e74c3c 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(231, 76, 60, 0.3);">
         <div style="display: flex; align-items: center; margin-bottom: 15px;">
             <div style="font-size: 48px; margin-right: 20px;">🚨</div>
@@ -2917,7 +3360,8 @@ fn generate_kev_alert_html(all_vulns: &[&VulnerabilityInfo]) -> String {
                 <p style="margin: 5px 0 0 0; opacity: 0.95; font-size: 14px;">Known Exploited Vulnerabilities - Immediate Action Required</p>
             </div>
         </div>
-    "#);
+    "#,
+    );
 
     // Deduplicate by CVE ID
     let mut seen_cves = std::collections::HashSet::new();
@@ -2982,15 +3426,12 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
     let reachable_count = all_vulns.iter().filter(|v| v.is_reachable).count();
     let unreachable_count = all_vulns.len() - reachable_count;
 
-    // Count KEV vulns
-    let kev_count = all_vulns.iter().filter(|v| v.is_kev).count();
-
     // Generate HTML sections
     let kev_alert_html = generate_kev_alert_html(&all_vulns);
     let layers_html = generate_layers_html(results);
     let quick_wins_html = generate_quick_wins_html(&all_vulns);
-    let vulns_html = generate_vulnerabilities_html(&all_vulns);
-    let upgrades_html = generate_upgrades_html(results);
+    let _vulns_html = generate_vulnerabilities_html(&all_vulns);
+    let _upgrades_html = generate_upgrades_html(results);
 
     let html = format!(
         r#"<!DOCTYPE html>
@@ -3298,7 +3739,7 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
 </head>
 <body>
     <div class="header">
-        <h1>🐳 Container Security Report</h1>
+        <h1>CONTAINER Container Security Report</h1>
         <p><strong>Image:</strong> {image_name}</p>
         <p><strong>Generated:</strong> {timestamp}</p>
     </div>
@@ -3340,24 +3781,24 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
     {kev_alert_html}
 
     <div class="section">
-        <h2>🎯 Reachability Analysis</h2>
+        <h2>TARGET Reachability Analysis</h2>
         <p style="color: #7f8c8d; margin-bottom: 15px;">Vulnerabilities analyzed for actual exploitability in your code</p>
         <div class="reachability-summary">
             <div class="reach-card reachable">
                 <div class="reach-value critical">{reachable_count}</div>
-                <div>🎯 Reachable</div>
+                <div>TARGET Reachable</div>
                 <div style="font-size: 12px; color: #7f8c8d;">Prioritize these - actually exploitable</div>
             </div>
             <div class="reach-card unreachable">
                 <div class="reach-value" style="color: #27ae60;">{unreachable_count}</div>
-                <div>🛡️ Unreachable</div>
+                <div>SHIELD Unreachable</div>
                 <div style="font-size: 12px; color: #7f8c8d;">Lower priority - not in execution path</div>
             </div>
         </div>
     </div>
 
     <div class="section">
-        <h2>📦 Layer Attribution</h2>
+        <h2>PKG Layer Attribution</h2>
         <div class="layers-grid">
             {layers_html}
         </div>
@@ -3372,7 +3813,7 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
     </div>
 
     <div class="section">
-        <h2>📋 Compliance Status</h2>
+        <h2>NOTE Compliance Status</h2>
         <div class="compliance-grid">
             <div class="compliance-card {pci_class}">
                 <strong>PCI-DSS</strong>
@@ -3415,7 +3856,7 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
         layers_html = layers_html,
         quick_wins = quick_wins_html,
         pci_class = if results.compliance_results.as_ref().map(|c| c.pci_dss.status == "Pass").unwrap_or(false) { "pass" } else { "warn" },
-        pci_status = if results.compliance_results.as_ref().map(|c| c.pci_dss.status == "Pass").unwrap_or(false) { "✅ Pass" } else { "⚠️ Fail" },
+        pci_status = if results.compliance_results.as_ref().map(|c| c.pci_dss.status == "Pass").unwrap_or(false) { "OK Pass" } else { "WARN Fail" },
         pci_issues = results.compliance_results.as_ref().map(|c| {
             if c.pci_dss.issues.is_empty() {
                 String::new()
@@ -3425,7 +3866,7 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
             }
         }).unwrap_or_default(),
         hipaa_class = if results.compliance_results.as_ref().map(|c| c.hipaa.status == "Pass").unwrap_or(false) { "pass" } else { "warn" },
-        hipaa_status = if results.compliance_results.as_ref().map(|c| c.hipaa.status == "Pass").unwrap_or(false) { "✅ Pass" } else { "⚠️ Fail" },
+        hipaa_status = if results.compliance_results.as_ref().map(|c| c.hipaa.status == "Pass").unwrap_or(false) { "OK Pass" } else { "WARN Fail" },
         hipaa_issues = results.compliance_results.as_ref().map(|c| {
             if c.hipaa.issues.is_empty() {
                 String::new()
@@ -3435,7 +3876,7 @@ fn generate_executive_report(results: &ContainerScanResults, report_file: &str) 
             }
         }).unwrap_or_default(),
         soc2_class = if results.compliance_results.as_ref().map(|c| c.soc2.status == "Pass").unwrap_or(false) { "pass" } else { "warn" },
-        soc2_status = if results.compliance_results.as_ref().map(|c| c.soc2.status == "Pass").unwrap_or(false) { "✅ Pass" } else { "⚠️ Fail" },
+        soc2_status = if results.compliance_results.as_ref().map(|c| c.soc2.status == "Pass").unwrap_or(false) { "OK Pass" } else { "WARN Fail" },
         soc2_issues = results.compliance_results.as_ref().map(|c| {
             if c.soc2.issues.is_empty() {
                 String::new()
@@ -3516,7 +3957,7 @@ pub async fn run_orchestrated_scan(opts: &ContainerScanOptions) -> Result<Aggreg
     // Check for missing tools
     let missing = orchestrator.check_tools();
     if !missing.is_empty() {
-        println!("⚠️  {} Missing tools:", "Warning:".yellow());
+        println!("WARN  {} Missing tools:", "Warning:".yellow());
         for (name, hint) in &missing {
             println!("   • {} - {}", name.red(), hint.dimmed());
         }
@@ -3587,11 +4028,7 @@ fn generate_sarif_report(results: &ContainerScanResults) -> SarifReport {
             };
 
             // Create rule for this CVE
-            let rule = Rule::new(
-                &vuln.cve_id,
-                &vuln.title,
-                level,
-            );
+            let rule = Rule::new(&vuln.cve_id, &vuln.title, level);
             report.add_rule(rule);
 
             // Create result with properties
@@ -3603,8 +4040,8 @@ fn generate_sarif_report(results: &ContainerScanResults) -> SarifReport {
                 message.push_str(&format!(" - Fix available: {}", fix));
             }
 
-            let mut result = SarifResult::new(&vuln.cve_id, level, message)
-                .with_location(&results.image_name);
+            let mut result =
+                SarifResult::new(&vuln.cve_id, level, message).with_location(&results.image_name);
 
             // Add properties with enrichment data
             let mut properties = serde_json::json!({
@@ -3682,7 +4119,9 @@ fn merge_native_vulnerabilities(
                         os_packages::OsType::Alpine => "Alpine",
                         os_packages::OsType::Debian => "Debian",
                         os_packages::OsType::Ubuntu => "Ubuntu",
-                        os_packages::OsType::Rhel | os_packages::OsType::CentOS | os_packages::OsType::Fedora => "Red Hat",
+                        os_packages::OsType::Rhel
+                        | os_packages::OsType::CentOS
+                        | os_packages::OsType::Fedora => "Red Hat",
                         os_packages::OsType::Unknown(_) => "OS",
                     }
                 ),
@@ -3698,7 +4137,7 @@ fn merge_native_vulnerabilities(
                 upgrade_path: None,
                 is_reachable: false, // Will be analyzed by reachability pass
                 difficulty_score: None,
-                call_chain: None, // Will be populated if reachable
+                call_chain: None,      // Will be populated if reachable
                 dependency_path: None, // Populated for transitive deps
             });
             existing.insert(key);

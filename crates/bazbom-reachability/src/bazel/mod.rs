@@ -147,10 +147,7 @@ pub fn analyze_bazel_project(workspace_root: &Path) -> Result<ReachabilityReport
 ///
 /// Uses `bazel query rdeps(//..., set(files))` to find all targets that
 /// depend on the changed files (reverse dependencies).
-fn query_affected_targets(
-    workspace_root: &Path,
-    changed_files: &[String],
-) -> Result<Vec<String>> {
+fn query_affected_targets(workspace_root: &Path, changed_files: &[String]) -> Result<Vec<String>> {
     if changed_files.is_empty() {
         return Ok(Vec::new());
     }
@@ -180,7 +177,10 @@ fn query_affected_targets(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        tracing::warn!("rdeps query failed, trying individual file queries: {}", stderr);
+        tracing::warn!(
+            "rdeps query failed, trying individual file queries: {}",
+            stderr
+        );
 
         // Fallback: query each file individually and combine results
         let mut all_targets = std::collections::HashSet::new();
@@ -231,7 +231,9 @@ fn query_all_targets(workspace_root: &Path) -> Result<Vec<String>> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(BazelReachabilityError::BazelCommandFailed(stderr.to_string()));
+        return Err(BazelReachabilityError::BazelCommandFailed(
+            stderr.to_string(),
+        ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -302,7 +304,10 @@ fn identify_entrypoints(workspace_root: &Path, targets: &[String]) -> Result<Vec
         return Ok(targets
             .iter()
             .filter(|t| {
-                t.contains("_binary") || t.contains("_test") || t.ends_with(":main") || t.ends_with(":test")
+                t.contains("_binary")
+                    || t.contains("_test")
+                    || t.ends_with(":main")
+                    || t.ends_with(":test")
             })
             .cloned()
             .collect());
@@ -399,28 +404,45 @@ mod tests {
         for target in &report.reachable_targets {
             println!("  - {}", target);
         }
-        println!("\nUnreachable targets: {}", report.unreachable_targets.len());
+        println!(
+            "\nUnreachable targets: {}",
+            report.unreachable_targets.len()
+        );
         for target in &report.unreachable_targets {
             println!("  - {}", target);
         }
 
         // Verify expectations
-        assert!(report.entrypoints.contains(&"//src:main".to_string()),
-                "Should identify main as entrypoint");
-        assert!(report.entrypoints.contains(&"//src:test".to_string()),
-                "Should identify test as entrypoint");
+        assert!(
+            report.entrypoints.contains(&"//src:main".to_string()),
+            "Should identify main as entrypoint"
+        );
+        assert!(
+            report.entrypoints.contains(&"//src:test".to_string()),
+            "Should identify test as entrypoint"
+        );
 
-        assert!(report.reachable_targets.contains("//src:used_lib"),
-                "used_lib should be reachable");
-        assert!(report.reachable_targets.contains("//src:helper_lib"),
-                "helper_lib should be reachable");
-        assert!(report.reachable_targets.contains("//src:reachable_lib"),
-                "reachable_lib should be reachable");
+        assert!(
+            report.reachable_targets.contains("//src:used_lib"),
+            "used_lib should be reachable"
+        );
+        assert!(
+            report.reachable_targets.contains("//src:helper_lib"),
+            "helper_lib should be reachable"
+        );
+        assert!(
+            report.reachable_targets.contains("//src:reachable_lib"),
+            "reachable_lib should be reachable"
+        );
 
-        assert!(report.unreachable_targets.contains("//src:unused_lib"),
-                "unused_lib should be unreachable");
-        assert!(report.unreachable_targets.contains("//src:dead_code_lib"),
-                "dead_code_lib should be unreachable");
+        assert!(
+            report.unreachable_targets.contains("//src:unused_lib"),
+            "unused_lib should be unreachable"
+        );
+        assert!(
+            report.unreachable_targets.contains("//src:dead_code_lib"),
+            "dead_code_lib should be unreachable"
+        );
     }
 
     #[test]
@@ -451,16 +473,21 @@ mod tests {
         for ep in &report.entrypoints {
             println!("  - {}", ep);
         }
-        println!("\nReachable from affected: {}", report.reachable_targets.len());
+        println!(
+            "\nReachable from affected: {}",
+            report.reachable_targets.len()
+        );
         for target in &report.reachable_targets {
             println!("  - {}", target);
         }
 
         // Verify targeted scanning worked
         // helper.cc is used by helper_lib, which is used by used_lib, which is used by main and test
-        assert!(report.target_dependencies.len() < 10,
-                "Targeted scan should analyze fewer targets than full scan (was: {})",
-                report.target_dependencies.len());
+        assert!(
+            report.target_dependencies.len() < 10,
+            "Targeted scan should analyze fewer targets than full scan (was: {})",
+            report.target_dependencies.len()
+        );
 
         // The affected targets should include things that depend on helper.cc
         // But NOT include unused_lib or dead_code_lib (they don't use helper)
@@ -471,9 +498,13 @@ mod tests {
         }
 
         // Verify we didn't scan irrelevant targets
-        assert!(!all_targets.contains(&"//src:unused_lib".to_string()),
-                "unused_lib should NOT be in affected targets");
-        assert!(!all_targets.contains(&"//src:dead_code_lib".to_string()),
-                "dead_code_lib should NOT be in affected targets");
+        assert!(
+            !all_targets.contains(&"//src:unused_lib".to_string()),
+            "unused_lib should NOT be in affected targets"
+        );
+        assert!(
+            !all_targets.contains(&"//src:dead_code_lib".to_string()),
+            "dead_code_lib should NOT be in affected targets"
+        );
     }
 }

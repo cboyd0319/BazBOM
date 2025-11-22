@@ -134,7 +134,15 @@ impl JsReachabilityAnalyzer {
         info!("Parsing transitive dependencies in node_modules...");
 
         // Skip directories even within node_modules
-        let skip_dirs = ["dist", "build", "coverage", ".git", "test", "tests", "__tests__"];
+        let skip_dirs = [
+            "dist",
+            "build",
+            "coverage",
+            ".git",
+            "test",
+            "tests",
+            "__tests__",
+        ];
 
         for entry in WalkDir::new(&node_modules)
             .into_iter()
@@ -155,7 +163,8 @@ impl JsReachabilityAnalyzer {
                 let path_str = path.to_str().unwrap_or("");
                 if path_str.contains(".test.")
                     || path_str.contains(".spec.")
-                    || path_str.ends_with(".d.ts") {
+                    || path_str.ends_with(".d.ts")
+                {
                     continue;
                 }
 
@@ -387,7 +396,11 @@ main();
         fs::write(dep_dir.join("index.js"), "function foo() {}").unwrap();
 
         // Create application file
-        fs::write(temp_dir.path().join("index.js"), "function bar() { foo(); }").unwrap();
+        fs::write(
+            temp_dir.path().join("index.js"),
+            "function bar() { foo(); }",
+        )
+        .unwrap();
 
         let mut analyzer = JsReachabilityAnalyzer::new();
         let _ = analyzer.discover_and_parse_files(temp_dir.path());
@@ -402,6 +415,7 @@ main();
         assert!(analyzer
             .processed_files
             .iter()
-            .any(|p| p.to_str().unwrap().ends_with("index.js") && !p.to_str().unwrap().contains("node_modules")));
+            .any(|p| p.to_str().unwrap().ends_with("index.js")
+                && !p.to_str().unwrap().contains("node_modules")));
     }
 }

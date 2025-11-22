@@ -11,9 +11,7 @@ pub struct BazelUpdater;
 
 impl DependencyUpdater for BazelUpdater {
     fn update_version(&self, file_path: &Path, package: &str, new_version: &str) -> Result<()> {
-        let filename = file_path.file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or("");
+        let filename = file_path.file_name().and_then(|s| s.to_str()).unwrap_or("");
 
         if filename == "maven_install.json" {
             self.update_maven_install_json(file_path, package, new_version)
@@ -57,17 +55,25 @@ impl DependencyUpdater for BazelUpdater {
 }
 
 impl BazelUpdater {
-    fn update_maven_install_json(&self, file_path: &Path, package: &str, new_version: &str) -> Result<()> {
+    fn update_maven_install_json(
+        &self,
+        file_path: &Path,
+        package: &str,
+        new_version: &str,
+    ) -> Result<()> {
         let content = fs::read_to_string(file_path)
             .with_context(|| format!("Failed to read {}", file_path.display()))?;
 
-        let mut json: Value = serde_json::from_str(&content)
-            .with_context(|| "Failed to parse maven_install.json")?;
+        let mut json: Value =
+            serde_json::from_str(&content).with_context(|| "Failed to parse maven_install.json")?;
 
         // Parse groupId:artifactId format
         let parts: Vec<&str> = package.split(':').collect();
         if parts.len() != 2 {
-            anyhow::bail!("Invalid package format. Expected groupId:artifactId, got: {}", package);
+            anyhow::bail!(
+                "Invalid package format. Expected groupId:artifactId, got: {}",
+                package
+            );
         }
         let group_id = parts[0];
         let artifact_id = parts[1];
@@ -81,7 +87,8 @@ impl BazelUpdater {
                         if let Some(coord) = dep.get("coord").and_then(|c| c.as_str()) {
                             if coord.starts_with(&format!("{}:{}:", group_id, artifact_id)) {
                                 // Update version in coord
-                                let new_coord = format!("{}:{}:{}", group_id, artifact_id, new_version);
+                                let new_coord =
+                                    format!("{}:{}:{}", group_id, artifact_id, new_version);
                                 if let Some(obj) = dep.as_object_mut() {
                                     obj.insert("coord".to_string(), Value::String(new_coord));
                                     updated = true;
@@ -99,7 +106,10 @@ impl BazelUpdater {
                 let key = format!("{}:{}", group_id, artifact_id);
                 if let Some(artifact) = artifacts_obj.get_mut(&key) {
                     if let Some(obj) = artifact.as_object_mut() {
-                        obj.insert("version".to_string(), Value::String(new_version.to_string()));
+                        obj.insert(
+                            "version".to_string(),
+                            Value::String(new_version.to_string()),
+                        );
                         updated = true;
                     }
                 }
@@ -107,16 +117,23 @@ impl BazelUpdater {
         }
 
         if !updated {
-            anyhow::bail!("Package {}:{} not found in maven_install.json", group_id, artifact_id);
+            anyhow::bail!(
+                "Package {}:{} not found in maven_install.json",
+                group_id,
+                artifact_id
+            );
         }
 
-        let updated_content = serde_json::to_string_pretty(&json)
-            .context("Failed to serialize updated JSON")?;
+        let updated_content =
+            serde_json::to_string_pretty(&json).context("Failed to serialize updated JSON")?;
 
         fs::write(file_path, updated_content)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {}:{} in maven_install.json: {}", group_id, artifact_id, new_version);
+        println!(
+            "  [+] Updated {}:{} in maven_install.json: {}",
+            group_id, artifact_id, new_version
+        );
         Ok(())
     }
 
@@ -127,7 +144,10 @@ impl BazelUpdater {
         // Parse groupId:artifactId format
         let parts: Vec<&str> = package.split(':').collect();
         if parts.len() != 2 {
-            anyhow::bail!("Invalid package format. Expected groupId:artifactId, got: {}", package);
+            anyhow::bail!(
+                "Invalid package format. Expected groupId:artifactId, got: {}",
+                package
+            );
         }
         let group_id = parts[0];
         let artifact_id = parts[1];
@@ -139,11 +159,14 @@ impl BazelUpdater {
             regex::escape(artifact_id)
         );
 
-        let re = regex::Regex::new(&pattern)
-            .context("Failed to compile regex")?;
+        let re = regex::Regex::new(&pattern).context("Failed to compile regex")?;
 
         if !re.is_match(&content) {
-            anyhow::bail!("Package {}:{} not found in WORKSPACE", group_id, artifact_id);
+            anyhow::bail!(
+                "Package {}:{} not found in WORKSPACE",
+                group_id,
+                artifact_id
+            );
         }
 
         let replacement = format!(
@@ -156,7 +179,10 @@ impl BazelUpdater {
         fs::write(file_path, updated)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {}:{} in WORKSPACE: {}", group_id, artifact_id, new_version);
+        println!(
+            "  [+] Updated {}:{} in WORKSPACE: {}",
+            group_id, artifact_id, new_version
+        );
         Ok(())
     }
 }
@@ -188,7 +214,9 @@ mod tests {
         fs::write(&json_path, json_content).unwrap();
 
         let updater = BazelUpdater;
-        updater.update_version(&json_path, "com.google.guava:guava", "32.0-jre").unwrap();
+        updater
+            .update_version(&json_path, "com.google.guava:guava", "32.0-jre")
+            .unwrap();
 
         let updated = fs::read_to_string(&json_path).unwrap();
         assert!(updated.contains("32.0-jre"));
@@ -209,7 +237,9 @@ maven_install(
         fs::write(&workspace_path, workspace_content).unwrap();
 
         let updater = BazelUpdater;
-        updater.update_version(&workspace_path, "com.google.guava:guava", "32.0-jre").unwrap();
+        updater
+            .update_version(&workspace_path, "com.google.guava:guava", "32.0-jre")
+            .unwrap();
 
         let updated = fs::read_to_string(&workspace_path).unwrap();
         assert!(updated.contains("\"32.0-jre\""));

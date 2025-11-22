@@ -65,7 +65,10 @@ pub fn handle_notify_test(channel: String) -> Result<()> {
             if let Some(webhook) = &config.slack_webhook {
                 println!("Sending test message to Slack...");
                 // TODO: Actually send via bazbom_threats::notifications
-                println!("[+] Test notification sent to Slack webhook: {}...", &webhook[..50.min(webhook.len())]);
+                println!(
+                    "[+] Test notification sent to Slack webhook: {}...",
+                    &webhook[..50.min(webhook.len())]
+                );
             } else {
                 anyhow::bail!("Slack webhook not configured. Run: bazbom notify configure --slack-webhook <URL>");
             }
@@ -73,7 +76,10 @@ pub fn handle_notify_test(channel: String) -> Result<()> {
         "teams" => {
             if let Some(webhook) = &config.teams_webhook {
                 println!("Sending test message to Microsoft Teams...");
-                println!("[+] Test notification sent to Teams webhook: {}...", &webhook[..50.min(webhook.len())]);
+                println!(
+                    "[+] Test notification sent to Teams webhook: {}...",
+                    &webhook[..50.min(webhook.len())]
+                );
             } else {
                 anyhow::bail!("Teams webhook not configured. Run: bazbom notify configure --teams-webhook <URL>");
             }
@@ -82,7 +88,9 @@ pub fn handle_notify_test(channel: String) -> Result<()> {
             if let Some(addr) = &config.email {
                 println!("Sending test email to {}...", addr);
                 if config.smtp_host.is_none() {
-                    anyhow::bail!("SMTP host not configured. Run: bazbom notify configure --smtp-host <HOST>");
+                    anyhow::bail!(
+                        "SMTP host not configured. Run: bazbom notify configure --smtp-host <HOST>"
+                    );
                 }
                 println!("[+] Test email sent to {}", addr);
             } else {
@@ -98,7 +106,10 @@ pub fn handle_notify_test(channel: String) -> Result<()> {
             }
         }
         _ => {
-            anyhow::bail!("Unknown channel: {}. Supported: slack, teams, email, github", channel);
+            anyhow::bail!(
+                "Unknown channel: {}. Supported: slack, teams, email, github",
+                channel
+            );
         }
     }
 
@@ -119,11 +130,10 @@ pub fn handle_notify_history(limit: usize) -> Result<()> {
         return Ok(());
     }
 
-    let content = std::fs::read_to_string(&history_path)
-        .context("Failed to read notification history")?;
+    let content =
+        std::fs::read_to_string(&history_path).context("Failed to read notification history")?;
 
-    let entries: Vec<serde_json::Value> = serde_json::from_str(&content)
-        .unwrap_or_default();
+    let entries: Vec<serde_json::Value> = serde_json::from_str(&content).unwrap_or_default();
 
     println!("Notification History (last {} entries):\n", limit);
 

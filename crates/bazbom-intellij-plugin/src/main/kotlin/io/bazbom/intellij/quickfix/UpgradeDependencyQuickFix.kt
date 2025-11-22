@@ -96,14 +96,14 @@ class UpgradeDependencyQuickFix(
                         showNotification(
                             project,
                             "Upgrade Successful",
-                            "✅ Upgraded $artifactId to $targetVersion. All tests passed.",
+                            "Upgraded $artifactId to $targetVersion. All tests passed.",
                             NotificationType.INFORMATION
                         )
                     } else {
                         showNotification(
                             project,
                             "Tests Failed",
-                            "⚠️ Upgraded $artifactId to $targetVersion but tests failed. Please review and fix.",
+                            "Upgraded $artifactId to $targetVersion but tests failed. Please review and fix.",
                             NotificationType.WARNING
                         )
                     }
@@ -112,7 +112,7 @@ class UpgradeDependencyQuickFix(
                     showNotification(
                         project,
                         "Upgrade Applied",
-                        "✅ Upgraded $artifactId to $targetVersion. Run tests manually to verify.",
+                        "Upgraded $artifactId to $targetVersion. Run tests manually to verify.",
                         NotificationType.INFORMATION
                     )
                 }

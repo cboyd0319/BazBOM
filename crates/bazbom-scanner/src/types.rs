@@ -45,7 +45,10 @@ impl Package {
                 &self.name
             };
             if let Some(ref groupid) = self.namespace {
-                return format!("pkg:{}/{}/{}@{}", ecosystem, groupid, artifact, self.version);
+                return format!(
+                    "pkg:{}/{}/{}@{}",
+                    ecosystem, groupid, artifact, self.version
+                );
             } else {
                 return format!("pkg:{}/{}@{}", ecosystem, self.name, self.version);
             }
@@ -62,7 +65,11 @@ impl Package {
 
         if let Some(ref ns) = self.namespace {
             // Check if namespace is an ecosystem identifier (like "crates.io") or a package scope (like "@types")
-            if ns == "crates.io" || ns == "rubygems.org" || ns == "packagist.org" || ns.starts_with("packagist.org/") {
+            if ns == "crates.io"
+                || ns == "rubygems.org"
+                || ns == "packagist.org"
+                || ns.starts_with("packagist.org/")
+            {
                 // Ecosystem namespace - don't include in purl, just use package name
                 format!("pkg:{}/{}@{}", ecosystem, self.name, self.version)
             } else if ns.starts_with('@') || self.ecosystem == "npm" {

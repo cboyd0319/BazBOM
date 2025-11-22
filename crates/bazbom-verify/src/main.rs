@@ -123,7 +123,7 @@ fn main() -> Result<()> {
         }
         Ok(false) => {
             println!("{}", "FAIL".red().bold());
-            eprintln!("   {} Checksum mismatch!", "⚠".yellow());
+            eprintln!("   {} Checksum mismatch!", "WARN".yellow());
         }
         Err(e) => {
             println!("{}", "SKIP".yellow());
@@ -142,7 +142,7 @@ fn main() -> Result<()> {
         }
         Ok(false) => {
             println!("{}", "WARN".yellow().bold());
-            eprintln!("   {} Permissions should be 755", "⚠".yellow());
+            eprintln!("   {} Permissions should be 755", "WARN".yellow());
             result.permissions_correct = false;
         }
         Err(e) => {
@@ -160,7 +160,10 @@ fn main() -> Result<()> {
         result.not_compromised = true;
     } else {
         println!("{}", "FAIL".red().bold());
-        eprintln!("   {} This version is known to be compromised!", "⚠".red());
+        eprintln!(
+            "   {} This version is known to be compromised!",
+            "WARN".red()
+        );
         result.not_compromised = false;
     }
 
@@ -168,7 +171,10 @@ fn main() -> Result<()> {
     if !args.skip_signature {
         print!("{}  Signature verification... ", "4.".bold());
         println!("{}", "SKIP".yellow());
-        println!("   {} Cosign verification not yet implemented", "ℹ".blue());
+        println!(
+            "   {} Cosign verification not yet implemented",
+            "INFO".blue()
+        );
         // TODO: Implement cosign verification
         result.signature_valid = Some(false);
     }
@@ -179,7 +185,7 @@ fn main() -> Result<()> {
         println!("{}", "SKIP".yellow());
         println!(
             "   {} Provenance verification not yet implemented",
-            "ℹ".blue()
+            "INFO".blue()
         );
         // TODO: Implement SLSA provenance verification
         result.provenance_valid = Some(false);
@@ -192,14 +198,14 @@ fn main() -> Result<()> {
     if result.is_fully_valid() {
         println!(
             "{} {}",
-            "✓".green().bold(),
+            "OK".green().bold(),
             "Installation verification PASSED".green().bold()
         );
         std::process::exit(0);
     } else if result.checksum_valid && result.permissions_correct && result.not_compromised {
         println!(
             "{} {}",
-            "⚠".yellow().bold(),
+            "WARN".yellow().bold(),
             "Installation verification PASSED (with warnings)"
                 .yellow()
                 .bold()
@@ -208,7 +214,7 @@ fn main() -> Result<()> {
     } else {
         println!(
             "{} {}",
-            "✗".red().bold(),
+            "FAIL".red().bold(),
             "Installation verification FAILED".red().bold()
         );
         std::process::exit(1);

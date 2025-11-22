@@ -87,8 +87,11 @@ fn test_osv_complete_pipeline() {
     // Enrich vulnerability
     vuln.kev =
         bazbom_vulnerabilities::enrichment::kev::find_kev_entry(&vuln.id, &vuln.aliases, &kev_map);
-    vuln.epss =
-        bazbom_vulnerabilities::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+    vuln.epss = bazbom_vulnerabilities::enrichment::epss::find_epss_score(
+        &vuln.id,
+        &vuln.aliases,
+        &epss_map,
+    );
 
     assert!(vuln.kev.is_some());
     assert!(vuln.epss.is_some());
@@ -148,8 +151,11 @@ fn test_nvd_complete_pipeline() {
     let epss_map = load_epss_scores(epss_file.path()).unwrap();
 
     // Enrich with EPSS
-    vuln.epss =
-        bazbom_vulnerabilities::enrichment::epss::find_epss_score(&vuln.id, &vuln.aliases, &epss_map);
+    vuln.epss = bazbom_vulnerabilities::enrichment::epss::find_epss_score(
+        &vuln.id,
+        &vuln.aliases,
+        &epss_map,
+    );
 
     // Calculate priority
     let priority = calculate_priority(&vuln.severity, &vuln.kev, &vuln.epss);

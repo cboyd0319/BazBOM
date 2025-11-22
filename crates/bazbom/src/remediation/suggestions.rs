@@ -1,7 +1,7 @@
 // Suggestion generation for remediation
 
-use bazbom_vulnerabilities::Vulnerability;
 use bazbom_core::BuildSystem;
+use bazbom_vulnerabilities::Vulnerability;
 
 use super::types::{RemediationReport, RemediationSuggestion, RemediationSummary};
 use super::version::parse_semantic_version;
@@ -193,7 +193,9 @@ fn generate_why_fix(vuln: &Vulnerability) -> String {
             bazbom_vulnerabilities::SeverityLevel::Critical => {
                 "CRITICAL severity - immediate action required"
             }
-            bazbom_vulnerabilities::SeverityLevel::High => "HIGH severity - fix as soon as possible",
+            bazbom_vulnerabilities::SeverityLevel::High => {
+                "HIGH severity - fix as soon as possible"
+            }
             bazbom_vulnerabilities::SeverityLevel::Medium => {
                 "MEDIUM severity - schedule fix in near term"
             }

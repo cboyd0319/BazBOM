@@ -159,9 +159,7 @@ async fn handle_webhook(
     body: Bytes,
 ) -> std::result::Result<StatusCode, StatusCode> {
     // Verify webhook signature
-    let signature = headers
-        .get("X-Hub-Signature")
-        .and_then(|v| v.to_str().ok());
+    let signature = headers.get("X-Hub-Signature").and_then(|v| v.to_str().ok());
 
     if !verify_signature(&server.secret, signature, &body) {
         warn!("Invalid webhook signature - rejecting request");

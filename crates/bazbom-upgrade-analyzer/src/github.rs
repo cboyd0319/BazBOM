@@ -98,7 +98,7 @@ impl GitHubAnalyzer {
             Regex::new(r"(?im)^#+\s*breaking\s*$").unwrap(),
             Regex::new(r"(?i)breaking change[s]?:").unwrap(),
             Regex::new(r"(?i)\*\*breaking\*\*:?\s*(.+)").unwrap(),
-            Regex::new(r"(?i)[⚠️💥]\s*(.+)").unwrap(),
+            Regex::new(r"(?i)[WARN💥]\s*(.+)").unwrap(),
         ];
 
         // Split body into lines

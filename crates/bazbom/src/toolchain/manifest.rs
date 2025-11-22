@@ -107,10 +107,10 @@ mod tests {
     #[test]
     fn test_get_codeql_descriptor() {
         let loader = ToolManifestLoader::load();
-        if loader.is_err() {
-            return; // Skip if manifest cannot be loaded in test environment
-        }
-        let loader = loader.unwrap();
+        let loader = match loader {
+            Ok(l) => l,
+            Err(_) => return, // Skip if manifest cannot be loaded in test environment
+        };
 
         // This might fail if the current platform is not in the manifest
         // That's expected for unsupported platforms

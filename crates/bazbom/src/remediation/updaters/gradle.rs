@@ -16,7 +16,10 @@ impl DependencyUpdater for GradleUpdater {
         // Parse groupId:artifactId format
         let parts: Vec<&str> = package.split(':').collect();
         if parts.len() != 2 {
-            anyhow::bail!("Invalid package format. Expected groupId:artifactId, got: {}", package);
+            anyhow::bail!(
+                "Invalid package format. Expected groupId:artifactId, got: {}",
+                package
+            );
         }
         let group_id = parts[0];
         let artifact_id = parts[1];
@@ -31,8 +34,13 @@ impl DependencyUpdater for GradleUpdater {
         fs::write(file_path, updated)
             .with_context(|| format!("Failed to write to {}", file_path.display()))?;
 
-        println!("  [+] Updated {}:{} in {}: {}", group_id, artifact_id,
-            file_path.file_name().unwrap_or_default().to_string_lossy(), new_version);
+        println!(
+            "  [+] Updated {}:{} in {}: {}",
+            group_id,
+            artifact_id,
+            file_path.file_name().unwrap_or_default().to_string_lossy(),
+            new_version
+        );
         Ok(())
     }
 
@@ -87,33 +95,29 @@ impl GradleUpdater {
         let escaped_artifact = Self::escape_regex(artifact_id);
 
         // Try single quotes first: 'group:artifact:version'
-        let single_quote_pattern = format!(
-            r#"'{}:{}:[^']+'"#,
-            escaped_group,
-            escaped_artifact
-        );
+        let single_quote_pattern = format!(r#"'{}:{}:[^']+'"#, escaped_group, escaped_artifact);
 
-        let single_re = regex::Regex::new(&single_quote_pattern)
-            .context("Failed to compile regex")?;
+        let single_re =
+            regex::Regex::new(&single_quote_pattern).context("Failed to compile regex")?;
 
         if single_re.is_match(content) {
             let replacement = format!("'{}:{}:{}'", group_id, artifact_id, new_version);
-            return Ok(single_re.replace_all(content, replacement.as_str()).to_string());
+            return Ok(single_re
+                .replace_all(content, replacement.as_str())
+                .to_string());
         }
 
         // Try double quotes: "group:artifact:version"
-        let double_quote_pattern = format!(
-            r#""{}:{}:[^"]+""#,
-            escaped_group,
-            escaped_artifact
-        );
+        let double_quote_pattern = format!(r#""{}:{}:[^"]+""#, escaped_group, escaped_artifact);
 
-        let double_re = regex::Regex::new(&double_quote_pattern)
-            .context("Failed to compile regex")?;
+        let double_re =
+            regex::Regex::new(&double_quote_pattern).context("Failed to compile regex")?;
 
         if double_re.is_match(content) {
             let replacement = format!("\"{}:{}:{}\"", group_id, artifact_id, new_version);
-            return Ok(double_re.replace_all(content, replacement.as_str()).to_string());
+            return Ok(double_re
+                .replace_all(content, replacement.as_str())
+                .to_string());
         }
 
         // Try alternate format: implementation group: 'x', name: 'y', version: 'z'
@@ -130,17 +134,16 @@ impl GradleUpdater {
         // Pattern for: implementation("group:artifact:version")
         let escaped_group = Self::escape_regex(group_id);
         let escaped_artifact = Self::escape_regex(artifact_id);
-        let pattern = format!(
-            r#"\("{}:{}:[^"]+"\)"#,
-            escaped_group,
-            escaped_artifact
-        );
+        let pattern = format!(r#"\("{}:{}:[^"]+"\)"#, escaped_group, escaped_artifact);
 
-        let re = regex::Regex::new(&pattern)
-            .context("Failed to compile regex")?;
+        let re = regex::Regex::new(&pattern).context("Failed to compile regex")?;
 
         if !re.is_match(content) {
-            anyhow::bail!("Package {}:{} not found in build.gradle.kts", group_id, artifact_id);
+            anyhow::bail!(
+                "Package {}:{} not found in build.gradle.kts",
+                group_id,
+                artifact_id
+            );
         }
 
         let replacement = format!("(\"{}:{}:{}\")", group_id, artifact_id, new_version);
@@ -153,7 +156,8 @@ impl GradleUpdater {
         let mut result = String::new();
         for c in s.chars() {
             match c {
-                '.' | '+' | '*' | '?' | '^' | '$' | '(' | ')' | '[' | ']' | '{' | '}' | '|' | '\\' => {
+                '.' | '+' | '*' | '?' | '^' | '$' | '(' | ')' | '[' | ']' | '{' | '}' | '|'
+                | '\\' => {
                     result.push('\\');
                     result.push(c);
                 }
@@ -175,15 +179,17 @@ impl GradleUpdater {
         let escaped_artifact = Self::escape_regex(artifact_id);
         let pattern = format!(
             r#"group:\s*['"]{}['"],\s*name:\s*['"]{}['"],\s*version:\s*['"][^'"]+['"]"#,
-            escaped_group,
-            escaped_artifact
+            escaped_group, escaped_artifact
         );
 
-        let re = regex::Regex::new(&pattern)
-            .context("Failed to compile regex")?;
+        let re = regex::Regex::new(&pattern).context("Failed to compile regex")?;
 
         if !re.is_match(content) {
-            anyhow::bail!("Package {}:{} not found in build.gradle", group_id, artifact_id);
+            anyhow::bail!(
+                "Package {}:{} not found in build.gradle",
+                group_id,
+                artifact_id
+            );
         }
 
         let replacement = format!(
@@ -210,14 +216,16 @@ dependencies {
 }
 "#;
 
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("temp dir");
         let gradle_path = temp_dir.path().join("build.gradle");
-        fs::write(&gradle_path, gradle_content).unwrap();
+        fs::write(&gradle_path, gradle_content).expect("write gradle");
 
         let updater = GradleUpdater;
-        updater.update_version(&gradle_path, "com.google.guava:guava", "32.0-jre").unwrap();
+        updater
+            .update_version(&gradle_path, "com.google.guava:guava", "32.0-jre")
+            .expect("update version");
 
-        let updated = fs::read_to_string(&gradle_path).unwrap();
+        let updated = fs::read_to_string(&gradle_path).expect("read gradle");
         assert!(updated.contains("'com.google.guava:guava:32.0-jre'"));
     }
 
@@ -229,14 +237,16 @@ dependencies {
 }
 "#;
 
-        let temp_dir = TempDir::new().unwrap();
+        let temp_dir = TempDir::new().expect("temp dir");
         let gradle_path = temp_dir.path().join("build.gradle.kts");
-        fs::write(&gradle_path, gradle_content).unwrap();
+        fs::write(&gradle_path, gradle_content).expect("write gradle kts");
 
         let updater = GradleUpdater;
-        updater.update_version(&gradle_path, "com.google.guava:guava", "32.0-jre").unwrap();
+        updater
+            .update_version(&gradle_path, "com.google.guava:guava", "32.0-jre")
+            .expect("update version");
 
-        let updated = fs::read_to_string(&gradle_path).unwrap();
+        let updated = fs::read_to_string(&gradle_path).expect("read gradle kts");
         assert!(updated.contains("(\"com.google.guava:guava:32.0-jre\")"));
     }
 }

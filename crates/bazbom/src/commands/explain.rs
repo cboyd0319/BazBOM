@@ -12,7 +12,7 @@ use std::path::Path;
 /// - References and links
 pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bool) -> Result<()> {
     println!();
-    println!("{}", format!("🔍 Explaining {}", cve_id).bold().cyan());
+    println!("{}", format!("SCAN Explaining {}", cve_id).bold().cyan());
     println!();
 
     let findings_file = findings_path.unwrap_or_else(|| "bazbom-findings.json".to_string());
@@ -88,7 +88,7 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
     println!("  • GitHub:     https://github.com/advisories/{}", cve_id);
     println!();
 
-    println!("{}", "🔓 Exploit Resources:".bold().yellow());
+    println!("{}", "UNLOCK Exploit Resources:".bold().yellow());
     println!(
         "  • ExploitDB:  https://www.exploit-db.com/search?cve={}",
         cve_id
@@ -107,7 +107,7 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
     );
     println!();
 
-    println!("{}", "💡 Tip:".dimmed());
+    println!("{}", "HINT Tip:".dimmed());
     println!(
         "  {}",
         "Check if exploit code exists before prioritizing remediation.".dimmed()
@@ -123,7 +123,7 @@ pub fn handle_explain(cve_id: String, findings_path: Option<String>, verbose: bo
 
 /// Display vulnerability details from SARIF result
 fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: bool) -> Result<()> {
-    println!("{}", "📦 Affected Package:".bold());
+    println!("{}", "PKG Affected Package:".bold());
 
     if let Some(message) = result
         .get("message")
@@ -134,7 +134,7 @@ fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: boo
     }
     println!();
 
-    println!("{}", "⚠️  Severity Information:".bold());
+    println!("{}", "WARN  Severity Information:".bold());
     if let Some(level) = result.get("level").and_then(|l| l.as_str()) {
         let level_colored = match level {
             "error" => "CRITICAL".red().bold(),
@@ -151,7 +151,7 @@ fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: boo
     }
     println!();
 
-    println!("{}", "🎯 Reachability Analysis:".bold());
+    println!("{}", "TARGET Reachability Analysis:".bold());
     if let Some(properties) = result.get("properties") {
         if let Some(reachable) = properties.get("reachable").and_then(|r| r.as_bool()) {
             if reachable {
@@ -188,7 +188,7 @@ fn display_vulnerability(result: &serde_json::Value, _cve_id: &str, verbose: boo
     }
     println!();
 
-    println!("{}", "🔧 Remediation:".bold());
+    println!("{}", "TOOL Remediation:".bold());
     if let Some(properties) = result.get("properties") {
         if let Some(fix) = properties.get("fix").and_then(|f| f.as_str()) {
             println!("  {}", fix);
