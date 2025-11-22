@@ -11,7 +11,7 @@ serde_json = "1.0"
 anyhow = "1.0"
 chrono = { version = "0.4", features = ["serde"] }
 printpdf = "0.7"
-lopdf = "0.32"
+lopdf = "0.38"
 headless_chrome = { version = "1.0", optional = true }
 
 [features]
